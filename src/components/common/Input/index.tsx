@@ -1,0 +1,2 @@
+// Input component placeholder
+export { }

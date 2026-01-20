@@ -1,0 +1,2 @@
+// View profile page
+export { }

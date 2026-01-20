@@ -1,0 +1,2 @@
+// Create receipt voucher
+export { }

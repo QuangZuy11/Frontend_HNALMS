@@ -1,0 +1,2 @@
+// Delete request detail
+export { }

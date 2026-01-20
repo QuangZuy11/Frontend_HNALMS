@@ -1,0 +1,2 @@
+// Update request detail
+export { }

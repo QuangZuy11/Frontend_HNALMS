@@ -1,0 +1,2 @@
+// Create tenant notification
+export { }

@@ -1,0 +1,2 @@
+// Forgot password page
+export { }

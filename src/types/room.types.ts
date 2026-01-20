@@ -1,0 +1,2 @@
+// Room types
+export { }

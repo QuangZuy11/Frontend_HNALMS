@@ -1,0 +1,2 @@
+// Confirm contract renewal
+export { }

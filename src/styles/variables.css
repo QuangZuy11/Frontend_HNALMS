@@ -1,0 +1,7 @@
+/* CSS Variables - colors, spacing, breakpoints */
+:root {
+  --primary-color: #646cff;
+  --secondary-color: #535bf2;
+  --text-color: #213547;
+  --bg-color: #ffffff;
+}

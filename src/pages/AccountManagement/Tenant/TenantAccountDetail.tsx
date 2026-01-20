@@ -1,0 +1,2 @@
+// Tenant account detail
+export { }

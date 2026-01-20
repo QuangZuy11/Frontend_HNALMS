@@ -1,0 +1,2 @@
+// Owner account detail
+export { }

@@ -1,0 +1,2 @@
+// Manager account detail
+export { }
