@@ -3,7 +3,7 @@ import './App.css'
 
 // Pages
 import TestAPI from './pages/TestAPI'
-// import Login from './pages/Auth/Login'
+import Login from './pages/Auth/Login/Login'
 // import ForgotPassword from './pages/Auth/ForgotPassword'
 // import ChangePassword from './pages/Auth/ChangePassword'
 
@@ -81,7 +81,7 @@ function App() {
         <Route path="/test-api" element={<TestAPI />} />
 
         {/* Authentication Routes */}
-        {/* <Route path="/login" element={<Login />} /> */}
+        <Route path="/login" element={<Login />} />
         {/* <Route path="/forgot-password" element={<ForgotPassword />} /> */}
         {/* <Route path="/change-password" element={<ChangePassword />} /> */}
 
