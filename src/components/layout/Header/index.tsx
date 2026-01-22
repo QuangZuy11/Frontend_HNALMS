@@ -1,2 +1,0 @@
-// Header component placeholder
-export { }
