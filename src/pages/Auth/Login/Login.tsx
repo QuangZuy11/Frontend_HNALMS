@@ -126,6 +126,9 @@ export default function LoginPage() {
         case 'tenant':
           navigate('/tenant');
           break;
+        case 'accountant':
+          navigate('/accountant');
+          break;
         default:
           navigate('/');
       }

@@ -16,6 +16,7 @@ import AdminDashboard from './pages/Dashboard/AdminDashboard'
 import BuildingManagerDashboard from './pages/Dashboard/BuildingManagerDashboard'
 import BuildingOwnerDashboard from './pages/Dashboard/BuildingOwnerDashboard'
 import TenantDashboard from './pages/Dashboard/TenantDashboard'
+import AccountantDashboard from './pages/Dashboard/AccountantDashboard'
 // import ForgotPassword from './pages/Auth/ForgotPassword'
 // import ChangePassword from './pages/Auth/ChangePassword'
 
@@ -128,6 +129,14 @@ function App() {
             element={
               <PrivateRoute allowedRoles={['tenant']}>
                 <TenantDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/accountant"
+            element={
+              <PrivateRoute allowedRoles={['accountant']}>
+                <AccountantDashboard />
               </PrivateRoute>
             }
           />
