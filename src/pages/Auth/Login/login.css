@@ -1,7 +1,8 @@
 /* Login page styles */
 
 /* Full screen layout - Override global styles */
-html, body {
+html,
+body {
   margin: 0 !important;
   padding: 0 !important;
   height: 100% !important;
@@ -100,7 +101,7 @@ main.min-h-screen {
     padding-left: 3rem;
     padding-right: 3rem;
   }
-  
+
   .lg\:py-0 {
     padding-top: 0;
     padding-bottom: 0;
@@ -371,6 +372,111 @@ main.min-h-screen {
   border: 1px solid #FECACA;
 }
 
+/* Validation Popup */
+.validation-popup {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.validation-popup-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  color: #92400E;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: 0 10px 40px rgba(251, 191, 36, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid #FCD34D;
+  min-width: 320px;
+  max-width: 500px;
+}
+
+.validation-popup-content svg {
+  flex-shrink: 0;
+  color: #D97706;
+  width: 20px;
+  height: 20px;
+}
+
+.validation-popup-content span {
+  flex: 1;
+  line-height: 1.5;
+}
+
+/* Shake animation for errors */
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-5px);
+  }
+
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+/* Success Popup */
+.validation-popup-success {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+  color: #065F46;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid #10B981;
+  min-width: 320px;
+  max-width: 500px;
+}
+
+.validation-popup-success svg {
+  flex-shrink: 0;
+  color: #059669;
+  width: 20px;
+  height: 20px;
+}
+
+.validation-popup-success span {
+  flex: 1;
+  line-height: 1.5;
+}
+
 /* Hero Section Styles */
 .relative.z-10 {
   display: flex;
@@ -616,7 +722,7 @@ body {
   gap: 0.5rem;
 }
 
-.space-y-4 > * + * {
+.space-y-4>*+* {
   margin-top: 1rem;
 }
 
@@ -819,11 +925,11 @@ body {
   .lg\:flex {
     display: flex;
   }
-  
+
   .lg\:w-1\/2 {
     width: 50%;
   }
-  
+
   .lg\:px-12 {
     padding-left: 3rem;
     padding-right: 3rem;
@@ -835,12 +941,12 @@ body {
     padding-left: 6rem;
     padding-right: 6rem;
   }
-  
+
   .xl\:text-4xl {
     font-size: 2.25rem;
     line-height: 2.5rem;
   }
-  
+
   .xl\:p-16 {
     padding: 4rem;
   }
@@ -859,13 +965,24 @@ body {
 
 /* Shake animation for error */
 @keyframes shake {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateX(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     transform: translateX(-5px);
   }
-  20%, 40%, 60%, 80% {
+
+  20%,
+  40%,
+  60%,
+  80% {
     transform: translateX(5px);
   }
 }

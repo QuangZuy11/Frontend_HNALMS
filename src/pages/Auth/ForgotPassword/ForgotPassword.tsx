@@ -29,12 +29,35 @@ const BuildingIcon = () => (
 );
 
 export default function ForgotPasswordPage() {
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
     const [loading, setLoading] = useState(false);
+    const [validationPopup, setValidationPopup] = useState<{ show: boolean, message: string, type: 'error' | 'success' }>({
+        show: false,
+        message: "",
+        type: 'error'
+    });
 
     const emailRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
+
+    const showValidationPopup = (message: string, type: 'error' | 'success' = 'error') => {
+        setValidationPopup({ show: true, message, type });
+        setTimeout(() => {
+            setValidationPopup({ show: false, message: "", type: 'error' });
+        }, 3000);
+    };
+
+    const validateEmail = (email: string): boolean => {
+        if (!email) {
+            showValidationPopup("Vui lòng nhập địa chỉ email");
+            return false;
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            showValidationPopup("Vui lòng nhập địa chỉ email hợp lệ (ví dụ: user@example.com)");
+            return false;
+        }
+        return true;
+    };
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -42,21 +65,20 @@ export default function ForgotPasswordPage() {
 
         if (loading) return;
 
-        const email = emailRef.current?.value || "";
+        const email = emailRef.current?.value.trim() || "";
 
-        if (!email) {
-            setError("Vui lòng nhập email");
+        // Custom validation
+        if (!validateEmail(email)) {
+            emailRef.current?.focus();
             return;
         }
 
-        setError("");
-        setSuccess("");
         setLoading(true);
 
         try {
             const response = await authService.forgotPassword(email);
 
-            setSuccess(response.message || "Mật khẩu mới đã được gửi đến email của bạn");
+            showValidationPopup(response.message || "Mật khẩu mới đã được gửi đến email của bạn", 'success');
 
             // Redirect to login after 3 seconds
             setTimeout(() => {
@@ -72,7 +94,7 @@ export default function ForgotPasswordPage() {
                 errorMessage = "Không thể kết nối đến máy chủ";
             }
 
-            setError(errorMessage);
+            showValidationPopup(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -91,29 +113,17 @@ export default function ForgotPasswordPage() {
                     <h1 className="login-title mb-2">Quên mật khẩu</h1>
                     <p className="login-subtitle mb-8">Nhập email để nhận mật khẩu mới</p>
 
-                    <form onSubmit={handleSubmit} className="login-form">
-                        {error && (
-                            <div className="login-error" style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                animation: 'shake 0.3s ease-in-out'
-                            }}>
-                                <AlertIcon />
-                                <span>{error}</span>
+                    <form onSubmit={handleSubmit} className="login-form" noValidate>
+                        {/* Validation Popup */}
+                        {validationPopup.show && (
+                            <div className="validation-popup">
+                                <div className={validationPopup.type === 'success' ? 'validation-popup-success' : 'validation-popup-content'}>
+                                    {validationPopup.type === 'success' ? <CheckIcon /> : <AlertIcon />}
+                                    <span>{validationPopup.message}</span>
+                                </div>
                             </div>
                         )}
 
-                        {success && (
-                            <div className="login-success" style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }}>
-                                <CheckIcon />
-                                <span>{success}</span>
-                            </div>
-                        )}
 
                         <div>
                             <label htmlFor="email" className="login-label">Email</label>
@@ -125,26 +135,24 @@ export default function ForgotPasswordPage() {
                                     ref={emailRef}
                                     id="email"
                                     name="email"
-                                    type="email"
+                                    type="text"
                                     onChange={() => {
-                                        if (error) setError("");
-                                        if (success) setSuccess("");
+                                        if (validationPopup.show) setValidationPopup({ show: false, message: "", type: 'error' });
                                     }}
-                                    autoComplete="email"
-                                    required
-                                    className={`login-input ${error ? 'login-input-error' : ''}`}
+                                    autoComplete="username"
+                                    className="login-input"
                                     placeholder="email@example.com"
-                                    disabled={loading || !!success}
+                                    disabled={loading}
                                 />
                             </div>
                         </div>
 
                         <button
                             type="submit"
-                            disabled={loading || !!success}
+                            disabled={loading}
                             className="login-button"
                         >
-                            {loading ? "Đang xử lý..." : success ? "Đang chuyển hướng..." : "Gửi mật khẩu mới"}
+                            {loading ? "Đang xử lý..." : "Gửi mật khẩu mới"}
                         </button>
 
                         <div style={{ textAlign: 'center', marginTop: '16px' }}>

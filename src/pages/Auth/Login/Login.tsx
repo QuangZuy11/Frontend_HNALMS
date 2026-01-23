@@ -48,8 +48,12 @@ const BuildingIcon = () => (
 export default function LoginPage() {
   const [view, setView] = useState<View>("login");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
+
   const [loading, setLoading] = useState(false);
+  const [validationPopup, setValidationPopup] = useState<{ show: boolean, message: string }>({
+    show: false,
+    message: ""
+  });
 
   // Sử dụng ref để giữ giá trị input (uncontrolled components)
   const emailRef = useRef<HTMLInputElement>(null);
@@ -58,6 +62,26 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  const showValidationPopup = (message: string) => {
+    setValidationPopup({ show: true, message });
+    setTimeout(() => {
+      setValidationPopup({ show: false, message: "" });
+    }, 3000);
+  };
+
+  const validateEmail = (email: string): boolean => {
+    if (!email) {
+      showValidationPopup("Vui lòng nhập địa chỉ email");
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showValidationPopup("Vui lòng nhập địa chỉ email hợp lệ (ví dụ: user@example.com)");
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -65,15 +89,21 @@ export default function LoginPage() {
     // Ngăn form submit nhiều lần
     if (loading) return;
 
-    const email = emailRef.current?.value || "";
+    const email = emailRef.current?.value.trim() || "";
     const password = passwordRef.current?.value || "";
 
-    if (!email || !password) {
-      setError("Vui lòng nhập email và mật khẩu");
+    // Custom validation
+    if (!validateEmail(email)) {
+      emailRef.current?.focus();
       return;
     }
 
-    setError("");
+    if (!password) {
+      showValidationPopup("Vui lòng nhập mật khẩu");
+      passwordRef.current?.focus();
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -111,7 +141,7 @@ export default function LoginPage() {
         errorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
       }
 
-      setError(errorMessage);
+      showValidationPopup(errorMessage);
 
       // Focus vào password field
       setTimeout(() => {
@@ -139,16 +169,14 @@ export default function LoginPage() {
           <p className="login-subtitle mb-8">Đăng nhập để quản lý căn hộ của bạn</p>
 
           {view === "login" ? (
-            <form onSubmit={handleSubmit} className="login-form">
-              {error && (
-                <div className="login-error" style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  animation: 'shake 0.3s ease-in-out'
-                }}>
-                  <AlertIcon />
-                  <span>{error}</span>
+            <form onSubmit={handleSubmit} className="login-form" noValidate>
+              {/* Validation Popup */}
+              {validationPopup.show && (
+                <div className="validation-popup">
+                  <div className="validation-popup-content">
+                    <AlertIcon />
+                    <span>{validationPopup.message}</span>
+                  </div>
                 </div>
               )}
 
@@ -163,11 +191,10 @@ export default function LoginPage() {
                     ref={emailRef}
                     id="email"
                     name="email"
-                    type="email"
-                    onChange={() => { if (error) setError(""); }}
+                    type="text"
+                    onChange={() => { if (validationPopup.show) setValidationPopup({ show: false, message: "" }); }}
                     autoComplete="email"
-                    required
-                    className={`login-input ${error ? 'login-input-error' : ''}`}
+                    className="login-input"
                     placeholder="email@example.com"
                     disabled={loading}
                   />
@@ -186,10 +213,9 @@ export default function LoginPage() {
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    onChange={() => { if (error) setError(""); }}
+                    onChange={() => { if (validationPopup.show) setValidationPopup({ show: false, message: "" }); }}
                     autoComplete="current-password"
-                    required
-                    className={`login-input ${error ? 'login-input-error' : ''}`}
+                    className="login-input"
                     placeholder="Nhập mật khẩu"
                     disabled={loading}
                   />
