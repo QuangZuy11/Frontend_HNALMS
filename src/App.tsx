@@ -1,9 +1,21 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 
+// Context
+import { AuthProvider } from './context/AuthContext'
+import { PrivateRoute } from './routes/PrivateRoute'
+
 // Pages
 import TestAPI from './pages/TestAPI'
 import Login from './pages/Auth/Login/Login'
+import ForgotPassword from './pages/Auth/ForgotPassword/ForgotPassword'
+import Unauthorized from './pages/Unauthorized'
+
+// Dashboard Pages
+import AdminDashboard from './pages/Dashboard/AdminDashboard'
+import BuildingManagerDashboard from './pages/Dashboard/BuildingManagerDashboard'
+import BuildingOwnerDashboard from './pages/Dashboard/BuildingOwnerDashboard'
+import TenantDashboard from './pages/Dashboard/TenantDashboard'
 // import ForgotPassword from './pages/Auth/ForgotPassword'
 // import ChangePassword from './pages/Auth/ChangePassword'
 
@@ -72,99 +84,137 @@ import Login from './pages/Auth/Login/Login'
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Default route - redirect to test-api */}
-        <Route path="/" element={<Navigate to="/test-api" replace />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Default route - redirect to login */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* Test API Route */}
-        <Route path="/test-api" element={<TestAPI />} />
+          {/* Test API Route */}
+          <Route path="/test-api" element={<TestAPI />} />
 
-        {/* Authentication Routes */}
-        <Route path="/login" element={<Login />} />
-        {/* <Route path="/forgot-password" element={<ForgotPassword />} /> */}
-        {/* <Route path="/change-password" element={<ChangePassword />} /> */}
+          {/* Authentication Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
 
-        {/* Profile Routes */}
-        {/* <Route path="/profile" element={<ViewProfile />} /> */}
-        {/* <Route path="/profile/update" element={<UpdateProfile />} /> */}
+          {/* Protected Dashboard Routes */}
+          <Route
+            path="/admin"
+            element={
+              <PrivateRoute allowedRoles={['admin']}>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/building"
+            element={
+              <PrivateRoute allowedRoles={['manager']}>
+                <BuildingManagerDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/building-owner"
+            element={
+              <PrivateRoute allowedRoles={['owner']}>
+                <BuildingOwnerDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/tenant"
+            element={
+              <PrivateRoute allowedRoles={['tenant']}>
+                <TenantDashboard />
+              </PrivateRoute>
+            }
+          />
+          {/* <Route path="/forgot-password" element={<ForgotPassword />} /> */}
+          {/* <Route path="/change-password" element={<ChangePassword />} /> */}
 
-        {/* Owner Account Routes */}
-        {/* <Route path="/accounts/owners" element={<OwnerAccountList />} /> */}
-        {/* <Route path="/accounts/owners/:id" element={<OwnerAccountDetail />} /> */}
-        {/* <Route path="/accounts/owners/create" element={<CreateOwnerAccount />} /> */}
+          {/* Profile Routes */}
+          {/* <Route path="/profile" element={<ViewProfile />} /> */}
+          {/* <Route path="/profile/update" element={<UpdateProfile />} /> */}
 
-        {/* Manager Account Routes */}
-        {/* <Route path="/accounts/managers" element={<ManagerAccountList />} /> */}
-        {/* <Route path="/accounts/managers/:id" element={<ManagerAccountDetail />} /> */}
-        {/* <Route path="/accounts/managers/create" element={<CreateManagerAccount />} /> */}
+          {/* Owner Account Routes */}
+          {/* <Route path="/accounts/owners" element={<OwnerAccountList />} /> */}
+          {/* <Route path="/accounts/owners/:id" element={<OwnerAccountDetail />} /> */}
+          {/* <Route path="/accounts/owners/create" element={<CreateOwnerAccount />} /> */}
 
-        {/* Tenant Account Routes */}
-        {/* <Route path="/accounts/tenants" element={<TenantAccountList />} /> */}
-        {/* <Route path="/accounts/tenants/:id" element={<TenantAccountDetail />} /> */}
+          {/* Manager Account Routes */}
+          {/* <Route path="/accounts/managers" element={<ManagerAccountList />} /> */}
+          {/* <Route path="/accounts/managers/:id" element={<ManagerAccountDetail />} /> */}
+          {/* <Route path="/accounts/managers/create" element={<CreateManagerAccount />} /> */}
 
-        {/* Contract Routes */}
-        {/* <Route path="/contracts" element={<ContractList />} /> */}
-        {/* <Route path="/contracts/:id" element={<ContractDetail />} /> */}
-        {/* <Route path="/contracts/create" element={<CreateContract />} /> */}
-        {/* <Route path="/contracts/:id/update" element={<UpdateContract />} /> */}
-        {/* <Route path="/contracts/:id/terminate" element={<TerminateContract />} /> */}
-        {/* <Route path="/contracts/:id/renew" element={<RenewContract />} /> */}
-        {/* <Route path="/contracts/:id/confirm-renewal" element={<ConfirmRenewal />} /> */}
-        {/* <Route path="/contracts/deposit" element={<DepositRoom />} /> */}
+          {/* Tenant Account Routes */}
+          {/* <Route path="/accounts/tenants" element={<TenantAccountList />} /> */}
+          {/* <Route path="/accounts/tenants/:id" element={<TenantAccountDetail />} /> */}
 
-        {/* Room Routes */}
-        {/* <Route path="/rooms" element={<RoomList />} /> */}
-        {/* <Route path="/rooms/:id" element={<RoomDetail />} /> */}
-        {/* <Route path="/rooms/create" element={<CreateRoom />} /> */}
-        {/* <Route path="/rooms/:id/update" element={<UpdateRoom />} /> */}
-        {/* <Route path="/my-room" element={<MyRoom />} /> */}
+          {/* Contract Routes */}
+          {/* <Route path="/contracts" element={<ContractList />} /> */}
+          {/* <Route path="/contracts/:id" element={<ContractDetail />} /> */}
+          {/* <Route path="/contracts/create" element={<CreateContract />} /> */}
+          {/* <Route path="/contracts/:id/update" element={<UpdateContract />} /> */}
+          {/* <Route path="/contracts/:id/terminate" element={<TerminateContract />} /> */}
+          {/* <Route path="/contracts/:id/renew" element={<RenewContract />} /> */}
+          {/* <Route path="/contracts/:id/confirm-renewal" element={<ConfirmRenewal />} /> */}
+          {/* <Route path="/contracts/deposit" element={<DepositRoom />} /> */}
 
-        {/* Service Routes */}
-        {/* <Route path="/services" element={<ServiceList />} /> */}
-        {/* <Route path="/services/:id" element={<ServiceDetail />} /> */}
-        {/* <Route path="/services/create" element={<CreateService />} /> */}
-        {/* <Route path="/services/:id/update" element={<UpdateService />} /> */}
+          {/* Room Routes */}
+          {/* <Route path="/rooms" element={<RoomList />} /> */}
+          {/* <Route path="/rooms/:id" element={<RoomDetail />} /> */}
+          {/* <Route path="/rooms/create" element={<CreateRoom />} /> */}
+          {/* <Route path="/rooms/:id/update" element={<UpdateRoom />} /> */}
+          {/* <Route path="/my-room" element={<MyRoom />} /> */}
 
-        {/* Invoice Routes */}
-        {/* <Route path="/invoices" element={<InvoiceList />} /> */}
-        {/* <Route path="/invoices/:id" element={<InvoiceDetail />} /> */}
-        {/* <Route path="/invoices/create" element={<CreateInvoice />} /> */}
-        {/* <Route path="/invoices/:id/pay" element={<PayInvoice />} /> */}
+          {/* Service Routes */}
+          {/* <Route path="/services" element={<ServiceList />} /> */}
+          {/* <Route path="/services/:id" element={<ServiceDetail />} /> */}
+          {/* <Route path="/services/create" element={<CreateService />} /> */}
+          {/* <Route path="/services/:id/update" element={<UpdateService />} /> */}
 
-        {/* Cash Flow Routes */}
-        {/* <Route path="/dashboard" element={<Dashboard />} /> */}
-        {/* <Route path="/cash-flow/report" element={<CashFlowReport />} /> */}
-        {/* <Route path="/cash-flow/revenue" element={<DetailedRevenueReport />} /> */}
+          {/* Invoice Routes */}
+          {/* <Route path="/invoices" element={<InvoiceList />} /> */}
+          {/* <Route path="/invoices/:id" element={<InvoiceDetail />} /> */}
+          {/* <Route path="/invoices/create" element={<CreateInvoice />} /> */}
+          {/* <Route path="/invoices/:id/pay" element={<PayInvoice />} /> */}
 
-        {/* Request Routes */}
-        {/* <Route path="/requests" element={<RequestList />} /> */}
-        {/* <Route path="/requests/:id" element={<RequestDetail />} /> */}
-        {/* <Route path="/requests/repair/create" element={<CreateRepairRequest />} /> */}
-        {/* <Route path="/requests/complaint/create" element={<CreateComplaintRequest />} /> */}
+          {/* Cash Flow Routes */}
+          {/* <Route path="/dashboard" element={<Dashboard />} /> */}
+          {/* <Route path="/cash-flow/report" element={<CashFlowReport />} /> */}
+          {/* <Route path="/cash-flow/revenue" element={<DetailedRevenueReport />} /> */}
 
-        {/* Notification Routes */}
-        {/* <Route path="/notifications" element={<NotificationList />} /> */}
-        {/* <Route path="/notifications/:id" element={<NotificationDetail />} /> */}
-        {/* <Route path="/notifications/manager/create" element={<CreateManagerNotification />} /> */}
-        {/* <Route path="/notifications/tenant/create" element={<CreateTenantNotification />} /> */}
+          {/* Request Routes */}
+          {/* <Route path="/requests" element={<RequestList />} /> */}
+          {/* <Route path="/requests/:id" element={<RequestDetail />} /> */}
+          {/* <Route path="/requests/repair/create" element={<CreateRepairRequest />} /> */}
+          {/* <Route path="/requests/complaint/create" element={<CreateComplaintRequest />} /> */}
 
-        {/* Building Information Routes */}
-        {/* <Route path="/building/rules" element={<BuildingRules />} /> */}
-        {/* <Route path="/building/rules/create" element={<CreateBuildingRules />} /> */}
-        {/* <Route path="/building/rules/:id/update" element={<UpdateBuildingRules />} /> */}
-        {/* <Route path="/building/contact" element={<ManagerContact />} /> */}
-        {/* <Route path="/building/information" element={<InformationBuilding />} /> */}
+          {/* Notification Routes */}
+          {/* <Route path="/notifications" element={<NotificationList />} /> */}
+          {/* <Route path="/notifications/:id" element={<NotificationDetail />} /> */}
+          {/* <Route path="/notifications/manager/create" element={<CreateManagerNotification />} /> */}
+          {/* <Route path="/notifications/tenant/create" element={<CreateTenantNotification />} /> */}
 
-        {/* Report Routes */}
-        {/* <Route path="/reports/performance" element={<ReportPerformance />} /> */}
-        {/* <Route path="/reports/revenue" element={<ReportRevenue />} /> */}
-        {/* <Route path="/reports/maintenance" element={<ReportRepairMaintenance />} /> */}
+          {/* Building Information Routes */}
+          {/* <Route path="/building/rules" element={<BuildingRules />} /> */}
+          {/* <Route path="/building/rules/create" element={<CreateBuildingRules />} /> */}
+          {/* <Route path="/building/rules/:id/update" element={<UpdateBuildingRules />} /> */}
+          {/* <Route path="/building/contact" element={<ManagerContact />} /> */}
+          {/* <Route path="/building/information" element={<InformationBuilding />} /> */}
 
-        {/* 404 Not Found */}
-        <Route path="*" element={<div style={{ padding: '20px', textAlign: 'center' }}><h1>404 - Page Not Found</h1></div>} />
-      </Routes>
-    </BrowserRouter>
+          {/* Report Routes */}
+          {/* <Route path="/reports/performance" element={<ReportPerformance />} /> */}
+          {/* <Route path="/reports/revenue" element={<ReportRevenue />} /> */}
+          {/* <Route path="/reports/maintenance" element={<ReportRepairMaintenance />} /> */}
+
+          {/* 404 Not Found */}
+          <Route path="*" element={<div style={{ padding: '20px', textAlign: 'center' }}><h1>404 - Page Not Found</h1></div>} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }
 

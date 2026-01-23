@@ -25,11 +25,18 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            // Redirect to login if token expired
-            window.location.href = '/login'
+            // Chỉ redirect nếu KHÔNG phải đang ở trang login
+            // (tránh reload khi login sai password)
+            const currentPath = window.location.pathname;
+            if (currentPath !== '/login') {
+                // Token expired - redirect to login
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login';
+            }
         }
-        return Promise.reject(error)
+        return Promise.reject(error);
     }
-)
+);
 
 export default api

@@ -13,6 +13,12 @@ export const authService = {
         return response.data
     },
 
+    // Forgot Password
+    forgotPassword: async (email: string) => {
+        const response = await api.post('/auth/forgot-password', { email })
+        return response.data
+    },
+
     // Test database connection
     testDB: async () => {
         const response = await api.get('/test-db')
