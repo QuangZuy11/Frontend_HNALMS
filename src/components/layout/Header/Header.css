@@ -165,9 +165,10 @@
   gap: 0.5rem;
 }
 
-.header-login-button {
+.login-btn {
   display: inline-flex;
-  background-color: black;
+  background-color: rgb(0, 0, 0) !important;
+  color: #e5e7eb !important;
 }
 
 /* Mobile Menu Button */
@@ -222,7 +223,7 @@
   color: hsl(var(--primary));
 }
 
-.header-mobile-login {
+.mobile-login {
   width: 100%;
   margin-top: 1rem;
 }

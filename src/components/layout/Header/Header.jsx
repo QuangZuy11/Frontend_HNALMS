@@ -55,7 +55,7 @@ export default function Header() {
 
           {/* Right Section */}
           <div className="header-right">
-            <Button variant="default" className="header-login-button">
+            <Button variant="default" className="login-btn">
               Đăng Nhập
             </Button>
 
@@ -86,7 +86,7 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
-            <Button variant="default" className="header-mobile-login">
+            <Button variant="default" className="mobile-login">
               Đăng Nhập
             </Button>
           </nav>

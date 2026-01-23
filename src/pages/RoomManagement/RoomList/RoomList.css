@@ -1,0 +1,101 @@
+/* Room List Page */
+.room-list-page {
+  min-height: 100vh;
+  background-color: #f9fafb;
+  padding: 2rem 0;
+}
+
+.room-list-page .container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 3rem;
+}
+
+.room-list-page .page-header {
+  margin-bottom: 2rem;
+}
+
+.room-list-page .page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.room-list-page .page-description {
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+/* Two column layout */
+.room-list-page .content-layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.room-list-page .filters-sidebar {
+  flex-shrink: 0;
+  width: 280px;
+}
+
+.room-list-page .rooms-content {
+  flex: 1;
+  min-width: 0;
+  margin-top: -3.7rem;
+}
+
+.room-list-page .results-info {
+  margin-bottom: 1.5rem;
+}
+
+.room-list-page .results-info p {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.room-list-page .room-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+@media (max-width: 1024px) {
+  .room-list-page .content-layout {
+    flex-direction: column;
+  }
+
+  .room-list-page .filters-sidebar {
+    width: 100%;
+  }
+
+  .room-list-page .room-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.room-list-page .loading,
+.room-list-page .error-state,
+.room-list-page .empty-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  gap: 1rem;
+}
+
+.room-list-page .btn-retry {
+  padding: 0.75rem 1.5rem;
+  background-color: #000000;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.room-list-page .btn-retry:hover {
+  background-color: #1f2937;
+}
