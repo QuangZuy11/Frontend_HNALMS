@@ -42,7 +42,7 @@
 .room-list-page .rooms-content {
   flex: 1;
   min-width: 0;
-  margin-top: -3.7rem;
+  margin-top: -2.7rem;
 }
 
 .room-list-page .results-info {
@@ -52,6 +52,7 @@
 .room-list-page .results-info p {
   font-size: 0.875rem;
   color: #6b7280;
+  margin-top: -0.5rem;
 }
 
 .room-list-page .room-grid {

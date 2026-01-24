@@ -100,21 +100,29 @@ function SelectItem({ value, children }) {
 export default function RoomFilters({
   priceRange,
   onPriceRangeChange,
-  selectedFloor,
-  onFloorChange,
+  selectedFloors,
+  onFloorsChange,
   minArea,
   onMinAreaChange,
   showAvailableOnly,
   onShowAvailableOnlyChange,
   sortBy,
   onSortByChange,
+  onResetFilters,
 }) {
-  const handleResetFilters = () => {
-    onPriceRangeChange([3000000, 5000000]);
-    onFloorChange(null);
-    onMinAreaChange(30);
-    onShowAvailableOnlyChange(false);
-    onSortByChange("newest");
+  const handleFloorToggle = (floorValue) => {
+    if (floorValue === null) {
+      // Nếu chọn "Tất cả tầng", xóa tất cả các chọn khác
+      onFloorsChange([]);
+    } else {
+      if (selectedFloors.includes(floorValue)) {
+        // Bỏ chọn tầng
+        onFloorsChange(selectedFloors.filter((f) => f !== floorValue));
+      } else {
+        // Thêm tầng
+        onFloorsChange([...selectedFloors, floorValue]);
+      }
+    }
   };
 
   return (
@@ -158,22 +166,31 @@ export default function RoomFilters({
           <CardTitle className="filter-title">Tầng</CardTitle>
         </CardHeader>
         <CardContent className="checkbox-group">
+          <div className="checkbox-item">
+            <Checkbox
+              id="floor-all"
+              checked={selectedFloors.length === 0}
+              onCheckedChange={() => handleFloorToggle(null)}
+            />
+            <Label htmlFor="floor-all" className="checkbox-label">
+              Tất cả tầng
+            </Label>
+          </div>
           {[
-            { label: "Tất cả tầng", value: null },
             { label: "Tầng 1 (Nhà xe)", value: 1 },
             { label: "Tầng 2", value: 2 },
             { label: "Tầng 3", value: 3 },
             { label: "Tầng 4", value: 4 },
             { label: "Tầng 5 (Sân thượng)", value: 5 },
           ].map((floor) => (
-            <div key={floor.value ?? "all"} className="checkbox-item">
+            <div key={floor.value} className="checkbox-item">
               <Checkbox
-                id={`floor-${floor.value ?? "all"}`}
-                checked={selectedFloor === floor.value}
-                onCheckedChange={() => onFloorChange(floor.value)}
+                id={`floor-${floor.value}`}
+                checked={selectedFloors.includes(floor.value)}
+                onCheckedChange={() => handleFloorToggle(floor.value)}
               />
               <Label
-                htmlFor={`floor-${floor.value ?? "all"}`}
+                htmlFor={`floor-${floor.value}`}
                 className="checkbox-label"
               >
                 {floor.label}
@@ -244,7 +261,7 @@ export default function RoomFilters({
       <Button
         variant="outline"
         className="reset-button"
-        onClick={handleResetFilters}
+        onClick={onResetFilters}
       >
         Xóa Bộ Lọc
       </Button>

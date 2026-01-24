@@ -24,14 +24,14 @@
 }
 
 .button-default {
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+  background-color: #3579c6;
+  color: #ffffff;
   height: 2.25rem;
   padding: 0.5rem 1rem;
 }
 
 .button-default:hover:not(:disabled) {
-  background-color: hsl(var(--primary) / 0.9);
+  background-color: #2b6bb0;
 }
 
 .button-outline {

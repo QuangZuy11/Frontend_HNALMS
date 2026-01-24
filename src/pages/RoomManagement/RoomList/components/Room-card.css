@@ -135,7 +135,7 @@
 .spec-icon {
   width: 1rem;
   height: 1rem;
-  color: #000000;
+  color: #3579c6;
 }
 
 .spec-value {
@@ -156,7 +156,7 @@
 .price-amount {
   font-size: 1.375rem;
   font-weight: 700;
-  color: #000000;
+  color: #3579c6;
 }
 
 .price-label {
@@ -196,7 +196,7 @@
   width: 100%;
   text-align: center;
   padding: 0.5rem 0.08rem;
-  background: #000000;
+  background: #3579c6;
   color: white;
   border: none;
   border-radius: 0.575rem;
@@ -209,7 +209,8 @@
 }
 
 .detail-button:hover {
-  background: #1f2937;
+  background: #2b6bb0;
+  color: white;
 }
 .room-card {
   background-color: white;
@@ -343,7 +344,7 @@
   width: 100%;
   text-align: center;
   padding: 0.75rem 1rem;
-  background-color: #000000;
+  background-color: #3579c6;
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -357,5 +358,5 @@
 }
 
 .room-card .btn-detail:hover {
-  background-color: #1f2937;
+  background-color: #2b6bb0;
 }

@@ -61,7 +61,7 @@
   width: 1rem;
   height: 1rem;
   cursor: pointer;
-  accent-color: #000000;
+  accent-color: #3579c6;
 }
 
 .checkbox-label {
@@ -87,7 +87,7 @@
   width: 1rem;
   height: 1rem;
   border-radius: 50%;
-  background: #000000;
+  background: #3579c6;
   cursor: pointer;
 }
 
@@ -96,7 +96,7 @@
   width: 1rem;
   height: 1rem;
   border-radius: 50%;
-  background: #000000;
+  background: #3579c6;
   cursor: pointer;
   border: none;
 }
@@ -122,8 +122,8 @@
 .filter-select:focus,
 .select:focus {
   outline: none;
-  border-color: #000000;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  border-color: #3579c6;
+  box-shadow: 0 0 0 2px rgba(53, 121, 198, 0.1);
 }
 
 .button {
@@ -147,8 +147,9 @@
 }
 
 .button-outline:hover {
-  background: #f9fafb;
-  color: #111827;
+  background: #f0f7fc;
+  color: #3579c6;
+  border-color: #3579c6;
 }
 
 .reset-button {

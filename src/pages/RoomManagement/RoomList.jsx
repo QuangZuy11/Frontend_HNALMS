@@ -10,7 +10,7 @@ export default function RoomList() {
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     priceRange: [3000000, 5000000],
-    selectedFloor: null,
+    selectedFloors: [],
     minArea: 30,
     showAvailableOnly: false,
     sortBy: "newest",
@@ -18,7 +18,16 @@ export default function RoomList() {
 
   useEffect(() => {
     fetchRooms();
-  }, [filters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    filters.priceRange[0],
+    filters.priceRange[1],
+    filters.selectedFloors.length,
+    filters.selectedFloors.join(","),
+    filters.minArea,
+    filters.showAvailableOnly,
+    filters.sortBy,
+  ]);
 
   const fetchRooms = async () => {
     setLoading(true);
@@ -26,13 +35,53 @@ export default function RoomList() {
     try {
       const params = {
         status: filters.showAvailableOnly ? "available" : "all",
-        floor: filters.selectedFloor || "all",
+        floor: "all", // Lấy tất cả phòng từ backend
       };
 
       const response = await roomService.getRooms(params);
 
       if (response.success) {
-        setRooms(response.data || []);
+        let filteredRooms = response.data || [];
+
+        // Filter phía frontend theo nhiều tầng
+        if (filters.selectedFloors.length > 0) {
+          filteredRooms = filteredRooms.filter((room) =>
+            filters.selectedFloors.includes(room.floor),
+          );
+        }
+
+        // Filter theo diện tích tối thiểu
+        filteredRooms = filteredRooms.filter(
+          (room) => room.area >= filters.minArea,
+        );
+
+        // Filter theo khoảng giá
+        filteredRooms = filteredRooms.filter(
+          (room) =>
+            room.price >= filters.priceRange[0] &&
+            room.price <= filters.priceRange[1],
+        );
+
+        // Sắp xếp
+        switch (filters.sortBy) {
+          case "price-low":
+            filteredRooms.sort((a, b) => a.price - b.price);
+            break;
+          case "price-high":
+            filteredRooms.sort((a, b) => b.price - a.price);
+            break;
+          case "area-large":
+            filteredRooms.sort((a, b) => b.area - a.area);
+            break;
+          case "floor-high":
+            filteredRooms.sort((a, b) => b.floor - a.floor);
+            break;
+          default:
+            // newest - giữ nguyên thứ tự từ backend
+            break;
+        }
+
+        setRooms(filteredRooms);
       } else {
         setError("Không thể tải danh sách phòng");
       }
@@ -42,6 +91,16 @@ export default function RoomList() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResetFilters = () => {
+    setFilters({
+      priceRange: [3000000, 5000000],
+      selectedFloors: [],
+      minArea: 30,
+      showAvailableOnly: false,
+      sortBy: "newest",
+    });
   };
 
   return (
@@ -63,9 +122,9 @@ export default function RoomList() {
               onPriceRangeChange={(value) =>
                 setFilters({ ...filters, priceRange: value })
               }
-              selectedFloor={filters.selectedFloor}
-              onFloorChange={(value) =>
-                setFilters({ ...filters, selectedFloor: value })
+              selectedFloors={filters.selectedFloors}
+              onFloorsChange={(value) =>
+                setFilters({ ...filters, selectedFloors: value })
               }
               minArea={filters.minArea}
               onMinAreaChange={(value) =>
@@ -79,6 +138,7 @@ export default function RoomList() {
               onSortByChange={(value) =>
                 setFilters({ ...filters, sortBy: value })
               }
+              onResetFilters={handleResetFilters}
             />
           </aside>
 

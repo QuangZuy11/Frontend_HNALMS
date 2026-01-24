@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Users, Maximize, MapPin } from "lucide-react";
+import { Users, Maximize, MapPin, ListChecks } from "lucide-react";
 import "./Room-card.css";
 
 export default function RoomCard({ room }) {
@@ -54,7 +54,7 @@ export default function RoomCard({ room }) {
             <span className="spec-value">{room.capacity} người</span>
           </div>
           <div className="spec-item">
-            <span className="spec-icon">🛏️</span>
+            <ListChecks className="spec-icon" />
             <span className="spec-value">{room.amenities?.length || 0}</span>
           </div>
         </div>
