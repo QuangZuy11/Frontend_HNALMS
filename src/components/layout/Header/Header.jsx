@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Slot } from "@radix-ui/react-slot";
 import "./Header.css";
+import Logo from "../../../assets/images/Logo.png";
 
 // Button Component
 function Button({
@@ -38,10 +39,11 @@ export default function Header() {
         <div className="header-container">
           {/* Logo */}
           <Link to="/" className="header-logo">
-            <div className="header-logo-icon">
-              <span className="header-logo-text">HN</span>
-            </div>
-            <span className="header-logo-title">Hoàng Nam</span>
+            <img
+              src={Logo}
+              alt="Hoàng Nam Apartment"
+              className="header-logo-img"
+            />
           </Link>
 
           {/* Desktop Navigation */}

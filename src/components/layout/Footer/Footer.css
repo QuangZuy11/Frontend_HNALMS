@@ -7,7 +7,7 @@
   color: #ffffff;
   padding-top: 1rem;
   padding-bottom: 1rem;
-  border-top: 3px solid #60a5fa;
+  border-top: 3px solid #3579c6;
 }
 
 @media (min-width: 768px) {
@@ -102,7 +102,7 @@
 }
 
 .footer-link:hover {
-  color: #60a5fa;
+  color: #3579c6;
 }
 
 .footer-contact-item {

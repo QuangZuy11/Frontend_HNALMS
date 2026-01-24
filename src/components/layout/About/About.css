@@ -10,11 +10,11 @@
 }
 
 .about-card:hover {
-  border-color: #3b82f6;
+  border-color: #3579c6;
   background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
   box-shadow:
-    0 10px 15px -3px rgb(59 130 246 / 0.2),
-    0 4px 6px -4px rgb(59 130 246 / 0.15);
+    0 10px 15px -3px rgb(53 121 198 / 0.2),
+    0 4px 6px -4px rgb(53 121 198 / 0.15);
   transform: translateY(-2px);
 }
 
@@ -154,7 +154,7 @@
 }
 
 .about-feature-check {
-  color: #396efd;
+  color: #3579c6;
   font-weight: 700;
 }
 
@@ -164,15 +164,15 @@
 
 /* Stats Box */
 .about-stats {
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  border: 1px solid #93c5fd;
+  background: linear-gradient(135deg, #e6f0f7 0%, #d1e3f0 100%);
+  border: 1px solid #3579c6;
   border-radius: 0.75rem;
   padding: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 16rem;
-  box-shadow: 0 4px 6px -1px rgb(59 130 246 / 0.2);
+  box-shadow: 0 4px 6px -1px rgb(53 121 198 / 0.2);
 }
 
 .about-stats-content {
@@ -182,7 +182,7 @@
 .about-stats-number {
   font-size: 3.75rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #3579c6 0%, #2b6bb0 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -231,11 +231,11 @@
 }
 
 .about-amenity-card:hover {
-  border-color: #3b82f6;
-  background: linear-gradient(135deg, #ffffff 0%, #dbeafe 100%);
+  border-color: #3579c6;
+  background: linear-gradient(135deg, #ffffff 0%, #e6f0f7 100%);
   box-shadow:
-    0 8px 12px -2px rgb(59 130 246 / 0.2),
-    0 4px 6px -3px rgb(59 130 246 / 0.15);
+    0 8px 12px -2px rgb(53 121 198 / 0.2),
+    0 4px 6px -3px rgb(53 121 198 / 0.15);
   transform: translateY(-3px);
 }
 
@@ -246,13 +246,13 @@
 .about-amenity-icon {
   width: 2.5rem;
   height: 2.5rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #3579c6 0%, #2b6bb0 100%);
   border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 0.5rem;
-  box-shadow: 0 2px 4px rgb(59 130 246 / 0.3);
+  box-shadow: 0 2px 4px rgb(53 121 198 / 0.3);
 }
 
 .about-amenity-icon-svg {
