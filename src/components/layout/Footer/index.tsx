@@ -1,2 +1,0 @@
-// Footer component placeholder
-export { }
