@@ -11,6 +11,7 @@ import FloatingContact from "./components/layout/Floating-contact/Floating-conta
 
 // Pages
 import RoomList from "./pages/RoomManagement/RoomList";
+import RoomDetail from "./pages/RoomManagement/DetailRoom/RoomDetail";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           }
         />
         <Route path="/rooms" element={<RoomList />} />
+        <Route path="/rooms/:id" element={<RoomDetail />} />
       </Routes>
       <Footer />
       <FloatingContact />

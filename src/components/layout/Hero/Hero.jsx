@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Slot } from "@radix-ui/react-slot";
 import "./Hero.css";
+import { Link } from "react-router-dom";
 
 // Button Component
 function Button({
@@ -102,9 +103,11 @@ export default function Hero() {
 
       {/* CTA Button */}
       <div className="hero-cta">
-        <Button size="lg" className="hero-cta-button">
-          Xem Các Phòng Trống
-        </Button>
+        <Link to="/rooms">
+          <Button size="lg" className="hero-cta-button">
+            Xem Các Phòng Trống
+          </Button>
+        </Link>
       </div>
     </section>
   );
