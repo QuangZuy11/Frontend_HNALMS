@@ -12,7 +12,12 @@ function Button({
 }) {
   const Comp = asChild ? Slot : "button";
 
-  const classes = ["button", `button-${variant}`, `button-${size}`, className]
+  const classes = [
+    "contact-btn",
+    `contact-btn-${variant}`,
+    `contact-btn-${size}`,
+    className,
+  ]
     .filter(Boolean)
     .join(" ");
 
@@ -46,21 +51,21 @@ export default function Contact() {
     {
       icon: Phone,
       title: "Gọi Hotline",
-      value: "(028) 1234 5678",
-      action: "tel:+842812345678",
+      value: "(+84) 869048066",
+      action: "tel:+84869048066",
       label: "Gọi Ngay",
     },
     {
       icon: MessageCircle,
       title: "Chat Zalo",
       value: "@hoangnambuilding",
-      action: "https://zalo.me/0812345678",
+      action: "https://zalo.me/0869048066",
       label: "Nhắn Tin",
     },
     {
       icon: MapPin,
       title: "Địa Chỉ",
-      value: "123 Đường ABC, Quận 1, TP.HCM",
+      value: "Thạch Hoà, Thạch Thất, Hà Nội",
       action: "#",
       label: "Xem Map",
     },
@@ -106,7 +111,7 @@ export default function Contact() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="contact-method-button"
+                      className="contact-method-btn"
                     >
                       {method.label}
                     </Button>

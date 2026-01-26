@@ -44,7 +44,7 @@ export default function FloatingContact() {
 
             {/* Zalo Chat */}
             <a
-              href="https://zalo.me/0812345678"
+              href="https://zalo.me/0869048066"
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setIsOpen(false)}

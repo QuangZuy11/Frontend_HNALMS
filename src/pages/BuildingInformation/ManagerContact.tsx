@@ -1,2 +1,0 @@
-// Manager contact
-export { }

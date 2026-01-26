@@ -1,6 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 
+// Context
+import { AuthProvider } from "./context/AuthContext";
+
 // Components
 import Header from "./components/layout/Header/Header";
 import Hero from "./components/layout/Hero/Hero";
@@ -12,28 +15,32 @@ import FloatingContact from "./components/layout/Floating-contact/Floating-conta
 // Pages
 import RoomList from "./pages/RoomManagement/RoomList";
 import RoomDetail from "./pages/RoomManagement/DetailRoom/RoomDetail";
+import BuildingRulesPublic from "./pages/BuildingInformation/BuildingRulesPublic";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Header />
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <>
-              <Hero />
-              <About />
-              <Contact />
-            </>
-          }
-        />
-        <Route path="/rooms" element={<RoomList />} />
-        <Route path="/rooms/:id" element={<RoomDetail />} />
-      </Routes>
-      <Footer />
-      <FloatingContact />
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Header />
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <>
+                <Hero />
+                <About />
+                <Contact />
+              </>
+            }
+          />
+          <Route path="/rooms" element={<RoomList />} />
+          <Route path="/rooms/:id" element={<RoomDetail />} />
+          <Route path="/rules" element={<BuildingRulesPublic />} />
+        </Routes>
+        <Footer />
+        <FloatingContact />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

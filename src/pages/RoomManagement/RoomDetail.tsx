@@ -1,2 +1,0 @@
-// Room detail
-export { }

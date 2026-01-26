@@ -10,7 +10,7 @@ export default function Footer() {
           <div className="footer-section">
             <h3 className="footer-section-title">Hoàng Nam Building</h3>
             <p className="footer-section-text">
-              Tòa nhà căn hộ hiện đại với các tiện ích hàng đầu tại TP.HCM
+              Tòa nhà căn hộ hiện đại với các tiện ích hàng đầu tại Hòa Lạc
             </p>
           </div>
 
@@ -46,13 +46,13 @@ export default function Footer() {
             <h4 className="footer-section-heading">Liên Hệ</h4>
             <ul className="footer-list">
               <li className="footer-contact-item">
-                <strong>Hotline:</strong> (028) 1234 5678
+                <strong>Hotline:</strong> (+84) 869048066
               </li>
               <li className="footer-contact-item">
                 <strong>Email:</strong> info@hoangnam.vn
               </li>
               <li className="footer-contact-item">
-                <strong>Địa Chỉ:</strong> 123 Đường ABC, Quận 1
+                <strong>Địa Chỉ:</strong> Thạch Hoà, Thạch Thất, Hà Nội
               </li>
               <li className="footer-contact-item">
                 <strong>Giờ Làm:</strong> 8:00 - 21:00
@@ -65,12 +65,15 @@ export default function Footer() {
             <h4 className="footer-section-heading">Kết Nối</h4>
             <ul className="footer-list">
               <li>
-                <a href="#" className="footer-link">
+                <a
+                  href="https://www.facebook.com/nguyen.quang.958297/"
+                  className="footer-link"
+                >
                   Facebook
                 </a>
               </li>
               <li>
-                <a href="#" className="footer-link">
+                <a href="https://zalo.me/0869048066" className="footer-link">
                   Zalo
                 </a>
               </li>
