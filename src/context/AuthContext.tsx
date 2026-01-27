@@ -14,6 +14,7 @@ export interface User {
   id: string;
   email: string;
   name?: string;
+  fullname?: string | null;
   role: Role;
 }
 
@@ -30,6 +31,7 @@ interface AuthContextType extends AuthState {
   isAdminOrManager: boolean;
   login: (token: string, user: User) => void;
   logout: () => void;
+  updateUser: (updates: Partial<Pick<User, "fullname" | "name">>) => void;
 }
 
 /* ===================== CONTEXT ===================== */
@@ -116,6 +118,20 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     }));
   };
 
+  /* ---------- Update user (e.g. sau khi cập nhật họ tên ở profile) ---------- */
+  const updateUser = (updates: Partial<Pick<User, "fullname" | "name">>) => {
+    setAuthState((prev) => {
+      if (!prev.user) return prev;
+      const nextUser = { ...prev.user, ...updates };
+      try {
+        localStorage.setItem("user", JSON.stringify(nextUser));
+      } catch (e) {
+        console.warn("Could not persist user update to localStorage", e);
+      }
+      return { ...prev, user: nextUser };
+    });
+  };
+
   /* ---------- Role helpers ---------- */
   const isAdmin = authState.user?.role === "admin";
   const isManager = authState.user?.role === "manager";
@@ -130,6 +146,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
         isAdminOrManager,
         login,
         logout,
+        updateUser,
       }}
     >
       {children}

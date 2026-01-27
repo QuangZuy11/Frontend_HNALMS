@@ -485,22 +485,22 @@ main.min-h-screen {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 24px;
-  background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
-  color: #065F46;
+  padding: 14px 22px;
+  background: linear-gradient(135deg, #3579C6 0%, #2b6bb0 100%);
+  color: #ffffff;
   border-radius: 12px;
   font-size: 0.9rem;
   font-weight: 500;
-  box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3),
+  box-shadow: 0 10px 40px rgba(53, 121, 198, 0.35),
     0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 2px solid #10B981;
-  min-width: 320px;
-  max-width: 500px;
+  border: 2px solid #3579C6;
+  min-width: 280px;
+  max-width: 420px;
 }
 
 .validation-popup-success svg {
   flex-shrink: 0;
-  color: #059669;
+  color: #ffffff;
   width: 20px;
   height: 20px;
 }

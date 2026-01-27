@@ -71,33 +71,45 @@ export default function Header() {
           {/* Right Section */}
           <div className="header-right">
             {isAuthenticated && user ? (
-              <div className="header-user">
+              <div className="header-user-wrap">
                 <button
                   type="button"
                   className="header-user-trigger"
                   onClick={() => setIsUserMenuOpen((open) => !open)}
+                  aria-expanded={isUserMenuOpen}
+                  aria-haspopup="true"
                 >
                   <span className="header-user-name">
                     {user.fullname || user.email || 'User'}
                   </span>
                 </button>
                 {isUserMenuOpen && (
-                  <div className="header-user-menu">
-                    <Link
-                      to="/profile"
-                      className="header-user-menu-item"
+                  <>
+                    <div
+                      className="header-user-backdrop"
                       onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      Xem profile
-                    </Link>
-                    <button
-                      type="button"
-                      className="header-user-menu-item"
-                      onClick={handleLogout}
-                    >
-                      Đăng xuất
-                    </button>
-                  </div>
+                      aria-hidden="true"
+                    />
+                    <div className="header-user-menu" role="menu">
+                      <Link
+                        to="/profile"
+                        className="header-user-menu-item"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        role="menuitem"
+                      >
+                        Thông tin cá nhân
+                      </Link>
+                      <div className="header-user-menu-divider" />
+                      <button
+                        type="button"
+                        className="header-user-menu-item header-user-menu-item-logout"
+                        onClick={handleLogout}
+                        role="menuitem"
+                      >
+                        Đăng xuất
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
             ) : (

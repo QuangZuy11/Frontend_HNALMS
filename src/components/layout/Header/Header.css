@@ -178,68 +178,96 @@
   color: #ffffff !important;
 }
 
-/* Logged-in User Badge */
-.header-user {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.4rem 0.75rem;
-  border-radius: 999px;
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
+/* Logged-in User: trigger + dropdown */
+.header-user-wrap {
   position: relative;
+  display: inline-flex;
 }
 
 .header-user-trigger {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  padding: 0;
-  border: none;
-  background: transparent;
+  padding: 0.5rem 1.25rem;
+  min-height: 2.5rem;
+  background: #ffffff;
+  border: 1px solid #1f2937;
+  border-radius: 9999px;
   cursor: pointer;
+  transition: box-shadow 0.2s, background 0.2s;
+}
+
+.header-user-trigger:hover {
+  background: #f9fafb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .header-user-name {
   color: #111827;
   font-weight: 600;
-  font-size: 0.9rem;
-  max-width: 180px;
+  font-size: 0.9375rem;
+  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Backdrop: click outside to close */
+.header-user-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}
+
 .header-user-menu {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 6px);
   right: 0;
-  min-width: 160px;
+  min-width: 200px;
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-  padding: 0.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 0.375rem;
   z-index: 100;
 }
 
 .header-user-menu-item {
-  display: block;
+  display: flex;
+  align-items: center;
   width: 100%;
   text-align: left;
   padding: 0.5rem 0.75rem;
   border: none;
   background: transparent;
-  border-radius: 0.5rem;
+  border-radius: 0.375rem;
   cursor: pointer;
   font-size: 0.9rem;
+  font-weight: 500;
   color: #111827;
   text-decoration: none;
-  transition: background-color 0.2s;
+  transition: background-color 0.15s;
+  white-space: nowrap;
 }
 
 .header-user-menu-item:hover {
   background: #f3f4f6;
+}
+
+.header-user-menu-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 0.25rem 0.5rem;
+}
+
+.header-user-menu-item-logout {
+  color: #6b7280;
+}
+
+.header-user-menu-item-logout:hover {
+  background: #fef2f2;
+  color: #b91c1c;
 }
 
 /* Mobile Menu Button */
