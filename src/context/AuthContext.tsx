@@ -5,6 +5,7 @@ import {
   useState,
   PropsWithChildren,
 } from "react";
+import { authService } from "../services/authService";
 
 /* ===================== TYPES ===================== */
 
@@ -65,6 +66,41 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
             isAuthenticated: true,
             isLoading: false,
           }));
+
+          // Sau khi load từ localStorage, gọi /auth/me để đồng bộ thông tin mới nhất (fullname, v.v.)
+          (async () => {
+            try {
+              const profileRes = await authService.getProfile();
+              const profile = profileRes.data;
+
+              const mergedUser: User = {
+                id: (profile.id || profile.user_id || user.id || "").toString(),
+                email: profile.email || user.email,
+                fullname:
+                  profile.fullname !== undefined && profile.fullname !== null
+                    ? profile.fullname
+                    : user.fullname,
+                name:
+                  (profile as any).username !== undefined &&
+                  (profile as any).username !== null
+                    ? (profile as any).username
+                    : user.name,
+                role: profile.role || user.role,
+              };
+
+              localStorage.setItem("user", JSON.stringify(mergedUser));
+
+              setAuthState((prev) => ({
+                ...prev,
+                user: mergedUser,
+                token,
+                isAuthenticated: true,
+                isLoading: false,
+              }));
+            } catch (e) {
+              console.warn("Không thể đồng bộ profile từ server khi khởi tạo", e);
+            }
+          })();
           return;
         }
       } catch (error) {
