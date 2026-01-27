@@ -191,12 +191,16 @@
   gap: 0.5rem;
   padding: 0.45rem 0.9rem;
   min-height: 2.4rem;
+  max-width: 280px; /* Giới hạn độ rộng tối đa */
   background: #3579c6; /* màu chính theo yêu cầu */
   border: 1px solid transparent;
   border-radius: 9999px;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease,
-    box-shadow 0.15s ease, transform 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
   color: #ffffff;
 }
@@ -237,10 +241,17 @@
   color: #ffffff;
   font-weight: 600;
   font-size: 0.9375rem;
-  max-width: 200px;
+  width: 80px; /* Kích thước cố định ngắn hơn */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Responsive: kích thước cố định khác cho màn lớn */
+@media (min-width: 1024px) {
+  .header-user-name {
+    width: 100px;
+  }
 }
 
 /* Backdrop: click outside to close */

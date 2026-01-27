@@ -1,8 +1,3 @@
-/**
- * Component hiển thị nội quy tòa nhà (trang công khai)
- * - User thường: Chỉ xem nội quy
- * - Admin/Manager: Có nút chỉnh sửa và CRUD
- */
 import { useState, useEffect } from "react";
 import {
   Clock,

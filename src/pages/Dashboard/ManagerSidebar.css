@@ -75,8 +75,8 @@
 
 /* ========== Manager Info ========== */
 .sidebar-header {
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -88,7 +88,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 0.75rem;
+  margin: 0 auto 0.5rem;
 }
 
 .avatar-text {
@@ -107,7 +107,7 @@
 .manager-role-badge {
   display: flex;
   justify-content: center;
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
 }
 
 .role-text {
@@ -181,20 +181,18 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  color: #374151;
-  background: none;
+  color: white;
+  background: #3579c6;
   border: none;
-  border-top: 1px solid #e5e7eb;
   border-radius: 0.5rem;
   margin-top: 1rem;
-  padding-top: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .logout-button:hover {
-  background-color: #f3f4f6;
-  color: #000000;
+  background-color: #2b6bb0;
+  color: white;
 }
 
 .logout-icon {

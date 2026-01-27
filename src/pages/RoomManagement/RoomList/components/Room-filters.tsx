@@ -205,7 +205,7 @@ export default function RoomFilters({
         <CardHeader className="filter-header">
           <CardTitle className="filter-title">Diện Tích Tối Thiểu</CardTitle>
         </CardHeader>
-        <CardContent className="filter-content">
+        <CardContent className="compact-content">
           <Slider
             value={[minArea]}
             onValueChange={(value) => onMinAreaChange(value[0])}
@@ -223,7 +223,7 @@ export default function RoomFilters({
         <CardHeader className="filter-header">
           <CardTitle className="filter-title">Tình Trạng</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="compact-content">
           <div className="checkbox-item">
             <Checkbox
               id="available-only"
@@ -242,7 +242,7 @@ export default function RoomFilters({
         <CardHeader className="filter-header">
           <CardTitle className="filter-title">Sắp Xếp</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="compact-content">
           <Select
             value={sortBy}
             onValueChange={onSortByChange}

@@ -24,7 +24,7 @@ export function LoginForm({ onForgotPassword }: LoginFormProps) {
     try {
       const response = (await authService.login(
         email,
-        password
+        password,
       )) as LoginResponse;
 
       // Nếu backend trả token + user thì dùng cho AuthContext
@@ -52,13 +52,27 @@ export function LoginForm({ onForgotPassword }: LoginFormProps) {
             role: profile.role,
           };
           login(response.token, freshUser);
+
+          // Redirect dựa vào role
+          if (freshUser.role === "manager") {
+            window.location.href = "/managerdashboard";
+          } else if (freshUser.role === "tenant") {
+            window.location.href = "/";
+          } else {
+            window.location.href = "/homepage";
+          }
         } catch (profileErr) {
           console.warn("Could not refresh profile after login", profileErr);
+          // Nếu không lấy được profile, redirect dựa vào baseUser role
+          if (baseUser.role === "manager") {
+            window.location.href = "/managerdashboard";
+          } else if (baseUser.role === "tenant") {
+            window.location.href = "/";
+          } else {
+            window.location.href = "/homepage";
+          }
         }
       }
-
-      // Redirect đến trang chủ hoặc dashboard (reload để đồng bộ header ngay)
-      window.location.href = "/homepage";
     } catch (err: any) {
       setError(err.response?.data?.message || "Đăng nhập thất bại");
     } finally {

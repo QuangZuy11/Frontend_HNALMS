@@ -106,17 +106,18 @@ export default function RoomList() {
   return (
     <div className="room-list-page">
       <div className="container">
-        <div className="page-header">
-          <h1 className="page-title">Tầng & Phòng</h1>
-          <p className="page-description">
-            Tổng cộng: <strong>{rooms.length}</strong> phòng |{" "}
-            <strong>{rooms.filter((r) => r.status === "Trống").length}</strong>{" "}
-            phòng trống
-          </p>
-        </div>
-
         <div className="content-layout">
           <aside className="filters-sidebar">
+            <div className="sidebar-header-info">
+              <h1 className="sidebar-title">Tầng & Phòng</h1>
+              <p className="sidebar-stats">
+                Tổng cộng: <strong>{rooms.length}</strong> phòng |{" "}
+                <strong>
+                  {rooms.filter((r) => r.status === "Trống").length}
+                </strong>{" "}
+                phòng trống
+              </p>
+            </div>
             <RoomFilters
               priceRange={filters.priceRange}
               onPriceRangeChange={(value) =>

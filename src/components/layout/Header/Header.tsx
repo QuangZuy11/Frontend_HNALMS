@@ -84,10 +84,7 @@ export default function Header() {
                   <span className="header-user-avatar">
                     <UserIcon className="header-user-avatar-icon" />
                   </span>
-                  <span className="header-user-name">
-                    {user.fullname || user.email || "User"}
-                    {displayName}
-                  </span>
+                  <span className="header-user-name">{displayName}</span>
                   <span className="header-user-caret">
                     <ChevronDown size={16} />
                   </span>
