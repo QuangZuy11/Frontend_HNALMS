@@ -10,6 +10,8 @@ import {
     Calendar,
     MapPin,
     Pencil,
+    Eye,
+    EyeOff,
 } from 'lucide-react';
 import { authService } from '../../../services/authService';
 import { useAuth } from '../../../context/AuthContext';
@@ -45,6 +47,9 @@ export default function ViewProfile() {
     // Toast hiển thị thông báo đổi mật khẩu thành công (kiểu giống trang Login)
     const [passwordToast, setPasswordToast] = useState<string | null>(null);
     const [changePasswordLoading, setChangePasswordLoading] = useState(false);
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [formData, setFormData] = useState<FormData>({
         fullname: '',
         citizen_id: '',
@@ -584,33 +589,63 @@ export default function ViewProfile() {
                                     <div className="profile-grid">
                                         <div className="profile-item full-width">
                                             <label htmlFor="currentPassword">Mật khẩu hiện tại</label>
-                                            <input
-                                                id="currentPassword"
-                                                type="password"
-                                                value={currentPassword}
-                                                onChange={(e) => setCurrentPassword(e.target.value)}
-                                                placeholder="Nhập mật khẩu hiện tại"
-                                            />
+                                            <div className="password-input-wrapper">
+                                                <input
+                                                    id="currentPassword"
+                                                    type={showCurrentPassword ? 'text' : 'password'}
+                                                    value={currentPassword}
+                                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                                    placeholder="Nhập mật khẩu hiện tại"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="password-eye-icon"
+                                                    onClick={() => setShowCurrentPassword((v) => !v)}
+                                                    aria-label={showCurrentPassword ? 'Ẩn mật khẩu hiện tại' : 'Hiện mật khẩu hiện tại'}
+                                                >
+                                                    {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="profile-item">
                                             <label htmlFor="newPassword">Mật khẩu mới</label>
-                                            <input
-                                                id="newPassword"
-                                                type="password"
-                                                value={newPassword}
-                                                onChange={(e) => setNewPassword(e.target.value)}
-                                                placeholder="Nhập mật khẩu mới"
-                                            />
+                                            <div className="password-input-wrapper">
+                                                <input
+                                                    id="newPassword"
+                                                    type={showNewPassword ? 'text' : 'password'}
+                                                    value={newPassword}
+                                                    onChange={(e) => setNewPassword(e.target.value)}
+                                                    placeholder="Nhập mật khẩu mới"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="password-eye-icon"
+                                                    onClick={() => setShowNewPassword((v) => !v)}
+                                                    aria-label={showNewPassword ? 'Ẩn mật khẩu mới' : 'Hiện mật khẩu mới'}
+                                                >
+                                                    {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="profile-item">
                                             <label htmlFor="confirmPassword">Xác nhận mật khẩu mới</label>
-                                            <input
-                                                id="confirmPassword"
-                                                type="password"
-                                                value={confirmPassword}
-                                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                                placeholder="Nhập lại mật khẩu mới"
-                                            />
+                                            <div className="password-input-wrapper">
+                                                <input
+                                                    id="confirmPassword"
+                                                    type={showConfirmPassword ? 'text' : 'password'}
+                                                    value={confirmPassword}
+                                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                                    placeholder="Nhập lại mật khẩu mới"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="password-eye-icon"
+                                                    onClick={() => setShowConfirmPassword((v) => !v)}
+                                                    aria-label={showConfirmPassword ? 'Ẩn mật khẩu xác nhận' : 'Hiện mật khẩu xác nhận'}
+                                                >
+                                                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

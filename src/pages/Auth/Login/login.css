@@ -278,8 +278,8 @@ main.min-h-screen {
   align-items: center;
   justify-content: center;
   z-index: 1;
-  width: 16px;
-  height: 16px;
+  width: 22px;
+  height: 22px;
 }
 
 .login-eye-icon:hover {

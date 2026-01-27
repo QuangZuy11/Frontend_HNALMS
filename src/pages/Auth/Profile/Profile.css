@@ -439,6 +439,35 @@
     transition: border-color 0.2s;
 }
 
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-wrapper input {
+    padding-right: 2.5rem;
+}
+
+.password-eye-icon {
+    position: absolute;
+    right: 10px;
+    color: #9CA3AF;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+}
+
+.password-eye-icon:hover {
+    color: #6B7280;
+}
+
 .profile-form .input-error {
     border-color: #dc2626;
     box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.12);
