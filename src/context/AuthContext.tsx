@@ -1,71 +1,147 @@
 import {
   createContext,
   useContext,
-  useState,
   useEffect,
-  ReactNode,
+  useState,
+  PropsWithChildren,
 } from "react";
 
-interface User {
+/* ===================== TYPES ===================== */
+
+export type Role = "admin" | "manager" | "owner" | "tenant" | "accountant";
+
+export interface User {
   id: string;
   email: string;
-  name: string;
-  role: "admin" | "manager" | "tenant" | "owner";
+  name?: string;
+  role: Role;
 }
 
-interface AuthContextType {
+interface AuthState {
   user: User | null;
+  token: string | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
+}
+
+interface AuthContextType extends AuthState {
   isAdmin: boolean;
   isManager: boolean;
   isAdminOrManager: boolean;
-  login: (userData: User, token: string) => void;
+  login: (token: string, user: User) => void;
   logout: () => void;
 }
 
+/* ===================== CONTEXT ===================== */
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+/* ===================== PROVIDER ===================== */
 
+export const AuthProvider = ({ children }: PropsWithChildren) => {
+  const [authState, setAuthState] = useState<AuthState>({
+    user: null,
+    token: null,
+    isAuthenticated: false,
+    isLoading: true,
+  });
+
+  /* ---------- Load auth from localStorage ---------- */
   useEffect(() => {
-    // Load user from localStorage on mount
-    const storedUser = localStorage.getItem("user");
     const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
 
-    if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
+    if (token && userStr) {
+      try {
+        const user: User = JSON.parse(userStr);
+
+        if (user && user.email && user.role) {
+          setAuthState((prev) => ({
+            ...prev,
+            user,
+            token,
+            isAuthenticated: true,
+            isLoading: false,
+          }));
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to parse user from localStorage", error);
+      }
     }
+
+    // fallback: clear invalid storage
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    setAuthState((prev) => ({
+      ...prev,
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isLoading: false,
+    }));
   }, []);
 
-  const login = (userData: User, token: string) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
-    localStorage.setItem("token", token);
+  /* ---------- Login ---------- */
+  const login = (token: string, user: User) => {
+    if (!token || !user || !user.email || !user.role) {
+      console.error("Invalid login data", { token, user });
+      return;
+    }
+
+    localStorage.setItem("token", token.trim());
+    localStorage.setItem("user", JSON.stringify(user));
+
+    setAuthState((prev) => ({
+      ...prev,
+      user,
+      token,
+      isAuthenticated: true,
+      isLoading: false,
+    }));
   };
 
+  /* ---------- Logout ---------- */
   const logout = () => {
-    setUser(null);
-    localStorage.removeItem("user");
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    setAuthState((prev) => ({
+      ...prev,
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isLoading: false,
+    }));
   };
 
-  const value: AuthContextType = {
-    user,
-    isAuthenticated: !!user,
-    isAdmin: user?.role === "admin",
-    isManager: user?.role === "manager",
-    isAdminOrManager: user?.role === "admin" || user?.role === "manager",
-    login,
-    logout,
-  };
+  /* ---------- Role helpers ---------- */
+  const isAdmin = authState.user?.role === "admin";
+  const isManager = authState.user?.role === "manager";
+  const isAdminOrManager = isAdmin || isManager;
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        ...authState,
+        isAdmin,
+        isManager,
+        isAdminOrManager,
+        login,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
+
+/* ===================== HOOK ===================== */
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
