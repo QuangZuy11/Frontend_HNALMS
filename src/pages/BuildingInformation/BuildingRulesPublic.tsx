@@ -108,31 +108,61 @@ const BuildingRulesPublic = () => {
     setShowModal(true);
   };
 
-  const handleDeleteCategory = (index) => {
+  const handleDeleteCategory = async (index) => {
     if (window.confirm("Bạn có chắc muốn xóa danh mục này?")) {
-      const newCategories = rulesData.categories.filter((_, i) => i !== index);
-      setRulesData({ ...rulesData, categories: newCategories });
+      try {
+        const newCategories = rulesData.categories.filter(
+          (_, i) => i !== index,
+        );
+        const updatedData = { ...rulesData, categories: newCategories };
+
+        // Lưu vào database ngay
+        if (rulesData._id) {
+          await updateBuildingRules(rulesData._id, updatedData);
+        }
+
+        setRulesData(updatedData);
+        await fetchRules(); // Reload data từ server
+      } catch (err) {
+        console.error("Error deleting category:", err);
+        alert("Không thể xóa danh mục. Vui lòng thử lại.");
+      }
     }
   };
 
-  const handleSaveCategory = () => {
-    const newCategories = [...(rulesData.categories || [])];
-    if (editingCategory.index !== undefined) {
-      newCategories[editingCategory.index] = {
-        title: editingCategory.title,
-        icon: editingCategory.icon,
-        rules: editingCategory.rules.filter((r) => r.trim() !== ""),
-      };
-    } else {
-      newCategories.push({
-        title: editingCategory.title,
-        icon: editingCategory.icon,
-        rules: editingCategory.rules.filter((r) => r.trim() !== ""),
-      });
+  const handleSaveCategory = async () => {
+    try {
+      const newCategories = [...(rulesData.categories || [])];
+      if (editingCategory.index !== undefined) {
+        newCategories[editingCategory.index] = {
+          title: editingCategory.title,
+          icon: editingCategory.icon,
+          rules: editingCategory.rules.filter((r) => r.trim() !== ""),
+        };
+      } else {
+        newCategories.push({
+          title: editingCategory.title,
+          icon: editingCategory.icon,
+          rules: editingCategory.rules.filter((r) => r.trim() !== ""),
+        });
+      }
+      const updatedData = { ...rulesData, categories: newCategories };
+
+      // Lưu vào database ngay
+      if (rulesData._id) {
+        await updateBuildingRules(rulesData._id, updatedData);
+      } else {
+        await createBuildingRules(updatedData);
+      }
+
+      setRulesData(updatedData);
+      setShowModal(false);
+      setEditingCategory(null);
+      await fetchRules(); // Reload data từ server
+    } catch (err) {
+      console.error("Error saving category:", err);
+      alert("Không thể lưu danh mục. Vui lòng thử lại.");
     }
-    setRulesData({ ...rulesData, categories: newCategories });
-    setShowModal(false);
-    setEditingCategory(null);
   };
 
   // Xử lý guideline
@@ -148,29 +178,59 @@ const BuildingRulesPublic = () => {
     setShowModal(true);
   };
 
-  const handleDeleteGuideline = (index) => {
+  const handleDeleteGuideline = async (index) => {
     if (window.confirm("Bạn có chắc muốn xóa hướng dẫn này?")) {
-      const newGuidelines = rulesData.guidelines.filter((_, i) => i !== index);
-      setRulesData({ ...rulesData, guidelines: newGuidelines });
+      try {
+        const newGuidelines = rulesData.guidelines.filter(
+          (_, i) => i !== index,
+        );
+        const updatedData = { ...rulesData, guidelines: newGuidelines };
+
+        // Lưu vào database ngay
+        if (rulesData._id) {
+          await updateBuildingRules(rulesData._id, updatedData);
+        }
+
+        setRulesData(updatedData);
+        await fetchRules(); // Reload data từ server
+      } catch (err) {
+        console.error("Error deleting guideline:", err);
+        alert("Không thể xóa hướng dẫn. Vui lòng thử lại.");
+      }
     }
   };
 
-  const handleSaveGuideline = () => {
-    const newGuidelines = [...(rulesData.guidelines || [])];
-    if (editingGuideline.index !== undefined) {
-      newGuidelines[editingGuideline.index] = {
-        title: editingGuideline.title,
-        content: editingGuideline.content,
-      };
-    } else {
-      newGuidelines.push({
-        title: editingGuideline.title,
-        content: editingGuideline.content,
-      });
+  const handleSaveGuideline = async () => {
+    try {
+      const newGuidelines = [...(rulesData.guidelines || [])];
+      if (editingGuideline.index !== undefined) {
+        newGuidelines[editingGuideline.index] = {
+          title: editingGuideline.title,
+          content: editingGuideline.content,
+        };
+      } else {
+        newGuidelines.push({
+          title: editingGuideline.title,
+          content: editingGuideline.content,
+        });
+      }
+      const updatedData = { ...rulesData, guidelines: newGuidelines };
+
+      // Lưu vào database ngay
+      if (rulesData._id) {
+        await updateBuildingRules(rulesData._id, updatedData);
+      } else {
+        await createBuildingRules(updatedData);
+      }
+
+      setRulesData(updatedData);
+      setShowModal(false);
+      setEditingGuideline(null);
+      await fetchRules(); // Reload data từ server
+    } catch (err) {
+      console.error("Error saving guideline:", err);
+      alert("Không thể lưu hướng dẫn. Vui lòng thử lại.");
     }
-    setRulesData({ ...rulesData, guidelines: newGuidelines });
-    setShowModal(false);
-    setEditingGuideline(null);
   };
 
   const addRuleToCategory = () => {
@@ -252,29 +312,14 @@ const BuildingRulesPublic = () => {
               {!isEditing ? (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="contact-button"
-                  style={{
-                    backgroundColor: "#3b82f6",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                  }}
+                  className="edit-button"
                 >
                   <Edit style={{ width: "1rem", height: "1rem" }} />
                   Chỉnh sửa
                 </button>
               ) : (
                 <>
-                  <button
-                    onClick={handleSaveRules}
-                    className="contact-button"
-                    style={{
-                      backgroundColor: "#10b981",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                    }}
-                  >
+                  <button onClick={handleSaveRules} className="save-button">
                     <Save style={{ width: "1rem", height: "1rem" }} />
                     Lưu
                   </button>
@@ -283,13 +328,7 @@ const BuildingRulesPublic = () => {
                       setIsEditing(false);
                       fetchRules();
                     }}
-                    className="contact-button"
-                    style={{
-                      backgroundColor: "#6b7280",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                    }}
+                    className="cancel-button"
                   >
                     <X style={{ width: "1rem", height: "1rem" }} />
                     Hủy
@@ -380,16 +419,14 @@ const BuildingRulesPublic = () => {
               {isAdminOrManager && isEditing && (
                 <button
                   onClick={handleAddCategory}
-                  className="contact-button"
+                  className="edit-button"
                   style={{
-                    backgroundColor: "#3b82f6",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
+                    padding: "0.5rem 0.75rem",
+                    fontSize: "0.875rem",
                   }}
                 >
                   <Plus style={{ width: "1rem", height: "1rem" }} />
-                  Thêm danh mục
+                  Thêm
                 </button>
               )}
             </div>
@@ -473,16 +510,14 @@ const BuildingRulesPublic = () => {
               {isAdminOrManager && isEditing && (
                 <button
                   onClick={handleAddGuideline}
-                  className="contact-button"
+                  className="edit-button"
                   style={{
-                    backgroundColor: "#3b82f6",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
+                    padding: "0.5rem 0.75rem",
+                    fontSize: "0.875rem",
                   }}
                 >
                   <Plus style={{ width: "1rem", height: "1rem" }} />
-                  Thêm hướng dẫn
+                  Thêm
                 </button>
               )}
             </div>
@@ -616,52 +651,19 @@ const BuildingRulesPublic = () => {
 
       {/* Modal thêm/sửa Category */}
       {showModal && modalType === "category" && editingCategory && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 50,
-            padding: "1rem",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "white",
-              borderRadius: "0.5rem",
-              maxWidth: "600px",
-              width: "100%",
-              maxHeight: "90vh",
-              overflowY: "auto",
-            }}
-          >
-            <div style={{ padding: "1.5rem" }}>
-              <h3
-                style={{
-                  fontSize: "1.5rem",
-                  fontWeight: "bold",
-                  marginBottom: "1rem",
-                }}
-              >
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3 className="modal-title">
                 {editingCategory.index !== undefined
                   ? "Chỉnh sửa danh mục"
                   : "Thêm danh mục mới"}
               </h3>
+            </div>
 
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "0.875rem",
-                    fontWeight: "500",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  Tiêu đề
-                </label>
+            <div className="modal-body">
+              <div className="modal-field">
+                <label className="modal-label">Tiêu đề</label>
                 <input
                   type="text"
                   value={editingCategory.title}
@@ -671,27 +673,13 @@ const BuildingRulesPublic = () => {
                       title: e.target.value,
                     })
                   }
-                  style={{
-                    width: "100%",
-                    padding: "0.5rem",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "0.375rem",
-                  }}
+                  className="modal-input"
                   placeholder="Ví dụ: Giờ Yên Tĩnh & Sinh Hoạt"
                 />
               </div>
 
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "0.875rem",
-                    fontWeight: "500",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  Icon
-                </label>
+              <div className="modal-field">
+                <label className="modal-label">Icon</label>
                 <select
                   value={editingCategory.icon}
                   onChange={(e) =>
@@ -700,12 +688,7 @@ const BuildingRulesPublic = () => {
                       icon: e.target.value,
                     })
                   }
-                  style={{
-                    width: "100%",
-                    padding: "0.5rem",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "0.375rem",
-                  }}
+                  className="modal-select"
                 >
                   {iconOptions.map((icon) => (
                     <option key={icon} value={icon}>
@@ -715,85 +698,36 @@ const BuildingRulesPublic = () => {
                 </select>
               </div>
 
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "0.875rem",
-                    fontWeight: "500",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  Quy định
-                </label>
+              <div className="modal-field">
+                <label className="modal-label">Quy định</label>
                 {editingCategory.rules.map((rule, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      display: "flex",
-                      gap: "0.5rem",
-                      marginBottom: "0.5rem",
-                    }}
-                  >
+                  <div key={index} className="rule-input-group">
                     <input
                       type="text"
                       value={rule}
                       onChange={(e) =>
                         updateCategoryRule(index, e.target.value)
                       }
-                      style={{
-                        flex: 1,
-                        padding: "0.5rem",
-                        border: "1px solid #d1d5db",
-                        borderRadius: "0.375rem",
-                      }}
+                      className="modal-input"
                       placeholder="Nhập quy định"
                     />
                     <button
                       onClick={() => removeCategoryRule(index)}
-                      style={{
-                        padding: "0.5rem",
-                        backgroundColor: "#ef4444",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "0.375rem",
-                        cursor: "pointer",
-                      }}
+                      className="delete-rule-button"
                     >
                       <Trash2 style={{ width: "1rem", height: "1rem" }} />
                     </button>
                   </div>
                 ))}
-                <button
-                  onClick={addRuleToCategory}
-                  style={{
-                    marginTop: "0.5rem",
-                    padding: "0.5rem 1rem",
-                    backgroundColor: "#10b981",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "0.375rem",
-                    cursor: "pointer",
-                  }}
-                >
+                <button onClick={addRuleToCategory} className="add-rule-button">
                   + Thêm quy định
                 </button>
               </div>
 
-              <div
-                style={{ display: "flex", gap: "1rem", marginTop: "1.5rem" }}
-              >
+              <div className="modal-footer">
                 <button
                   onClick={handleSaveCategory}
-                  style={{
-                    flex: 1,
-                    padding: "0.5rem 1.5rem",
-                    backgroundColor: "#3b82f6",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "0.375rem",
-                    cursor: "pointer",
-                  }}
+                  className="modal-button-primary"
                 >
                   Lưu
                 </button>
@@ -802,15 +736,7 @@ const BuildingRulesPublic = () => {
                     setShowModal(false);
                     setEditingCategory(null);
                   }}
-                  style={{
-                    flex: 1,
-                    padding: "0.5rem 1.5rem",
-                    backgroundColor: "#6b7280",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "0.375rem",
-                    cursor: "pointer",
-                  }}
+                  className="modal-button-secondary"
                 >
                   Hủy
                 </button>
@@ -822,50 +748,19 @@ const BuildingRulesPublic = () => {
 
       {/* Modal thêm/sửa Guideline */}
       {showModal && modalType === "guideline" && editingGuideline && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 50,
-            padding: "1rem",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "white",
-              borderRadius: "0.5rem",
-              maxWidth: "600px",
-              width: "100%",
-            }}
-          >
-            <div style={{ padding: "1.5rem" }}>
-              <h3
-                style={{
-                  fontSize: "1.5rem",
-                  fontWeight: "bold",
-                  marginBottom: "1rem",
-                }}
-              >
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3 className="modal-title">
                 {editingGuideline.index !== undefined
                   ? "Chỉnh sửa hướng dẫn"
                   : "Thêm hướng dẫn mới"}
               </h3>
+            </div>
 
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "0.875rem",
-                    fontWeight: "500",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  Tiêu đề
-                </label>
+            <div className="modal-body">
+              <div className="modal-field">
+                <label className="modal-label">Tiêu đề</label>
                 <input
                   type="text"
                   value={editingGuideline.title}
@@ -875,27 +770,13 @@ const BuildingRulesPublic = () => {
                       title: e.target.value,
                     })
                   }
-                  style={{
-                    width: "100%",
-                    padding: "0.5rem",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "0.375rem",
-                  }}
+                  className="modal-input"
                   placeholder="Ví dụ: Thời Hạn Thuê Nhà"
                 />
               </div>
 
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "0.875rem",
-                    fontWeight: "500",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  Nội dung
-                </label>
+              <div className="modal-field">
+                <label className="modal-label">Nội dung</label>
                 <textarea
                   value={editingGuideline.content}
                   onChange={(e) =>
@@ -904,31 +785,15 @@ const BuildingRulesPublic = () => {
                       content: e.target.value,
                     })
                   }
-                  style={{
-                    width: "100%",
-                    padding: "0.5rem",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "0.375rem",
-                    minHeight: "100px",
-                  }}
+                  className="modal-textarea"
                   placeholder="Nhập nội dung hướng dẫn"
                 />
               </div>
 
-              <div
-                style={{ display: "flex", gap: "1rem", marginTop: "1.5rem" }}
-              >
+              <div className="modal-footer">
                 <button
                   onClick={handleSaveGuideline}
-                  style={{
-                    flex: 1,
-                    padding: "0.5rem 1.5rem",
-                    backgroundColor: "#3b82f6",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "0.375rem",
-                    cursor: "pointer",
-                  }}
+                  className="modal-button-primary"
                 >
                   Lưu
                 </button>
@@ -937,15 +802,7 @@ const BuildingRulesPublic = () => {
                     setShowModal(false);
                     setEditingGuideline(null);
                   }}
-                  style={{
-                    flex: 1,
-                    padding: "0.5rem 1.5rem",
-                    backgroundColor: "#6b7280",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "0.375rem",
-                    cursor: "pointer",
-                  }}
+                  className="modal-button-secondary"
                 >
                   Hủy
                 </button>

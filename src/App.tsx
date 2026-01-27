@@ -35,6 +35,8 @@ import BuildingManagerDashboard from "./pages/Dashboard/BuildingManagerDashboard
 import BuildingOwnerDashboard from "./pages/Dashboard/BuildingOwnerDashboard";
 import TenantDashboard from "./pages/Dashboard/TenantDashboard";
 import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
+import ManagerDashboard from "./pages/Dashboard/ManagerDashboard";
+import ManagerRules from "./pages/Dashboard/ManagerRules";
 
 // Profile
 import ViewProfile from "./pages/Auth/Profile/ViewProfile";
@@ -51,9 +53,24 @@ function LayoutWrapper() {
     publicRoutes.includes(location.pathname) ||
     location.pathname.startsWith("/rooms/");
 
+  // Dashboard routes không hiển thị Header/Footer
+  const dashboardRoutes = [
+    "/admin",
+    "/building",
+    "/building-owner",
+    "/tenant",
+    "/accountant",
+    "/managerdashboard",
+    "/manager/rules",
+  ];
+
+  const isDashboardRoute = dashboardRoutes.some((route) =>
+    location.pathname.startsWith(route),
+  );
+
   return (
     <>
-      <Header />
+      {!isDashboardRoute && <Header />}
 
       <Routes>
         {/* Redirect root */}
@@ -123,6 +140,24 @@ function LayoutWrapper() {
           element={
             <PrivateRoute allowedRoles={["accountant"]}>
               <AccountantDashboard />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/managerdashboard"
+          element={
+            <PrivateRoute allowedRoles={["manager", "admin"]}>
+              <ManagerDashboard />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/manager/rules"
+          element={
+            <PrivateRoute allowedRoles={["manager", "admin"]}>
+              <ManagerRules />
             </PrivateRoute>
           }
         />

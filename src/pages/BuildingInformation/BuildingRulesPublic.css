@@ -355,3 +355,256 @@
 .rules-contact-button:active {
   transform: translateY(0);
 }
+
+/* Edit Button */
+.edit-button {
+  background-color: #3579c6 !important;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  outline: none;
+}
+
+.edit-button:hover {
+  background-color: #2b6bb0 !important;
+}
+/* Save Button */
+.save-button {
+  background-color: #3579c6 !important;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  outline: none;
+}
+
+.save-button:hover {
+  background-color: #2b6bb0 !important;
+}
+
+/* Cancel Button */
+.cancel-button {
+  background-color: #6b7280 !important;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  outline: none;
+}
+
+.cancel-button:hover {
+  background-color: #4b5563 !important;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 0.5rem;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #111827;
+  margin: 0;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-field {
+  margin-bottom: 1rem;
+}
+
+.modal-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #111827;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  outline: none;
+}
+
+.modal-input:focus {
+  border-color: #3579c6;
+  box-shadow: 0 0 0 3px rgba(53, 121, 198, 0.1);
+}
+
+.modal-select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #111827;
+  background-color: white;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  outline: none;
+}
+
+.modal-select:focus {
+  border-color: #3579c6;
+  box-shadow: 0 0 0 3px rgba(53, 121, 198, 0.1);
+}
+
+.modal-textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #111827;
+  min-height: 100px;
+  resize: vertical;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  outline: none;
+}
+
+.modal-textarea:focus {
+  border-color: #3579c6;
+  box-shadow: 0 0 0 3px rgba(53, 121, 198, 0.1);
+}
+
+.modal-footer {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.modal-button-primary {
+  flex: 1;
+  padding: 0.625rem 1.5rem;
+  background-color: #3579c6;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: background-color 0.2s;
+  outline: none;
+}
+
+.modal-button-primary:hover {
+  background-color: #2b6bb0;
+}
+
+.modal-button-secondary {
+  flex: 1;
+  padding: 0.625rem 1.5rem;
+  background-color: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: background-color 0.2s;
+  outline: none;
+}
+
+.modal-button-secondary:hover {
+  background-color: #4b5563;
+}
+
+.rule-input-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.rule-input-group input {
+  flex: 1;
+}
+
+.delete-rule-button {
+  padding: 0.5rem;
+  background-color: transparent;
+  color: #ef4444;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: color 0.2s;
+  outline: none;
+}
+
+.delete-rule-button:hover {
+  color: #dc2626;
+}
+
+.add-rule-button {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #3579c6;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: background-color 0.2s;
+  outline: none;
+}
+
+.add-rule-button:hover {
+  background-color: #2b6bb0;
+}

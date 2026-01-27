@@ -113,20 +113,39 @@ export default function LoginPage() {
       const response = await authService.login(email, password);
 
       // Debug log
-      console.log('Login response:', {
+      console.log('📥 Login response:', {
         hasToken: !!response.token,
         tokenLength: response.token?.length,
         tokenPreview: response.token?.substring(0, 30) + '...',
-        user: response.user
+        user: response.user,
+        userKeys: Object.keys(response.user || {}),
+        rawResponse: response
       });
 
       // Validate response
       if (!response.token || !response.user) {
-        console.error('Invalid login response:', response);
+        console.error('❌ Invalid login response:', response);
         showValidationPopup('Đăng nhập thất bại. Vui lòng thử lại.');
         setLoading(false);
         return;
       }
+
+      // Validate user has required fields
+      if (!response.user.email || !response.user.role) {
+        console.error('❌ User missing required fields:', {
+          hasEmail: !!response.user.email,
+          hasRole: !!response.user.role,
+          user: response.user
+        });
+        showValidationPopup('Dữ liệu người dùng không hợp lệ. Vui lòng thử lại.');
+        setLoading(false);
+        return;
+      }
+
+      console.log('✅ Calling AuthContext.login with:', {
+        token: response.token.substring(0, 20) + '...',
+        user: response.user
+      });
 
       // Save to context and localStorage
       login(response.token, response.user);

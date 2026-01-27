@@ -41,7 +41,7 @@ export default function Header() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate("/login");
     setIsOpen(false);
     setIsUserMenuOpen(false);
   };
@@ -78,7 +78,7 @@ export default function Header() {
                   onClick={() => setIsUserMenuOpen((open) => !open)}
                 >
                   <span className="header-user-name">
-                    {user.fullname || user.email || 'User'}
+                    {user.fullname || user.email || "User"}
                   </span>
                 </button>
                 {isUserMenuOpen && (
@@ -89,6 +89,13 @@ export default function Header() {
                       onClick={() => setIsUserMenuOpen(false)}
                     >
                       Xem profile
+                    </Link>
+                    <Link
+                      to="/managerdashboard"
+                      className="header-user-menu-item"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      Trang quản trị
                     </Link>
                     <button
                       type="button"
@@ -138,7 +145,7 @@ export default function Header() {
             {isAuthenticated && user ? (
               <div className="mobile-user">
                 <div className="mobile-user-name">
-                  {user.fullname || user.email || 'User'}
+                  {user.fullname || user.email || "User"}
                 </div>
                 <Link
                   to="/profile"

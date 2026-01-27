@@ -11,9 +11,11 @@ import {
 export type Role = "admin" | "manager" | "owner" | "tenant" | "accountant";
 
 export interface User {
-  id: string;
+  id?: string;
+  user_id?: string;
   email: string;
   name?: string;
+  fullname?: string;
   role: Role;
 }
 
@@ -39,6 +41,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 /* ===================== PROVIDER ===================== */
 
 export const AuthProvider = ({ children }: PropsWithChildren) => {
+  console.log('🏗️ AuthProvider: Component rendering/mounting');
+  
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     token: null,
@@ -48,54 +52,121 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
   /* ---------- Load auth from localStorage ---------- */
   useEffect(() => {
+    console.log('🔄 AuthContext: Loading auth from localStorage...');
     const token = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");
 
-    if (token && userStr) {
-      try {
-        const user: User = JSON.parse(userStr);
+    console.log('🔄 AuthContext: LocalStorage data:', {
+      hasToken: !!token,
+      tokenLength: token?.length,
+      hasUserStr: !!userStr,
+      userStr: userStr
+    });
 
-        if (user && user.email && user.role) {
-          setAuthState((prev) => ({
-            ...prev,
-            user,
-            token,
-            isAuthenticated: true,
-            isLoading: false,
-          }));
-          return;
-        }
-      } catch (error) {
-        console.error("Failed to parse user from localStorage", error);
-      }
+    // No token or user - set unauthenticated state WITHOUT clearing storage
+    if (!token || !userStr) {
+      console.log('⚠️ AuthContext: No token or user in localStorage');
+      setAuthState((prev) => ({
+        ...prev,
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        isLoading: false,
+      }));
+      return;
     }
 
-    // fallback: clear invalid storage
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    // Try to parse and validate user
+    try {
+      const user: User = JSON.parse(userStr);
 
-    setAuthState((prev) => ({
-      ...prev,
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      isLoading: false,
-    }));
+      console.log('🔄 AuthContext: Parsed user:', {
+        user,
+        hasEmail: !!user?.email,
+        hasRole: !!user?.role,
+        hasId: !!user?.id,
+        hasUserId: !!user?.user_id
+      });
+
+      // Validate user has required fields
+      if (!user || typeof user !== 'object') {
+        console.error('❌ AuthContext: Invalid user object');
+        throw new Error('Invalid user object');
+      }
+
+      if (!user.email || !user.role) {
+        console.error('❌ AuthContext: User missing required fields', {
+          hasEmail: !!user?.email,
+          hasRole: !!user?.role
+        });
+        throw new Error('User missing required fields');
+      }
+
+      // Valid user - set authenticated state
+      console.log('✅ AuthContext: User validated, setting authenticated state');
+      setAuthState((prev) => ({
+        ...prev,
+        user,
+        token,
+        isAuthenticated: true,
+        isLoading: false,
+      }));
+
+    } catch (error) {
+      console.error("❌ AuthContext: Failed to parse/validate user", error);
+      
+      // Clear invalid data
+      console.log('🧹 AuthContext: Clearing invalid localStorage data');
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+
+      setAuthState((prev) => ({
+        ...prev,
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        isLoading: false,
+      }));
+    }
   }, []);
 
   /* ---------- Login ---------- */
   const login = (token: string, user: User) => {
+    console.log('🔐 AuthContext Login: Received data:', {
+      hasToken: !!token,
+      tokenLength: token?.length,
+      user: user,
+      hasEmail: !!user?.email,
+      hasRole: !!user?.role,
+      hasUserId: !!user?.user_id,
+      hasId: !!user?.id
+    });
+
     if (!token || !user || !user.email || !user.role) {
-      console.error("Invalid login data", { token, user });
+      console.error("❌ AuthContext Login: Invalid login data", { token: !!token, user });
       return;
     }
 
+    const userToSave = {
+      ...user,
+      id: user.user_id || user.id // Ensure id is set from user_id
+    };
+
+    console.log('💾 AuthContext Login: Saving to localStorage:', {
+      token: token.substring(0, 20) + '...',
+      user: userToSave
+    });
+
     localStorage.setItem("token", token.trim());
-    localStorage.setItem("user", JSON.stringify(user));
+    localStorage.setItem("user", JSON.stringify(userToSave));
+
+    // Verify what was actually saved
+    const savedUser = localStorage.getItem("user");
+    console.log('✅ AuthContext Login: Verified saved user:', savedUser);
 
     setAuthState((prev) => ({
       ...prev,
-      user,
+      user: userToSave,
       token,
       isAuthenticated: true,
       isLoading: false,
