@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../../services/authService";
+import { useAuth } from "../../context/AuthContext";
+import type { LoginResponse } from "../../types/auth.types";
 
 interface LoginFormProps {
   onForgotPassword: () => void;
@@ -12,6 +14,7 @@ export function LoginForm({ onForgotPassword }: LoginFormProps) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,16 +22,43 @@ export function LoginForm({ onForgotPassword }: LoginFormProps) {
     setLoading(true);
 
     try {
-      const response = await authService.login(email, password);
-      
-      // Lưu token vào localStorage
-      if (response.token) {
-        localStorage.setItem("token", response.token);
-        localStorage.setItem("user", JSON.stringify(response.user));
+      const response = (await authService.login(
+        email,
+        password
+      )) as LoginResponse;
+
+      // Nếu backend trả token + user thì dùng cho AuthContext
+      if (response.token && response.user) {
+        const baseUser = {
+          id: (response.user.id || response.user.user_id || "").toString(),
+          email: response.user.email,
+          fullname: response.user.fullname ?? null,
+          name: response.user.username ?? undefined,
+          role: response.user.role,
+        };
+
+        // Đăng nhập + lưu vào context + localStorage
+        login(response.token, baseUser);
+
+        // Sau khi đăng nhập, gọi lại /auth/me để luôn lấy thông tin profile mới nhất
+        try {
+          const profileRes = await authService.getProfile();
+          const profile = profileRes.data;
+          const freshUser = {
+            id: (profile.id || profile.user_id || "").toString(),
+            email: profile.email,
+            fullname: profile.fullname ?? null,
+            name: profile.username ?? baseUser.name,
+            role: profile.role,
+          };
+          login(response.token, freshUser);
+        } catch (profileErr) {
+          console.warn("Could not refresh profile after login", profileErr);
+        }
       }
 
-      // Redirect đến trang chủ hoặc dashboard
-      navigate("/");
+      // Redirect đến trang chủ hoặc dashboard (reload để đồng bộ header ngay)
+      window.location.href = "/homepage";
     } catch (err: any) {
       setError(err.response?.data?.message || "Đăng nhập thất bại");
     } finally {

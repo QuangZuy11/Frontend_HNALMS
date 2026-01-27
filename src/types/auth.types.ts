@@ -15,6 +15,7 @@ export interface User {
   permanent_address?: string | null;
   dob?: string | null;
   gender?: 'male' | 'female' | 'other' | null;
+  phone?: string | null;
 }
 
 export interface AuthState {

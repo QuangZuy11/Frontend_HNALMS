@@ -5,6 +5,7 @@ import {
   useState,
   PropsWithChildren,
 } from "react";
+import { authService } from "../services/authService";
 
 /* ===================== TYPES ===================== */
 
@@ -15,7 +16,7 @@ export interface User {
   user_id?: string;
   email: string;
   name?: string;
-  fullname?: string;
+  fullname?: string | null;
   role: Role;
 }
 
@@ -32,6 +33,7 @@ interface AuthContextType extends AuthState {
   isAdminOrManager: boolean;
   login: (token: string, user: User) => void;
   logout: () => void;
+  updateUser: (updates: Partial<Pick<User, "fullname" | "name">>) => void;
 }
 
 /* ===================== CONTEXT ===================== */
@@ -41,8 +43,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 /* ===================== PROVIDER ===================== */
 
 export const AuthProvider = ({ children }: PropsWithChildren) => {
-  console.log('🏗️ AuthProvider: Component rendering/mounting');
-  
+  console.log("🏗️ AuthProvider: Component rendering/mounting");
+
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     token: null,
@@ -52,20 +54,20 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
   /* ---------- Load auth from localStorage ---------- */
   useEffect(() => {
-    console.log('🔄 AuthContext: Loading auth from localStorage...');
+    console.log("🔄 AuthContext: Loading auth from localStorage...");
     const token = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");
 
-    console.log('🔄 AuthContext: LocalStorage data:', {
+    console.log("🔄 AuthContext: LocalStorage data:", {
       hasToken: !!token,
       tokenLength: token?.length,
       hasUserStr: !!userStr,
-      userStr: userStr
+      userStr: userStr,
     });
 
     // No token or user - set unauthenticated state WITHOUT clearing storage
     if (!token || !userStr) {
-      console.log('⚠️ AuthContext: No token or user in localStorage');
+      console.log("⚠️ AuthContext: No token or user in localStorage");
       setAuthState((prev) => ({
         ...prev,
         user: null,
@@ -80,30 +82,32 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     try {
       const user: User = JSON.parse(userStr);
 
-      console.log('🔄 AuthContext: Parsed user:', {
+      console.log("🔄 AuthContext: Parsed user:", {
         user,
         hasEmail: !!user?.email,
         hasRole: !!user?.role,
         hasId: !!user?.id,
-        hasUserId: !!user?.user_id
+        hasUserId: !!user?.user_id,
       });
 
       // Validate user has required fields
-      if (!user || typeof user !== 'object') {
-        console.error('❌ AuthContext: Invalid user object');
-        throw new Error('Invalid user object');
+      if (!user || typeof user !== "object") {
+        console.error("❌ AuthContext: Invalid user object");
+        throw new Error("Invalid user object");
       }
 
       if (!user.email || !user.role) {
-        console.error('❌ AuthContext: User missing required fields', {
+        console.error("❌ AuthContext: User missing required fields", {
           hasEmail: !!user?.email,
-          hasRole: !!user?.role
+          hasRole: !!user?.role,
         });
-        throw new Error('User missing required fields');
+        throw new Error("User missing required fields");
       }
 
       // Valid user - set authenticated state
-      console.log('✅ AuthContext: User validated, setting authenticated state');
+      console.log(
+        "✅ AuthContext: User validated, setting authenticated state",
+      );
       setAuthState((prev) => ({
         ...prev,
         user,
@@ -111,12 +115,11 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
         isAuthenticated: true,
         isLoading: false,
       }));
-
     } catch (error) {
       console.error("❌ AuthContext: Failed to parse/validate user", error);
-      
+
       // Clear invalid data
-      console.log('🧹 AuthContext: Clearing invalid localStorage data');
+      console.log("🧹 AuthContext: Clearing invalid localStorage data");
       localStorage.removeItem("token");
       localStorage.removeItem("user");
 
@@ -132,29 +135,32 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
   /* ---------- Login ---------- */
   const login = (token: string, user: User) => {
-    console.log('🔐 AuthContext Login: Received data:', {
+    console.log("🔐 AuthContext Login: Received data:", {
       hasToken: !!token,
       tokenLength: token?.length,
       user: user,
       hasEmail: !!user?.email,
       hasRole: !!user?.role,
       hasUserId: !!user?.user_id,
-      hasId: !!user?.id
+      hasId: !!user?.id,
     });
 
     if (!token || !user || !user.email || !user.role) {
-      console.error("❌ AuthContext Login: Invalid login data", { token: !!token, user });
+      console.error("❌ AuthContext Login: Invalid login data", {
+        token: !!token,
+        user,
+      });
       return;
     }
 
     const userToSave = {
       ...user,
-      id: user.user_id || user.id // Ensure id is set from user_id
+      id: user.user_id || user.id, // Ensure id is set from user_id
     };
 
-    console.log('💾 AuthContext Login: Saving to localStorage:', {
-      token: token.substring(0, 20) + '...',
-      user: userToSave
+    console.log("💾 AuthContext Login: Saving to localStorage:", {
+      token: token.substring(0, 20) + "...",
+      user: userToSave,
     });
 
     localStorage.setItem("token", token.trim());
@@ -162,7 +168,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
     // Verify what was actually saved
     const savedUser = localStorage.getItem("user");
-    console.log('✅ AuthContext Login: Verified saved user:', savedUser);
+    console.log("✅ AuthContext Login: Verified saved user:", savedUser);
 
     setAuthState((prev) => ({
       ...prev,
@@ -187,6 +193,20 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     }));
   };
 
+  /* ---------- Update user (e.g. sau khi cập nhật họ tên ở profile) ---------- */
+  const updateUser = (updates: Partial<Pick<User, "fullname" | "name">>) => {
+    setAuthState((prev) => {
+      if (!prev.user) return prev;
+      const nextUser = { ...prev.user, ...updates };
+      try {
+        localStorage.setItem("user", JSON.stringify(nextUser));
+      } catch (e) {
+        console.warn("Could not persist user update to localStorage", e);
+      }
+      return { ...prev, user: nextUser };
+    });
+  };
+
   /* ---------- Role helpers ---------- */
   const isAdmin = authState.user?.role === "admin";
   const isManager = authState.user?.role === "manager";
@@ -201,6 +221,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
         isAdminOrManager,
         login,
         logout,
+        updateUser,
       }}
     >
       {children}

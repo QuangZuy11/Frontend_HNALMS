@@ -9,6 +9,22 @@ export const authService = {
         return response.data
     },
 
+    // Change Password
+    changePassword: async (data: {
+        currentPassword: string;
+        newPassword: string;
+        confirmPassword: string;
+    }) => {
+        // Backend đang yêu cầu oldPassword và newPassword
+        const payload = {
+            oldPassword: data.currentPassword,
+            newPassword: data.newPassword,
+            confirmPassword: data.confirmPassword,
+        };
+        const response = await api.post('/auth/change-password', payload);
+        return response.data;
+    },
+
     // Logout
     logout: async () => {
         const response = await api.post('/auth/logout')
@@ -34,6 +50,7 @@ export const authService = {
         permanent_address?: string | null;
         dob?: string | null;
         gender?: 'male' | 'female' | 'other' | null;
+        phone?: string | null;
     }): Promise<ProfileResponse> => {
         const response = await api.put('/auth/profile', profileData)
         return response.data

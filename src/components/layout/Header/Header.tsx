@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User as UserIcon, ChevronDown } from "lucide-react";
 import { Slot } from "@radix-ui/react-slot";
 import "./Header.css";
 import Logo from "../../../assets/images/Logo.png";
@@ -31,6 +31,8 @@ export default function Header() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
+
+  const displayName = user?.fullname || user?.email || "User";
 
   const navItems = [
     { label: "Trang Chủ", to: "/" },
@@ -71,14 +73,23 @@ export default function Header() {
           {/* Right Section */}
           <div className="header-right">
             {isAuthenticated && user ? (
-              <div className="header-user">
+              <div className="header-user-wrap">
                 <button
                   type="button"
                   className="header-user-trigger"
                   onClick={() => setIsUserMenuOpen((open) => !open)}
+                  aria-expanded={isUserMenuOpen}
+                  aria-haspopup="true"
                 >
+                  <span className="header-user-avatar">
+                    <UserIcon className="header-user-avatar-icon" />
+                  </span>
                   <span className="header-user-name">
                     {user.fullname || user.email || "User"}
+                    {displayName}
+                  </span>
+                  <span className="header-user-caret">
+                    <ChevronDown size={16} />
                   </span>
                 </button>
                 {isUserMenuOpen && (
@@ -89,13 +100,6 @@ export default function Header() {
                       onClick={() => setIsUserMenuOpen(false)}
                     >
                       Xem profile
-                    </Link>
-                    <Link
-                      to="/managerdashboard"
-                      className="header-user-menu-item"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      Trang quản trị
                     </Link>
                     <button
                       type="button"

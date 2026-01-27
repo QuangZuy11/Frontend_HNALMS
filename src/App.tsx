@@ -27,6 +27,7 @@ import BuildingRulesPublic from "./pages/BuildingInformation/BuildingRulesPublic
 // Pages - Auth
 import Login from "./pages/Auth/Login/Login";
 import ForgotPassword from "./pages/Auth/ForgotPassword/ForgotPassword";
+import ChangePassword from "./pages/Auth/ChangePassword";
 import Unauthorized from "./pages/Unauthorized";
 
 // Pages - Dashboard
@@ -96,6 +97,22 @@ function LayoutWrapper() {
         {/* Auth */}
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route
+          path="/change-password"
+          element={
+            <PrivateRoute
+              allowedRoles={[
+                "admin",
+                "manager",
+                "owner",
+                "tenant",
+                "accountant",
+              ]}
+            >
+              <ChangePassword />
+            </PrivateRoute>
+          }
+        />
         <Route path="/unauthorized" element={<Unauthorized />} />
 
         {/* Dashboards */}
