@@ -1,8 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../../../services/authService";
 import { useAuth } from "../../../context/AuthContext";
+import logoImage from "../../../assets/images/z7463676981543_494642986e53789b49de728b4f4a3a1e.jpg";
 import "./login.css";
 
 type View = "login" | "forgot-password";
@@ -39,11 +40,6 @@ const AlertIcon = () => (
   </svg>
 );
 
-const BuildingIcon = () => (
-  <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-  </svg>
-);
 
 export default function LoginPage() {
   const [view, setView] = useState<View>("login");
@@ -61,6 +57,13 @@ export default function LoginPage() {
 
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  useEffect(() => {
+    document.body.classList.add("login-page");
+    return () => {
+      document.body.classList.remove("login-page");
+    };
+  }, []);
 
   const showValidationPopup = (message: string) => {
     setValidationPopup({ show: true, message });
@@ -109,8 +112,42 @@ export default function LoginPage() {
     try {
       const response = await authService.login(email, password);
 
+      // Debug log
+      console.log('Login response:', {
+        hasToken: !!response.token,
+        tokenLength: response.token?.length,
+        tokenPreview: response.token?.substring(0, 30) + '...',
+        user: response.user
+      });
+
+      // Validate response
+      if (!response.token || !response.user) {
+        console.error('Invalid login response:', response);
+        showValidationPopup('Đăng nhập thất bại. Vui lòng thử lại.');
+        setLoading(false);
+        return;
+      }
+
       // Save to context and localStorage
       login(response.token, response.user);
+      
+      // Verify token was saved before redirecting
+      const savedToken = localStorage.getItem('token');
+      console.log('Token saved verification:', {
+        saved: !!savedToken,
+        length: savedToken?.length,
+        matches: savedToken === response.token.trim()
+      });
+      
+      if (!savedToken) {
+        console.error('Token was not saved to localStorage!');
+        showValidationPopup('Lỗi lưu token. Vui lòng thử lại.');
+        setLoading(false);
+        return;
+      }
+      
+      // Small delay to ensure localStorage is written (browser may need time)
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       // Redirect based on role
       switch (response.user.role) {
@@ -162,10 +199,12 @@ export default function LoginPage() {
     <main className="min-h-screen flex" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh' }}>
       <div className="w-full flex flex-col justify-center items-center px-6 py-12 bg-background" style={{ height: '100vh', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <div className="login-form-container">
-          <div className="login-icon-wrapper mb-6">
-            <div className="login-icon-box">
-              <BuildingIcon />
-            </div>
+          <div className="login-logo-wrapper">
+            <img 
+              src={logoImage} 
+              alt="HOÀNG NAM APARTMENT" 
+              className="login-logo"
+            />
           </div>
 
           <h1 className="login-title mb-2">Chào mừng trở lại</h1>

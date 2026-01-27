@@ -1,22 +1,45 @@
 /* Login page styles */
 
-/* Full screen layout - Override global styles */
-html,
-body {
+/* Tắt outline và selection khi click cho text bên ngoài */
+body.login-page * {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Cho phép selection trong input */
+body.login-page input,
+body.login-page textarea {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+body.login-page *:focus {
+  outline: none !important;
+}
+
+/* Full screen layout - Only for login page */
+body.login-page {
   margin: 0 !important;
   padding: 0 !important;
   height: 100% !important;
   width: 100% !important;
   overflow: hidden !important;
+  -webkit-tap-highlight-color: transparent;
 }
 
-body {
+body.login-page {
   display: block !important;
   place-items: unset !important;
   min-height: 100vh !important;
 }
 
-#root {
+body.login-page #root {
   height: 100vh !important;
   width: 100vw !important;
   max-width: 100% !important;
@@ -47,6 +70,9 @@ body {
   width: 100% !important;
   height: 100vh !important;
   max-width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
 }
 
 .lg\:w-1\/2 {
@@ -135,26 +161,31 @@ main.min-h-screen {
   border-radius: 12px;
   padding: 3.5rem 3rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  margin-top: 8rem;
 }
 
-/* Icon vàng vuông */
-.login-icon-wrapper {
-  margin-bottom: 1rem;
+/* Logo wrapper */
+.login-logo-wrapper {
+  margin-bottom: 2rem;
   text-align: center;
   width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.login-icon-box {
-  width: 48px;
-  height: 48px;
-  background: #FCD34D;
-  border-radius: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  flex-shrink: 0;
+.login-logo {
+  max-width: 280px;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+
+@media (max-width: 640px) {
+  .login-logo {
+    max-width: 220px;
+  }
 }
 
 /* Title và Subtitle */
@@ -215,6 +246,7 @@ main.min-h-screen {
   color: #1F2937;
   background: white;
   transition: all 0.2s;
+  caret-color: #1F2937;
 }
 
 .login-input:focus {
@@ -227,6 +259,7 @@ main.min-h-screen {
   outline: none;
   border-color: #FCD34D;
   box-shadow: 0 0 0 3px rgba(252, 211, 77, 0.1);
+  caret-color: #1F2937;
 }
 
 .login-input::placeholder {
@@ -303,7 +336,7 @@ main.min-h-screen {
 
 .login-forgot-link {
   font-size: 0.8rem;
-  color: #F59E0B;
+  color: #3579c6;
   background: none;
   border: none;
   cursor: pointer;
@@ -319,7 +352,7 @@ main.min-h-screen {
 .login-button {
   width: 100%;
   padding: 12px 20px;
-  background: #FCD34D;
+  background: #3579c6;
   color: white;
   border: none;
   border-radius: 6px;
@@ -330,9 +363,9 @@ main.min-h-screen {
 }
 
 .login-button:hover:not(:disabled) {
-  background: #FBBF24;
+  background: #2a61a0;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(252, 211, 77, 0.3);
+  box-shadow: 0 4px 12px rgba(53, 121, 198, 0.3);
 }
 
 .login-button:active:not(:disabled) {

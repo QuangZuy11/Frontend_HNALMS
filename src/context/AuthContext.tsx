@@ -24,13 +24,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (token && userStr) {
             try {
                 const user = JSON.parse(userStr);
-                setAuthState({
-                    user,
-                    token,
-                    isAuthenticated: true,
-                    isLoading: false,
-                });
+                // Validate user object has required fields
+                if (user && user.email && user.role) {
+                    setAuthState({
+                        user,
+                        token,
+                        isAuthenticated: true,
+                        isLoading: false,
+                    });
+                } else {
+                    // Invalid user object, clear storage
+                    console.warn('Invalid user object in localStorage:', user);
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    setAuthState({
+                        user: null,
+                        token: null,
+                        isAuthenticated: false,
+                        isLoading: false,
+                    });
+                }
             } catch (error) {
+                console.error('Error parsing user from localStorage:', error);
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
                 setAuthState({
@@ -46,11 +61,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     const login = (token: string, user: User) => {
-        localStorage.setItem('token', token);
+        // Clean and validate token before storing
+        const cleanToken = token?.trim();
+        if (!cleanToken) {
+            console.error('Invalid token provided to login');
+            return;
+        }
+        
+        // Validate user object
+        if (!user || !user.email || !user.role) {
+            console.error('Invalid user object provided to login:', user);
+            return;
+        }
+        
+        localStorage.setItem('token', cleanToken);
         localStorage.setItem('user', JSON.stringify(user));
         setAuthState({
             user,
-            token,
+            token: cleanToken,
             isAuthenticated: true,
             isLoading: false,
         });

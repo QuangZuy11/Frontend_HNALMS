@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Slot } from "@radix-ui/react-slot";
 import "./Header.css";
+
+// Import useAuth hook
+import { useAuth } from "../../../context/AuthContext";
 
 // Button Component
 function Button({
@@ -24,6 +27,9 @@ function Button({
 // Header Component
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const navItems = [
     { label: "Trang Chủ", to: "/" },
@@ -31,6 +37,13 @@ export default function Header() {
     { label: "Tin Tức", to: "/news" },
     { label: "Nội Quy", to: "/rules" },
   ];
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+    setIsOpen(false);
+    setIsUserMenuOpen(false);
+  };
 
   return (
     <header className="header">
@@ -55,9 +68,43 @@ export default function Header() {
 
           {/* Right Section */}
           <div className="header-right">
-            <Button variant="default" className="login-btn">
-              Đăng Nhập
-            </Button>
+            {isAuthenticated && user ? (
+              <div className="header-user">
+                <button
+                  type="button"
+                  className="header-user-trigger"
+                  onClick={() => setIsUserMenuOpen((open) => !open)}
+                >
+                  <span className="header-user-name">
+                    {user.fullname || user.email || 'User'}
+                  </span>
+                </button>
+                {isUserMenuOpen && (
+                  <div className="header-user-menu">
+                    <Link
+                      to="/profile"
+                      className="header-user-menu-item"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      Xem profile
+                    </Link>
+                    <button
+                      type="button"
+                      className="header-user-menu-item"
+                      onClick={handleLogout}
+                    >
+                      Đăng xuất
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link to="/login">
+                <Button variant="default" className="login-btn">
+                  Đăng Nhập
+                </Button>
+              </Link>
+            )}
 
             {/* Mobile Menu Button */}
             <button
@@ -86,9 +133,35 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
-            <Button variant="default" className="mobile-login">
-              Đăng Nhập
-            </Button>
+            {isAuthenticated && user ? (
+              <div className="mobile-user">
+                <div className="mobile-user-name">
+                  {user.fullname || user.email || 'User'}
+                </div>
+                <Link
+                  to="/profile"
+                  onClick={() => setIsOpen(false)}
+                  className="mobile-profile-link"
+                >
+                  <Button variant="default" className="mobile-profile">
+                    Xem profile
+                  </Button>
+                </Link>
+                <Button
+                  variant="default"
+                  className="mobile-logout"
+                  onClick={handleLogout}
+                >
+                  Đăng xuất
+                </Button>
+              </div>
+            ) : (
+              <Link to="/login" onClick={() => setIsOpen(false)}>
+                <Button variant="default" className="mobile-login">
+                  Đăng Nhập
+                </Button>
+              </Link>
+            )}
           </nav>
         )}
       </div>

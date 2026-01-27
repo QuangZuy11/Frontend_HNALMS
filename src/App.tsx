@@ -1,15 +1,31 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import './App.css'
 
 // Context
 import { AuthProvider } from './context/AuthContext'
 import { PrivateRoute } from './routes/PrivateRoute'
 
+// Layout Components
+// @ts-expect-error - JSX files
+import Header from './components/layout/Header/Header'
+// @ts-expect-error - JSX files
+import Hero from './components/layout/Hero/Hero'
+// @ts-expect-error - JSX files
+import About from './components/layout/About/About'
+// @ts-expect-error - JSX files
+import Contact from './components/layout/Contact/Contact'
+// @ts-expect-error - JSX files
+import Footer from './components/layout/Footer/Footer'
+// @ts-expect-error - JSX files
+import FloatingContact from './components/layout/Floating-contact/Floating-contact'
+
 // Pages
 import TestAPI from './pages/TestAPI'
 import Login from './pages/Auth/Login/Login'
 import ForgotPassword from './pages/Auth/ForgotPassword/ForgotPassword'
 import Unauthorized from './pages/Unauthorized'
+// @ts-expect-error - JSX files
+import RoomList from './pages/RoomManagement/RoomList'
 
 // Dashboard Pages
 import AdminDashboard from './pages/Dashboard/AdminDashboard'
@@ -20,8 +36,8 @@ import AccountantDashboard from './pages/Dashboard/AccountantDashboard'
 // import ForgotPassword from './pages/Auth/ForgotPassword'
 // import ChangePassword from './pages/Auth/ChangePassword'
 
-// import ViewProfile from './pages/AccountManagement/Profile/ViewProfile'
-// import UpdateProfile from './pages/AccountManagement/Profile/UpdateProfile'
+import ViewProfile from './pages/Auth/Profile/ViewProfile'
+import UpdateProfile from './pages/Auth/Profile/UpdateProfile'
 
 // import OwnerAccountList from './pages/AccountManagement/Owner/OwnerAccountList'
 // import OwnerAccountDetail from './pages/AccountManagement/Owner/OwnerAccountDetail'
@@ -83,21 +99,43 @@ import AccountantDashboard from './pages/Dashboard/AccountantDashboard'
 // import ReportRevenue from './pages/ReportManagement/ReportRevenue'
 // import ReportRepairMaintenance from './pages/ReportManagement/ReportRepairMaintenance'
 
-function App() {
+// Component để kiểm tra route và hiển thị Footer/FloatingContact
+function LayoutWrapper() {
+  const location = useLocation()
+  
+  // Các routes công khai cần hiển thị Footer và FloatingContact
+  const publicRoutes = ['/homepage', '/rooms', '/']
+  const isPublicRoute = publicRoutes.includes(location.pathname)
+  
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Default route - redirect to login */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+    <>
+      <Header />
+      <Routes>
+        {/* Default route - redirect to homepage */}
+        <Route path="/" element={<Navigate to="/homepage" replace />} />
 
-          {/* Test API Route */}
-          <Route path="/test-api" element={<TestAPI />} />
+        {/* Homepage Route */}
+        <Route
+          path="/homepage"
+          element={
+            <>
+              <Hero />
+              <About />
+              <Contact />
+            </>
+          }
+        />
 
-          {/* Authentication Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/unauthorized" element={<Unauthorized />} />
+        {/* Room Management Route */}
+        <Route path="/rooms" element={<RoomList />} />
+
+        {/* Test API Route */}
+        <Route path="/test-api" element={<TestAPI />} />
+
+        {/* Authentication Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
 
           {/* Protected Dashboard Routes */}
           <Route
@@ -144,8 +182,22 @@ function App() {
           {/* <Route path="/change-password" element={<ChangePassword />} /> */}
 
           {/* Profile Routes */}
-          {/* <Route path="/profile" element={<ViewProfile />} /> */}
-          {/* <Route path="/profile/update" element={<UpdateProfile />} /> */}
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute allowedRoles={['admin', 'manager', 'owner', 'tenant', 'accountant']}>
+                <ViewProfile />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/profile/update"
+            element={
+              <PrivateRoute allowedRoles={['admin', 'manager', 'owner', 'tenant', 'accountant']}>
+                <UpdateProfile />
+              </PrivateRoute>
+            }
+          />
 
           {/* Owner Account Routes */}
           {/* <Route path="/accounts/owners" element={<OwnerAccountList />} /> */}
@@ -222,6 +274,21 @@ function App() {
           {/* 404 Not Found */}
           <Route path="*" element={<div style={{ padding: '20px', textAlign: 'center' }}><h1>404 - Page Not Found</h1></div>} />
         </Routes>
+        {isPublicRoute && (
+          <>
+            <Footer />
+            <FloatingContact />
+          </>
+        )}
+      </>
+    )
+  }
+
+function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <LayoutWrapper />
       </BrowserRouter>
     </AuthProvider>
   )

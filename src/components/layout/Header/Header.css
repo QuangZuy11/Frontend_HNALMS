@@ -171,6 +171,70 @@
   color: #e5e7eb !important;
 }
 
+/* Logged-in User Badge */
+.header-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  position: relative;
+}
+
+.header-user-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.header-user-name {
+  color: #111827;
+  font-weight: 600;
+  font-size: 0.9rem;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-user-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  padding: 0.5rem;
+  z-index: 100;
+}
+
+.header-user-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: transparent;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #111827;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.header-user-menu-item:hover {
+  background: #f3f4f6;
+}
+
 /* Mobile Menu Button */
 .header-mobile-button {
   display: flex;
@@ -226,4 +290,32 @@
 .mobile-login {
   width: 100%;
   margin-top: 1rem;
+}
+
+.mobile-user {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 0.25rem;
+}
+
+.mobile-user-name {
+  color: #111827;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.mobile-profile-link {
+  width: 100%;
+  text-decoration: none;
+}
+
+.mobile-profile {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.mobile-logout {
+  width: 100%;
+  margin-top: 0.5rem;
 }
