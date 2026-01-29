@@ -1,25 +1,37 @@
 import api from './api'
 
-import type { ProfileResponse } from '../types/auth.types'
+import type { ProfileResponse, LoginResponse } from '../types/auth.types'
 
 export const authService = {
-    // Login
-    login: async (email: string, password: string) => {
-        const response = await api.post('/auth/login', { email, password })
+    // Login - Backend expects username and passwordHash
+    login: async (email: string, password: string): Promise<LoginResponse> => {
+        const response = await api.post('/auth/login', { 
+            username: email,  // Use email as username
+            passwordHash: password 
+        })
         return response.data
     },
 
-    // Change Password
+    // Register - Create new account
+    register: async (data: {
+        username: string;
+        phoneNumber: string;
+        email: string;
+        passwordHash: string;
+        role: string;
+    }): Promise<LoginResponse> => {
+        const response = await api.post('/auth/register', data)
+        return response.data
+    },
+
+    // Change Password - Backend expects oldPasswordHash and newPasswordHash
     changePassword: async (data: {
         currentPassword: string;
         newPassword: string;
-        confirmPassword: string;
     }) => {
-        // Backend đang yêu cầu oldPassword và newPassword
         const payload = {
-            oldPassword: data.currentPassword,
-            newPassword: data.newPassword,
-            confirmPassword: data.confirmPassword,
+            oldPasswordHash: data.currentPassword,
+            newPasswordHash: data.newPassword,
         };
         const response = await api.post('/auth/change-password', payload);
         return response.data;
@@ -43,14 +55,13 @@ export const authService = {
         return response.data
     },
 
-    // Update Profile
+    // Update Profile - Backend expects cccd, dob, gender fields
     updateProfile: async (profileData: {
         fullname?: string | null;
-        citizen_id?: string | null;
-        permanent_address?: string | null;
+        cccd?: string | null;
+        address?: string | null;
         dob?: string | null;
         gender?: 'male' | 'female' | 'other' | null;
-        phone?: string | null;
     }): Promise<ProfileResponse> => {
         const response = await api.put('/auth/profile', profileData)
         return response.data
