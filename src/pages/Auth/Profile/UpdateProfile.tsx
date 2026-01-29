@@ -5,10 +5,10 @@ import './Profile.css';
 
 interface FormData {
     fullname: string;
-    citizen_id: string;
-    permanent_address: string;
+    cccd: string;
+    address: string;
     dob: string;
-    gender: 'male' | 'female' | 'other' | '';
+    gender: string; // Can be "male", "female", "other", "Male", "Female", "Other", or empty
 }
 
 export default function UpdateProfile() {
@@ -18,8 +18,8 @@ export default function UpdateProfile() {
     const [error, setError] = useState<string | null>(null);
     const [formData, setFormData] = useState<FormData>({
         fullname: '',
-        citizen_id: '',
-        permanent_address: '',
+        cccd: '',
+        address: '',
         dob: '',
         gender: ''
     });
@@ -34,11 +34,11 @@ export default function UpdateProfile() {
             setError(null);
             const response = await authService.getProfile();
             
-            // Populate form with existing data
+            // Populate form with existing data, keep gender as is from backend
             setFormData({
                 fullname: response.data.fullname || '',
-                citizen_id: response.data.citizen_id || '',
-                permanent_address: response.data.permanent_address || '',
+                cccd: response.data.cccd || '',
+                address: response.data.address || '',
                 dob: response.data.dob ? new Date(response.data.dob).toISOString().split('T')[0] : '',
                 gender: response.data.gender || ''
             });
@@ -70,8 +70,8 @@ export default function UpdateProfile() {
             
             await authService.updateProfile({
                 fullname: formData.fullname.trim() || null,
-                citizen_id: formData.citizen_id.trim() || null,
-                permanent_address: formData.permanent_address.trim() || null,
+                cccd: formData.cccd.trim() || null,
+                address: formData.address.trim() || null,
                 dob: formData.dob || null,
                 gender: formData.gender || null
             });
@@ -139,12 +139,12 @@ export default function UpdateProfile() {
                             </div>
 
                             <div className="profile-item">
-                                <label htmlFor="citizen_id">CCCD/CMND</label>
+                                <label htmlFor="cccd">CCCD/CMND</label>
                                 <input
                                     type="text"
-                                    id="citizen_id"
-                                    name="citizen_id"
-                                    value={formData.citizen_id}
+                                    id="cccd"
+                                    name="cccd"
+                                    value={formData.cccd}
                                     onChange={handleChange}
                                     placeholder="Nhập số CCCD/CMND"
                                     minLength={9}
@@ -171,18 +171,18 @@ export default function UpdateProfile() {
                                     onChange={handleChange}
                                 >
                                     <option value="">Chọn giới tính</option>
-                                    <option value="male">Nam</option>
-                                    <option value="female">Nữ</option>
-                                    <option value="other">Khác</option>
+                                    <option value="Male">Nam</option>
+                                    <option value="Female">Nữ</option>
+                                    <option value="Other">Khác</option>
                                 </select>
                             </div>
 
                             <div className="profile-item full-width">
-                                <label htmlFor="permanent_address">Địa chỉ thường trú</label>
+                                <label htmlFor="address">Địa chỉ thường trú</label>
                                 <textarea
-                                    id="permanent_address"
-                                    name="permanent_address"
-                                    value={formData.permanent_address}
+                                    id="address"
+                                    name="address"
+                                    value={formData.address}
                                     onChange={handleChange}
                                     placeholder="Nhập địa chỉ thường trú"
                                     rows={3}
