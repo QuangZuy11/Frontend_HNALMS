@@ -143,6 +143,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       hasRole: !!user?.role,
       hasUserId: !!user?.user_id,
       hasId: !!user?.id,
+      has_id: !!(user as any)?._id,
     });
 
     if (!token || !user || !user.email || !user.role) {
@@ -153,9 +154,16 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       return;
     }
 
+    // Normalize user data from backend response
+    // Backend may send role as "Tenant", "Admin", etc. - convert to lowercase
+    const normalizedRole = (user.role as string).toLowerCase() as Role;
+    
     const userToSave = {
       ...user,
-      id: user.user_id || user.id, // Ensure id is set from user_id
+      // Support both _id and user_id for ID
+      id: (user as any)._id || user.user_id || user.id,
+      user_id: (user as any)._id || user.user_id,
+      role: normalizedRole, // Normalize role to lowercase
     };
 
     console.log("💾 AuthContext Login: Saving to localStorage:", {
