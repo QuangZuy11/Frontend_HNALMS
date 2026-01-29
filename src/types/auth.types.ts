@@ -1,20 +1,24 @@
-export type UserRole = 'admin' | 'manager' | 'owner' | 'tenant' | 'accountant';
+export type UserRole = 'admin' | 'Admin' | 'manager' | 'Manager' | 'owner' | 'Owner' | 'tenant' | 'Tenant' | 'accountant' | 'Accountant';
 
 export interface User {
-  user_id?: string;
+  _id?: string; // Primary ID from MongoDB
+  user_id?: string; // Legacy support
   id?: string; // For backward compatibility
   email: string;
+  username?: string;
   fullname?: string | null;
   role: UserRole;
-  username?: string;
+  status?: string; // e.g., "active"
   avatarURL?: string;
   isactive?: boolean;
+  createdAt?: string;
   create_at?: string;
-  // UserInfo fields
-  citizen_id?: string | null;
-  permanent_address?: string | null;
+  // UserInfo fields - updated to match backend field names
+  cccd?: string | null;
+  address?: string | null;
   dob?: string | null;
-  gender?: 'male' | 'female' | 'other' | null;
+  gender?: string | null; // Can be "Male", "Female", "Other" or "male", "female", "other"
+  phoneNumber?: string | null;
   phone?: string | null;
 }
 
@@ -26,6 +30,7 @@ export interface AuthState {
 }
 
 export interface LoginResponse {
+  success: boolean;
   message: string;
   token: string;
   user: User;
@@ -33,5 +38,6 @@ export interface LoginResponse {
 
 export interface ProfileResponse {
   success: boolean;
+  message: string;
   data: User;
 }
