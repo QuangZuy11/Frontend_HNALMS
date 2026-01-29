@@ -114,7 +114,7 @@ export default function LoginPage() {
   });
 
   // Sử dụng ref để giữ giá trị input (uncontrolled components)
-  const emailRef = useRef<HTMLInputElement>(null);
+  const usernameRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
 
   const navigate = useNavigate();
@@ -134,16 +134,13 @@ export default function LoginPage() {
     }, 3000);
   };
 
-  const validateEmail = (email: string): boolean => {
-    if (!email) {
-      showValidationPopup("Vui lòng nhập địa chỉ email");
+  const validateUsername = (username: string): boolean => {
+    if (!username) {
+      showValidationPopup("Vui lòng nhập tên đăng nhập");
       return false;
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      showValidationPopup(
-        "Vui lòng nhập địa chỉ email hợp lệ (ví dụ: user@example.com)",
-      );
+    if (username.length < 3) {
+      showValidationPopup("Tên đăng nhập phải có ít nhất 3 ký tự");
       return false;
     }
     return true;
@@ -156,12 +153,12 @@ export default function LoginPage() {
     // Ngăn form submit nhiều lần
     if (loading) return;
 
-    const email = emailRef.current?.value.trim() || "";
+    const username = usernameRef.current?.value.trim() || "";
     const password = passwordRef.current?.value || "";
 
     // Custom validation
-    if (!validateEmail(email)) {
-      emailRef.current?.focus();
+    if (!validateUsername(username)) {
+      usernameRef.current?.focus();
       return;
     }
 
@@ -174,7 +171,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await authService.login(email, password);
+      const response = await authService.login(username, password);
 
       // Debug log
       console.log("📥 Login response:", {
@@ -234,8 +231,9 @@ export default function LoginPage() {
       // Small delay to ensure localStorage is written (browser may need time)
       await new Promise((resolve) => setTimeout(resolve, 50));
 
-      // Redirect based on role
-      switch (response.user.role) {
+      // Redirect based on role (case-insensitive)
+      const role = response.user.role?.toLowerCase();
+      switch (role) {
         case "admin":
           navigate("/admin");
           break;
@@ -330,27 +328,27 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Email Input */}
+              {/* Username Input */}
               <div>
-                <label htmlFor="email" className="login-label">
-                  Email
+                <label htmlFor="username" className="login-label">
+                  Tên đăng nhập
                 </label>
                 <div className="login-input-wrapper">
                   <div className="login-input-icon">
                     <EnvelopeIcon />
                   </div>
                   <input
-                    ref={emailRef}
-                    id="email"
-                    name="email"
+                    ref={usernameRef}
+                    id="username"
+                    name="username"
                     type="text"
                     onChange={() => {
                       if (validationPopup.show)
                         setValidationPopup({ show: false, message: "" });
                     }}
-                    autoComplete="email"
+                    autoComplete="username"
                     className="login-input"
-                    placeholder="email@example.com"
+                    placeholder="Nhập tên đăng nhập"
                     disabled={loading}
                   />
                 </div>
