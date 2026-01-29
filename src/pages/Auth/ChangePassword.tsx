@@ -39,7 +39,6 @@ export default function ChangePassword() {
       await authService.changePassword({
         currentPassword,
         newPassword,
-        confirmPassword,
       });
       setSuccess("Đổi mật khẩu thành công.");
       setCurrentPassword("");
