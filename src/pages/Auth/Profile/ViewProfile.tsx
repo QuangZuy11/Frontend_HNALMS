@@ -12,6 +12,7 @@ import {
   Pencil,
   Eye,
   EyeOff,
+  Users,
 } from "lucide-react";
 import { authService } from "../../../services/authService";
 import { useAuth } from "../../../context/AuthContext";
@@ -20,10 +21,10 @@ import "./Profile.css";
 
 interface FormData {
   fullname: string;
-  citizen_id: string;
-  permanent_address: string;
+  cccd: string;
+  address: string;
   dob: string;
-  gender: "male" | "female" | "other" | "";
+  gender: string; // Can be "male", "female", "other", "Male", "Female", "Other", or empty
   phone: string;
 }
 
@@ -58,8 +59,8 @@ export default function ViewProfile() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     fullname: "",
-    citizen_id: "",
-    permanent_address: "",
+    cccd: "",
+    address: "",
     dob: "",
     gender: "",
     phone: "",
@@ -81,15 +82,17 @@ export default function ViewProfile() {
       }
       const response = await authService.getProfile();
       setProfile(response.data);
+      // Keep gender as is from backend (Male, Female, Other) for form
+      const genderValue = response.data.gender || "";
       setFormData({
         fullname: response.data.fullname || "",
-        citizen_id: response.data.citizen_id || "",
-        permanent_address: response.data.permanent_address || "",
+        cccd: response.data.cccd || "",
+        address: response.data.address || "",
         dob: response.data.dob
           ? new Date(response.data.dob).toISOString().split("T")[0]
           : "",
-        gender: response.data.gender || "",
-        phone: response.data.phone || "",
+        gender: genderValue,
+        phone: response.data.phoneNumber || "",
       });
     } catch (err: unknown) {
       console.error("Error fetching profile:", err);
@@ -130,13 +133,13 @@ export default function ViewProfile() {
     if (profile) {
       setFormData({
         fullname: profile.fullname || "",
-        citizen_id: profile.citizen_id || "",
-        permanent_address: profile.permanent_address || "",
+        cccd: profile.cccd || "",
+        address: profile.address || "",
         dob: profile.dob
           ? new Date(profile.dob).toISOString().split("T")[0]
           : "",
         gender: profile.gender || "",
-        phone: profile.phone || "",
+        phone: profile.phoneNumber || "",
       });
     }
   };
@@ -170,10 +173,10 @@ export default function ViewProfile() {
 
   const validateForm = (): boolean => {
     const fullname = formData.fullname.trim();
-    const citizenId = formData.citizen_id.trim();
+    const cccd = formData.cccd.trim();
     const phone = formData.phone.trim();
     const dob = formData.dob.trim();
-    const address = formData.permanent_address.trim();
+    const address = formData.address.trim();
 
     const errors: Partial<Record<keyof FormData, string>> = {};
 
@@ -183,8 +186,8 @@ export default function ViewProfile() {
       errors.fullname = "Họ và tên phải có ít nhất 2 ký tự.";
     }
 
-    if (citizenId && !/^\d{9,12}$/.test(citizenId)) {
-      errors.citizen_id = "CCCD/CMND phải là số và có từ 9–12 chữ số.";
+    if (cccd && !/^\d{9,12}$/.test(cccd)) {
+      errors.cccd = "CCCD/CMND phải là số và có từ 9–12 chữ số.";
     }
 
     if (!phone) {
@@ -206,7 +209,7 @@ export default function ViewProfile() {
     }
 
     if (address && address.length < 5) {
-      errors.permanent_address =
+      errors.address =
         "Địa chỉ thường trú quá ngắn. Vui lòng nhập chi tiết hơn.";
     }
 
@@ -226,11 +229,10 @@ export default function ViewProfile() {
       setFormError(null);
       await authService.updateProfile({
         fullname: formData.fullname.trim() || null,
-        citizen_id: formData.citizen_id.trim() || null,
-        permanent_address: formData.permanent_address.trim() || null,
+        cccd: formData.cccd.trim() || null,
+        address: formData.address.trim() || null,
         dob: formData.dob || null,
         gender: formData.gender || null,
-        phone: formData.phone.trim() || null,
       });
       updateUser({ fullname: formData.fullname.trim() || undefined });
       await fetchProfile();
@@ -273,7 +275,6 @@ export default function ViewProfile() {
       await authService.changePassword({
         currentPassword,
         newPassword,
-        confirmPassword,
       });
       setChangePasswordSuccess("Đổi mật khẩu thành công.");
       setCurrentPassword("");
@@ -437,7 +438,7 @@ export default function ViewProfile() {
               <span className="profile-detail-value-wrap">
                 <Lock size={14} className="profile-detail-lock" />
                 <span className="profile-detail-value">
-                  {profile.citizen_id || "Chưa cập nhật"}
+                  {profile.cccd || "Chưa cập nhật"}
                 </span>
               </span>
             </div>
@@ -445,7 +446,7 @@ export default function ViewProfile() {
               <Phone size={20} className="profile-detail-icon" />
               <span className="profile-detail-label">Số Điện Thoại *</span>
               <span className="profile-detail-value">
-                {profile.phone || "Chưa cập nhật"}
+                {profile.phoneNumber || "Chưa cập nhật"}
               </span>
             </div>
             <div className="profile-detail-row">
@@ -463,10 +464,21 @@ export default function ViewProfile() {
               </span>
             </div>
             <div className="profile-detail-row">
+              <Users size={20} className="profile-detail-icon" />
+              <span className="profile-detail-label">Giới Tính</span>
+              <span className="profile-detail-value">
+                {profile.gender ? (
+                  profile.gender.toLowerCase() === "male" ? "Nam" :
+                  profile.gender.toLowerCase() === "female" ? "Nữ" :
+                  "Khác"
+                ) : "Chưa cập nhật"}
+              </span>
+            </div>
+            <div className="profile-detail-row">
               <MapPin size={20} className="profile-detail-icon" />
               <span className="profile-detail-label">Địa Chỉ Thường Trú</span>
               <span className="profile-detail-value">
-                {profile.permanent_address || "Chưa cập nhật"}
+                {profile.address || "Chưa cập nhật"}
               </span>
             </div>
             <div className="profile-detail-row profile-security-row">
@@ -525,18 +537,18 @@ export default function ViewProfile() {
                       )}
                     </div>
                     <div className="profile-item">
-                      <label htmlFor="citizen_id">CCCD/CMND</label>
+                      <label htmlFor="cccd">CCCD/CMND</label>
                       <input
                         type="text"
-                        id="citizen_id"
-                        name="citizen_id"
-                        value={formData.citizen_id}
+                        id="cccd"
+                        name="cccd"
+                        value={formData.cccd}
                         onChange={handleFormChange}
                         placeholder="Nhập số CCCD/CMND"
-                        className={fieldErrors.citizen_id ? "input-error" : ""}
+                        className={fieldErrors.cccd ? "input-error" : ""}
                       />
-                      {fieldErrors.citizen_id && (
-                        <p className="field-error">{fieldErrors.citizen_id}</p>
+                      {fieldErrors.cccd && (
+                        <p className="field-error">{fieldErrors.cccd}</p>
                       )}
                     </div>
                     <div className="profile-item">
@@ -577,29 +589,29 @@ export default function ViewProfile() {
                         onChange={handleFormChange}
                       >
                         <option value="">Chọn giới tính</option>
-                        <option value="male">Nam</option>
-                        <option value="female">Nữ</option>
-                        <option value="other">Khác</option>
+                        <option value="Male">Nam</option>
+                        <option value="Female">Nữ</option>
+                        <option value="Other">Khác</option>
                       </select>
                     </div>
                     <div className="profile-item full-width">
-                      <label htmlFor="permanent_address">
+                      <label htmlFor="address">
                         Địa chỉ thường trú
                       </label>
                       <textarea
-                        id="permanent_address"
-                        name="permanent_address"
-                        value={formData.permanent_address}
+                        id="address"
+                        name="address"
+                        value={formData.address}
                         onChange={handleFormChange}
                         placeholder="Nhập địa chỉ thường trú"
                         rows={3}
                         className={
-                          fieldErrors.permanent_address ? "input-error" : ""
+                          fieldErrors.address ? "input-error" : ""
                         }
                       />
-                      {fieldErrors.permanent_address && (
+                      {fieldErrors.address && (
                         <p className="field-error">
-                          {fieldErrors.permanent_address}
+                          {fieldErrors.address}
                         </p>
                       )}
                     </div>
