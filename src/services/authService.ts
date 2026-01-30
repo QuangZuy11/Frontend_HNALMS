@@ -3,11 +3,11 @@ import api from './api'
 import type { ProfileResponse, LoginResponse } from '../types/auth.types'
 
 export const authService = {
-    // Login - Backend expects username and passwordHash
+    // Login - Backend expects username and password
     login: async (email: string, password: string): Promise<LoginResponse> => {
         const response = await api.post('/auth/login', { 
             username: email,  // Use email as username
-            passwordHash: password 
+            password: password 
         })
         return response.data
     },
@@ -17,21 +17,21 @@ export const authService = {
         username: string;
         phoneNumber: string;
         email: string;
-        passwordHash: string;
+        password: string;
         role: string;
     }): Promise<LoginResponse> => {
         const response = await api.post('/auth/register', data)
         return response.data
     },
 
-    // Change Password - Backend expects oldPasswordHash and newPasswordHash
+    // Change Password - Backend expects oldPassword and newPassword
     changePassword: async (data: {
         currentPassword: string;
         newPassword: string;
     }) => {
         const payload = {
-            oldPasswordHash: data.currentPassword,
-            newPasswordHash: data.newPassword,
+            oldPassword: data.currentPassword,
+            newPassword: data.newPassword,
         };
         const response = await api.post('/auth/change-password', payload);
         return response.data;
