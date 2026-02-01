@@ -11,15 +11,14 @@ import {
   ChevronDown,
   ChevronRight,
   Settings,
-  LogOut,
-  Power
+  LogOut
 } from 'lucide-react';
 import './ManagerSidebar.css'; // Đảm bảo import file CSS của bạn
 
 // Định nghĩa cấu trúc menu
 const MENU_ITEMS = [
   {
-    title: "Dashboard",
+    title: "Tổng quan",
     icon: <LayoutDashboard size={20} />,
     path: "/dashboard",
     subItems: []

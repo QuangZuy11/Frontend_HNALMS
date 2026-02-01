@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  Plus, Edit, Trash2, Eye, 
-  ChevronDown, ChevronRight, 
+import {
+  Plus, Edit, Trash2, Eye,
+  ChevronDown, ChevronRight,
   CheckCircle, AlertCircle, Wrench, X,
   Building, Home, Tag, // Icon cho phần thống kê
   Power, // Icon cho nút vô hiệu hóa
@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import './ManageRoom.css';
 
-import ManagerSidebar from '../../Dashboard/ManagerSidebar'; 
+import ManagerSidebar from '../../../components/layout/Sidebar/ManagerSidebar/ManagerSidebar';
 
 const API_BASE_URL = 'http://localhost:9999/api';
 
@@ -32,7 +32,7 @@ interface Room {
   _id: string;
   roomCode: string;
   name: string;
-  floorId: string | Floor; 
+  floorId: string | Floor;
   roomTypeId: string | RoomType;
   status: 'Available' | 'Occupied' | 'Maintenance';
   description?: string;
@@ -52,11 +52,11 @@ const ManageRoom = () => {
   // Modal States
   const [showModal, setShowModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
   const [viewingRoom, setViewingRoom] = useState<Room | null>(null);
-  
+
   // Form Data
   const [formData, setFormData] = useState({
     roomCode: '',
@@ -99,7 +99,7 @@ const ManageRoom = () => {
 
   // --- HANDLERS ---
   const toggleFloor = (floorId: string) => {
-    setExpandedFloors(prev => 
+    setExpandedFloors(prev =>
       prev.includes(floorId) ? prev.filter(id => id !== floorId) : [...prev, floorId]
     );
   };
@@ -125,10 +125,10 @@ const ManageRoom = () => {
   };
 
   const renderStatus = (status: string) => {
-    switch(status) {
-      case 'Available': return <span className="status-badge available"><CheckCircle size={12}/> Trống</span>;
-      case 'Occupied': return <span className="status-badge occupied"><AlertCircle size={12}/> Đang thuê</span>;
-      case 'Maintenance': return <span className="status-badge maintenance"><Wrench size={12}/> Bảo trì</span>;
+    switch (status) {
+      case 'Available': return <span className="status-badge available"><CheckCircle size={12} /> Trống</span>;
+      case 'Occupied': return <span className="status-badge occupied"><AlertCircle size={12} /> Đang thuê</span>;
+      case 'Maintenance': return <span className="status-badge maintenance"><Wrench size={12} /> Bảo trì</span>;
       default: return <span>{status}</span>;
     }
   };
@@ -196,7 +196,7 @@ const ManageRoom = () => {
 
   const handleDelete = async (id: string) => {
     if (window.confirm("Xóa phòng này?")) {
-      try { await axios.delete(`${API_BASE_URL}/room/${id}`); fetchData(); } 
+      try { await axios.delete(`${API_BASE_URL}/room/${id}`); fetchData(); }
       catch (e) { alert("Lỗi xóa phòng"); }
     }
   };
@@ -207,13 +207,13 @@ const ManageRoom = () => {
 
       <main style={{ flex: 1, marginLeft: '280px', width: 'calc(100% - 280px)' }}>
         <div className="room-container">
-          
+
           <div className="page-header">
             <div>
               <h2 className="page-title">Quản lý danh sách phòng</h2>
               <p className="page-subtitle">Nhóm theo tầng - Xem dạng bảng</p>
             </div>
-            
+
             {/* [MỚI] PHẦN THỐNG KÊ (Giống BuildingConfig) */}
             <div className="stats-summary">
               <div className="stat-item">
@@ -234,15 +234,15 @@ const ManageRoom = () => {
           </div>
 
           {/* Nút Thêm mới (Đưa xuống dưới Header 1 chút cho thoáng) */}
-          <div className="toolbar-actions" style={{marginBottom: 16, display: 'flex', justifyContent: 'flex-end'}}>
-             <button className="btn-primary" onClick={handleOpenAdd}>
-               <Plus size={18} /> Thêm phòng mới
-             </button>
+          <div className="toolbar-actions" style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+            <button className="btn-primary" onClick={handleOpenAdd}>
+              <Plus size={18} /> Thêm phòng mới
+            </button>
           </div>
 
           <div className="floor-list-container">
             {floors.length === 0 && !loading && <div className="empty-floor">Chưa có dữ liệu tầng.</div>}
-            
+
             {floors.map(floor => {
               const floorRooms = rooms.filter(r => {
                 const fId = typeof r.floorId === 'object' ? r.floorId._id : r.floorId;
@@ -267,13 +267,13 @@ const ManageRoom = () => {
                         <table className="room-table">
                           <thead>
                             <tr>
-                              <th style={{width: '100px'}}>Mã phòng</th>
-                              <th style={{width: '150px'}}>Tên phòng</th>
-                              <th style={{width: '150px'}}>Loại phòng</th>
-                              <th style={{width: '120px'}}>Giá niêm yết</th>
-                              <th style={{width: '120px'}}>Trạng thái</th>
+                              <th style={{ width: '100px' }}>Mã phòng</th>
+                              <th style={{ width: '150px' }}>Tên phòng</th>
+                              <th style={{ width: '150px' }}>Loại phòng</th>
+                              <th style={{ width: '120px' }}>Giá niêm yết</th>
+                              <th style={{ width: '120px' }}>Trạng thái</th>
                               <th>Mô tả</th>
-                              <th style={{width: '140px', textAlign: 'center'}}>Thao tác</th>
+                              <th style={{ width: '140px', textAlign: 'center' }}>Thao tác</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -283,27 +283,27 @@ const ManageRoom = () => {
                               const rowOpacity = room.isActive ? 1 : 0.5;
 
                               return (
-                                <tr key={room._id} style={{opacity: rowOpacity}}>
-                                  <td style={{fontFamily: 'monospace', color: '#64748b', fontWeight: 600}}>
+                                <tr key={room._id} style={{ opacity: rowOpacity }}>
+                                  <td style={{ fontFamily: 'monospace', color: '#64748b', fontWeight: 600 }}>
                                     {room.roomCode || '---'}
                                   </td>
-                                  
+
                                   <td className="font-bold">{room.name}</td>
-                                  
-                                  <td>{typeDetail ? typeDetail.typeName : <span style={{color:'red'}}>Lỗi</span>}</td>
-                                  
+
+                                  <td>{typeDetail ? typeDetail.typeName : <span style={{ color: 'red' }}>Lỗi</span>}</td>
+
                                   <td className="text-price">
                                     {typeDetail ? formatCurrency(typeDetail.currentPrice) : '---'}
                                   </td>
 
                                   <td>{renderStatus(room.status)}</td>
-                                  
+
                                   <td className="text-desc">
                                     {room.description || <span className="text-muted-italic">Không có mô tả</span>}
                                   </td>
 
                                   <td>
-                                    <div className="action-group">                                   
+                                    <div className="action-group">
                                       <button className="btn-icon-sm view" onClick={() => handleViewDetail(room)} title="Chi tiết">
                                         <Eye size={16} />
                                       </button>
@@ -314,9 +314,9 @@ const ManageRoom = () => {
                                         <Trash2 size={16} />
                                       </button>
                                       {/* Nút Vô hiệu hóa (Power) */}
-                                      <button 
-                                        className={`btn-icon-sm power ${room.isActive ? 'active' : 'inactive'}`} 
-                                        onClick={() => handleToggleActive(room)} 
+                                      <button
+                                        className={`btn-icon-sm power ${room.isActive ? 'active' : 'inactive'}`}
+                                        onClick={() => handleToggleActive(room)}
                                         title={room.isActive ? "Vô hiệu hóa" : "Kích hoạt lại"}
                                       >
                                         <Power size={16} />
@@ -347,59 +347,59 @@ const ManageRoom = () => {
           <div className="modal-content">
             <div className="modal-header">
               <h3>{isEditing ? 'Sửa Phòng' : 'Thêm Phòng Mới'}</h3>
-              <button onClick={() => setShowModal(false)}><X size={20}/></button>
+              <button onClick={() => setShowModal(false)}><X size={20} /></button>
             </div>
             <form onSubmit={handleSave}>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Mã phòng <span style={{color:'red'}}>*</span></label>
-                  <input type="text" value={formData.roomCode} onChange={e => setFormData({...formData, roomCode: e.target.value})} required placeholder="VD: R101" />
+                  <label>Mã phòng <span style={{ color: 'red' }}>*</span></label>
+                  <input type="text" value={formData.roomCode} onChange={e => setFormData({ ...formData, roomCode: e.target.value })} required placeholder="VD: R101" />
                 </div>
                 <div className="form-group">
-                  <label>Tên hiển thị <span style={{color:'red'}}>*</span></label>
-                  <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required placeholder="VD: Phòng 101" />
+                  <label>Tên hiển thị <span style={{ color: 'red' }}>*</span></label>
+                  <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required placeholder="VD: Phòng 101" />
                 </div>
               </div>
               <div className="form-row">
-                 <div className="form-group">
-                    <label>Tầng</label>
-                    <select value={formData.floorId} onChange={e => setFormData({...formData, floorId: e.target.value})}>
-                      {floors.map(f => <option key={f._id} value={f._id}>{f.name}</option>)}
-                    </select>
-                 </div>
-                 <div className="form-group">
-                    <label>Loại phòng</label>
-                    <select value={formData.roomTypeId} onChange={e => setFormData({...formData, roomTypeId: e.target.value})}>
-                      {roomTypes.map(t => <option key={t._id} value={t._id}>{t.typeName}</option>)}
-                    </select>
-                 </div>
+                <div className="form-group">
+                  <label>Tầng</label>
+                  <select value={formData.floorId} onChange={e => setFormData({ ...formData, floorId: e.target.value })}>
+                    {floors.map(f => <option key={f._id} value={f._id}>{f.name}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Loại phòng</label>
+                  <select value={formData.roomTypeId} onChange={e => setFormData({ ...formData, roomTypeId: e.target.value })}>
+                    {roomTypes.map(t => <option key={t._id} value={t._id}>{t.typeName}</option>)}
+                  </select>
+                </div>
               </div>
               <div className="form-group">
-                 <label>Trạng thái</label>
-                 <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value as any})}>
-                    <option value="Available">Trống</option>
-                    <option value="Occupied">Đang thuê</option>
-                    <option value="Maintenance">Bảo trì</option>
-                 </select>
+                <label>Trạng thái</label>
+                <select value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value as any })}>
+                  <option value="Available">Trống</option>
+                  <option value="Occupied">Đang thuê</option>
+                  <option value="Maintenance">Bảo trì</option>
+                </select>
               </div>
-              
+
               {/* [MỚI] Checkbox kích hoạt trong form sửa */}
               {isEditing && (
-                <div className="form-group" style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
-                   <input 
-                      type="checkbox" 
-                      id="chkActive" 
-                      checked={formData.isActive} 
-                      onChange={e => setFormData({...formData, isActive: e.target.checked})}
-                      style={{width: 'auto', margin: 0}}
-                   />
-                   <label htmlFor="chkActive" style={{margin: 0, cursor: 'pointer'}}>Đang hoạt động (Active)</label>
+                <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <input
+                    type="checkbox"
+                    id="chkActive"
+                    checked={formData.isActive}
+                    onChange={e => setFormData({ ...formData, isActive: e.target.checked })}
+                    style={{ width: 'auto', margin: 0 }}
+                  />
+                  <label htmlFor="chkActive" style={{ margin: 0, cursor: 'pointer' }}>Đang hoạt động (Active)</label>
                 </div>
               )}
 
               <div className="form-group">
-                 <label>Mô tả</label>
-                 <textarea rows={2} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                <label>Mô tả</label>
+                <textarea rows={2} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Hủy</button>
@@ -412,63 +412,63 @@ const ManageRoom = () => {
 
       {/* --- MODAL XEM CHI TIẾT --- */}
       {showDetailModal && viewingRoom && (
-        <div className="modal-overlay" style={{zIndex: 1100}}>
+        <div className="modal-overlay" style={{ zIndex: 1100 }}>
           <div className="modal-content detail-view">
             <div className="modal-header">
               <h3>Chi tiết Phòng: {viewingRoom.name}</h3>
-              <button onClick={() => setShowDetailModal(false)}><X size={20}/></button>
+              <button onClick={() => setShowDetailModal(false)}><X size={20} /></button>
             </div>
             <div className="detail-body">
               <div className="detail-grid">
-                 <div className="detail-item">
-                    <label>Mã phòng:</label><span>{viewingRoom.roomCode || '---'}</span>
-                 </div>
-                 <div className="detail-item">
-                    <label>Trạng thái:</label><span>{renderStatus(viewingRoom.status)}</span>
-                 </div>
-                 <div className="detail-item">
-                    <label>Kích hoạt:</label>
-                    <span style={{color: viewingRoom.isActive ? 'green' : 'red', fontWeight: 600}}>
-                       {viewingRoom.isActive ? 'Đang hoạt động' : 'Đã vô hiệu hóa'}
-                    </span>
-                 </div>
-                 <div className="detail-item">
-                    <label>Thuộc Tầng:</label><span>{getFloorName(viewingRoom.floorId)}</span>
-                 </div>
-                 <div className="detail-item">
-                    <label>Loại phòng:</label><span>{getRoomTypeDetail(viewingRoom.roomTypeId)?.typeName || '---'}</span>
-                 </div>
-                 <div className="detail-item">
-                    <label>Giá niêm yết:</label>
-                    <span className="text-price">
-                       {getRoomTypeDetail(viewingRoom.roomTypeId) ? formatCurrency(getRoomTypeDetail(viewingRoom.roomTypeId)!.currentPrice) : '---'}
-                    </span>
-                 </div>
-                 <div className="detail-item full">
-                    <label>Mô tả:</label><p>{viewingRoom.description || "Không có mô tả."}</p>
-                 </div>
+                <div className="detail-item">
+                  <label>Mã phòng:</label><span>{viewingRoom.roomCode || '---'}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Trạng thái:</label><span>{renderStatus(viewingRoom.status)}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Kích hoạt:</label>
+                  <span style={{ color: viewingRoom.isActive ? 'green' : 'red', fontWeight: 600 }}>
+                    {viewingRoom.isActive ? 'Đang hoạt động' : 'Đã vô hiệu hóa'}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <label>Thuộc Tầng:</label><span>{getFloorName(viewingRoom.floorId)}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Loại phòng:</label><span>{getRoomTypeDetail(viewingRoom.roomTypeId)?.typeName || '---'}</span>
+                </div>
+                <div className="detail-item">
+                  <label>Giá niêm yết:</label>
+                  <span className="text-price">
+                    {getRoomTypeDetail(viewingRoom.roomTypeId) ? formatCurrency(getRoomTypeDetail(viewingRoom.roomTypeId)!.currentPrice) : '---'}
+                  </span>
+                </div>
+                <div className="detail-item full">
+                  <label>Mô tả:</label><p>{viewingRoom.description || "Không có mô tả."}</p>
+                </div>
               </div>
               <div className="detail-images-area">
                 <h4>Hình ảnh tham khảo (Theo loại phòng)</h4>
                 {(() => {
-                   const typeDetail = getRoomTypeDetail(viewingRoom.roomTypeId);
-                   const images = typeDetail?.images || [];
-                   if (images.length === 0) return <p className="text-muted-italic">Chưa có hình ảnh.</p>;
-                   return (
-                     <div className="detail-image-list">
-                        {images.map((img, idx) => (
-                           <div key={idx} className="detail-img-item"><img src={img} alt="img" /></div>
-                        ))}
-                     </div>
-                   );
+                  const typeDetail = getRoomTypeDetail(viewingRoom.roomTypeId);
+                  const images = typeDetail?.images || [];
+                  if (images.length === 0) return <p className="text-muted-italic">Chưa có hình ảnh.</p>;
+                  return (
+                    <div className="detail-image-list">
+                      {images.map((img, idx) => (
+                        <div key={idx} className="detail-img-item"><img src={img} alt="img" /></div>
+                      ))}
+                    </div>
+                  );
                 })()}
               </div>
             </div>
             <div className="modal-actions">
-               <button className="btn-secondary" onClick={() => setShowDetailModal(false)}>Đóng</button>
-               <button className="btn-primary" onClick={() => { setShowDetailModal(false); handleOpenEdit(viewingRoom); }}>
-                  <Edit size={16}/> Chỉnh sửa
-               </button>
+              <button className="btn-secondary" onClick={() => setShowDetailModal(false)}>Đóng</button>
+              <button className="btn-primary" onClick={() => { setShowDetailModal(false); handleOpenEdit(viewingRoom); }}>
+                <Edit size={16} /> Chỉnh sửa
+              </button>
             </div>
           </div>
         </div>

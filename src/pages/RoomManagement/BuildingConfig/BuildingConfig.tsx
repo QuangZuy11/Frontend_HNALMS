@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Layers, 
-  LayoutTemplate, 
-  BedDouble, 
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Layers,
+  LayoutTemplate,
+  BedDouble,
   MoreVertical,
   X,
   Building,
@@ -20,9 +20,9 @@ import {
 import './BuildingConfig.css';
 
 // --- IMPORT SIDEBAR ---
-import ManagerSidebar from '../../Dashboard/ManagerSidebar'; 
+import ManagerSidebar from '../../../components/layout/Sidebar/ManagerSidebar/ManagerSidebar';
 
-const API_BASE_URL = 'http://localhost:9999/api'; 
+const API_BASE_URL = 'http://localhost:9999/api';
 
 interface Floor {
   _id: string;
@@ -94,11 +94,11 @@ const BuildingConfig = () => {
 
       const rawFloors: Floor[] = floorRes.data.data || floorRes.data || [];
       const rawRooms: Room[] = roomRes.data.data || roomRes.data || [];
-      
+
       const roomCountsByFloor: { [key: string]: number } = {};
       rawRooms.forEach(room => {
-        const fId = typeof room.floorId === 'object' && room.floorId !== null 
-          ? room.floorId._id 
+        const fId = typeof room.floorId === 'object' && room.floorId !== null
+          ? room.floorId._id
           : room.floorId as string;
         if (fId) roomCountsByFloor[fId] = (roomCountsByFloor[fId] || 0) + 1;
       });
@@ -187,7 +187,7 @@ const BuildingConfig = () => {
         await axios.post(`${API_BASE_URL}/floors`, payload);
       }
       setShowFloorModal(false);
-      fetchData(); 
+      fetchData();
     } catch (error) {
       alert("Không thể cập nhật thông tin tầng vì đang có phòng hoạt động tại tầng này.");
     }
@@ -204,7 +204,7 @@ const BuildingConfig = () => {
   };
 
   // --- HANDLERS (ROOM TYPE) ---
-  
+
   // [NEW] Open Detail Modal
   const handleViewDetail = (type: RoomType) => {
     setViewingType(type);
@@ -304,13 +304,13 @@ const BuildingConfig = () => {
 
       <main style={{ flex: 1, marginLeft: '280px', width: 'calc(100% - 280px)' }}>
         <div className="config-container">
-          
+
           <div className="page-header">
             <div>
               <h2 className="page-title">Cấu hình tòa nhà</h2>
               <p className="page-subtitle">Quản lý danh sách tầng và các hạng mục loại phòng</p>
             </div>
-            
+
             <div className="stats-summary">
               <div className="stat-item">
                 <Building size={16} className="stat-icon icon-primary" />
@@ -330,7 +330,7 @@ const BuildingConfig = () => {
           </div>
 
           <div className="config-content">
-            
+
             {/* SECTION TẦNG */}
             <section className="section-block">
               <div className="section-header">
@@ -356,7 +356,7 @@ const BuildingConfig = () => {
                       <h4>{floor.name}</h4>
                       {floor.description && <p className="floor-desc" title={floor.description}>{floor.description}</p>}
                       <p className="floor-meta">
-                        <BedDouble size={14} style={{ marginRight: 4 }} /> 
+                        <BedDouble size={14} style={{ marginRight: 4 }} />
                         {floor.roomCount || 0} phòng
                       </p>
                     </div>
@@ -434,7 +434,7 @@ const BuildingConfig = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h3>{editingFloor ? 'Sửa Tầng' : 'Thêm Tầng Mới'}</h3>
-                <button onClick={() => setShowFloorModal(false)}><X size={20}/></button>
+                <button onClick={() => setShowFloorModal(false)}><X size={20} /></button>
               </div>
               <form onSubmit={handleSaveFloor}>
                 <div className="form-group">
@@ -460,50 +460,50 @@ const BuildingConfig = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h3>{editingType ? 'Sửa Loại Phòng' : 'Thêm Loại Phòng'}</h3>
-                <button onClick={() => setShowTypeModal(false)}><X size={20}/></button>
+                <button onClick={() => setShowTypeModal(false)}><X size={20} /></button>
               </div>
               <form onSubmit={handleSaveType}>
                 <div className="form-group">
                   <label>Tên loại phòng</label>
-                  <input type="text" value={typeForm.typeName} onChange={(e) => setTypeForm({...typeForm, typeName: e.target.value})} required />
+                  <input type="text" value={typeForm.typeName} onChange={(e) => setTypeForm({ ...typeForm, typeName: e.target.value })} required />
                 </div>
                 <div className="form-row">
                   <div className="form-group">
                     <label>Giá phòng</label>
-                    <input type="number" value={typeForm.currentPrice} onChange={(e) => setTypeForm({...typeForm, currentPrice: Number(e.target.value)})} required />
+                    <input type="number" value={typeForm.currentPrice} onChange={(e) => setTypeForm({ ...typeForm, currentPrice: Number(e.target.value) })} required />
                   </div>
                   <div className="form-group">
                     <label>Số người tối đa</label>
-                    <input type="number" value={typeForm.personMax} onChange={(e) => setTypeForm({...typeForm, personMax: Number(e.target.value)})} required />
+                    <input type="number" value={typeForm.personMax} onChange={(e) => setTypeForm({ ...typeForm, personMax: Number(e.target.value) })} required />
                   </div>
                 </div>
                 <div className="form-group">
                   <label>Mô tả</label>
-                  <textarea rows={3} value={typeForm.description} onChange={(e) => setTypeForm({...typeForm, description: e.target.value})} />
+                  <textarea rows={3} value={typeForm.description} onChange={(e) => setTypeForm({ ...typeForm, description: e.target.value })} />
                 </div>
                 <div className="form-group">
                   <label>Hình ảnh ({oldImages.length + newFiles.length}/10)</label>
                   <div className="image-upload-container">
                     <div className="upload-btn-wrapper">
-                        <button type="button" className="btn-upload">
-                            <Upload size={24} />
-                            <span className="upload-hint">Click chọn ảnh hoặc kéo thả vào đây</span>
-                        </button>
-                        <input type="file" multiple accept="image/*" onChange={handleFileChange} />
+                      <button type="button" className="btn-upload">
+                        <Upload size={24} />
+                        <span className="upload-hint">Click chọn ảnh hoặc kéo thả vào đây</span>
+                      </button>
+                      <input type="file" multiple accept="image/*" onChange={handleFileChange} />
                     </div>
                     <div className="image-preview-grid">
-                        {oldImages.map((url, idx) => (
-                            <div key={`old-${idx}`} className="preview-item">
-                                <img src={url} alt="Old" />
-                                <button type="button" className="remove-image-btn" onClick={() => handleRemoveOldImage(idx)}><X size={12} /></button>
-                            </div>
-                        ))}
-                        {previewUrls.map((url, idx) => (
-                            <div key={`new-${idx}`} className="preview-item">
-                                <img src={url} alt="New" />
-                                <button type="button" className="remove-image-btn" onClick={() => handleRemoveNewImage(idx)}><X size={12} /></button>
-                            </div>
-                        ))}
+                      {oldImages.map((url, idx) => (
+                        <div key={`old-${idx}`} className="preview-item">
+                          <img src={url} alt="Old" />
+                          <button type="button" className="remove-image-btn" onClick={() => handleRemoveOldImage(idx)}><X size={12} /></button>
+                        </div>
+                      ))}
+                      {previewUrls.map((url, idx) => (
+                        <div key={`new-${idx}`} className="preview-item">
+                          <img src={url} alt="New" />
+                          <button type="button" className="remove-image-btn" onClick={() => handleRemoveNewImage(idx)}><X size={12} /></button>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -522,9 +522,9 @@ const BuildingConfig = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h3>Chi tiết Loại phòng</h3>
-                <button onClick={() => setShowDetailModal(false)}><X size={20}/></button>
+                <button onClick={() => setShowDetailModal(false)}><X size={20} /></button>
               </div>
-              
+
               <div className="detail-body">
                 {/* Info Fields */}
                 <div className="detail-info-grid">
@@ -566,8 +566,8 @@ const BuildingConfig = () => {
               <div className="modal-actions">
                 <button type="button" className="btn-secondary" onClick={() => setShowDetailModal(false)}>Đóng</button>
                 <button type="button" className="btn-primary" onClick={() => {
-                   setShowDetailModal(false);
-                   handleOpenTypeModal(viewingType); // Switch to edit mode
+                  setShowDetailModal(false);
+                  handleOpenTypeModal(viewingType); // Switch to edit mode
                 }}>
                   <Edit size={16} /> Chỉnh sửa
                 </button>
@@ -587,14 +587,14 @@ const BuildingConfig = () => {
             </button>
 
             <div className="lightbox-content">
-               <img 
-                 src={currentImages[photoIndex]} 
-                 alt="Full view" 
-                 className="lightbox-image"
-               />
-               <div className="lightbox-counter">
-                 {photoIndex + 1} / {currentImages.length}
-               </div>
+              <img
+                src={currentImages[photoIndex]}
+                alt="Full view"
+                className="lightbox-image"
+              />
+              <div className="lightbox-counter">
+                {photoIndex + 1} / {currentImages.length}
+              </div>
             </div>
 
             <button className="lightbox-nav-btn next" onClick={nextImage}>

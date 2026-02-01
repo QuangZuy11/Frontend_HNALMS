@@ -276,3 +276,32 @@
 .popup-item.text-muted {
   color: #64748b;
 }
+
+/* ========== Responsive ========== */
+@media (max-width: 1024px) {
+  .sidebar-container {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar-container.mobile-open {
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar-container {
+    width: 260px;
+  }
+  
+  .brand-logo {
+    font-size: 20px;
+  }
+  
+  .menu-title {
+    font-size: 14px;
+  }
+  
+  .user-name {
+    font-size: 12px;
+  }
+}

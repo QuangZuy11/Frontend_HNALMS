@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import api from "../../services/api";
-import ManagerSidebar from "./ManagerSidebar";
+import api from "../../../services/api";
+import ManagerSidebar from "../../../components/layout/Sidebar/ManagerSidebar/ManagerSidebar";
 import "./ManagerDashboard.css";
 import {
   DoorOpen,
