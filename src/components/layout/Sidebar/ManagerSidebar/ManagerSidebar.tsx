@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -10,17 +10,16 @@ import {
   MessageSquare,
   ChevronDown,
   ChevronRight,
-  Settings,
-  LogOut
 } from 'lucide-react';
-import './ManagerSidebar.css'; // Đảm bảo import file CSS của bạn
+import './ManagerSidebar.css';
+import logo from '../../../../assets/images/Logo.png';
 
 // Định nghĩa cấu trúc menu
 const MENU_ITEMS = [
   {
     title: "Tổng quan",
     icon: <LayoutDashboard size={20} />,
-    path: "/dashboard",
+    path: "/managerdashboard",
     subItems: []
   },
   {
@@ -86,7 +85,6 @@ const MENU_ITEMS = [
 
 const ManagerSidebar = () => {
   const [expandedMenus, setExpandedMenus] = useState<{ [key: number]: boolean }>({});
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const location = useLocation();
 
   // Xử lý đóng mở menu con
@@ -97,26 +95,19 @@ const ManagerSidebar = () => {
     }));
   };
 
-  // Dữ liệu giả lập user
-  const currentUser = {
-    name: "ANHNPT - Nguyễn Phi T...",
-    loginTime: "30/01/2026 08:56:03 AM",
-    initials: "NT"
-  };
-
   return (
     <aside className="sidebar-container">
-      {/* 1. Header Sidebar (Logo) */}
-      <div className="sidebar-header">
-        <h1 className="brand-logo">HNALMS<span>.</span></h1>
+      {/* Logo */}
+      <div className="sidebar-logo">
+        <img src={logo} alt="Hoàng Nam Apartment" className="brand-logo" />
       </div>
 
-      {/* 2. Menu Items (Scrollable) */}
+      {/* Menu Items (Scrollable) */}
       <div className="sidebar-nav-scroll">
         <nav className="sidebar-nav">
           {MENU_ITEMS.map((item, index) => {
             const hasSubItems = item.subItems.length > 0;
-            const isActiveParent = location.pathname.startsWith(item.path);
+            const isActiveParent = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             const isExpanded = expandedMenus[index] || isActiveParent;
 
             return (
@@ -127,7 +118,6 @@ const ManagerSidebar = () => {
                   className={`menu-item ${isActiveParent ? 'active' : ''}`}
                 >
                   {hasSubItems ? (
-                    // Menu cha có submenu -> Dùng div để handle click toggle
                     <div className="menu-link-content">
                       <span className="menu-icon">{item.icon}</span>
                       <span className="menu-title">{item.title}</span>
@@ -136,7 +126,6 @@ const ManagerSidebar = () => {
                       </span>
                     </div>
                   ) : (
-                    // Menu thường -> Dùng Link
                     <Link to={item.path} className="menu-link-content">
                       <span className="menu-icon">{item.icon}</span>
                       <span className="menu-title">{item.title}</span>
@@ -165,41 +154,6 @@ const ManagerSidebar = () => {
             );
           })}
         </nav>
-      </div>
-
-      {/* 3. User Footer */}
-      <div className="sidebar-footer">
-        {/* Popup Menu */}
-        {showUserMenu && (
-          <div className="user-popup-menu">
-            <button className="popup-item">
-              <Settings size={16} /> Tuỳ chỉnh giao diện
-            </button>
-            <button className="popup-item text-danger">
-              <LogOut size={16} /> Đăng xuất
-            </button>
-
-          </div>
-        )}
-
-        {/* User Info Bar */}
-        <div
-          className="user-info-bar"
-          onClick={() => setShowUserMenu(!showUserMenu)}
-        >
-          <div className="user-avatar">
-            {currentUser.initials}
-          </div>
-
-          <div className="user-details">
-            <p className="user-name">{currentUser.name}</p>
-            <p className="user-time">{currentUser.loginTime}</p>
-          </div>
-
-          <div className="user-more-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" /></svg>
-          </div>
-        </div>
       </div>
     </aside>
   );

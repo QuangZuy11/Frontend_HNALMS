@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import api from "../../../services/api";
 import ManagerSidebar from "../../../components/layout/Sidebar/ManagerSidebar/ManagerSidebar";
+import HeaderDashboard from "../../../components/layout/Header/HeaderDashboard/HeaderDashboard";
 import "./ManagerDashboard.css";
 import {
   DoorOpen,
@@ -129,11 +130,14 @@ export default function ManagerDashboard() {
     return (
       <div className="manager-dashboard-wrapper">
         <ManagerSidebar />
-        <main className="manager-dashboard-main">
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
-          </div>
-        </main>
+        <div className="manager-dashboard-body">
+          <HeaderDashboard />
+          <main className="manager-dashboard-main">
+            <div className="loading-container">
+              <div className="loading-spinner"></div>
+            </div>
+          </main>
+        </div>
       </div>
     );
   }
@@ -142,102 +146,107 @@ export default function ManagerDashboard() {
     <div className="manager-dashboard-wrapper">
       <ManagerSidebar />
 
-      <main className="manager-dashboard-main">
-        <div className="manager-dashboard-content">
-          {/* Header */}
-          <div className="dashboard-header">
-            <h1 className="dashboard-title">Dashboard</h1>
-            <p className="dashboard-subtitle">
-              Tổng quan quản lý tòa nhà Hoàng Nam
-            </p>
-          </div>
+      <div className="manager-dashboard-body">
+        <HeaderDashboard />
+        <main className="manager-dashboard-main">
+          <div className="manager-dashboard-content">
+            {/* Page Title */}
+            <div className="dashboard-header">
+              <div className="dashboard-header-left">
+                <h1 className="dashboard-title">Dashboard</h1>
+                <p className="dashboard-subtitle">
+                  Tổng quan quản lý tòa nhà Hoàng Nam
+                </p>
+              </div>
+            </div>
 
-          {/* Stats Grid */}
-          <div className="stats-grid">
-            {statCards.map((stat) => {
-              const Icon = stat.icon;
-              return (
-                <div
-                  key={stat.title}
-                  className={`stat-card ${stat.colorClass}`}
-                >
-                  <div className="stat-card-header">
-                    <div className="stat-icon-wrapper">
-                      <Icon className="stat-icon" />
-                    </div>
-                    <TrendingUp className="stat-trend-icon" />
-                  </div>
-                  <p className="stat-label">{stat.title}</p>
-                  <p className="stat-value">{stat.value}</p>
-                  <Link to={stat.href} className="stat-link">
-                    Xem chi tiết <ArrowRight className="link-arrow" />
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Quick Actions */}
-          <div className="quick-actions-section">
-            <h2 className="section-title">Thao Tác Nhanh</h2>
-            <div className="quick-actions-grid">
-              {quickActions.map((action) => {
-                const Icon = action.icon;
+            {/* Stats Grid */}
+            <div className="stats-grid">
+              {statCards.map((stat) => {
+                const Icon = stat.icon;
                 return (
-                  <Link
-                    key={action.title}
-                    to={action.href}
-                    className="quick-action-card"
+                  <div
+                    key={stat.title}
+                    className={`stat-card ${stat.colorClass}`}
                   >
-                    <div className="quick-action-header">
-                      <div className="quick-action-icon">
-                        <Icon className="icon" />
+                    <div className="stat-card-header">
+                      <div className="stat-icon-wrapper">
+                        <Icon className="stat-icon" />
                       </div>
+                      <TrendingUp className="stat-trend-icon" />
                     </div>
-                    <h3 className="quick-action-title">{action.title}</h3>
-                    <p className="quick-action-description">
-                      {action.description}
-                    </p>
-                  </Link>
+                    <p className="stat-label">{stat.title}</p>
+                    <p className="stat-value">{stat.value}</p>
+                    <Link to={stat.href} className="stat-link">
+                      Xem chi tiết <ArrowRight className="link-arrow" />
+                    </Link>
+                  </div>
                 );
               })}
             </div>
-          </div>
 
-          {/* Info Cards */}
-          <div className="info-cards-grid">
-            <div className="info-card info-card-orange">
-              <div className="info-card-content">
-                <div className="info-icon-wrapper info-icon-orange">
-                  <AlertCircle className="info-icon" />
-                </div>
-                <div>
-                  <h3 className="info-title">Phòng Cần Chú Ý</h3>
-                  <p className="info-text">
-                    {stats?.vacantRooms || 0} phòng trống đang chờ khách hàng
-                    mới
-                  </p>
-                </div>
+            {/* Quick Actions */}
+            <div className="quick-actions-section">
+              <h2 className="section-title">Thao Tác Nhanh</h2>
+              <div className="quick-actions-grid">
+                {quickActions.map((action) => {
+                  const Icon = action.icon;
+                  return (
+                    <Link
+                      key={action.title}
+                      to={action.href}
+                      className="quick-action-card"
+                    >
+                      <div className="quick-action-header">
+                        <div className="quick-action-icon">
+                          <Icon className="icon" />
+                        </div>
+                      </div>
+                      <h3 className="quick-action-title">{action.title}</h3>
+                      <p className="quick-action-description">
+                        {action.description}
+                      </p>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
 
-            <div className="info-card info-card-purple">
-              <div className="info-card-content">
-                <div className="info-icon-wrapper info-icon-purple">
-                  <FileText className="info-icon" />
+            {/* Info Cards */}
+            <div className="info-cards-grid">
+              <div className="info-card info-card-orange">
+                <div className="info-card-content">
+                  <div className="info-icon-wrapper info-icon-orange">
+                    <AlertCircle className="info-icon" />
+                  </div>
+                  <div>
+                    <h3 className="info-title">Phòng Cần Chú Ý</h3>
+                    <p className="info-text">
+                      {stats?.vacantRooms || 0} phòng trống đang chờ khách hàng
+                      mới
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="info-title">Hợp Đồng Hết Hạn</h3>
-                  <p className="info-text">
-                    {stats?.expiredContracts || 0} hợp đồng đã hết hạn cần gia
-                    hạn
-                  </p>
+              </div>
+
+              <div className="info-card info-card-purple">
+                <div className="info-card-content">
+                  <div className="info-icon-wrapper info-icon-purple">
+                    <FileText className="info-icon" />
+                  </div>
+                  <div>
+                    <h3 className="info-title">Hợp Đồng Hết Hạn</h3>
+                    <p className="info-text">
+                      {stats?.expiredContracts || 0} hợp đồng đã hết hạn cần gia
+                      hạn
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
