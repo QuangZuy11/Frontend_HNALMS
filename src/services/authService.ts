@@ -24,6 +24,37 @@ export const authService = {
         return response.data
     },
 
+    // Create Account - Admin/Owner/Manager tạo tài khoản theo role
+    // Admin -> Owner | Owner -> Manager, Accountant | Manager -> Tenant
+    createAccount: async (data: {
+        username: string;
+        phoneNumber: string;
+        email: string;
+        password: string;
+        role: string;
+    }) => {
+        const response = await api.post('/auth/create-account', data)
+        return response.data
+    },
+
+    // Get Created Accounts - Danh sách tài khoản do user hiện tại tạo
+    getCreatedAccounts: async () => {
+        const response = await api.get('/auth/created-accounts')
+        return response.data
+    },
+
+    // Get Account Detail - Xem chi tiết tài khoản do user tạo
+    getAccountDetail: async (accountId: string) => {
+        const response = await api.get(`/auth/account/${accountId}`)
+        return response.data
+    },
+
+    // Disable Account - Đóng tài khoản (chỉ chuyển status, không xóa DB)
+    disableAccount: async (accountId: string) => {
+        const response = await api.put(`/auth/disable-account/${accountId}`)
+        return response.data
+    },
+
     // Change Password - Backend expects oldPassword and newPassword
     changePassword: async (data: {
         currentPassword: string;

@@ -1,0 +1,503 @@
+/* Created Accounts List Page */
+.created-accounts-page {
+  --primary: #3579C6;
+  --primary-hover: #2b6bb0;
+  min-height: 60vh;
+  padding: 2rem 2.5rem;
+  width: 100%;
+  max-width: min(95vw, 1600px);
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.created-accounts-card {
+  background: #fff;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 20px rgba(53, 121, 198, 0.12);
+  border: 1px solid rgba(53, 121, 198, 0.15);
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 2.5rem 3rem;
+  box-sizing: border-box;
+}
+
+.created-accounts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.created-accounts-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.created-accounts-subtitle {
+  font-size: 0.9375rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.btn-create {
+  padding: 0.65rem 1.25rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+
+.btn-create:hover {
+  background: var(--primary-hover);
+  box-shadow: 0 2px 8px rgba(53, 121, 198, 0.3);
+}
+
+.created-accounts-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.created-accounts-loading .spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(53, 121, 198, 0.15);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.created-accounts-loading p {
+  color: #6b7280;
+  margin: 0;
+}
+
+.created-accounts-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.created-accounts-empty p {
+  color: #6b7280;
+  margin: 0 0 1rem 0;
+}
+
+.form-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-error p {
+  color: #b91c1c;
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+}
+
+.btn-retry {
+  padding: 0.5rem 1rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background 0.2s;
+}
+
+.btn-retry:hover {
+  background: var(--primary-hover);
+}
+
+.btn-primary {
+  padding: 0.75rem 1.5rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  box-shadow: 0 2px 8px rgba(53, 121, 198, 0.3);
+}
+
+/* Table */
+.created-accounts-table-wrap {
+  width: 100%;
+  overflow: visible;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.created-accounts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+  table-layout: auto;
+}
+
+.created-accounts-table th,
+.created-accounts-table td {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.created-accounts-table th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+.created-accounts-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  background: rgba(53, 121, 198, 0.12);
+  color: var(--primary);
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.status-active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-inactive {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-suspended {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.btn-disable {
+  padding: 0.4rem 0.85rem;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+
+.btn-disable:hover:not(:disabled) {
+  background: #fecaca;
+  border-color: #f87171;
+}
+
+.btn-disable:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.disabled-label {
+  font-size: 0.8125rem;
+  color: #9ca3af;
+  font-style: italic;
+  min-width: 115px;
+  display: inline-block;
+  text-align: center;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btn-view-detail,
+.btn-disable {
+  min-width: 115px;
+  text-align: center;
+}
+
+.btn-view-detail {
+  padding: 0.4rem 0.85rem;
+  background: rgba(53, 121, 198, 0.12);
+  color: var(--primary);
+  border: 1px solid rgba(53, 121, 198, 0.35);
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.btn-view-detail:hover {
+  background: rgba(53, 121, 198, 0.2);
+  border-color: var(--primary);
+}
+
+/* Modal Chi tiết tài khoản */
+.account-detail-modal {
+  background: #fff;
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  max-width: 520px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.account-detail-modal-body {
+  padding: 1.5rem;
+}
+
+.detail-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+}
+
+.detail-loading .spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(53, 121, 198, 0.15);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 0.75rem;
+}
+
+.detail-loading p {
+  color: #6b7280;
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.detail-section {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.detail-section:last-of-type {
+  border-bottom: none;
+}
+
+.detail-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(53, 121, 198, 0.2);
+}
+
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  font-size: 0.9375rem;
+}
+
+.detail-label {
+  flex: 0 0 120px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.detail-value {
+  flex: 1;
+  color: #111827;
+  word-break: break-word;
+}
+
+.detail-actions {
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+/* Modal Tạo tài khoản */
+.create-account-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.create-account-modal {
+  background: #fff;
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.create-account-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.create-account-modal-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.75rem;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  transition: background 0.2s;
+  line-height: 1;
+}
+
+.modal-close-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.create-account-modal-body {
+  padding: 1.5rem;
+}
+
+.create-account-modal-body .create-account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.create-account-modal-body .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.create-account-modal-body .form-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.create-account-modal-body .form-group input,
+.create-account-modal-body .form-group select {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.create-account-modal-body .form-group input:focus,
+.create-account-modal-body .form-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.create-account-modal-body .form-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.create-account-modal-body .form-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.create-account-modal-body .form-success p {
+  color: #166534;
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+  .created-accounts-page {
+    padding: 1rem;
+  }
+
+  .created-accounts-card {
+    padding: 1.25rem;
+  }
+
+  .created-accounts-header {
+    flex-direction: column;
+  }
+
+  .created-accounts-table th,
+  .created-accounts-table td {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}

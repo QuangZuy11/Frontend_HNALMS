@@ -14,6 +14,7 @@ import {
   Bell,
   MessageSquare,
   ScrollText,
+  User,
 } from "lucide-react";
 
 export default function ManagerSidebar() {
@@ -79,6 +80,11 @@ export default function ManagerSidebar() {
       href: "#",
       icon: MessageSquare,
     },
+    {
+      label: "Thông Tin Cá Nhân",
+      href: "/manager/profile",
+      icon: User,
+    },
   ];
 
   const handleLogout = () => {
@@ -123,7 +129,10 @@ export default function ManagerSidebar() {
           <nav className="sidebar-nav">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.href;
+              const isActive =
+                location.pathname === item.href ||
+                (item.href === "/manager/profile" &&
+                  location.pathname.startsWith("/manager/profile"));
               return (
                 <Link
                   key={item.href}

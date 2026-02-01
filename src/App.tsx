@@ -38,10 +38,13 @@ import TenantDashboard from "./pages/Dashboard/TenantDashboard";
 import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
 import ManagerDashboard from "./pages/Dashboard/ManagerDashboard";
 import ManagerRules from "./pages/Dashboard/ManagerRules";
+import ManagerProfile from "./pages/Dashboard/ManagerProfile";
 
 // Profile
 import ViewProfile from "./pages/Auth/Profile/ViewProfile";
 import UpdateProfile from "./pages/Auth/Profile/UpdateProfile";
+import CreateAccount from "./pages/Auth/CreateAccount/CreateAccount";
+import CreatedAccountsList from "./pages/Auth/CreatedAccountsList/CreatedAccountsList";
 
 // ================= Layout Wrapper =================
 function LayoutWrapper() {
@@ -54,24 +57,26 @@ function LayoutWrapper() {
     publicRoutes.includes(location.pathname) ||
     location.pathname.startsWith("/rooms/");
 
-  // Dashboard routes không hiển thị Header/Footer
-  const dashboardRoutes = [
+  // Ẩn Header ở chức năng tạo tài khoản và các trang dashboard (có sidebar)
+  const hideHeaderPaths = [
+    "/create-account",
+    "/created-accounts",
     "/admin",
     "/building",
     "/building-owner",
     "/tenant",
     "/accountant",
     "/managerdashboard",
-    "/manager/rules",
+    "/manager",
   ];
-
-  const isDashboardRoute = dashboardRoutes.some((route) =>
-    location.pathname.startsWith(route),
+  const showHeader = !hideHeaderPaths.some(
+    (path) =>
+      location.pathname === path || location.pathname.startsWith(path + "/")
   );
 
   return (
     <>
-      {!isDashboardRoute && <Header />}
+      {showHeader && <Header />}
 
       <Routes>
         {/* Redirect root */}
@@ -179,6 +184,15 @@ function LayoutWrapper() {
           }
         />
 
+        <Route
+          path="/manager/profile"
+          element={
+            <PrivateRoute allowedRoles={["manager", "admin"]}>
+              <ManagerProfile />
+            </PrivateRoute>
+          }
+        />
+
         {/* Profile */}
         <Route
           path="/profile"
@@ -210,6 +224,26 @@ function LayoutWrapper() {
               ]}
             >
               <UpdateProfile />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Create Account - Admin/Owner/Manager tạo tài khoản theo role */}
+        <Route
+          path="/create-account"
+          element={
+            <PrivateRoute allowedRoles={["admin", "owner", "manager"]}>
+              <CreateAccount />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Danh sách tài khoản đã tạo - Admin/Owner/Manager */}
+        <Route
+          path="/created-accounts"
+          element={
+            <PrivateRoute allowedRoles={["admin", "owner", "manager"]}>
+              <CreatedAccountsList />
             </PrivateRoute>
           }
         />
