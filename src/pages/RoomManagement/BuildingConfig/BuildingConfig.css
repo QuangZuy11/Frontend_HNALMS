@@ -596,48 +596,65 @@ input::placeholder, textarea::placeholder {
 /* Grid hiển thị ảnh preview */
 .image-preview-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    /* Chỉnh kích thước cột: tối thiểu 100px */
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); 
     gap: 12px;
     margin-top: 16px;
 }
 
+/* --- FIX CỨNG KÍCH THƯỚC ẢNH PREVIEW (KHI UPLOAD) --- */
+
+.image-preview-grid {
+    display: grid;
+    /* Chia cột tự động, mỗi cột tối thiểu 100px */
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); 
+    gap: 12px;
+    margin-top: 16px;
+    width: 100%; /* Đảm bảo grid chiếm hết chiều ngang */
+}
+
 .preview-item {
     position: relative;
-    width: 100%;
-    padding-top: 100%; /* Tạo hình vuông */
+    width: 100%;         /* Rộng bằng 1 ô grid */
+    padding-top: 100%;   /* MẸO: Padding-top % theo width -> Tạo hình vuông tỉ lệ 1:1 */
     border-radius: 8px;
-    overflow: hidden;
+    overflow: hidden;    /* Cắt bỏ phần ảnh thừa ra ngoài */
     border: 1px solid var(--border-color);
+    background-color: #f8fafc;
 }
 
 .preview-item img {
-    position: absolute;
+    position: absolute;  /* Tuyệt đối để đè lên phần padding bên trên */
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    width: 100% !important;  /* Bắt buộc rộng 100% */
+    height: 100% !important; /* Bắt buộc cao 100% */
+    object-fit: cover !important; /* Cắt ảnh vừa khít khung, KHÔNG méo */
+    display: block;
 }
 
+/* Nút xoá ảnh nhỏ gọn ở góc */
 .remove-image-btn {
     position: absolute;
     top: 4px;
     right: 4px;
-    background-color: rgba(0, 0, 0, 0.6);
-    color: white;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #ef4444;
     border: none;
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 10;
 }
 
 .remove-image-btn:hover {
-    background-color: var(--danger);
+    background-color: #ef4444;
+    color: white;
 }
 
 .upload-hint {
@@ -711,26 +728,120 @@ input::placeholder, textarea::placeholder {
 }
 
 .detail-image-item {
-    aspect-ratio: 4/3; /* Tỷ lệ ảnh */
+    width: 100%;
+    height: 120px; 
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid var(--border-color);
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .detail-image-item:hover {
-    transform: scale(1.02);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .detail-image-item img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: cover; 
+    display: block;
 }
 
 .text-empty-small {
     font-size: 13px;
     color: var(--text-secondary);
     font-style: italic;
+}
+
+/* --- LIGHTBOX STYLES (MỚI) --- */
+.lightbox-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.9); /* Nền đen đậm */
+    z-index: 2000; /* Cao hơn mọi modal khác */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.lightbox-content {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.lightbox-image {
+    max-width: 90vw;  
+    max-height: 85vh; 
+    object-fit: contain; 
+    border-radius: 4px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.lightbox-counter {
+    color: white;
+    margin-top: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 1px;
+}
+
+/* Nút Đóng */
+.lightbox-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: color 0.2s;
+    z-index: 2001;
+}
+
+.lightbox-close-btn:hover {
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Nút Điều hướng (Trái/Phải) */
+.lightbox-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 20px;
+    transition: all 0.2s;
+    z-index: 2001;
+}
+
+.lightbox-nav-btn:hover {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.lightbox-nav-btn.prev {
+    left: 20px;
+}
+
+.lightbox-nav-btn.next {
+    right: 20px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }

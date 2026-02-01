@@ -98,6 +98,7 @@ function LayoutWrapper() {
         <Route path="/rooms/:id" element={<RoomDetail />} />
         <Route path="/rules" element={<BuildingRulesPublic />} />
         <Route path="/buildingconfig" element={<BuildingConfig />} />
+        <Route path="/manageroom" element={<ManageRoom />} />
 
         {/* Auth */}
         <Route path="/login" element={<Login />} />

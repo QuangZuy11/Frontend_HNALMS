@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { 
   Plus, 
@@ -13,10 +13,13 @@ import {
   Home,
   Tag,
   Upload,
-  Eye // [MỚI] Icon xem chi tiết
+  Eye, // [NEW] Icon for view details
+  ChevronLeft, // [NEW] Icon for lightbox navigation
+  ChevronRight // [NEW] Icon for lightbox navigation
 } from 'lucide-react';
 import './BuildingConfig.css';
 
+// --- IMPORT SIDEBAR ---
 import ManagerSidebar from '../../Dashboard/ManagerSidebar'; 
 
 const API_BASE_URL = 'http://localhost:9999/api'; 
@@ -53,11 +56,15 @@ const BuildingConfig = () => {
   // --- MODAL STATES ---
   const [showFloorModal, setShowFloorModal] = useState(false);
   const [showTypeModal, setShowTypeModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false); // [MỚI] Modal xem chi tiết
+  const [showDetailModal, setShowDetailModal] = useState(false); // [NEW] Detail Modal state
+
+  // --- LIGHTBOX STATES ---
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [photoIndex, setPhotoIndex] = useState(0);
 
   const [editingFloor, setEditingFloor] = useState<Floor | null>(null);
   const [editingType, setEditingType] = useState<RoomType | null>(null);
-  const [viewingType, setViewingType] = useState<RoomType | null>(null); // [MỚI] Data chi tiết
+  const [viewingType, setViewingType] = useState<RoomType | null>(null); // [NEW] Data for detail view
 
   // --- FORM DATA ---
   const [floorName, setFloorName] = useState('');
@@ -70,7 +77,7 @@ const BuildingConfig = () => {
     description: ''
   });
 
-  // Upload ảnh
+  // Upload images
   const [oldImages, setOldImages] = useState<string[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -119,6 +126,43 @@ const BuildingConfig = () => {
   const totalFloors = floors.length;
   const totalTypes = roomTypes.length;
 
+  // --- LIGHTBOX LOGIC ---
+  const currentImages = viewingType?.images || [];
+
+  const openLightbox = (index: number) => {
+    setPhotoIndex(index);
+    setIsLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setIsLightboxOpen(false);
+  };
+
+  const nextImage = useCallback(() => {
+    if (currentImages.length > 0) {
+      setPhotoIndex((prev) => (prev + 1) % currentImages.length);
+    }
+  }, [currentImages]);
+
+  const prevImage = useCallback(() => {
+    if (currentImages.length > 0) {
+      setPhotoIndex((prev) => (prev + currentImages.length - 1) % currentImages.length);
+    }
+  }, [currentImages]);
+
+  // Keyboard navigation for Lightbox
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isLightboxOpen) return;
+      if (e.key === 'ArrowRight') nextImage();
+      if (e.key === 'ArrowLeft') prevImage();
+      if (e.key === 'Escape') closeLightbox();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLightboxOpen, nextImage, prevImage]);
+
+
   // --- HANDLERS (FLOOR) ---
   const handleOpenFloorModal = (floor?: Floor) => {
     if (floor) {
@@ -145,7 +189,7 @@ const BuildingConfig = () => {
       setShowFloorModal(false);
       fetchData(); 
     } catch (error) {
-      alert("Lỗi khi lưu tầng.");
+      alert("Không thể cập nhật thông tin tầng vì đang có phòng hoạt động tại tầng này.");
     }
   };
 
@@ -155,13 +199,13 @@ const BuildingConfig = () => {
       await axios.delete(`${API_BASE_URL}/floors/${id}`);
       fetchData();
     } catch (error) {
-      alert("Không thể xóa tầng.");
+      alert("Không thể xóa tầng này vì đang có phòng hoạt động tại tầng này.");
     }
   };
 
   // --- HANDLERS (ROOM TYPE) ---
   
-  // [MỚI] Hàm mở modal xem chi tiết
+  // [NEW] Open Detail Modal
   const handleViewDetail = (type: RoomType) => {
     setViewingType(type);
     setShowDetailModal(true);
@@ -353,7 +397,7 @@ const BuildingConfig = () => {
                       <tr key={type._id}>
                         <td>
                           <div className="room-type-name">
-                            {/* [SỬA] Đã bỏ ảnh ở đây, chỉ còn chấm màu */}
+                            {/* [MODIFIED] Removed image here, just the colored dot */}
                             <span className="type-dot"></span>
                             {type.typeName}
                           </div>
@@ -363,7 +407,7 @@ const BuildingConfig = () => {
                         <td className="text-muted">{type.description}</td>
                         <td>
                           <div className="action-group">
-                            {/* [MỚI] Nút xem chi tiết */}
+                            {/* [NEW] View Detail Button */}
                             <button className="btn-icon-sm view" onClick={() => handleViewDetail(type)} title="Xem chi tiết">
                               <Eye size={16} />
                             </button>
@@ -472,9 +516,9 @@ const BuildingConfig = () => {
           </div>
         )}
 
-        {/* [MỚI] MODAL: XEM CHI TIẾT */}
+        {/* [NEW] MODAL: XEM CHI TIẾT */}
         {showDetailModal && viewingType && (
-          <div className="modal-overlay">
+          <div className="modal-overlay" style={{ zIndex: 1000 }}>
             <div className="modal-content">
               <div className="modal-header">
                 <h3>Chi tiết Loại phòng</h3>
@@ -482,7 +526,7 @@ const BuildingConfig = () => {
               </div>
               
               <div className="detail-body">
-                {/* Thông tin chung */}
+                {/* Info Fields */}
                 <div className="detail-info-grid">
                   <div className="info-item">
                     <label>Tên loại phòng</label>
@@ -502,13 +546,13 @@ const BuildingConfig = () => {
                   </div>
                 </div>
 
-                {/* Bộ sưu tập ảnh */}
+                {/* Image Gallery */}
                 <div className="detail-images-section">
                   <label className="section-label">Hình ảnh ({viewingType.images?.length || 0})</label>
                   {viewingType.images && viewingType.images.length > 0 ? (
                     <div className="detail-image-grid">
                       {viewingType.images.map((img, idx) => (
-                        <div key={idx} className="detail-image-item">
+                        <div key={idx} className="detail-image-item" onClick={() => openLightbox(idx)}>
                           <img src={img} alt={`Room ${idx}`} />
                         </div>
                       ))}
@@ -523,12 +567,39 @@ const BuildingConfig = () => {
                 <button type="button" className="btn-secondary" onClick={() => setShowDetailModal(false)}>Đóng</button>
                 <button type="button" className="btn-primary" onClick={() => {
                    setShowDetailModal(false);
-                   handleOpenTypeModal(viewingType); // Chuyển sang sửa ngay
+                   handleOpenTypeModal(viewingType); // Switch to edit mode
                 }}>
                   <Edit size={16} /> Chỉnh sửa
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* [NEW] LIGHTBOX VIEWER */}
+        {isLightboxOpen && (
+          <div className="lightbox-overlay">
+            <button className="lightbox-close-btn" onClick={closeLightbox}>
+              <X size={32} />
+            </button>
+            <button className="lightbox-nav-btn prev" onClick={prevImage}>
+              <ChevronLeft size={48} />
+            </button>
+
+            <div className="lightbox-content">
+               <img 
+                 src={currentImages[photoIndex]} 
+                 alt="Full view" 
+                 className="lightbox-image"
+               />
+               <div className="lightbox-counter">
+                 {photoIndex + 1} / {currentImages.length}
+               </div>
+            </div>
+
+            <button className="lightbox-nav-btn next" onClick={nextImage}>
+              <ChevronRight size={48} />
+            </button>
           </div>
         )}
 

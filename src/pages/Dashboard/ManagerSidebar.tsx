@@ -38,7 +38,7 @@ const MENU_ITEMS = [
     icon: <Home size={20} />,
     path: "/rooms",
     subItems: [
-      { title: "Danh sách phòng", path: "/rooms/list" },
+      { title: "Quản lý phòng", path: "/manageroom" },
       { title: "Cấu hình tòa nhà", path: "/buildingconfig" },
       { title: "Nội quy tòa nhà", path: "/rooms/rules" },
     ]
