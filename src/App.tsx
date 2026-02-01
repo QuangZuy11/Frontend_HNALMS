@@ -34,7 +34,6 @@ import Unauthorized from "./pages/Unauthorized";
 import AdminDashboard from "./pages/Dashboard/AdminDashboard";
 import BuildingManagerDashboard from "./pages/Dashboard/BuildingManagerDashboard";
 import BuildingOwnerDashboard from "./pages/Dashboard/BuildingOwnerDashboard";
-import TenantDashboard from "./pages/Dashboard/TenantDashboard";
 import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
 import ManagerDashboard from "./pages/Dashboard/ManagerDashboard/ManagerDashboard";
 import ManagerRules from "./pages/Dashboard/ManagerRules";
@@ -154,14 +153,7 @@ function LayoutWrapper() {
           }
         />
 
-        <Route
-          path="/tenant"
-          element={
-            <PrivateRoute allowedRoles={["tenant"]}>
-              <TenantDashboard />
-            </PrivateRoute>
-          }
-        />
+
 
         <Route
           path="/accountant"
