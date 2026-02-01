@@ -43,6 +43,10 @@ import ManagerRules from "./pages/Dashboard/ManagerRules";
 import ViewProfile from "./pages/Auth/Profile/ViewProfile";
 import UpdateProfile from "./pages/Auth/Profile/UpdateProfile";
 
+// Pages - Manage
+import BuildingConfig from "./pages/RoomManagement/BuildingConfig/BuildingConfig";
+import ManageRoom from "./pages/RoomManagement/ManageRoom/ManageRoom";
+
 // ================= Layout Wrapper =================
 function LayoutWrapper() {
   const location = useLocation();
@@ -93,6 +97,7 @@ function LayoutWrapper() {
         <Route path="/rooms" element={<RoomList />} />
         <Route path="/rooms/:id" element={<RoomDetail />} />
         <Route path="/rules" element={<BuildingRulesPublic />} />
+        <Route path="/buildingconfig" element={<BuildingConfig />} />
 
         {/* Auth */}
         <Route path="/login" element={<Login />} />
