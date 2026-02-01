@@ -323,7 +323,7 @@ export default function ViewProfile() {
   const getRoleDashboardPath = (role: string): string => {
     const map: Record<string, string> = {
       admin: "/admin",
-      manager: "/building",
+      manager: "/managerdashboard",
       owner: "/building-owner",
       tenant: "/tenant",
       accountant: "/accountant",

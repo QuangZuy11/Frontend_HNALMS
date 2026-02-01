@@ -3,11 +3,11 @@ import api from './api'
 import type { ProfileResponse, LoginResponse } from '../types/auth.types'
 
 export const authService = {
-    // Login - Backend expects username and passwordHash
+    // Login - Backend expects username and password
     login: async (email: string, password: string): Promise<LoginResponse> => {
         const response = await api.post('/auth/login', { 
             username: email,  // Use email as username
-            passwordHash: password 
+            password: password 
         })
         return response.data
     },
@@ -17,21 +17,52 @@ export const authService = {
         username: string;
         phoneNumber: string;
         email: string;
-        passwordHash: string;
+        password: string;
         role: string;
     }): Promise<LoginResponse> => {
         const response = await api.post('/auth/register', data)
         return response.data
     },
 
-    // Change Password - Backend expects oldPasswordHash and newPasswordHash
+    // Create Account - Admin/Owner/Manager tạo tài khoản theo role
+    // Admin -> Owner | Owner -> Manager, Accountant | Manager -> Tenant
+    createAccount: async (data: {
+        username: string;
+        phoneNumber: string;
+        email: string;
+        password: string;
+        role: string;
+    }) => {
+        const response = await api.post('/auth/create-account', data)
+        return response.data
+    },
+
+    // Get Created Accounts - Danh sách tài khoản do user hiện tại tạo
+    getCreatedAccounts: async () => {
+        const response = await api.get('/auth/created-accounts')
+        return response.data
+    },
+
+    // Get Account Detail - Xem chi tiết tài khoản do user tạo
+    getAccountDetail: async (accountId: string) => {
+        const response = await api.get(`/auth/account/${accountId}`)
+        return response.data
+    },
+
+    // Disable Account - Đóng tài khoản (chỉ chuyển status, không xóa DB)
+    disableAccount: async (accountId: string) => {
+        const response = await api.put(`/auth/disable-account/${accountId}`)
+        return response.data
+    },
+
+    // Change Password - Backend expects oldPassword and newPassword
     changePassword: async (data: {
         currentPassword: string;
         newPassword: string;
     }) => {
         const payload = {
-            oldPasswordHash: data.currentPassword,
-            newPasswordHash: data.newPassword,
+            oldPassword: data.currentPassword,
+            newPassword: data.newPassword,
         };
         const response = await api.post('/auth/change-password', payload);
         return response.data;
