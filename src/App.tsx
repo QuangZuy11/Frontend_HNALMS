@@ -34,9 +34,8 @@ import Unauthorized from "./pages/Unauthorized";
 import AdminDashboard from "./pages/Dashboard/AdminDashboard";
 import BuildingManagerDashboard from "./pages/Dashboard/BuildingManagerDashboard";
 import BuildingOwnerDashboard from "./pages/Dashboard/BuildingOwnerDashboard";
-import TenantDashboard from "./pages/Dashboard/TenantDashboard";
 import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
-import ManagerDashboard from "./pages/Dashboard/ManagerDashboard";
+import ManagerDashboard from "./pages/Dashboard/ManagerDashboard/ManagerDashboard";
 import ManagerRules from "./pages/Dashboard/ManagerRules";
 import ManagerProfile from "./pages/Dashboard/ManagerProfile";
 
@@ -45,6 +44,10 @@ import ViewProfile from "./pages/Auth/Profile/ViewProfile";
 import UpdateProfile from "./pages/Auth/Profile/UpdateProfile";
 import CreateAccount from "./pages/Auth/CreateAccount/CreateAccount";
 import CreatedAccountsList from "./pages/Auth/CreatedAccountsList/CreatedAccountsList";
+
+// Pages - Manage
+import BuildingConfig from "./pages/RoomManagement/BuildingConfig/BuildingConfig";
+import ManageRoom from "./pages/RoomManagement/ManageRoom/ManageRoom";
 
 // ================= Layout Wrapper =================
 function LayoutWrapper() {
@@ -98,6 +101,8 @@ function LayoutWrapper() {
         <Route path="/rooms" element={<RoomList />} />
         <Route path="/rooms/:id" element={<RoomDetail />} />
         <Route path="/rules" element={<BuildingRulesPublic />} />
+        <Route path="/buildingconfig" element={<BuildingConfig />} />
+        <Route path="/manageroom" element={<ManageRoom />} />
 
         {/* Auth */}
         <Route path="/login" element={<Login />} />
@@ -148,14 +153,7 @@ function LayoutWrapper() {
           }
         />
 
-        <Route
-          path="/tenant"
-          element={
-            <PrivateRoute allowedRoles={["tenant"]}>
-              <TenantDashboard />
-            </PrivateRoute>
-          }
-        />
+
 
         <Route
           path="/accountant"
