@@ -49,6 +49,7 @@ import CreatedAccountsList from "./pages/Auth/CreatedAccountsList/CreatedAccount
 // Pages - Manage
 import BuildingConfig from "./pages/RoomManagement/BuildingConfig/BuildingConfig";
 import ManageRoom from "./pages/RoomManagement/ManageRoom/ManageRoom";
+import ManageService from "./pages/ServiceManagement/ManageService";
 
 // ================= Layout Wrapper =================
 function LayoutWrapper() {
@@ -104,6 +105,7 @@ function LayoutWrapper() {
         <Route path="/rules" element={<BuildingRulesPublic />} />
         <Route path="/buildingconfig" element={<BuildingConfig />} />
         <Route path="/manageroom" element={<ManageRoom />} />
+        <Route path="/manageservice" element={<ManageService />} />
 
         {/* Auth */}
         <Route path="/login" element={<Login />} />
