@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard,
     Users,
-    Building2,
     Settings,
     ChevronDown,
     ChevronRight,
@@ -28,12 +27,6 @@ const MENU_ITEMS = [
             { title: "Tạo tài khoản", path: "/admin/create-account" },
             { title: "Danh sách tài khoản", path: "/admin/accounts" },
         ]
-    },
-    {
-        title: "Quản lý tòa nhà",
-        icon: <Building2 size={20} />,
-        path: "/admin/buildings",
-        subItems: []
     },
     {
         title: "Cài đặt hệ thống",

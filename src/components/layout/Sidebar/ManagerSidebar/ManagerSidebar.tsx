@@ -85,15 +85,7 @@ const MENU_ITEMS = [
     path: "/manager/notifications",
     subItems: []
   },
-  {
-    title: "Quản lý tài khoản",
-    icon: <Users size={20} />,
-    path: "/manager/account-management",
-    subItems: [
-      { title: "Tạo tài khoản", path: "/manager/create-account" },
-      { title: "Danh sách tài khoản", path: "/manager/accounts" },
-    ]
-  },
+
 ];
 
 const ManagerSidebar = () => {
@@ -120,8 +112,18 @@ const ManagerSidebar = () => {
         <nav className="sidebar-nav">
           {MENU_ITEMS.map((item, index) => {
             const hasSubItems = item.subItems && item.subItems.length > 0;
-            const isActiveParent = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
-            const isExpanded = expandedMenus[index] || isActiveParent;
+
+            // Kiểm tra submenu con có đang active không
+            const hasActiveSubItem = hasSubItems && item.subItems.some(
+              sub => location.pathname === sub.path
+            );
+
+            // Item KHÔNG có submenu: chỉ active khi exact match
+            // Item CÓ submenu: chỉ expanded khi có submenu con active
+            const isActiveParent = !hasSubItems && location.pathname === item.path;
+
+            // Mở rộng menu khi có submenu con active hoặc user đã click mở
+            const isExpanded = expandedMenus[index] || hasActiveSubItem;
 
             return (
               <div key={index} className="menu-group">
