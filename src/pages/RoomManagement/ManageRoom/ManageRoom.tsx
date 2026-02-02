@@ -294,15 +294,15 @@ const ManageRoom = () => {
             </div>
 
             {/* THANH CÔNG CỤ (TOOLBAR) */}
-            <div className="toolbar-actions" style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+            <div className="toolbar-actions">
 
               {/* [MỚI] Button Tải Mẫu */}
-              <button className="btn-secondary" onClick={handleDownloadTemplate} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button className="btn-secondary" onClick={handleDownloadTemplate}>
                 <Download size={18} /> Tải mẫu Excel
               </button>
 
               {/* [MỚI] Button Nhập File */}
-              <button className="btn-success" onClick={triggerFileInput} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button className="btn-success" onClick={triggerFileInput}>
                 <FileSpreadsheet size={18} /> Nhập Excel
               </button>
               {/* Input ẩn */}

@@ -238,19 +238,19 @@ export default function LoginPage() {
           navigate("/admin");
           break;
         case "manager":
-          navigate("/managerdashboard");
+          navigate("/manager");
           break;
         case "owner":
-          navigate("/building-owner");
-          break;
-        case "tenant":
-          navigate("/");
+          navigate("/owner");
           break;
         case "accountant":
           navigate("/accountant");
           break;
+        case "tenant":
+          navigate("/homepage");
+          break;
         default:
-          navigate("/");
+          navigate("/homepage");
       }
     } catch (err: any) {
       // Xử lý lỗi

@@ -19,7 +19,7 @@ const MENU_ITEMS = [
     {
         title: "Tổng quan", //Dashboard
         icon: <LayoutDashboard size={20} />,
-        path: "/building-owner",
+        path: "/owner",
         subItems: []
     },
     {
@@ -27,16 +27,19 @@ const MENU_ITEMS = [
         icon: <Building2 size={20} />,
         path: "/owner/buildings",
         subItems: [
-            { title: "Danh sách phòng", path: "/manageroom" },
-            { title: "Cấu hình tòa nhà", path: "/buildingconfig" }, // tầng & loại phòng 
-            { title: "Nội quy tòa nhà", path: "/owner/buildings/rules" },
+            { title: "Danh sách phòng", path: "/owner/rooms" },
+            { title: "Cấu hình tòa nhà", path: "/owner/building-config" }, // tầng & loại phòng 
+            { title: "Nội quy tòa nhà", path: "/owner/rules" },
         ]
     },
     {
         title: "Quản lý nhân sự",
         icon: <Users size={20} />,
         path: "/owner/staff",
-        subItems: []
+        subItems: [
+            { title: "Tạo tài khoản", path: "/owner/create-account" },
+            { title: "Danh sách tài khoản", path: "/owner/accounts" },
+        ]
     },
     {
         title: "Hợp đồng & Cư dân",

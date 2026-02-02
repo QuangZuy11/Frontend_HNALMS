@@ -12,14 +12,13 @@ import { AuthProvider } from "./context/AuthContext";
 import { PrivateRoute } from "./routes/PrivateRoute";
 
 // Layout Components
-import Header from "./components/layout/Header/Header";
 import Hero from "./components/layout/Hero/Hero";
 import About from "./components/layout/About/About";
 import Contact from "./components/layout/Contact/Contact";
 import Footer from "./components/layout/Footer/Footer";
 import FloatingContact from "./components/layout/Floating-contact/Floating-contact";
 
-// Pages - Public
+// Pages - Guest (Public - No Login Required)
 import RoomList from "./pages/RoomManagement/RoomList";
 import RoomDetail from "./pages/RoomManagement/DetailRoom/RoomDetail";
 import BuildingRulesPublic from "./pages/BuildingInformation/BuildingRulesPublic";
@@ -30,61 +29,46 @@ import ForgotPassword from "./pages/Auth/ForgotPassword/ForgotPassword";
 import ChangePassword from "./pages/Auth/ChangePassword";
 import Unauthorized from "./pages/Unauthorized";
 
-// Pages - Dashboard
+// Pages - Admin Dashboard
 import AdminDashboard from "./pages/Dashboard/AdminDashboard";
+
+// Pages - Owner Dashboard
 import BuildingOwnerDashboard from "./pages/Dashboard/OwnerDashboard/BuildingOwnerDashboard";
-import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
+import BuildingConfig from "./pages/RoomManagement/BuildingConfig/BuildingConfig";
+import ManageRoom from "./pages/RoomManagement/ManageRoom/ManageRoom";
+
+// Pages - Manager Dashboard
 import ManagerDashboard from "./pages/Dashboard/ManagerDashboard/ManagerDashboard";
 import ManagerRules from "./pages/Dashboard/ManagerRules";
 import ManagerProfile from "./pages/Dashboard/ManagerProfile";
+import ManageService from "./pages/ServiceManagement/ManageService";
 
-// Profile
+// Pages - Accountant Dashboard
+import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
+
+// Pages - Profile (All authenticated roles)
 import ViewProfile from "./pages/Auth/Profile/ViewProfile";
 import UpdateProfile from "./pages/Auth/Profile/UpdateProfile";
+
+// Pages - Account Management
 import CreateAccount from "./pages/Auth/CreateAccount/CreateAccount";
 import CreatedAccountsList from "./pages/Auth/CreatedAccountsList/CreatedAccountsList";
-
-// Pages - Manage
-import BuildingConfig from "./pages/RoomManagement/BuildingConfig/BuildingConfig";
-import ManageRoom from "./pages/RoomManagement/ManageRoom/ManageRoom";
-import ManageService from "./pages/ServiceManagement/ManageService";
+import Header from "./components/layout/Header/Header";
 
 // ================= Layout Wrapper =================
 function LayoutWrapper() {
   const location = useLocation();
 
-  // Routes được coi là public (hiện Footer + FloatingContact)
-  const publicRoutes = ["/", "/homepage", "/rooms", "/rules"];
-
-  const isPublicRoute =
-    publicRoutes.includes(location.pathname) ||
+  // Guest routes (public - hiện Footer + FloatingContact)
+  const guestRoutes = ["/", "/homepage", "/rooms", "/rules"];
+  const isGuestRoute =
+    guestRoutes.includes(location.pathname) ||
     location.pathname.startsWith("/rooms/");
-
-  // Ẩn Header ở chức năng tạo tài khoản và các trang dashboard (có sidebar)
-  const hideHeaderPaths = [
-    "/create-account",
-    "/created-accounts",
-    "/admin",
-    "/building",
-    "/building-owner",
-    "/tenant",
-    "/accountant",
-    "/managerdashboard",
-    "/manager",
-    "/manageroom",
-    "/manageservice",
-    "/buildingconfig",
-  ];
-  const showHeader = !hideHeaderPaths.some(
-    (path) =>
-      location.pathname === path || location.pathname.startsWith(path + "/")
-  );
 
   return (
     <>
-      {showHeader && <Header />}
-
       <Routes>
+        {/* ==================== GUEST ROUTES (No Login Required) ==================== */}
         {/* Redirect root */}
         <Route path="/" element={<Navigate to="/homepage" replace />} />
 
@@ -93,6 +77,7 @@ function LayoutWrapper() {
           path="/homepage"
           element={
             <>
+              <Header />
               <Hero />
               <About />
               <Contact />
@@ -100,108 +85,102 @@ function LayoutWrapper() {
           }
         />
 
-        {/* Public Pages */}
-        <Route path="/rooms" element={<RoomList />} />
-        <Route path="/rooms/:id" element={<RoomDetail />} />
-        <Route path="/rules" element={<BuildingRulesPublic />} />
-        <Route path="/buildingconfig" element={<BuildingConfig />} />
-        <Route path="/manageroom" element={<ManageRoom />} />
-        <Route path="/manageservice" element={<ManageService />} />
+        {/* Room List & Detail */}
+        <Route path="/rooms" element={<><Header /><RoomList /></>} />
+        <Route path="/rooms/:id" element={<><Header /><RoomDetail /></>} />
 
-        {/* Auth */}
+        {/* Building Rules Public */}
+        <Route path="/rules" element={<><Header /><BuildingRulesPublic /></>} />
+
+        {/* ==================== AUTH ROUTES ==================== */}
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
+
+        {/* Change Password - All authenticated roles */}
         <Route
           path="/change-password"
           element={
             <PrivateRoute
-              allowedRoles={[
-                "admin",
-                "manager",
-                "owner",
-                "tenant",
-                "accountant",
-              ]}
+              allowedRoles={["admin", "manager", "owner", "tenant", "accountant"]}
             >
               <ChangePassword />
             </PrivateRoute>
           }
         />
-        <Route path="/unauthorized" element={<Unauthorized />} />
 
-        {/* Dashboards */}
+        {/* ==================== ADMIN ROUTES ==================== */}
         <Route
-          path="/admin"
+          path="/admin/*"
           element={
             <PrivateRoute allowedRoles={["admin"]}>
-              <AdminDashboard />
+              <Routes>
+                <Route index element={<AdminDashboard />} />
+                <Route path="create-account" element={<CreateAccount />} />
+                <Route path="accounts" element={<CreatedAccountsList />} />
+                <Route path="profile" element={<ViewProfile />} />
+                <Route path="profile/update" element={<UpdateProfile />} />
+              </Routes>
             </PrivateRoute>
           }
         />
 
-
+        {/* ==================== OWNER ROUTES ==================== */}
         <Route
-          path="/building-owner"
+          path="/owner/*"
           element={
             <PrivateRoute allowedRoles={["owner"]}>
-              <BuildingOwnerDashboard />
-              <BuildingConfig />
-              <ManageRoom />
+              <Routes>
+                <Route index element={<BuildingOwnerDashboard />} />
+                <Route path="building-config" element={<BuildingConfig />} />
+                <Route path="rooms" element={<ManageRoom />} />
+                <Route path="create-account" element={<CreateAccount />} />
+                <Route path="accounts" element={<CreatedAccountsList />} />
+                <Route path="profile" element={<ViewProfile />} />
+                <Route path="profile/update" element={<UpdateProfile />} />
+              </Routes>
             </PrivateRoute>
           }
         />
 
-
-
+        {/* ==================== MANAGER ROUTES ==================== */}
         <Route
-          path="/accountant"
+          path="/manager/*"
+          element={
+            <PrivateRoute allowedRoles={["manager"]}>
+              <Routes>
+                <Route index element={<ManagerDashboard />} />
+                <Route path="services" element={<ManageService />} />
+                <Route path="rules" element={<ManagerRules />} />
+                <Route path="create-account" element={<CreateAccount />} />
+                <Route path="accounts" element={<CreatedAccountsList />} />
+                <Route path="profile" element={<ManagerProfile />} />
+                <Route path="profile/update" element={<UpdateProfile />} />
+              </Routes>
+            </PrivateRoute>
+          }
+        />
+
+        {/* ==================== ACCOUNTANT ROUTES ==================== */}
+        <Route
+          path="/accountant/*"
           element={
             <PrivateRoute allowedRoles={["accountant"]}>
-              <AccountantDashboard />
+              <Routes>
+                <Route index element={<AccountantDashboard />} />
+                <Route path="profile" element={<ViewProfile />} />
+                <Route path="profile/update" element={<UpdateProfile />} />
+              </Routes>
             </PrivateRoute>
           }
         />
 
-        <Route
-          path="/managerdashboard"
-          element={
-            <PrivateRoute allowedRoles={["manager", "admin"]}>
-              <ManagerDashboard />
-              <ManageService />
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/manager/rules"
-          element={
-            <PrivateRoute allowedRoles={["manager", "admin"]}>
-              <ManagerRules />
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/manager/profile"
-          element={
-            <PrivateRoute allowedRoles={["manager", "admin"]}>
-              <ManagerProfile />
-            </PrivateRoute>
-          }
-        />
-
-        {/* Profile */}
+        {/* ==================== SHARED PROFILE ROUTES (Legacy support) ==================== */}
         <Route
           path="/profile"
           element={
             <PrivateRoute
-              allowedRoles={[
-                "admin",
-                "manager",
-                "owner",
-                "tenant",
-                "accountant",
-              ]}
+              allowedRoles={["admin", "manager", "owner", "tenant", "accountant"]}
             >
               <ViewProfile />
             </PrivateRoute>
@@ -212,40 +191,14 @@ function LayoutWrapper() {
           path="/profile/update"
           element={
             <PrivateRoute
-              allowedRoles={[
-                "admin",
-                "manager",
-                "owner",
-                "tenant",
-                "accountant",
-              ]}
+              allowedRoles={["admin", "manager", "owner", "tenant", "accountant"]}
             >
               <UpdateProfile />
             </PrivateRoute>
           }
         />
 
-        {/* Create Account - Admin/Owner/Manager tạo tài khoản theo role */}
-        <Route
-          path="/create-account"
-          element={
-            <PrivateRoute allowedRoles={["admin", "owner", "manager"]}>
-              <CreateAccount />
-            </PrivateRoute>
-          }
-        />
-
-        {/* Danh sách tài khoản đã tạo - Admin/Owner/Manager */}
-        <Route
-          path="/created-accounts"
-          element={
-            <PrivateRoute allowedRoles={["admin", "owner", "manager"]}>
-              <CreatedAccountsList />
-            </PrivateRoute>
-          }
-        />
-
-        {/* 404 */}
+        {/* ==================== 404 NOT FOUND ==================== */}
         <Route
           path="*"
           element={
@@ -256,7 +209,8 @@ function LayoutWrapper() {
         />
       </Routes>
 
-      {isPublicRoute && (
+      {/* Footer & FloatingContact chỉ hiện cho Guest routes */}
+      {isGuestRoute && (
         <>
           <Footer />
           <FloatingContact />
