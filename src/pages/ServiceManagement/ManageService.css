@@ -304,3 +304,55 @@
   border-color: #3b82f6;
   outline: none;
 }
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  display: flex !important;           /* Ép hiển thị flex */
+  align-items: center !important;     /* Căn giữa dọc */
+  justify-content: center !important; /* Căn giữa ngang */
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;                         /* Bỏ padding thừa */
+}
+
+/* --- CAN THIỆP TRỰC TIẾP VÀO ICON SVG --- */
+.btn-icon svg {
+  width: 18px !important;        /* Ép kích thước */
+  height: 18px !important;
+  min-width: 18px !important;    /* Tránh bị co lại */
+  stroke: currentColor !important; /* Ép lấy màu từ nút cha */
+  stroke-width: 2px !important;    /* Ép độ dày nét */
+  fill: none !important;           /* Đảm bảo nền trong suốt */
+  display: block !important;
+  opacity: 1 !important;           /* Đảm bảo không bị ẩn */
+}
+
+/* --- MÀU SẮC CỤ THỂ --- */
+
+/* Nút Sửa: Nền xám nhạt, Icon xám đậm */
+.btn-edit { 
+  background-color: #f1f5f9 !important; 
+  color: #475569 !important; 
+}
+.btn-edit:hover { 
+  background-color: #e2e8f0 !important; 
+  color: #1e293b !important; 
+}
+
+/* Nút Xóa: Nền đỏ nhạt, Icon đỏ */
+.btn-delete { 
+  background-color: #fee2e2 !important; 
+  color: #ef4444 !important; 
+}
+.btn-delete:hover { 
+  background-color: #fecaca !important; 
+  color: #dc2626 !important; 
+}

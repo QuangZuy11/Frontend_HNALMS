@@ -68,7 +68,7 @@ const MENU_ITEMS = [
     icon: <Zap size={20} />,
     path: "/services",
     subItems: [
-      { title: "Danh sách dịch vụ", path: "/services/list" },
+      { title: "Danh sách dịch vụ", path: "/manageservice" },
       { title: "Chỉ số điện nước", path: "/services/indexes" },
     ]
   },

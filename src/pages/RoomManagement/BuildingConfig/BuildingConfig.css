@@ -550,6 +550,8 @@ input::placeholder, textarea::placeholder {
     border: 1px dashed var(--border-color);
 }
 
+/* --- IMAGE UPLOAD STYLES --- */
+
 .image-upload-container {
     margin-top: 8px;
 }
@@ -593,17 +595,12 @@ input::placeholder, textarea::placeholder {
     cursor: pointer;
 }
 
-/* Grid hiển thị ảnh preview */
-.image-preview-grid {
-    display: grid;
-    /* Chỉnh kích thước cột: tối thiểu 100px */
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); 
-    gap: 12px;
-    margin-top: 16px;
+.upload-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
 }
 
-/* --- FIX CỨNG KÍCH THƯỚC ẢNH PREVIEW (KHI UPLOAD) --- */
-
+/* Grid hiển thị ảnh preview */
 .image-preview-grid {
     display: grid;
     /* Chia cột tự động, mỗi cột tối thiểu 100px */
@@ -633,34 +630,43 @@ input::placeholder, textarea::placeholder {
     display: block;
 }
 
-/* Nút xoá ảnh nhỏ gọn ở góc */
+/* --- FIX: NÚT XÓA ẢNH (MODAL ADD/EDIT) --- */
 .remove-image-btn {
     position: absolute;
     top: 4px;
     right: 4px;
-    background-color: rgba(255, 255, 255, 0.9);
-    color: #ef4444;
-    border: none;
-    border-radius: 50%;
-    width: 24px;
+    width: 24px;  /* Kích thước cố định */
     height: 24px;
+    border-radius: 50%; /* Tròn xoe */
+    background-color: rgba(255, 255, 255, 0.85); /* Nền trắng mờ để nổi bật trên ảnh */
+    color: #ef4444; /* Màu icon đỏ */
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15); /* Shadow nhẹ */
+    z-index: 10; /* Luôn nằm trên ảnh */
+    padding: 0;
+    transition: all 0.2s ease;
 }
 
 .remove-image-btn:hover {
-    background-color: #ef4444;
-    color: white;
+    background-color: #ef4444; /* Hover thành nền đỏ */
+    color: white; /* Icon trắng */
+    transform: scale(1.1);
 }
 
-.upload-hint {
-    font-size: 12px;
-    color: var(--text-secondary);
+/* Đảm bảo icon bên trong nút xóa hiển thị đúng */
+.remove-image-btn svg {
+    width: 14px;
+    height: 14px;
+    stroke-width: 3px;
+    display: block;
 }
+
+
+/* --- CHI TIẾT LOẠI PHÒNG (MODAL VIEW) --- */
 
 /* Nút View Detail */
 .btn-icon-sm.view:hover {
@@ -668,7 +674,6 @@ input::placeholder, textarea::placeholder {
     color: #0ea5e9;
 }
 
-/* Modal Chi Tiết Styles */
 .detail-body {
     display: flex;
     flex-direction: column;
@@ -733,13 +738,15 @@ input::placeholder, textarea::placeholder {
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid var(--border-color);
-    cursor: pointer;
+    cursor: zoom-in; /* Con trỏ hình kính lúp */
     transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
 }
 
 .detail-image-item:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: var(--primary-color);
 }
 
 .detail-image-item img {
@@ -755,62 +762,75 @@ input::placeholder, textarea::placeholder {
     font-style: italic;
 }
 
-/* --- LIGHTBOX STYLES (MỚI) --- */
+/* --- LIGHTBOX STYLES (MỚI - SỬA LỖI HIỂN THỊ) --- */
+
 .lightbox-overlay {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.9); /* Nền đen đậm */
-    z-index: 2000; /* Cao hơn mọi modal khác */
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.95); /* Nền đen đậm hơn */
+    z-index: 2000; /* Đảm bảo cao hơn tất cả các modal khác (thường là 1000) */
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: fadeIn 0.2s ease-out;
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.25s ease-out;
 }
 
 .lightbox-content {
     position: relative;
-    max-width: 90%;
-    max-height: 90%;
+    max-width: 90vw;
+    max-height: 90vh;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
 }
 
 .lightbox-image {
-    max-width: 90vw;  
-    max-height: 85vh; 
+    max-width: 100%;
+    max-height: 85vh; /* Chừa chỗ cho counter */
     object-fit: contain; 
     border-radius: 4px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    user-select: none;
 }
 
 .lightbox-counter {
-    color: white;
-    margin-top: 12px;
-    font-size: 16px;
-    font-weight: 500;
-    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: 16px;
+    font-family: monospace;
+    font-size: 14px;
+    background: rgba(255,255,255,0.1);
+    padding: 4px 12px;
+    border-radius: 20px;
 }
 
-/* Nút Đóng */
+/* Nút Đóng - Fix vị trí */
 .lightbox-close-btn {
     position: absolute;
-    top: 20px;
-    right: 20px;
-    background: transparent;
+    top: 24px;
+    right: 24px;
+    background: rgba(255, 255, 255, 0.1);
     border: none;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.8);
     cursor: pointer;
-    transition: color 0.2s;
-    z-index: 2001;
+    transition: all 0.2s;
+    z-index: 2005;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .lightbox-close-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
     color: white;
-    transform: scale(1.1);
+    transform: rotate(90deg);
 }
 
 /* Nút Điều hướng (Trái/Phải) */
@@ -818,27 +838,32 @@ input::placeholder, textarea::placeholder {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background: transparent;
+    background: rgba(255, 255, 255, 0.1);
     border: none;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.6);
     cursor: pointer;
-    padding: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: all 0.2s;
-    z-index: 2001;
+    z-index: 2005;
 }
 
 .lightbox-nav-btn:hover {
     color: white;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-50%) scale(1.1);
 }
 
 .lightbox-nav-btn.prev {
-    left: 20px;
+    left: 32px;
 }
 
 .lightbox-nav-btn.next {
-    right: 20px;
+    right: 32px;
 }
 
 @keyframes fadeIn {
