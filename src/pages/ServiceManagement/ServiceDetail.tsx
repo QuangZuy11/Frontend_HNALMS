@@ -1,2 +1,0 @@
-// Service detail
-export { }
