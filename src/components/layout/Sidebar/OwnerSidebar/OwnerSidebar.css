@@ -108,6 +108,15 @@
   color: white;
 }
 
+.menu-item.expanded {
+  background-color: #f0f7ff;
+  color: #3579c6;
+}
+
+.menu-item.expanded .menu-icon {
+  color: #3579c6;
+}
+
 .menu-icon {
   margin-right: 12px;
   display: flex;

@@ -3,13 +3,16 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
-  Home,
+  ShoppingBag,
   FileText,
-  DollarSign,
+  Receipt,
+  Wallet,
   Zap,
   MessageSquare,
+  Bell,
   ChevronDown,
   ChevronRight,
+  DoorOpen
 } from 'lucide-react';
 import './ManagerSidebar.css';
 import logo from '../../../../assets/images/Logo.png';
@@ -17,69 +20,70 @@ import logo from '../../../../assets/images/Logo.png';
 // Định nghĩa cấu trúc menu
 const MENU_ITEMS = [
   {
-    title: "Tổng quan",
+    title: "Tổng Quan",
     icon: <LayoutDashboard size={20} />,
     path: "/managerdashboard",
     subItems: []
   },
   {
-    title: "Quản lý nhân sự",
+    title: "Cư Dân",
     icon: <Users size={20} />,
     path: "/staff",
-    subItems: [
-      { title: "Quản lý tòa nhà", path: "/staff/managers" },
-      { title: "Kế toán", path: "/staff/accountants" },
-    ]
+    subItems: []
   },
   {
     title: "Quản lý Phòng",
-    icon: <Home size={20} />,
+    icon: <DoorOpen size={20} />,
     path: "/rooms",
-    subItems: [
-      { title: "Quản lý phòng", path: "/manageroom" },
-      { title: "Cấu hình tòa nhà", path: "/buildingconfig" },
-      { title: "Nội quy tòa nhà", path: "/rooms/rules" },
-    ]
+    subItems: []
   },
   {
-    title: "Cư dân & Hợp đồng",
+    title: "Hợp Đồng",
     icon: <FileText size={20} />,
     path: "/residents",
-    subItems: [
-      { title: "Danh sách hợp đồng", path: "/residents/contracts" },
-      { title: "Danh sách cọc", path: "/residents/deposits" },
-      { title: "Danh sách người thuê", path: "/residents/tenants" },
-    ]
+    subItems: []
   },
   {
-    title: "Tài chính",
-    icon: <DollarSign size={20} />,
+    title: "Danh Sách Cọc",
+    icon: <Wallet size={20} />,
+    path: "/deposits",
+    subItems: []
+  },
+  {
+    title: "Hóa Đơn",
+    icon: <Receipt size={20} />,
     path: "/finance",
-    subItems: [
-      { title: "Danh sách hóa đơn", path: "/finance/invoices" },
-      { title: "Phiếu thu / chi", path: "/finance/transactions" },
-      { title: "Báo cáo điện nước", path: "/finance/utility-reports" },
-    ]
+    subItems: []
   },
   {
-    title: "Dịch vụ & Tiện ích",
+    title: "Điện & Nước",
     icon: <Zap size={20} />,
-    path: "/services",
-    subItems: [
-      { title: "Danh sách dịch vụ", path: "/services/list" },
-      { title: "Chỉ số điện nước", path: "/services/indexes" },
-    ]
+    path: "/utilities",
+    subItems: []
   },
   {
-    title: "Yêu cầu / CSKH",
+    title: "Dịch Vụ",
+    icon: <ShoppingBag size={20} />,
+    path: "/services",
+    subItems: []
+  },
+  {
+    title: "Yêu Cầu",
     icon: <MessageSquare size={20} />,
     path: "/requests",
     subItems: [
       { title: "Yêu cầu sửa chữa", path: "/requests/repairs" },
+      { title: "Yêu cầu bảo trì", path: "/requests/maintenance" },
       { title: "Danh sách khiếu nại", path: "/requests/complaints" },
       { title: "Yêu cầu chuyển phòng", path: "/requests/transfers" },
       { title: "Yêu cầu trả phòng", path: "/requests/checkouts" },
     ]
+  },
+  {
+    title: "Gửi Thông Báo",
+    icon: <Bell size={20} />,
+    path: "/notifications",
+    subItems: []
   },
 ];
 
@@ -106,7 +110,7 @@ const ManagerSidebar = () => {
       <div className="sidebar-nav-scroll">
         <nav className="sidebar-nav">
           {MENU_ITEMS.map((item, index) => {
-            const hasSubItems = item.subItems.length > 0;
+            const hasSubItems = item.subItems && item.subItems.length > 0;
             const isActiveParent = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             const isExpanded = expandedMenus[index] || isActiveParent;
 
@@ -115,7 +119,7 @@ const ManagerSidebar = () => {
                 {/* Parent Item */}
                 <div
                   onClick={() => hasSubItems ? toggleMenu(index) : null}
-                  className={`menu-item ${isActiveParent ? 'active' : ''}`}
+                  className={`menu-item ${isActiveParent && !hasSubItems ? 'active' : ''} ${hasSubItems && isExpanded ? 'expanded' : ''}`}
                 >
                   {hasSubItems ? (
                     <div className="menu-link-content">
