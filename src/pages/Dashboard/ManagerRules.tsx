@@ -1,6 +1,6 @@
-import ManagerSidebar from "./ManagerSidebar";
+import ManagerSidebar from "../../components/layout/Sidebar/ManagerSidebar/ManagerSidebar";
 import BuildingRulesPublic from "../BuildingInformation/BuildingRulesPublic";
-import "./ManagerDashboard.css";
+import "./ManagerDashboard/ManagerDashboard.css";
 
 export default function ManagerRules() {
   return (

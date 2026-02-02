@@ -5,14 +5,24 @@
   background-color: #f8fafc;
 }
 
-.manager-dashboard-main {
+.manager-dashboard-body {
   flex: 1;
-  margin-left: 256px;
+  margin-left: 260px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   transition: margin-left 0.3s ease;
 }
 
-@media (max-width: 768px) {
-  .manager-dashboard-main {
+.manager-dashboard-main {
+  flex: 1;
+  overflow-y: auto;
+  background-color: #f8fafc;
+  border-top-left-radius: 16px;
+}
+
+@media (max-width: 1024px) {
+  .manager-dashboard-body {
     margin-left: 0;
   }
 }
@@ -48,20 +58,29 @@
 
 /* ========== Dashboard Header ========== */
 .dashboard-header {
-  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.dashboard-header-left {
+  display: flex;
+  flex-direction: column;
 }
 
 .dashboard-title {
-  font-size: 2.25rem;
+  font-size: 2rem;
   font-weight: 700;
   color: #0f172a;
-  margin-bottom: 0;
+  margin: 0;
   line-height: 1.2;
 }
 
 .dashboard-subtitle {
   color: #64748b;
-  margin-top: 0;
+  margin: 4px 0 0 0;
+  font-size: 14px;
 }
 
 /* ========== Stats Grid ========== */
