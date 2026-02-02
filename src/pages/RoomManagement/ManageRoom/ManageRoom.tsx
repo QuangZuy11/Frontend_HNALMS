@@ -141,7 +141,7 @@ const ManageRoom = () => {
   // 1. Tải mẫu Excel
   const handleDownloadTemplate = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/room/template`, {
+      const response = await axios.get(`${API_BASE_URL}/excel/template`, {
         responseType: 'blob',
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -174,7 +174,7 @@ const ManageRoom = () => {
 
     try {
       setLoading(true);
-      const res = await axios.post(`${API_BASE_URL}/room/import`, formData, {
+      const res = await axios.post(`${API_BASE_URL}/excel/import`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       alert(res.data.message);
