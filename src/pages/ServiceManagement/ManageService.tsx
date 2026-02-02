@@ -6,7 +6,7 @@ import {
   Filter, ArrowUpDown // [MỚI] Thêm icon
 } from 'lucide-react';
 import './ManageService.css';
-import ManagerSidebar from '../Dashboard/ManagerSidebar'; 
+import ManagerSidebar from '../../components/layout/Sidebar/OwnerSidebar/OwnerSidebar'; 
 
 const API_BASE_URL = 'http://localhost:9999/api';
 
