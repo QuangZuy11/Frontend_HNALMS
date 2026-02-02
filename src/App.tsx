@@ -228,21 +228,21 @@ function LayoutWrapper() {
           }
         />
 
-        {/* Create Account - Admin/Owner/Manager tạo tài khoản theo role */}
+        {/* Create Account - Admin/Owner tạo tài khoản theo role */}
         <Route
           path="/create-account"
           element={
-            <PrivateRoute allowedRoles={["admin", "owner", "manager"]}>
+            <PrivateRoute allowedRoles={["admin", "owner"]}>
               <CreateAccount />
             </PrivateRoute>
           }
         />
 
-        {/* Danh sách tài khoản đã tạo - Admin/Owner/Manager */}
+        {/* Danh sách tài khoản đã tạo - Admin/Owner */}
         <Route
           path="/created-accounts"
           element={
-            <PrivateRoute allowedRoles={["admin", "owner", "manager"]}>
+            <PrivateRoute allowedRoles={["admin", "owner"]}>
               <CreatedAccountsList />
             </PrivateRoute>
           }

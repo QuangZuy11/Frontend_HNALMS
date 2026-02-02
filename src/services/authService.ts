@@ -24,8 +24,8 @@ export const authService = {
         return response.data
     },
 
-    // Create Account - Admin/Owner/Manager tạo tài khoản theo role
-    // Admin -> Owner | Owner -> Manager, Accountant | Manager -> Tenant
+    // Create Account - Admin/Owner tạo tài khoản theo role
+    // Admin -> Owner | Owner -> Manager, Accountant
     createAccount: async (data: {
         username: string;
         phoneNumber: string;

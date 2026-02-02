@@ -4,14 +4,13 @@ import { authService } from '../../../services/authService';
 import { useAuth } from '../../../context/AuthContext';
 import './CreatedAccountsList.css';
 
-// Admin -> Owner | Owner -> Manager, Accountant | Manager -> Tenant
+// Admin -> Owner | Owner -> Manager, Accountant
 const ROLE_OPTIONS: Record<string, { value: string; label: string }[]> = {
   admin: [{ value: 'owner', label: 'Chủ nhà (Owner)' }],
   owner: [
-    { value: 'manager', label: 'Quản lý ' },
-    { value: 'accountant', label: 'Kế toán ' },
+    { value: 'manager', label: 'Quản lý' },
+    { value: 'accountant', label: 'Kế toán' },
   ],
-  manager: [{ value: 'Tenant', label: 'Người thuê ' }],
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -223,7 +222,7 @@ export default function CreatedAccountsList() {
     }
   };
 
-  if (!['admin', 'owner', 'manager'].includes(currentRole)) {
+  if (!['admin', 'owner'].includes(currentRole)) {
     return (
       <div className="created-accounts-page">
         <div className="created-accounts-card">
@@ -246,7 +245,6 @@ export default function CreatedAccountsList() {
             <p className="created-accounts-subtitle">
               {currentRole === 'admin' && 'Các tài khoản Chủ nhà (Owner) do bạn tạo'}
               {currentRole === 'owner' && 'Các tài khoản Quản lý, Kế toán do bạn tạo'}
-              {currentRole === 'manager' && 'Các tài khoản Người thuê (Tenant) do bạn tạo'}
             </p>
           </div>
           <button onClick={handleCreateNew} className="btn-create">
@@ -461,7 +459,7 @@ export default function CreatedAccountsList() {
                       name="username"
                       value={formData.username}
                       onChange={handleFormChange}
-                      placeholder="Nhập tên đăng nhập"
+                      
                       required
                       minLength={3}
                     />
@@ -474,7 +472,7 @@ export default function CreatedAccountsList() {
                       name="phoneNumber"
                       value={formData.phoneNumber}
                       onChange={handleFormChange}
-                      placeholder="0901234567"
+                      
                       required
                     />
                   </div>
