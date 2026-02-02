@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Home, 
-  FileText, 
-  DollarSign, 
-  Zap, 
-  MessageSquare, 
-  ChevronDown, 
+import {
+  LayoutDashboard,
+  Users,
+  Home,
+  FileText,
+  DollarSign,
+  Zap,
+  MessageSquare,
+  ChevronDown,
   ChevronRight,
   Settings,
   LogOut,
@@ -86,7 +86,7 @@ const MENU_ITEMS = [
 ];
 
 const ManagerSidebar = () => {
-  const [expandedMenus, setExpandedMenus] = useState<{[key: number]: boolean}>({});
+  const [expandedMenus, setExpandedMenus] = useState<{ [key: number]: boolean }>({});
   const [showUserMenu, setShowUserMenu] = useState(false);
   const location = useLocation();
 
@@ -123,7 +123,7 @@ const ManagerSidebar = () => {
             return (
               <div key={index} className="menu-group">
                 {/* Parent Item */}
-                <div 
+                <div
                   onClick={() => hasSubItems ? toggleMenu(index) : null}
                   className={`menu-item ${isActiveParent ? 'active' : ''}`}
                 >
@@ -151,8 +151,8 @@ const ManagerSidebar = () => {
                     {item.subItems.map((sub, subIndex) => {
                       const isActiveSub = location.pathname === sub.path;
                       return (
-                        <Link 
-                          key={subIndex} 
+                        <Link
+                          key={subIndex}
                           to={sub.path}
                           className={`submenu-item ${isActiveSub ? 'sub-active' : ''}`}
                         >
@@ -179,26 +179,26 @@ const ManagerSidebar = () => {
             <button className="popup-item text-danger">
               <LogOut size={16} /> Đăng xuất
             </button>
-            
+
           </div>
         )}
 
         {/* User Info Bar */}
-        <div 
+        <div
           className="user-info-bar"
           onClick={() => setShowUserMenu(!showUserMenu)}
         >
           <div className="user-avatar">
             {currentUser.initials}
           </div>
-          
+
           <div className="user-details">
             <p className="user-name">{currentUser.name}</p>
             <p className="user-time">{currentUser.loginTime}</p>
           </div>
 
           <div className="user-more-icon">
-             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" /></svg>
           </div>
         </div>
       </div>
