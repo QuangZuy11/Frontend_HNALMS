@@ -19,9 +19,6 @@ import {
 } from 'lucide-react';
 import './BuildingConfig.css';
 
-// --- IMPORT SIDEBAR ---
-import ManagerSidebar from '../../../components/layout/Sidebar/ManagerSidebar/ManagerSidebar';
-
 const API_BASE_URL = 'http://localhost:9999/api';
 
 interface Floor {
@@ -299,311 +296,305 @@ const BuildingConfig = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#ffffff' }}>
-      <ManagerSidebar />
+    <div className="config-container">
 
-      <main style={{ flex: 1, marginLeft: '280px', width: 'calc(100% - 280px)' }}>
-        <div className="config-container">
-
-          <div className="page-header">
-            <div>
-              <h2 className="page-title">Cấu hình tòa nhà</h2>
-              <p className="page-subtitle">Quản lý danh sách tầng và các hạng mục loại phòng</p>
-            </div>
-
-            <div className="stats-summary">
-              <div className="stat-item">
-                <Building size={16} className="stat-icon icon-primary" />
-                <div className="stat-text"><span className="stat-value">{totalFloors}</span><span className="stat-label">Tầng</span></div>
-              </div>
-              <div className="stat-divider"></div>
-              <div className="stat-item">
-                <Home size={16} className="stat-icon icon-accent" />
-                <div className="stat-text"><span className="stat-value">{totalRooms}</span><span className="stat-label">Phòng</span></div>
-              </div>
-              <div className="stat-divider"></div>
-              <div className="stat-item">
-                <Tag size={16} className="stat-icon icon-success" />
-                <div className="stat-text"><span className="stat-value">{totalTypes}</span><span className="stat-label">Loại phòng</span></div>
-              </div>
-            </div>
-          </div>
-
-          <div className="config-content">
-
-            {/* SECTION TẦNG */}
-            <section className="section-block">
-              <div className="section-header">
-                <div className="section-title-wrapper">
-                  <Layers className="section-icon" size={20} />
-                  <h3>Danh sách Tầng</h3>
-                </div>
-                <button className="btn-primary" onClick={() => handleOpenFloorModal()}>
-                  <Plus size={16} /> Thêm tầng
-                </button>
-              </div>
-
-              {floors.length === 0 && !loading && <p className="text-empty">Chưa có dữ liệu tầng.</p>}
-
-              <div className="floor-grid">
-                {floors.map((floor) => (
-                  <div key={floor._id} className="floor-card">
-                    <div className="floor-card-header">
-                      <span className="floor-icon-bg"><Layers size={24} /></span>
-                      <button className="btn-icon"><MoreVertical size={16} /></button>
-                    </div>
-                    <div className="floor-info">
-                      <h4>{floor.name}</h4>
-                      {floor.description && <p className="floor-desc" title={floor.description}>{floor.description}</p>}
-                      <p className="floor-meta">
-                        <BedDouble size={14} style={{ marginRight: 4 }} />
-                        {floor.roomCount || 0} phòng
-                      </p>
-                    </div>
-                    <div className="floor-actions">
-                      <button className="btn-action edit" onClick={() => handleOpenFloorModal(floor)}>Sửa</button>
-                      <button className="btn-action delete" onClick={() => handleDeleteFloor(floor._id)}>Xóa</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* SECTION LOẠI PHÒNG */}
-            <section className="section-block mt-8">
-              <div className="section-header">
-                <div className="section-title-wrapper">
-                  <LayoutTemplate className="section-icon" size={20} />
-                  <h3>Danh sách Loại phòng</h3>
-                </div>
-                <button className="btn-primary" onClick={() => handleOpenTypeModal()}>
-                  <Plus size={16} /> Thêm loại phòng
-                </button>
-              </div>
-
-              <div className="table-wrapper">
-                <table className="config-table">
-                  <thead>
-                    <tr>
-                      <th>Tên loại phòng</th>
-                      <th>Đơn giá</th>
-                      <th>Số người tối đa</th>
-                      <th>Mô tả</th>
-                      <th style={{ width: '120px', textAlign: 'center' }}>Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {roomTypes.map((type) => (
-                      <tr key={type._id}>
-                        <td>
-                          <div className="room-type-name">
-                            {/* [MODIFIED] Removed image here, just the colored dot */}
-                            <span className="type-dot"></span>
-                            {type.typeName}
-                          </div>
-                        </td>
-                        <td className="text-price">{formatCurrency(type.currentPrice)}</td>
-                        <td>{type.personMax} người</td>
-                        <td className="text-muted">{type.description}</td>
-                        <td>
-                          <div className="action-group">
-                            {/* [NEW] View Detail Button */}
-                            <button className="btn-icon-sm view" onClick={() => handleViewDetail(type)} title="Xem chi tiết">
-                              <Eye size={16} />
-                            </button>
-                            <button className="btn-icon-sm edit" onClick={() => handleOpenTypeModal(type)} title="Sửa">
-                              <Edit size={16} />
-                            </button>
-                            <button className="btn-icon-sm delete" onClick={() => handleDeleteType(type._id)} title="Xóa">
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          </div>
+      <div className="page-header">
+        <div>
+          <h2 className="page-title">Cấu hình tòa nhà</h2>
+          <p className="page-subtitle">Quản lý danh sách tầng và các hạng mục loại phòng</p>
         </div>
 
-        {/* MODAL: TẦNG */}
-        {showFloorModal && (
-          <div className="modal-overlay">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h3>{editingFloor ? 'Sửa Tầng' : 'Thêm Tầng Mới'}</h3>
-                <button onClick={() => setShowFloorModal(false)}><X size={20} /></button>
-              </div>
-              <form onSubmit={handleSaveFloor}>
-                <div className="form-group">
-                  <label>Tên tầng</label>
-                  <input type="text" value={floorName} onChange={(e) => setFloorName(e.target.value)} required placeholder="Ví dụ: Tầng 1" />
-                </div>
-                <div className="form-group">
-                  <label>Mô tả</label>
-                  <textarea rows={2} value={floorDesc} onChange={(e) => setFloorDesc(e.target.value)} placeholder="Ghi chú thêm..." />
-                </div>
-                <div className="modal-actions">
-                  <button type="button" className="btn-secondary" onClick={() => setShowFloorModal(false)}>Hủy</button>
-                  <button type="submit" className="btn-primary">Lưu lại</button>
-                </div>
-              </form>
-            </div>
+        <div className="stats-summary">
+          <div className="stat-item">
+            <Building size={16} className="stat-icon icon-primary" />
+            <div className="stat-text"><span className="stat-value">{totalFloors}</span><span className="stat-label">Tầng</span></div>
           </div>
-        )}
-
-        {/* MODAL: THÊM/SỬA LOẠI PHÒNG */}
-        {showTypeModal && (
-          <div className="modal-overlay">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h3>{editingType ? 'Sửa Loại Phòng' : 'Thêm Loại Phòng'}</h3>
-                <button onClick={() => setShowTypeModal(false)}><X size={20} /></button>
-              </div>
-              <form onSubmit={handleSaveType}>
-                <div className="form-group">
-                  <label>Tên loại phòng</label>
-                  <input type="text" value={typeForm.typeName} onChange={(e) => setTypeForm({ ...typeForm, typeName: e.target.value })} required />
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Giá phòng</label>
-                    <input type="number" value={typeForm.currentPrice} onChange={(e) => setTypeForm({ ...typeForm, currentPrice: Number(e.target.value) })} required />
-                  </div>
-                  <div className="form-group">
-                    <label>Số người tối đa</label>
-                    <input type="number" value={typeForm.personMax} onChange={(e) => setTypeForm({ ...typeForm, personMax: Number(e.target.value) })} required />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>Mô tả</label>
-                  <textarea rows={3} value={typeForm.description} onChange={(e) => setTypeForm({ ...typeForm, description: e.target.value })} />
-                </div>
-                <div className="form-group">
-                  <label>Hình ảnh ({oldImages.length + newFiles.length}/10)</label>
-                  <div className="image-upload-container">
-                    <div className="upload-btn-wrapper">
-                      <button type="button" className="btn-upload">
-                        <Upload size={24} />
-                        <span className="upload-hint">Click chọn ảnh hoặc kéo thả vào đây</span>
-                      </button>
-                      <input type="file" multiple accept="image/*" onChange={handleFileChange} />
-                    </div>
-                    <div className="image-preview-grid">
-                      {oldImages.map((url, idx) => (
-                        <div key={`old-${idx}`} className="preview-item">
-                          <img src={url} alt="Old" />
-                          <button type="button" className="remove-image-btn" onClick={() => handleRemoveOldImage(idx)}><X size={12} /></button>
-                        </div>
-                      ))}
-                      {previewUrls.map((url, idx) => (
-                        <div key={`new-${idx}`} className="preview-item">
-                          <img src={url} alt="New" />
-                          <button type="button" className="remove-image-btn" onClick={() => handleRemoveNewImage(idx)}><X size={12} /></button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-actions">
-                  <button type="button" className="btn-secondary" onClick={() => setShowTypeModal(false)}>Hủy</button>
-                  <button type="submit" className="btn-primary">Lưu lại</button>
-                </div>
-              </form>
-            </div>
+          <div className="stat-divider"></div>
+          <div className="stat-item">
+            <Home size={16} className="stat-icon icon-accent" />
+            <div className="stat-text"><span className="stat-value">{totalRooms}</span><span className="stat-label">Phòng</span></div>
           </div>
-        )}
+          <div className="stat-divider"></div>
+          <div className="stat-item">
+            <Tag size={16} className="stat-icon icon-success" />
+            <div className="stat-text"><span className="stat-value">{totalTypes}</span><span className="stat-label">Loại phòng</span></div>
+          </div>
+        </div>
+      </div>
 
-        {/* [NEW] MODAL: XEM CHI TIẾT */}
-        {showDetailModal && viewingType && (
-          <div className="modal-overlay" style={{ zIndex: 1000 }}>
-            <div className="modal-content">
-              <div className="modal-header">
-                <h3>Chi tiết Loại phòng</h3>
-                <button onClick={() => setShowDetailModal(false)}><X size={20} /></button>
-              </div>
+      <div className="config-content">
 
-              <div className="detail-body">
-                {/* Info Fields */}
-                <div className="detail-info-grid">
-                  <div className="info-item">
-                    <label>Tên loại phòng</label>
-                    <div className="info-value text-bold">{viewingType.typeName}</div>
-                  </div>
-                  <div className="info-item">
-                    <label>Giá hiện tại</label>
-                    <div className="info-value text-price">{formatCurrency(viewingType.currentPrice)}</div>
-                  </div>
-                  <div className="info-item">
-                    <label>Số người tối đa</label>
-                    <div className="info-value">{viewingType.personMax} người</div>
-                  </div>
-                  <div className="info-item full-width">
-                    <label>Mô tả</label>
-                    <div className="info-value text-desc">{viewingType.description || "Không có mô tả"}</div>
-                  </div>
+        {/* SECTION TẦNG */}
+        <section className="section-block">
+          <div className="section-header">
+            <div className="section-title-wrapper">
+              <Layers className="section-icon" size={20} />
+              <h3>Danh sách Tầng</h3>
+            </div>
+            <button className="btn-primary" onClick={() => handleOpenFloorModal()}>
+              <Plus size={16} /> Thêm tầng
+            </button>
+          </div>
+
+          {floors.length === 0 && !loading && <p className="text-empty">Chưa có dữ liệu tầng.</p>}
+
+          <div className="floor-grid">
+            {floors.map((floor) => (
+              <div key={floor._id} className="floor-card">
+                <div className="floor-card-header">
+                  <span className="floor-icon-bg"><Layers size={24} /></span>
+                  <button className="btn-icon"><MoreVertical size={16} /></button>
                 </div>
-
-                {/* Image Gallery */}
-                <div className="detail-images-section">
-                  <label className="section-label">Hình ảnh ({viewingType.images?.length || 0})</label>
-                  {viewingType.images && viewingType.images.length > 0 ? (
-                    <div className="detail-image-grid">
-                      {viewingType.images.map((img, idx) => (
-                        <div key={idx} className="detail-image-item" onClick={() => openLightbox(idx)}>
-                          <img src={img} alt={`Room ${idx}`} />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-empty-small">Chưa có hình ảnh nào.</p>
-                  )}
+                <div className="floor-info">
+                  <h4>{floor.name}</h4>
+                  {floor.description && <p className="floor-desc" title={floor.description}>{floor.description}</p>}
+                  <p className="floor-meta">
+                    <BedDouble size={14} style={{ marginRight: 4 }} />
+                    {floor.roomCount || 0} phòng
+                  </p>
+                </div>
+                <div className="floor-actions">
+                  <button className="btn-action edit" onClick={() => handleOpenFloorModal(floor)}>Sửa</button>
+                  <button className="btn-action delete" onClick={() => handleDeleteFloor(floor._id)}>Xóa</button>
                 </div>
               </div>
+            ))}
+          </div>
+        </section>
 
+        {/* SECTION LOẠI PHÒNG */}
+        <section className="section-block mt-8">
+          <div className="section-header">
+            <div className="section-title-wrapper">
+              <LayoutTemplate className="section-icon" size={20} />
+              <h3>Danh sách Loại phòng</h3>
+            </div>
+            <button className="btn-primary" onClick={() => handleOpenTypeModal()}>
+              <Plus size={16} /> Thêm loại phòng
+            </button>
+          </div>
+
+          <div className="table-wrapper">
+            <table className="config-table">
+              <thead>
+                <tr>
+                  <th>Tên loại phòng</th>
+                  <th>Đơn giá</th>
+                  <th>Số người tối đa</th>
+                  <th>Mô tả</th>
+                  <th style={{ width: '120px', textAlign: 'center' }}>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {roomTypes.map((type) => (
+                  <tr key={type._id}>
+                    <td>
+                      <div className="room-type-name">
+                        {/* [MODIFIED] Removed image here, just the colored dot */}
+                        <span className="type-dot"></span>
+                        {type.typeName}
+                      </div>
+                    </td>
+                    <td className="text-price">{formatCurrency(type.currentPrice)}</td>
+                    <td>{type.personMax} người</td>
+                    <td className="text-muted">{type.description}</td>
+                    <td>
+                      <div className="action-group">
+                        {/* [NEW] View Detail Button */}
+                        <button className="btn-icon-sm view" onClick={() => handleViewDetail(type)} title="Xem chi tiết">
+                          <Eye size={16} />
+                        </button>
+                        <button className="btn-icon-sm edit" onClick={() => handleOpenTypeModal(type)} title="Sửa">
+                          <Edit size={16} />
+                        </button>
+                        <button className="btn-icon-sm delete" onClick={() => handleDeleteType(type._id)} title="Xóa">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      {/* MODAL: TẦNG */}
+      {showFloorModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>{editingFloor ? 'Sửa Tầng' : 'Thêm Tầng Mới'}</h3>
+              <button onClick={() => setShowFloorModal(false)}><X size={20} /></button>
+            </div>
+            <form onSubmit={handleSaveFloor}>
+              <div className="form-group">
+                <label>Tên tầng</label>
+                <input type="text" value={floorName} onChange={(e) => setFloorName(e.target.value)} required placeholder="Ví dụ: Tầng 1" />
+              </div>
+              <div className="form-group">
+                <label>Mô tả</label>
+                <textarea rows={2} value={floorDesc} onChange={(e) => setFloorDesc(e.target.value)} placeholder="Ghi chú thêm..." />
+              </div>
               <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowDetailModal(false)}>Đóng</button>
-                <button type="button" className="btn-primary" onClick={() => {
-                  setShowDetailModal(false);
-                  handleOpenTypeModal(viewingType); // Switch to edit mode
-                }}>
-                  <Edit size={16} /> Chỉnh sửa
-                </button>
+                <button type="button" className="btn-secondary" onClick={() => setShowFloorModal(false)}>Hủy</button>
+                <button type="submit" className="btn-primary">Lưu lại</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: THÊM/SỬA LOẠI PHÒNG */}
+      {showTypeModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>{editingType ? 'Sửa Loại Phòng' : 'Thêm Loại Phòng'}</h3>
+              <button onClick={() => setShowTypeModal(false)}><X size={20} /></button>
+            </div>
+            <form onSubmit={handleSaveType}>
+              <div className="form-group">
+                <label>Tên loại phòng</label>
+                <input type="text" value={typeForm.typeName} onChange={(e) => setTypeForm({ ...typeForm, typeName: e.target.value })} required />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Giá phòng</label>
+                  <input type="number" value={typeForm.currentPrice} onChange={(e) => setTypeForm({ ...typeForm, currentPrice: Number(e.target.value) })} required />
+                </div>
+                <div className="form-group">
+                  <label>Số người tối đa</label>
+                  <input type="number" value={typeForm.personMax} onChange={(e) => setTypeForm({ ...typeForm, personMax: Number(e.target.value) })} required />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Mô tả</label>
+                <textarea rows={3} value={typeForm.description} onChange={(e) => setTypeForm({ ...typeForm, description: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label>Hình ảnh ({oldImages.length + newFiles.length}/10)</label>
+                <div className="image-upload-container">
+                  <div className="upload-btn-wrapper">
+                    <button type="button" className="btn-upload">
+                      <Upload size={24} />
+                      <span className="upload-hint">Click chọn ảnh hoặc kéo thả vào đây</span>
+                    </button>
+                    <input type="file" multiple accept="image/*" onChange={handleFileChange} />
+                  </div>
+                  <div className="image-preview-grid">
+                    {oldImages.map((url, idx) => (
+                      <div key={`old-${idx}`} className="preview-item">
+                        <img src={url} alt="Old" />
+                        <button type="button" className="remove-image-btn" onClick={() => handleRemoveOldImage(idx)}><X size={12} /></button>
+                      </div>
+                    ))}
+                    {previewUrls.map((url, idx) => (
+                      <div key={`new-${idx}`} className="preview-item">
+                        <img src={url} alt="New" />
+                        <button type="button" className="remove-image-btn" onClick={() => handleRemoveNewImage(idx)}><X size={12} /></button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={() => setShowTypeModal(false)}>Hủy</button>
+                <button type="submit" className="btn-primary">Lưu lại</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* [NEW] MODAL: XEM CHI TIẾT */}
+      {showDetailModal && viewingType && (
+        <div className="modal-overlay" style={{ zIndex: 1000 }}>
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Chi tiết Loại phòng</h3>
+              <button onClick={() => setShowDetailModal(false)}><X size={20} /></button>
+            </div>
+
+            <div className="detail-body">
+              {/* Info Fields */}
+              <div className="detail-info-grid">
+                <div className="info-item">
+                  <label>Tên loại phòng</label>
+                  <div className="info-value text-bold">{viewingType.typeName}</div>
+                </div>
+                <div className="info-item">
+                  <label>Giá hiện tại</label>
+                  <div className="info-value text-price">{formatCurrency(viewingType.currentPrice)}</div>
+                </div>
+                <div className="info-item">
+                  <label>Số người tối đa</label>
+                  <div className="info-value">{viewingType.personMax} người</div>
+                </div>
+                <div className="info-item full-width">
+                  <label>Mô tả</label>
+                  <div className="info-value text-desc">{viewingType.description || "Không có mô tả"}</div>
+                </div>
+              </div>
+
+              {/* Image Gallery */}
+              <div className="detail-images-section">
+                <label className="section-label">Hình ảnh ({viewingType.images?.length || 0})</label>
+                {viewingType.images && viewingType.images.length > 0 ? (
+                  <div className="detail-image-grid">
+                    {viewingType.images.map((img, idx) => (
+                      <div key={idx} className="detail-image-item" onClick={() => openLightbox(idx)}>
+                        <img src={img} alt={`Room ${idx}`} />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-empty-small">Chưa có hình ảnh nào.</p>
+                )}
               </div>
             </div>
-          </div>
-        )}
 
-        {/* [NEW] LIGHTBOX VIEWER */}
-        {isLightboxOpen && (
-          <div className="lightbox-overlay">
-            <button className="lightbox-close-btn" onClick={closeLightbox}>
-              <X size={32} />
-            </button>
-            <button className="lightbox-nav-btn prev" onClick={prevImage}>
-              <ChevronLeft size={48} />
-            </button>
-
-            <div className="lightbox-content">
-              <img
-                src={currentImages[photoIndex]}
-                alt="Full view"
-                className="lightbox-image"
-              />
-              <div className="lightbox-counter">
-                {photoIndex + 1} / {currentImages.length}
-              </div>
+            <div className="modal-actions">
+              <button type="button" className="btn-secondary" onClick={() => setShowDetailModal(false)}>Đóng</button>
+              <button type="button" className="btn-primary" onClick={() => {
+                setShowDetailModal(false);
+                handleOpenTypeModal(viewingType); // Switch to edit mode
+              }}>
+                <Edit size={16} /> Chỉnh sửa
+              </button>
             </div>
-
-            <button className="lightbox-nav-btn next" onClick={nextImage}>
-              <ChevronRight size={48} />
-            </button>
           </div>
-        )}
+        </div>
+      )}
 
-      </main>
+      {/* [NEW] LIGHTBOX VIEWER */}
+      {isLightboxOpen && (
+        <div className="lightbox-overlay">
+          <button className="lightbox-close-btn" onClick={closeLightbox}>
+            <X size={32} />
+          </button>
+          <button className="lightbox-nav-btn prev" onClick={prevImage}>
+            <ChevronLeft size={48} />
+          </button>
+
+          <div className="lightbox-content">
+            <img
+              src={currentImages[photoIndex]}
+              alt="Full view"
+              className="lightbox-image"
+            />
+            <div className="lightbox-counter">
+              {photoIndex + 1} / {currentImages.length}
+            </div>
+          </div>
+
+          <button className="lightbox-nav-btn next" onClick={nextImage}>
+            <ChevronRight size={48} />
+          </button>
+        </div>
+      )}
+
     </div>
   );
 };

@@ -18,6 +18,14 @@ import Contact from "./components/layout/Contact/Contact";
 import Footer from "./components/layout/Footer/Footer";
 import FloatingContact from "./components/layout/Floating-contact/Floating-contact";
 
+// Dashboard Layouts
+import {
+  OwnerLayout,
+  ManagerLayout,
+  AdminLayout,
+  AccountantLayout,
+} from "./components/layout/DashboardLayout";
+
 // Pages - Guest (Public - No Login Required)
 import RoomList from "./pages/RoomManagement/RoomList";
 import RoomDetail from "./pages/RoomManagement/DetailRoom/RoomDetail";
@@ -111,69 +119,69 @@ function LayoutWrapper() {
 
         {/* ==================== ADMIN ROUTES ==================== */}
         <Route
-          path="/admin/*"
+          path="/admin"
           element={
             <PrivateRoute allowedRoles={["admin"]}>
-              <Routes>
-                <Route index element={<AdminDashboard />} />
-                <Route path="create-account" element={<CreateAccount />} />
-                <Route path="accounts" element={<CreatedAccountsList />} />
-                <Route path="profile" element={<ViewProfile />} />
-                <Route path="profile/update" element={<UpdateProfile />} />
-              </Routes>
+              <AdminLayout />
             </PrivateRoute>
           }
-        />
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="create-account" element={<CreateAccount />} />
+          <Route path="accounts" element={<CreatedAccountsList />} />
+          <Route path="profile" element={<ViewProfile />} />
+          <Route path="profile/update" element={<UpdateProfile />} />
+        </Route>
 
         {/* ==================== OWNER ROUTES ==================== */}
         <Route
-          path="/owner/*"
+          path="/owner"
           element={
             <PrivateRoute allowedRoles={["owner"]}>
-              <Routes>
-                <Route index element={<BuildingOwnerDashboard />} />
-                <Route path="building-config" element={<BuildingConfig />} />
-                <Route path="rooms" element={<ManageRoom />} />
-                <Route path="create-account" element={<CreateAccount />} />
-                <Route path="accounts" element={<CreatedAccountsList />} />
-                <Route path="profile" element={<ViewProfile />} />
-                <Route path="profile/update" element={<UpdateProfile />} />
-              </Routes>
+              <OwnerLayout />
             </PrivateRoute>
           }
-        />
+        >
+          <Route index element={<BuildingOwnerDashboard />} />
+          <Route path="building-config" element={<BuildingConfig />} />
+          <Route path="rooms" element={<ManageRoom />} />
+          <Route path="create-account" element={<CreateAccount />} />
+          <Route path="accounts" element={<CreatedAccountsList />} />
+          <Route path="profile" element={<ViewProfile />} />
+          <Route path="profile/update" element={<UpdateProfile />} />
+        </Route>
 
         {/* ==================== MANAGER ROUTES ==================== */}
         <Route
-          path="/manager/*"
+          path="/manager"
           element={
             <PrivateRoute allowedRoles={["manager"]}>
-              <Routes>
-                <Route index element={<ManagerDashboard />} />
-                <Route path="services" element={<ManageService />} />
-                <Route path="rules" element={<ManagerRules />} />
-                <Route path="create-account" element={<CreateAccount />} />
-                <Route path="accounts" element={<CreatedAccountsList />} />
-                <Route path="profile" element={<ManagerProfile />} />
-                <Route path="profile/update" element={<UpdateProfile />} />
-              </Routes>
+              <ManagerLayout />
             </PrivateRoute>
           }
-        />
+        >
+          <Route index element={<ManagerDashboard />} />
+          <Route path="services" element={<ManageService />} />
+          <Route path="rules" element={<ManagerRules />} />
+          <Route path="create-account" element={<CreateAccount />} />
+          <Route path="accounts" element={<CreatedAccountsList />} />
+          <Route path="profile" element={<ManagerProfile />} />
+          <Route path="profile/update" element={<UpdateProfile />} />
+        </Route>
 
         {/* ==================== ACCOUNTANT ROUTES ==================== */}
         <Route
-          path="/accountant/*"
+          path="/accountant"
           element={
             <PrivateRoute allowedRoles={["accountant"]}>
-              <Routes>
-                <Route index element={<AccountantDashboard />} />
-                <Route path="profile" element={<ViewProfile />} />
-                <Route path="profile/update" element={<UpdateProfile />} />
-              </Routes>
+              <AccountantLayout />
             </PrivateRoute>
           }
-        />
+        >
+          <Route index element={<AccountantDashboard />} />
+          <Route path="profile" element={<ViewProfile />} />
+          <Route path="profile/update" element={<UpdateProfile />} />
+        </Route>
 
         {/* ==================== SHARED PROFILE ROUTES (Legacy support) ==================== */}
         <Route

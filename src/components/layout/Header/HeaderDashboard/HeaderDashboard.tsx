@@ -43,7 +43,7 @@ const HeaderDashboard = () => {
     const handleLogout = () => {
         setShowUserMenu(false);
         logout();
-        navigate('/login');
+        navigate('/homepage');
     };
 
     // Mock notifications
