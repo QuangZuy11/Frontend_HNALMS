@@ -27,8 +27,8 @@ const MENU_ITEMS = [
         icon: <Building2 size={20} />,
         path: "/owner/buildings",
         subItems: [
-            { title: "Danh sách phòng", path: "/owner/buildings/list" },
-            { title: "Cấu hình tòa nhà", path: "/owner/buildings/config" }, // tầng & loại phòng 
+            { title: "Danh sách phòng", path: "/manageroom" },
+            { title: "Cấu hình tòa nhà", path: "/buildingconfig" }, // tầng & loại phòng 
             { title: "Nội quy tòa nhà", path: "/owner/buildings/rules" },
         ]
     },

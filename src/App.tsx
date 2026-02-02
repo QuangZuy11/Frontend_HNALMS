@@ -71,6 +71,9 @@ function LayoutWrapper() {
     "/accountant",
     "/managerdashboard",
     "/manager",
+    "/manageroom",
+    "/manageservice",
+    "/buildingconfig",
   ];
   const showHeader = !hideHeaderPaths.some(
     (path) =>
@@ -142,6 +145,8 @@ function LayoutWrapper() {
           element={
             <PrivateRoute allowedRoles={["owner"]}>
               <BuildingOwnerDashboard />
+              <BuildingConfig />
+              <ManageRoom />
             </PrivateRoute>
           }
         />
@@ -162,6 +167,7 @@ function LayoutWrapper() {
           element={
             <PrivateRoute allowedRoles={["manager", "admin"]}>
               <ManagerDashboard />
+              <ManageService />
             </PrivateRoute>
           }
         />
