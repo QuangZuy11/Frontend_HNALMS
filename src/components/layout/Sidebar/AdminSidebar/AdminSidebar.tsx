@@ -2,70 +2,51 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard,
-    FileText,
-    DollarSign,
-    Receipt,
-    BarChart3,
+    Users,
+    Building2,
+    Settings,
     ChevronDown,
     ChevronRight,
 } from 'lucide-react';
-import './AccountantSidebar.css';
+// Sử dụng chung CSS với OwnerSidebar
+import '../OwnerSidebar/OwnerSidebar.css';
 import logo from '../../../../assets/images/Logo.png';
 
-// Định nghĩa cấu trúc menu cho Kế toán
+// Định nghĩa cấu trúc menu cho Admin
 const MENU_ITEMS = [
     {
         title: "Tổng quan",
         icon: <LayoutDashboard size={20} />,
-        path: "/accountant",
+        path: "/admin",
         subItems: []
     },
     {
-        title: "Hóa đơn",
-        icon: <Receipt size={20} />,
-        path: "/accountant/invoices",
+        title: "Quản lý tài khoản",
+        icon: <Users size={20} />,
+        path: "/admin/accounts",
         subItems: [
-            { title: "Danh sách hóa đơn", path: "/accountant/invoices/list" },
-            { title: "Tạo hóa đơn", path: "/accountant/invoices/create" },
-            { title: "Hóa đơn quá hạn", path: "/accountant/invoices/overdue" },
+            { title: "Tạo tài khoản", path: "/admin/create-account" },
+            { title: "Danh sách tài khoản", path: "/admin/accounts" },
         ]
     },
     {
-        title: "Phiếu thu / chi",
-        icon: <FileText size={20} />,
-        path: "/accountant/transactions",
-        subItems: [
-            { title: "Phiếu thu", path: "/accountant/transactions/receipts" },
-            { title: "Phiếu chi", path: "/accountant/transactions/payments" },
-            { title: "Phiếu điều chỉnh", path: "/accountant/transactions/adjustments" },
-        ]
+        title: "Quản lý tòa nhà",
+        icon: <Building2 size={20} />,
+        path: "/admin/buildings",
+        subItems: []
     },
     {
-        title: "Báo cáo tài chính",
-        icon: <BarChart3 size={20} />,
-        path: "/accountant/reports",
-        subItems: [
-            { title: "Báo cáo doanh thu", path: "/accountant/reports/revenue" },
-            { title: "Báo cáo công nợ", path: "/accountant/reports/debt" },
-            { title: "Báo cáo điện nước", path: "/accountant/reports/utilities" },
-        ]
-    },
-    {
-        title: "Chỉ số điện nước",
-        icon: <DollarSign size={20} />,
-        path: "/accountant/utilities",
-        subItems: [
-            { title: "Nhập chỉ số", path: "/accountant/utilities/input" },
-            { title: "Lịch sử chỉ số", path: "/accountant/utilities/history" },
-        ]
+        title: "Cài đặt hệ thống",
+        icon: <Settings size={20} />,
+        path: "/admin/settings",
+        subItems: []
     },
 ];
 
-const AccountantSidebar = () => {
+const AdminSidebar = () => {
     const [expandedMenus, setExpandedMenus] = useState<{ [key: number]: boolean }>({});
     const location = useLocation();
 
-    // Xử lý đóng mở menu con
     const toggleMenu = (index: number) => {
         setExpandedMenus((prev) => ({
             ...prev,
@@ -80,20 +61,19 @@ const AccountantSidebar = () => {
                 <img src={logo} alt="Hoàng Nam Apartment" className="brand-logo" />
             </div>
 
-            {/* Menu Items (Scrollable) */}
+            {/* Menu Items */}
             <div className="sidebar-nav-scroll">
                 <nav className="sidebar-nav">
                     {MENU_ITEMS.map((item, index) => {
-                        const hasSubItems = item.subItems.length > 0;
+                        const hasSubItems = item.subItems && item.subItems.length > 0;
                         const isActiveParent = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
                         const isExpanded = expandedMenus[index] || isActiveParent;
 
                         return (
                             <div key={index} className="menu-group">
-                                {/* Parent Item */}
                                 <div
                                     onClick={() => hasSubItems ? toggleMenu(index) : null}
-                                    className={`menu-item ${isActiveParent ? 'active' : ''}`}
+                                    className={`menu-item ${isActiveParent && !hasSubItems ? 'active' : ''} ${hasSubItems && isExpanded ? 'expanded' : ''}`}
                                 >
                                     {hasSubItems ? (
                                         <div className="menu-link-content">
@@ -111,7 +91,6 @@ const AccountantSidebar = () => {
                                     )}
                                 </div>
 
-                                {/* Sub Items (Dropdown) */}
                                 {hasSubItems && isExpanded && (
                                     <div className="submenu-container">
                                         {item.subItems.map((sub, subIndex) => {
@@ -137,4 +116,4 @@ const AccountantSidebar = () => {
     );
 };
 
-export default AccountantSidebar;
+export default AdminSidebar;

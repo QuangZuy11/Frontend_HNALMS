@@ -22,68 +22,77 @@ const MENU_ITEMS = [
   {
     title: "Tổng Quan",
     icon: <LayoutDashboard size={20} />,
-    path: "/managerdashboard",
+    path: "/manager",
     subItems: []
   },
   {
     title: "Cư Dân",
     icon: <Users size={20} />,
-    path: "/staff",
+    path: "/manager/residents",
     subItems: []
   },
   {
     title: "Quản lý Phòng",
     icon: <DoorOpen size={20} />,
-    path: "/rooms",
+    path: "/manager/rooms",
     subItems: []
   },
   {
     title: "Hợp Đồng",
     icon: <FileText size={20} />,
-    path: "/residents",
+    path: "/manager/contracts",
     subItems: []
   },
   {
     title: "Danh Sách Cọc",
     icon: <Wallet size={20} />,
-    path: "/deposits",
+    path: "/manager/deposits",
     subItems: []
   },
   {
     title: "Hóa Đơn",
     icon: <Receipt size={20} />,
-    path: "/finance",
+    path: "/manager/invoices",
     subItems: []
   },
   {
     title: "Điện & Nước",
     icon: <Zap size={20} />,
-    path: "/utilities",
+    path: "/manager/utilities",
     subItems: []
   },
   {
     title: "Dịch Vụ",
     icon: <ShoppingBag size={20} />,
-    path: "/services",
+    path: "/manager/services",
     subItems: []
   },
   {
     title: "Yêu Cầu",
     icon: <MessageSquare size={20} />,
-    path: "/requests",
+    path: "/manager/requests",
     subItems: [
-      { title: "Yêu cầu sửa chữa", path: "/requests/repairs" },
-      { title: "Yêu cầu bảo trì", path: "/requests/maintenance" },
-      { title: "Danh sách khiếu nại", path: "/requests/complaints" },
-      { title: "Yêu cầu chuyển phòng", path: "/requests/transfers" },
-      { title: "Yêu cầu trả phòng", path: "/requests/checkouts" },
+      { title: "Yêu cầu sửa chữa", path: "/manager/requests/repairs" },
+      { title: "Yêu cầu bảo trì", path: "/manager/requests/maintenance" },
+      { title: "Danh sách khiếu nại", path: "/manager/requests/complaints" },
+      { title: "Yêu cầu chuyển phòng", path: "/manager/requests/transfers" },
+      { title: "Yêu cầu trả phòng", path: "/manager/requests/checkouts" },
     ]
   },
   {
     title: "Gửi Thông Báo",
     icon: <Bell size={20} />,
-    path: "/notifications",
+    path: "/manager/notifications",
     subItems: []
+  },
+  {
+    title: "Quản lý tài khoản",
+    icon: <Users size={20} />,
+    path: "/manager/account-management",
+    subItems: [
+      { title: "Tạo tài khoản", path: "/manager/create-account" },
+      { title: "Danh sách tài khoản", path: "/manager/accounts" },
+    ]
   },
 ];
 
