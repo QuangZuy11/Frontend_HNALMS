@@ -4,6 +4,9 @@ import "./Room-card.css";
 
 export default function RoomCard({ room }) {
   const statusColors = {
+    Available: "available",
+    Occupied: "occupied",
+    Maintenance: "maintenance",
     Trống: "available",
     "Đã thuê": "occupied",
     "Bảo trì": "maintenance",
@@ -16,10 +19,22 @@ export default function RoomCard({ room }) {
     }).format(price);
   };
 
+  // Get the first image from room images array
+  const roomImage =
+    room.images && room.images.length > 0
+      ? room.images[0]
+      : "https://via.placeholder.com/400x300?text=No+Image";
+
   return (
     <div className="room-card">
       {/* Image Section */}
       <div className="room-image-container">
+        <img
+          src={roomImage}
+          alt={room.name || room.title}
+          className="room-image"
+          style={{ width: "100%", height: "200px", objectFit: "cover" }}
+        />
         <div className="room-image-gradient">
           <span className="room-name-overlay">{room.roomCode}</span>
         </div>

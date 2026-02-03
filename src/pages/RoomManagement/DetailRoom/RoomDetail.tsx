@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ChevronLeft,
+  ChevronRight,
   MapPin,
   Home,
   Users,
@@ -22,6 +23,21 @@ export default function RoomDetail() {
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Scroll thumbnail into view when image changes
+  useEffect(() => {
+    const thumbnailElement = document.querySelector(
+      `.thumbnail-wrapper:nth-child(${currentImageIndex + 1})`,
+    );
+    if (thumbnailElement) {
+      thumbnailElement.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+    }
+  }, [currentImageIndex]);
 
   useEffect(() => {
     fetchRoomDetail();
@@ -32,8 +48,33 @@ export default function RoomDetail() {
       setLoading(true);
       const response = await roomService.getRoomById(id);
 
-      if (response.success) {
-        setRoom(response.data);
+      // Backend returns { data } format
+      if (response.data) {
+        const roomData = response.data;
+
+        console.log("🏠 Room Detail Data:", roomData.name);
+        console.log("📸 roomTypeId.images:", roomData.roomTypeId?.images);
+        console.log("📊 Images count:", roomData.roomTypeId?.images?.length);
+
+        // Transform data to match component expectations
+        const transformedRoom = {
+          ...roomData,
+          roomCode: roomData.roomCode || roomData.name,
+          floor: roomData.floorId?.name || "N/A",
+          floorLabel: `Tầng ${roomData.floorId?.name || "N/A"}`,
+          price: roomData.roomTypeId?.currentPrice || 0,
+          area: roomData.roomTypeId?.area || 30,
+          capacity: roomData.roomTypeId?.personMax || 2,
+          description:
+            roomData.description || roomData.roomTypeId?.description || "",
+          images: roomData.roomTypeId?.images || [],
+          amenities: roomData.amenities || [],
+        };
+
+        console.log("✅ Transformed images:", transformedRoom.images);
+        console.log("✅ Images length:", transformedRoom.images.length);
+
+        setRoom(transformedRoom);
       } else {
         setError("Không thể tải thông tin phòng");
       }
@@ -53,6 +94,22 @@ export default function RoomDetail() {
       "Điều hòa không khí": Wind,
     };
     return iconMap[serviceName] || Zap;
+  };
+
+  const handlePrevImage = () => {
+    if (room?.images?.length > 0) {
+      setCurrentImageIndex((prev) =>
+        prev === 0 ? room.images.length - 1 : prev - 1,
+      );
+    }
+  };
+
+  const handleNextImage = () => {
+    if (room?.images?.length > 0) {
+      setCurrentImageIndex((prev) =>
+        prev === room.images.length - 1 ? 0 : prev + 1,
+      );
+    }
   };
 
   if (loading) {
@@ -98,28 +155,91 @@ export default function RoomDetail() {
           {/* Main Content */}
           <div className="main-content">
             {/* Room Header */}
-            {/* <div className="room-header-card">
+            <div className="room-header-card">
               <div className="room-header-content">
                 <div className="room-title-section">
                   <h1 className="detail-room-title">{room.roomCode}</h1>
                   <p className="detail-room-location">
                     <MapPin className="icon-small" />
-                    {room.floorLabel || `Tầng ${room.floor}`}
+                    {room.floorLabel}
                   </p>
                 </div>
                 <span
-                  className={`status-badge ${room.status === "Trống" ? "available" : "occupied"}`}
+                  className={`status-badge ${
+                    room.status === "Available" || room.status === "Trống"
+                      ? "available"
+                      : "occupied"
+                  }`}
                 >
                   {room.status}
                 </span>
               </div>
-            </div> */}
+            </div>
 
-            {/* Gallery Placeholder */}
+            {/* Gallery with Images from Cloudinary */}
             <div className="gallery-card">
-              <div className="gallery-placeholder">
-                <span className="gallery-text">Hình Ảnh Phòng</span>
-              </div>
+              {room.images && room.images.length > 0 ? (
+                <div className="image-gallery">
+                  {/* Main Image */}
+                  <div className="main-image-container">
+                    <img
+                      src={room.images[currentImageIndex]}
+                      alt={`${room.roomCode} - Ảnh ${currentImageIndex + 1}`}
+                      className="main-gallery-image"
+                    />
+
+                    {/* Navigation Buttons */}
+                    {room.images.length > 1 && (
+                      <>
+                        <button
+                          className="gallery-nav-button prev"
+                          onClick={handlePrevImage}
+                          aria-label="Ảnh trước"
+                        >
+                          <ChevronLeft size={24} />
+                        </button>
+                        <button
+                          className="gallery-nav-button next"
+                          onClick={handleNextImage}
+                          aria-label="Ảnh tiếp theo"
+                        >
+                          <ChevronRight size={24} />
+                        </button>
+                      </>
+                    )}
+
+                    {/* Image Counter */}
+                    <div className="image-counter">
+                      {currentImageIndex + 1} / {room.images.length}
+                    </div>
+                  </div>
+
+                  {/* Thumbnails */}
+                  {room.images.length > 1 && (
+                    <div className="thumbnails-container">
+                      {room.images.map((image, index) => (
+                        <div
+                          key={index}
+                          className={`thumbnail-wrapper ${
+                            index === currentImageIndex ? "active" : ""
+                          }`}
+                          onClick={() => setCurrentImageIndex(index)}
+                        >
+                          <img
+                            src={image}
+                            alt={`Thumbnail ${index + 1}`}
+                            className="thumbnail-image"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="gallery-placeholder">
+                  <span className="gallery-text">Chưa có hình ảnh</span>
+                </div>
+              )}
             </div>
 
             {/* Room Info */}
@@ -240,9 +360,13 @@ export default function RoomDetail() {
 
                 <button
                   className="booking-button"
-                  disabled={room.status !== "Trống"}
+                  disabled={
+                    room.status !== "Available" && room.status !== "Trống"
+                  }
                 >
-                  {room.status === "Trống" ? "Đặt Cọc Ngay" : "Phòng Đã Có Chủ"}
+                  {room.status === "Available" || room.status === "Trống"
+                    ? "Đặt Cọc Ngay"
+                    : "Phòng Đã Có Chủ"}
                 </button>
 
                 <button className="contact-button">Gọi Tư Vấn</button>
