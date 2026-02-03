@@ -245,7 +245,7 @@ export default function CreatedAccountsList() {
       <div className="created-accounts-card">
         <div className="created-accounts-header">
           <div>
-            <h1>{isManager ? 'Danh sách tài khoản cư dân' : 'Danh sách tài khoản đã tạo'}</h1>
+            <h1>{isManager ? 'Danh sách tài khoản cư dân' : 'Danh Sách Nhân Sự Tòa Nhà'}</h1>
             <p className="created-accounts-subtitle">
               {currentRole === 'admin' && 'Các tài khoản Chủ nhà (Owner) do bạn tạo'}
               {currentRole === 'owner' && 'Các tài khoản Quản lý, Kế toán'}
@@ -570,7 +570,7 @@ export default function CreatedAccountsList() {
                       name="username"
                       value={formData.username}
                       onChange={handleFormChange}
-                      
+
                       required
                       minLength={3}
                     />
@@ -583,7 +583,7 @@ export default function CreatedAccountsList() {
                       name="phoneNumber"
                       value={formData.phoneNumber}
                       onChange={handleFormChange}
-                      
+
                       required
                     />
                   </div>
