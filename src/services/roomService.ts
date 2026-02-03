@@ -10,4 +10,14 @@ export const roomService = {
     const response = await api.get(`/rooms/${id}`);
     return response.data;
   },
+
+  getFloors: async () => {
+    const response = await api.get("/floors");
+    return response.data;
+  },
+
+  getRoomTypes: async () => {
+    const response = await api.get("/roomtypes");
+    return response.data;
+  },
 };

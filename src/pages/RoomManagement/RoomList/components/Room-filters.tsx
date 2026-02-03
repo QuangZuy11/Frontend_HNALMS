@@ -1,6 +1,43 @@
 "use client";
+import { useState, useEffect } from "react";
 import { Slot } from "@radix-ui/react-slot";
+import { roomService } from "../../../../services/roomService";
 import "./Room-filters.css";
+
+// Interfaces
+interface Floor {
+  _id: string;
+  name: string;
+}
+
+interface RoomType {
+  _id: string;
+  typeName: string;
+  price?: number;
+}
+
+interface RoomFiltersProps {
+  selectedFloors: string[];
+  onFloorsChange: (floors: string[]) => void;
+  selectedRoomTypes: string[];
+  onRoomTypesChange: (roomTypes: string[]) => void;
+  selectedStatus: string[];
+  onStatusChange: (status: string[]) => void;
+  onResetFilters: () => void;
+}
+
+// Helper to format price short (e.g. 5000000 -> 5tr)
+const formatPriceShort = (price?: number) => {
+  if (!price) return "";
+  if (price >= 1000000) {
+    return `${(price / 1000000).toFixed(1).replace(/\.0$/, '')}tr`;
+  }
+  return `${(price / 1000).toFixed(0)}k`;
+};
+
+// ... (Button, Card components unchanged) ...
+
+// ... (Inside the component, update the Room Type mapping) ...
 
 // Button Component
 function Button({
@@ -11,7 +48,8 @@ function Button({
   ...props
 }) {
   const Comp = asChild ? Slot : "button";
-  const classes = ["button", `button-${variant}`, `button-${size}`, className]
+  // Changed base class from "button" to "rf-button"
+  const classes = ["rf-button", `rf-button-${variant}`, `rf-button-${size}`, className]
     .filter(Boolean)
     .join(" ");
   return <Comp data-slot="button" className={classes} {...props} />;
@@ -19,248 +57,246 @@ function Button({
 
 // Card Components
 function Card({ className = "", ...props }) {
-  return <div className={`card ${className}`} {...props} />;
+  // Changed "card" to "rf-card"
+  return <div className={`rf-card ${className}`} {...props} />;
 }
 
 function CardHeader({ className = "", ...props }) {
-  return <div className={`card-header ${className}`} {...props} />;
+  // Changed "card-header" to "rf-card-header"
+  return <div className={`rf-card-header ${className}`} {...props} />;
 }
 
 function CardTitle({ className = "", ...props }) {
-  return <h3 className={`card-title ${className}`} {...props} />;
+  // Changed "card-title" to "rf-card-title"
+  return <h3 className={`rf-card-title ${className}`} {...props} />;
 }
 
 function CardContent({ className = "", ...props }) {
-  return <div className={`card-content ${className}`} {...props} />;
+  // Changed "card-content" to "rf-card-content"
+  return <div className={`rf-card-content ${className}`} {...props} />;
 }
 
 // Checkbox Component
-function Checkbox({ id, checked, onCheckedChange, className = "", ...props }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function Checkbox({
+  id,
+  checked,
+  onCheckedChange,
+  className = "",
+  ...props
+}: any) {
   return (
     <input
       type="checkbox"
       id={id}
       checked={checked}
       onChange={(e) => onCheckedChange?.(e.target.checked)}
-      className={`checkbox ${className}`}
+      // Changed "checkbox" to "rf-checkbox"
+      className={`rf-checkbox ${className}`}
+      {...props}
+    />
+  );
+}
+
+// Radio Component
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function Radio({
+  id,
+  checked,
+  onCheckedChange,
+  name,
+  className = "",
+  ...props
+}: any) {
+  return (
+    <input
+      type="radio"
+      id={id}
+      name={name}
+      checked={checked}
+      onChange={(e) => onCheckedChange?.(e.target.checked)}
+      className={`rf-radio ${className}`}
       {...props}
     />
   );
 }
 
 // Label Component
-function Label({ htmlFor, className = "", ...props }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function Label({ htmlFor, className = "", ...props }: any) {
   return (
-    <label htmlFor={htmlFor} className={`label ${className}`} {...props} />
+    // Changed "label" to "rf-label"
+    <label htmlFor={htmlFor} className={`rf-label ${className}`} {...props} />
   );
-}
-
-// Slider Component
-function Slider({
-  value,
-  onValueChange,
-  min,
-  max,
-  step,
-  className = "",
-  ...props
-}) {
-  return (
-    <input
-      type="range"
-      value={value[0]}
-      onChange={(e) => onValueChange?.([Number(e.target.value)])}
-      min={min}
-      max={max}
-      step={step}
-      className={`slider ${className}`}
-      {...props}
-    />
-  );
-}
-
-// Select Components - Simplified to avoid DOM nesting errors
-function Select({ value, onValueChange, children, className = "" }) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onValueChange?.(e.target.value)}
-      className={`select ${className}`}
-    >
-      {children}
-    </select>
-  );
-}
-
-function SelectItem({ value, children }) {
-  return <option value={value}>{children}</option>;
 }
 
 // RoomFilters Component
 export default function RoomFilters({
-  priceRange,
-  onPriceRangeChange,
   selectedFloors,
   onFloorsChange,
-  minArea,
-  onMinAreaChange,
-  showAvailableOnly,
-  onShowAvailableOnlyChange,
-  sortBy,
-  onSortByChange,
+  selectedRoomTypes,
+  onRoomTypesChange,
+  selectedStatus,
+  onStatusChange,
   onResetFilters,
-}) {
-  const handleFloorToggle = (floorValue) => {
-    if (floorValue === null) {
-      // Nếu chọn "Tất cả tầng", xóa tất cả các chọn khác
+}: RoomFiltersProps) {
+  const [floors, setFloors] = useState<Floor[]>([]);
+  const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
+
+  const fetchFiltersData = async () => {
+    try {
+      const [floorsData, roomTypesData, roomsData] = await Promise.all([
+        roomService.getFloors(),
+        roomService.getRoomTypes(),
+        roomService.getRooms(), // Fetch rooms to get prices
+      ]);
+      setFloors(floorsData.data || []);
+
+      const rawRoomTypes = roomTypesData.data || [];
+      const rooms = roomsData.data || [];
+
+      // Map prices to room types based on actual room data
+      const roomTypesWithPrice = rawRoomTypes.map((rt: any) => {
+        const matchingRoom = rooms.find((r: any) =>
+          (r.roomType?._id === rt._id) || (r.roomTypeId?._id === rt._id) || (r.roomTypeId === rt._id)
+        );
+        return {
+          ...rt,
+          price: matchingRoom?.price || 0
+        };
+      });
+
+      // Sort by type name ascending (Loại 1 -> Loại 2 ...)
+      roomTypesWithPrice.sort((a: any, b: any) =>
+        a.typeName.localeCompare(b.typeName, undefined, { numeric: true, sensitivity: 'base' })
+      );
+
+      setRoomTypes(roomTypesWithPrice);
+    } catch (error) {
+      console.error("Error fetching filters data:", error);
+    }
+  };
+
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    fetchFiltersData();
+  }, []);
+
+  const handleFloorToggle = (floorId: string) => {
+    // Single selection mode logic including "all" case handling implies clearing or specific logic,
+    // but here we just follow the pattern of selecting one.
+    if (floorId === "all") {
       onFloorsChange([]);
     } else {
-      if (selectedFloors.includes(floorValue)) {
-        // Bỏ chọn tầng
-        onFloorsChange(selectedFloors.filter((f) => f !== floorValue));
+      if (selectedFloors.includes(floorId)) {
+        onFloorsChange([]); // Deselect if already selected
       } else {
-        // Thêm tầng
-        onFloorsChange([...selectedFloors, floorValue]);
+        onFloorsChange([floorId]); // Select only this one
+      }
+    }
+  };
+
+  const handleRoomTypeToggle = (roomTypeId: string) => {
+    // Single selection mode logic
+    if (selectedRoomTypes.includes(roomTypeId)) {
+      // If clicking the currently selected one, deselect it (optional, allows 0 selection)
+      onRoomTypesChange([]);
+    } else {
+      // Select strictly one
+      onRoomTypesChange([roomTypeId]);
+    }
+  };
+
+  const handleStatusToggle = (status: string) => {
+    if (status === "all") {
+      onStatusChange([]);
+    } else {
+      if (selectedStatus.includes(status)) {
+        onStatusChange(selectedStatus.filter((s: string) => s !== status));
+      } else {
+        onStatusChange([...selectedStatus, status]);
       }
     }
   };
 
   return (
-    <div className="sticky-filters">
-      {/* Price Filter */}
+    <div className="rf-sticky-container">
       <Card>
-        <CardHeader className="filter-header">
-          <CardTitle className="filter-title">Khoảng Giá</CardTitle>
+        <CardHeader className="rf-filter-header">
+          <CardTitle className="rf-filter-title">TẦNG</CardTitle>
         </CardHeader>
-        <CardContent className="filter-content">
-          <Slider
-            value={[priceRange[0]]}
-            onValueChange={(value) =>
-              onPriceRangeChange([value[0], priceRange[1]])
-            }
-            min={3000000}
-            max={5000000}
-            step={100000}
-            className="room-filter-slider"
-          />
-          <Slider
-            value={[priceRange[1]]}
-            onValueChange={(value) =>
-              onPriceRangeChange([priceRange[0], value[0]])
-            }
-            min={3000000}
-            max={5000000}
-            step={100000}
-            className="room-filter-slider"
-          />
-          <div className="price-range-display">
-            <span>{(priceRange[0] / 1000000).toFixed(1)}M</span>
-            <span>{(priceRange[1] / 1000000).toFixed(1)}M</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Floor Filter */}
-      <Card>
-        <CardHeader className="filter-header">
-          <CardTitle className="filter-title">Tầng</CardTitle>
-        </CardHeader>
-        <CardContent className="checkbox-group">
-          <div className="checkbox-item">
-            <Checkbox
-              id="floor-all"
-              checked={selectedFloors.length === 0}
-              onCheckedChange={() => handleFloorToggle(null)}
-            />
-            <Label htmlFor="floor-all" className="checkbox-label">
-              Tất cả tầng
-            </Label>
-          </div>
-          {[
-            { label: "Tầng 1 (Nhà xe)", value: 1 },
-            { label: "Tầng 2", value: 2 },
-            { label: "Tầng 3", value: 3 },
-            { label: "Tầng 4", value: 4 },
-            { label: "Tầng 5 (Sân thượng)", value: 5 },
-          ].map((floor) => (
-            <div key={floor.value} className="checkbox-item">
-              <Checkbox
-                id={`floor-${floor.value}`}
-                checked={selectedFloors.includes(floor.value)}
-                onCheckedChange={() => handleFloorToggle(floor.value)}
+        <CardContent className="rf-checkbox-group">
+          {floors.map((floor) => (
+            <div key={floor._id} className="rf-checkbox-item">
+              <Radio
+                id={`floor-${floor._id}`}
+                name="floorGroup"
+                checked={selectedFloors.includes(floor._id)}
+                onCheckedChange={() => handleFloorToggle(floor._id)}
               />
-              <Label
-                htmlFor={`floor-${floor.value}`}
-                className="checkbox-label"
-              >
-                {floor.label}
+              <Label htmlFor={`floor-${floor._id}`} className="rf-checkbox-label">
+                {floor.name}
               </Label>
             </div>
           ))}
         </CardContent>
       </Card>
 
-      {/* Area Filter */}
       <Card>
-        <CardHeader className="filter-header">
-          <CardTitle className="filter-title">Diện Tích Tối Thiểu</CardTitle>
+        <CardHeader className="rf-filter-header">
+          <CardTitle className="rf-filter-title">LOẠI PHÒNG</CardTitle>
         </CardHeader>
-        <CardContent className="compact-content">
-          <Slider
-            value={[minArea]}
-            onValueChange={(value) => onMinAreaChange(value[0])}
-            min={30}
-            max={60}
-            step={1}
-            className="filter-slider"
-          />
-          <div className="area-value">{minArea}m²</div>
+        <CardContent className="rf-checkbox-group">
+          {roomTypes.map((roomType) => (
+            <div key={roomType._id} className="rf-checkbox-item">
+              <Radio
+                id={`roomtype-${roomType._id}`}
+                name="roomTypeGroup"
+                checked={selectedRoomTypes.includes(roomType._id)}
+                onCheckedChange={() => handleRoomTypeToggle(roomType._id)}
+              />
+              <Label
+                htmlFor={`roomtype-${roomType._id}`}
+                className="rf-checkbox-label"
+              >
+                {roomType.typeName} <span style={{ opacity: 0.7, fontWeight: 400 }}>{roomType.price ? `(${formatPriceShort(roomType.price)})` : ''}</span>
+              </Label>
+            </div>
+          ))}
         </CardContent>
       </Card>
 
-      {/* Availability Filter */}
       <Card>
-        <CardHeader className="filter-header">
-          <CardTitle className="filter-title">Tình Trạng</CardTitle>
+        <CardHeader className="rf-filter-header">
+          <CardTitle className="rf-filter-title">TÌNH TRẠNG</CardTitle>
         </CardHeader>
-        <CardContent className="compact-content">
-          <div className="checkbox-item">
+        <CardContent className="rf-checkbox-group">
+          <div className="rf-checkbox-item">
             <Checkbox
-              id="available-only"
-              checked={showAvailableOnly}
-              onCheckedChange={(checked) => onShowAvailableOnlyChange(checked)}
+              id="status-available"
+              checked={selectedStatus.includes("Available")}
+              onCheckedChange={() => handleStatusToggle("Available")}
             />
-            <Label htmlFor="available-only" className="checkbox-label">
-              Chỉ hiển thị phòng trống
+            <Label htmlFor="status-available" className="rf-checkbox-label">
+              Phòng trống
+            </Label>
+          </div>
+          <div className="rf-checkbox-item">
+            <Checkbox
+              id="status-occupied"
+              checked={selectedStatus.includes("Occupied")}
+              onCheckedChange={() => handleStatusToggle("Occupied")}
+            />
+            <Label htmlFor="status-occupied" className="rf-checkbox-label">
+              Đang thuê
             </Label>
           </div>
         </CardContent>
       </Card>
 
-      {/* Sort Filter */}
-      <Card>
-        <CardHeader className="filter-header">
-          <CardTitle className="filter-title">Sắp Xếp</CardTitle>
-        </CardHeader>
-        <CardContent className="compact-content">
-          <Select
-            value={sortBy}
-            onValueChange={onSortByChange}
-            className="filter-select"
-          >
-            <SelectItem value="newest">Mới nhất</SelectItem>
-            <SelectItem value="price-low">Giá: Thấp đến Cao</SelectItem>
-            <SelectItem value="price-high">Giá: Cao đến Thấp</SelectItem>
-            <SelectItem value="area-large">Diện tích: Lớn đến Bé</SelectItem>
-            <SelectItem value="floor-high">Tầng: Cao đến Thấp</SelectItem>
-          </Select>
-        </CardContent>
-      </Card>
-
-      {/* Reset Button */}
       <Button
         variant="outline"
-        className="reset-button"
+        className="rf-reset-button"
         onClick={onResetFilters}
       >
         Xóa Bộ Lọc

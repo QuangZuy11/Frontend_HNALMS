@@ -22,19 +22,32 @@
   overflow: hidden;
 }
 
+.room-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
 .room-image-gradient {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), transparent);
 }
 
 .room-name-overlay {
   font-size: 2.25rem;
   font-weight: 700;
   color: white;
-  opacity: 0.5;
+  opacity: 0.9;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .room-status {

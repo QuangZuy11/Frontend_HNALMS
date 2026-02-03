@@ -1,0 +1,177 @@
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import "./FloorMap.css";
+
+interface Room {
+  _id: string;
+  name: string;
+  status: string;
+  floorLabel?: string;
+  roomTypeId?: {
+    _id: string;
+    name?: string;
+    typeName?: string;
+  };
+  [key: string]: any;
+}
+
+interface FloorMapProps {
+  rooms: Room[];
+  floorName?: string;
+}
+
+// Premium Soft/Modern Palette
+const ROOM_TYPE_COLORS = [
+  "#2dd4bf", // Soft Teal
+  "#818cf8", // Soft Indigo
+  "#fb7185", // Soft Rose
+  "#fbbf24", // Warm Amber
+  "#34d399", // Mint Green
+  "#a78bfa", // Soft Violet
+  "#38bdf8", // Sky Blue
+  "#f472b6", // Pink
+];
+
+export default function FloorMap({ rooms, floorName }: FloorMapProps) {
+  const navigate = useNavigate();
+
+  // 1. Identify Unique Room Types present in this list
+  const uniqueRoomTypes = Array.from(
+    new Set(rooms.map((r) => r.roomTypeId?._id).filter(Boolean)),
+  ).map((id) => {
+    const room = rooms.find((r) => r.roomTypeId?._id === id);
+    // Try to find a name property. roomTypeId might have name or typeName
+    const name =
+      room?.roomTypeId?.typeName || room?.roomTypeId?.name || "Loại Khác";
+    const price = room?.price || 0;
+    return { id, name, price };
+  });
+
+  // Sort types by name to assign colors consistently
+  uniqueRoomTypes.sort((a, b) => a.name.localeCompare(b.name));
+
+  // Helper to format price short (e.g. 5000000 -> 5tr)
+  const formatPriceShort = (price: number) => {
+    if (!price) return "";
+    if (price >= 1000000) {
+      return `${(price / 1000000).toFixed(1).replace(/\.0$/, "")}tr`;
+    }
+    return `${(price / 1000).toFixed(0)}k`;
+  };
+
+  // 2. Helper to get color for a type
+  const getRoomTypeColor = (typeId?: string) => {
+    if (!typeId) return "#6b7280"; // Default gray
+    const index = uniqueRoomTypes.findIndex((t) => t.id === typeId);
+    if (index === -1) return "#6b7280";
+    return ROOM_TYPE_COLORS[index % ROOM_TYPE_COLORS.length];
+  };
+
+  // Sort rooms by name Descending
+  const sortedRooms = [...rooms].sort((a, b) => {
+    return b.name.localeCompare(a.name, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+  });
+
+  const handleRoomClick = (roomId: string) => {
+    navigate(`/rooms/${roomId}`);
+  };
+
+  return (
+    <div className="floor-map-container">
+      <div className="map-header">
+        <h3 className="map-title">SƠ ĐỒ {floorName || "TẦNG"}</h3>
+
+        <div className="map-legends-container">
+          {/* Status Legend */}
+          <div className="map-legend status-legend">
+            <div className="legend-item">
+              <span className="legend-color available"></span>
+              <span>Trống</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-color occupied"></span>
+              <span>Đã Thuê</span>
+            </div>
+          </div>
+
+          {/* Room Type Legend (Dynamic) */}
+          {uniqueRoomTypes.length > 0 && (
+            <div className="map-legend type-legend">
+              {uniqueRoomTypes.map((type) => (
+                <div key={type.id} className="legend-item">
+                  <span
+                    className="legend-color"
+                    style={{
+                      backgroundColor: "white",
+                      border: `2px solid ${getRoomTypeColor(type.id)}`,
+                    }}
+                  ></span>
+                  <span>
+                    {type.name}{" "}
+                    <span style={{ opacity: 0.7, fontWeight: 400 }}>
+                      ({formatPriceShort(type.price)})
+                    </span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="map-layout">
+        <div className="rooms-grid">
+          {sortedRooms.length > 0 ? (
+            sortedRooms.map((room) => {
+              const isAvailable =
+                room.status === "Available" || room.status === "Trống";
+              const typeColor = getRoomTypeColor(room.roomTypeId?._id);
+
+              return (
+                <div
+                  key={room._id}
+                  className={`room-node ${isAvailable ? "status-available" : "status-occupied"}`}
+                  onClick={() => handleRoomClick(room._id)}
+                  title={`${room.name} - ${room.roomTypeId?.typeName || room.roomTypeId?.name || ""}`}
+                  style={
+                    isAvailable
+                      ? {
+                          borderColor: typeColor,
+                          color: typeColor,
+                          backgroundColor: `${typeColor}0D`, // Very faint tint (approx 5% opacity)
+                        }
+                      : undefined
+                  }
+                >
+                  <span className="room-node-name">{room.name}</span>
+                </div>
+              );
+            })
+          ) : (
+            <div
+              className="map-empty-state"
+              style={{
+                gridColumn: "1 / -1",
+                height: "200px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#6b7280",
+                fontStyle: "italic",
+              }}
+            >
+              Không tìm thấy phòng phù hợp
+            </div>
+          )}
+        </div>
+
+        <div className="map-sidebar-area">
+          <div className="area-label">Nhà Xe</div>
+        </div>
+      </div>
+    </div>
+  );
+}
