@@ -558,7 +558,7 @@ export default function ViewProfile() {
                         name="phone"
                         value={formData.phone}
                         onChange={handleFormChange}
-                        placeholder="0901234567"
+                       
                         className={fieldErrors.phone ? "input-error" : ""}
                       />
                       {fieldErrors.phone && (

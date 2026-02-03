@@ -4,14 +4,13 @@ import { authService } from '../../../services/authService';
 import { useAuth } from '../../../context/AuthContext';
 import './CreateAccount.css';
 
-// Admin -> Owner | Owner -> Manager, Accountant | Manager -> Tenant
+// Admin -> Owner | Owner -> Manager, Accountant
 const ROLE_OPTIONS: Record<string, { value: string; label: string }[]> = {
   admin: [{ value: 'owner', label: 'Chủ nhà (Owner)' }],
   owner: [
     { value: 'manager', label: 'Quản lý (Manager)' },
     { value: 'accountant', label: 'Kế toán (Accountant)' },
   ],
-  manager: [{ value: 'Tenant', label: 'Người thuê (Tenant)' }],
 };
 
 interface FormData {
@@ -91,7 +90,7 @@ export default function CreateAccount() {
     navigate(-1);
   };
 
-  if (!['admin', 'owner', 'manager'].includes(currentRole)) {
+  if (!['admin', 'owner'].includes(currentRole)) {
     return (
       <div className="create-account-page">
         <div className="create-account-card">
@@ -112,9 +111,8 @@ export default function CreateAccount() {
           <div>
             <h1>Tạo tài khoản mới</h1>
             <p className="create-account-subtitle">
-            {currentRole === 'admin' && 'Tạo tài khoản Chủ nhà (Owner)'}
-            {currentRole === 'owner' && 'Tạo tài khoản Quản lý hoặc Kế toán'}
-            {currentRole === 'manager' && 'Tạo tài khoản Người thuê (Tenant)'}
+              {currentRole === 'admin' && 'Tạo tài khoản Chủ nhà (Owner)'}
+              {currentRole === 'owner' && 'Tạo tài khoản Quản lý hoặc Kế toán'}
             </p>
           </div>
           <Link to="/created-accounts" className="btn-secondary">
@@ -142,7 +140,7 @@ export default function CreateAccount() {
               name="username"
               value={formData.username}
               onChange={handleChange}
-              placeholder="Nhập tên đăng nhập"
+              
               required
               minLength={3}
             />
@@ -189,7 +187,7 @@ export default function CreateAccount() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="role">Vai trò *</label>
+            <label htmlFor="role">Vai trò </label>
             <select
               id="role"
               name="role"

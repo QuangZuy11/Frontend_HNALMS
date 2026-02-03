@@ -35,11 +35,8 @@ const MENU_ITEMS = [
     {
         title: "Quản lý nhân sự",
         icon: <Users size={20} />,
-        path: "/owner/staff",
-        subItems: [
-            { title: "Tạo tài khoản", path: "/owner/create-account" },
-            { title: "Danh sách tài khoản", path: "/owner/accounts" },
-        ]
+        path: "/owner/accounts",
+        subItems: []
     },
     {
         title: "Hợp đồng & Cư dân",

@@ -348,7 +348,7 @@ export default function LoginPage() {
                     }}
                     autoComplete="username"
                     className="login-input"
-                    placeholder="Nhập tên đăng nhập"
+                   
                     disabled={loading}
                   />
                 </div>

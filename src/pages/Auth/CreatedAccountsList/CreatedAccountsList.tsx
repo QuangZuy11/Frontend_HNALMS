@@ -4,14 +4,13 @@ import { authService } from '../../../services/authService';
 import { useAuth } from '../../../context/AuthContext';
 import './CreatedAccountsList.css';
 
-// Admin -> Owner | Owner -> Manager, Accountant | Manager -> Tenant
+// Admin -> Owner | Owner -> Manager, Accountant
 const ROLE_OPTIONS: Record<string, { value: string; label: string }[]> = {
-  admin: [{ value: 'owner', label: 'Chủ nhà (Owner)' }],
+  admin: [{ value: 'owner', label: 'Chủ căn hộ ' }],
   owner: [
-    { value: 'manager', label: 'Quản lý ' },
-    { value: 'accountant', label: 'Kế toán ' },
+    { value: 'manager', label: 'Quản lý' },
+    { value: 'accountant', label: 'Kế toán' },
   ],
-  manager: [{ value: 'Tenant', label: 'Người thuê ' }],
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -36,6 +35,7 @@ interface CreatedAccount {
   role: string;
   status: string;
   createdAt?: string;
+  fullname?: string | null;
 }
 
 interface AccountDetail extends CreatedAccount {
@@ -71,6 +71,7 @@ export default function CreatedAccountsList() {
 
   const currentRole = (user?.role || '').toLowerCase();
   const roleOptions = ROLE_OPTIONS[currentRole] || [];
+  const singleRoleOption = roleOptions.length === 1 ? roleOptions[0] : null;
 
   const [formData, setFormData] = useState<FormData>({
     username: '',
@@ -237,21 +238,25 @@ export default function CreatedAccountsList() {
     );
   }
 
+  const isManager = currentRole === 'manager';
+
   return (
     <div className="created-accounts-page">
       <div className="created-accounts-card">
         <div className="created-accounts-header">
           <div>
-            <h1>Danh sách tài khoản đã tạo</h1>
+            <h1>{isManager ? 'Danh sách tài khoản cư dân' : 'Danh sách tài khoản đã tạo'}</h1>
             <p className="created-accounts-subtitle">
               {currentRole === 'admin' && 'Các tài khoản Chủ nhà (Owner) do bạn tạo'}
               {currentRole === 'owner' && 'Các tài khoản Quản lý, Kế toán do bạn tạo'}
-              {currentRole === 'manager' && 'Các tài khoản Người thuê (Tenant) do bạn tạo'}
+              {isManager && 'Danh sách tài khoản cư dân (tenant) trong tòa nhà'}
             </p>
           </div>
-          <button onClick={handleCreateNew} className="btn-create">
-            + Tạo tài khoản mới
-          </button>
+          {!isManager && (
+            <button onClick={handleCreateNew} className="btn-create">
+              + Tạo tài khoản mới
+            </button>
+          )}
         </div>
 
         {loading ? (
@@ -268,10 +273,12 @@ export default function CreatedAccountsList() {
           </div>
         ) : accounts.length === 0 ? (
           <div className="created-accounts-empty">
-            <p>Chưa có tài khoản nào được tạo.</p>
-            <button onClick={handleCreateNew} className="btn-primary">
-              Tạo tài khoản đầu tiên
-            </button>
+            <p>{isManager ? 'Chưa có tài khoản cư dân nào.' : 'Chưa có tài khoản nào được tạo.'}</p>
+            {!isManager && (
+              <button onClick={handleCreateNew} className="btn-primary">
+                Tạo tài khoản đầu tiên
+              </button>
+            )}
           </div>
         ) : null}
 
@@ -281,56 +288,97 @@ export default function CreatedAccountsList() {
               <thead>
                 <tr>
                   <th>STT</th>
-                  <th>Tên đăng nhập</th>
-                  <th>Email</th>
-                  <th>Số điện thoại</th>
-                  <th>Vai trò</th>
-                  <th>Trạng thái</th>
-                  <th>Ngày tạo</th>
-                  <th>Thao tác</th>
+                  {isManager ? (
+                    <>
+                      <th>Họ và tên</th>
+                      <th>Email</th>
+                      <th>Số điện thoại</th>
+                      <th>Trạng thái</th>
+                      <th>Ngày tạo</th>
+                      <th>Thao tác</th>
+                    </>
+                  ) : (
+                    <>
+                      <th>Tên đăng nhập</th>
+                      <th>Email</th>
+                      <th>Số điện thoại</th>
+                      <th>Vai trò</th>
+                      <th>Trạng thái</th>
+                      <th>Ngày tạo</th>
+                      <th>Thao tác</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {accounts.map((acc, index) => (
                   <tr key={acc._id}>
                     <td>{index + 1}</td>
-                    <td>{acc.username}</td>
-                    <td>{acc.email}</td>
-                    <td>{acc.phoneNumber || '-'}</td>
-                    <td>
-                      <span className="role-badge">{ROLE_LABELS[acc.role] || acc.role}</span>
-                    </td>
-                    <td>
-                      <span className={`status-badge status-${acc.status}`}>
-                        {STATUS_LABELS[acc.status] || acc.status}
-                      </span>
-                    </td>
-                    <td>{formatDate(acc.createdAt)}</td>
-                    <td>
-                      <div className="action-buttons">
-                        <button
-                          type="button"
-                          className="btn-view-detail"
-                          onClick={() => handleViewDetail(acc._id)}
-                          title="Xem chi tiết"
-                        >
-                          Xem chi tiết
-                        </button>
-                        {acc.status === 'active' ? (
-                          <button
-                            type="button"
-                            className="btn-disable"
-                            onClick={() => handleDisableAccount(acc._id)}
-                            disabled={disablingId === acc._id}
-                            title="Đóng tài khoản"
-                          >
-                            {disablingId === acc._id ? 'Đang xử lý...' : 'Đóng tài khoản'}
-                          </button>
-                        ) : (
-                          <span className="disabled-label">Đã đóng</span>
-                        )}
-                      </div>
-                    </td>
+                    {isManager ? (
+                      <>
+                        <td>{acc.fullname ?? '-'}</td>
+                        <td>{acc.email}</td>
+                        <td>{acc.phoneNumber || '-'}</td>
+                        <td>
+                          <span className={`status-badge status-${acc.status}`}>
+                            {STATUS_LABELS[acc.status] || acc.status}
+                          </span>
+                        </td>
+                        <td>{formatDate(acc.createdAt)}</td>
+                        <td>
+                          <div className="action-buttons">
+                            <button
+                              type="button"
+                              className="btn-view-detail"
+                              onClick={() => handleViewDetail(acc._id)}
+                              title="Xem chi tiết"
+                            >
+                              Xem chi tiết
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td>{acc.username}</td>
+                        <td>{acc.email}</td>
+                        <td>{acc.phoneNumber || '-'}</td>
+                        <td>
+                          <span className="role-badge">{ROLE_LABELS[acc.role] || acc.role}</span>
+                        </td>
+                        <td>
+                          <span className={`status-badge status-${acc.status}`}>
+                            {STATUS_LABELS[acc.status] || acc.status}
+                          </span>
+                        </td>
+                        <td>{formatDate(acc.createdAt)}</td>
+                        <td>
+                          <div className="action-buttons">
+                            <button
+                              type="button"
+                              className="btn-view-detail"
+                              onClick={() => handleViewDetail(acc._id)}
+                              title="Xem chi tiết"
+                            >
+                              Xem chi tiết
+                            </button>
+                            {acc.status === 'active' ? (
+                              <button
+                                type="button"
+                                className="btn-disable"
+                                onClick={() => handleDisableAccount(acc._id)}
+                                disabled={disablingId === acc._id}
+                                title="Đóng tài khoản"
+                              >
+                                {disablingId === acc._id ? 'Đang xử lý...' : 'Đóng tài khoản'}
+                              </button>
+                            ) : (
+                              <span className="disabled-label">Đã đóng</span>
+                            )}
+                          </div>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -356,73 +404,134 @@ export default function CreatedAccountsList() {
                   </div>
                 ) : detailAccount ? (
                   <div className="detail-content">
-                    <div className="detail-section">
-                      <h3>Thông tin đăng nhập</h3>
-                      <div className="detail-row">
-                        <span className="detail-label">Tên đăng nhập:</span>
-                        <span className="detail-value">{detailAccount.username}</span>
+                    {isManager ? (
+                      <div className="detail-content-manager">
+                        <div className="detail-section-divider">Thông tin tài khoản</div>
+                        <div className="detail-section-block">
+                          <div className="detail-row">
+                            <span className="detail-label">Username:</span>
+                            <span className="detail-value detail-value-black">{detailAccount.username}</span>
+                          </div>
+                          <div className="detail-row">
+                            <span className="detail-label">Trạng thái:</span>
+                            <span className={`status-badge status-${detailAccount.status}`}>
+                              {STATUS_LABELS[detailAccount.status] || detailAccount.status}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="detail-section-divider">Thông tin liên hệ</div>
+                        <div className="detail-section-block">
+                          <div className="detail-row">
+                            <span className="detail-label">Email:</span>
+                            <span className="detail-value detail-value-black">{detailAccount.email}</span>
+                          </div>
+                          <div className="detail-row">
+                            <span className="detail-label">Số điện thoại:</span>
+                            <span className="detail-value detail-value-black">{detailAccount.phoneNumber || '-'}</span>
+                          </div>
+                        </div>
+                        <div className="detail-section-divider">Thông tin cá nhân</div>
+                        <div className="detail-section-block">
+                          <div className="detail-row">
+                            <span className="detail-label">Họ và tên:</span>
+                            <span className="detail-value detail-value-black">{detailAccount.fullname || '-'}</span>
+                          </div>
+                          <div className="detail-row">
+                            <span className="detail-label">Giới tính:</span>
+                            <span className="detail-value detail-value-black">
+                              {detailAccount.gender === 'Male' ? 'Nam' : detailAccount.gender === 'Female' ? 'Nữ' : detailAccount.gender === 'Other' ? 'Khác' : '-'}
+                            </span>
+                          </div>
+                          <div className="detail-row">
+                            <span className="detail-label">Ngày sinh:</span>
+                            <span className="detail-value detail-value-black">
+                              {detailAccount.dob ? formatDate(detailAccount.dob) : '-'}
+                            </span>
+                          </div>
+                          <div className="detail-row">
+                            <span className="detail-label">Địa chỉ:</span>
+                            <span className="detail-value detail-value-black">{detailAccount.address || '-'}</span>
+                          </div>
+                        </div>
+                        <div className="detail-section-divider">Thông tin pháp lý</div>
+                        <div className="detail-section-block">
+                          <div className="detail-row">
+                            <span className="detail-label">CCCD:</span>
+                            <span className="detail-value detail-value-black">{detailAccount.cccd || '-'}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="detail-row">
-                        <span className="detail-label">Email:</span>
-                        <span className="detail-value">{detailAccount.email}</span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label">Số điện thoại:</span>
-                        <span className="detail-value">{detailAccount.phoneNumber || '-'}</span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label">Vai trò:</span>
-                        <span className="role-badge">{ROLE_LABELS[detailAccount.role] || detailAccount.role}</span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label">Trạng thái:</span>
-                        <span className={`status-badge status-${detailAccount.status}`}>
-                          {STATUS_LABELS[detailAccount.status] || detailAccount.status}
-                        </span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label">Ngày tạo:</span>
-                        <span className="detail-value">{formatDate(detailAccount.createdAt)}</span>
-                      </div>
-                    </div>
-                    <div className="detail-section">
-                      <h3>Thông tin cá nhân</h3>
-                      <div className="detail-row">
-                        <span className="detail-label">Họ và tên:</span>
-                        <span className="detail-value">{detailAccount.fullname || '-'}</span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label">CCCD/CMND:</span>
-                        <span className="detail-value">{detailAccount.cccd || '-'}</span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label">Ngày sinh:</span>
-                        <span className="detail-value">
-                          {detailAccount.dob ? formatDate(detailAccount.dob) : '-'}
-                        </span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label">Giới tính:</span>
-                        <span className="detail-value">
-                          {detailAccount.gender === 'Male' ? 'Nam' : detailAccount.gender === 'Female' ? 'Nữ' : detailAccount.gender === 'Other' ? 'Khác' : '-'}
-                        </span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label">Địa chỉ:</span>
-                        <span className="detail-value">{detailAccount.address || '-'}</span>
-                      </div>
-                    </div>
-                    {detailAccount.status === 'active' && (
-                      <div className="detail-actions">
-                        <button
-                          type="button"
-                          className="btn-disable"
-                          onClick={() => handleDisableAccount(detailAccount._id)}
-                          disabled={disablingId === detailAccount._id}
-                        >
-                          {disablingId === detailAccount._id ? 'Đang xử lý...' : 'Đóng tài khoản'}
-                        </button>
-                      </div>
+                    ) : (
+                      <>
+                        <div className="detail-section">
+                          <h3>Thông tin đăng nhập</h3>
+                          <div className="detail-row">
+                            <span className="detail-label">Tên đăng nhập:</span>
+                            <span className="detail-value">{detailAccount.username}</span>
+                          </div>
+                          <div className="detail-row">
+                            <span className="detail-label">Email:</span>
+                            <span className="detail-value">{detailAccount.email}</span>
+                          </div>
+                          <div className="detail-row">
+                            <span className="detail-label">Số điện thoại:</span>
+                            <span className="detail-value">{detailAccount.phoneNumber || '-'}</span>
+                          </div>
+                          <div className="detail-row">
+                            <span className="detail-label">Vai trò:</span>
+                            <span className="role-badge">{ROLE_LABELS[detailAccount.role] || detailAccount.role}</span>
+                          </div>
+                          <div className="detail-row">
+                            <span className="detail-label">Trạng thái:</span>
+                            <span className={`status-badge status-${detailAccount.status}`}>
+                              {STATUS_LABELS[detailAccount.status] || detailAccount.status}
+                            </span>
+                          </div>
+                          <div className="detail-row">
+                            <span className="detail-label">Ngày tạo:</span>
+                            <span className="detail-value">{formatDate(detailAccount.createdAt)}</span>
+                          </div>
+                        </div>
+                        <div className="detail-section">
+                          <h3>Thông tin cá nhân</h3>
+                          <div className="detail-row">
+                            <span className="detail-label">Họ và tên:</span>
+                            <span className="detail-value">{detailAccount.fullname || '-'}</span>
+                          </div>
+                          <div className="detail-row">
+                            <span className="detail-label">CCCD/CMND:</span>
+                            <span className="detail-value">{detailAccount.cccd || '-'}</span>
+                          </div>
+                          <div className="detail-row">
+                            <span className="detail-label">Ngày sinh:</span>
+                            <span className="detail-value">
+                              {detailAccount.dob ? formatDate(detailAccount.dob) : '-'}
+                            </span>
+                          </div>
+                          <div className="detail-row">
+                            <span className="detail-label">Giới tính:</span>
+                            <span className="detail-value">
+                              {detailAccount.gender === 'Male' ? 'Nam' : detailAccount.gender === 'Female' ? 'Nữ' : detailAccount.gender === 'Other' ? 'Khác' : '-'}
+                            </span>
+                          </div>
+                          <div className="detail-row">
+                            <span className="detail-label">Địa chỉ:</span>
+                            <span className="detail-value">{detailAccount.address || '-'}</span>
+                          </div>
+                        </div>
+                        {detailAccount.status === 'active' && (
+                          <div className="detail-actions">
+                            <button
+                              type="button"
+                              className="btn-disable"
+                              onClick={() => handleDisableAccount(detailAccount._id)}
+                              disabled={disablingId === detailAccount._id}
+                            >
+                              {disablingId === detailAccount._id ? 'Đang xử lý...' : 'Đóng tài khoản'}
+                            </button>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 ) : null}
@@ -461,7 +570,7 @@ export default function CreatedAccountsList() {
                       name="username"
                       value={formData.username}
                       onChange={handleFormChange}
-                      placeholder="Nhập tên đăng nhập"
+                      
                       required
                       minLength={3}
                     />
@@ -474,7 +583,7 @@ export default function CreatedAccountsList() {
                       name="phoneNumber"
                       value={formData.phoneNumber}
                       onChange={handleFormChange}
-                      placeholder="0901234567"
+                      
                       required
                     />
                   </div>
@@ -504,21 +613,28 @@ export default function CreatedAccountsList() {
                     />
                   </div>
                   <div className="form-group">
-                    <label htmlFor="modal-role">Vai trò *</label>
-                    <select
-                      id="modal-role"
-                      name="role"
-                      value={formData.role}
-                      onChange={handleFormChange}
-                      required
-                    >
-                      <option value="">Chọn vai trò</option>
-                      {roleOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
+                    <label htmlFor="modal-role">Vai trò </label>
+                    {singleRoleOption ? (
+                      // Trường hợp chỉ có 1 vai trò (ví dụ: Admin chỉ tạo được Chủ nhà)
+                      <div className="readonly-role">
+                        {singleRoleOption.label}
+                      </div>
+                    ) : (
+                      <select
+                        id="modal-role"
+                        name="role"
+                        value={formData.role}
+                        onChange={handleFormChange}
+                        required
+                      >
+                        <option value="">Chọn vai trò</option>
+                        {roleOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                   <div className="form-actions">
                     <button type="button" onClick={handleCloseModal} className="btn-secondary" disabled={formSaving}>

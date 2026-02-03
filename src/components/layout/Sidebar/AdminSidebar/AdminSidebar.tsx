@@ -23,10 +23,7 @@ const MENU_ITEMS = [
         title: "Quản lý tài khoản",
         icon: <Users size={20} />,
         path: "/admin/accounts",
-        subItems: [
-            { title: "Tạo tài khoản", path: "/admin/create-account" },
-            { title: "Danh sách tài khoản", path: "/admin/accounts" },
-        ]
+        subItems: []
     },
     {
         title: "Cài đặt hệ thống",
