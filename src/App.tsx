@@ -158,6 +158,7 @@ function LayoutWrapper() {
           <Route path="accounts" element={<CreatedAccountsList />} />
           <Route path="profile" element={<ViewProfile />} />
           <Route path="profile/update" element={<UpdateProfile />} />
+          <Route path="rules" element={<ManagerRules />} />
         </Route>
 
         {/* ==================== MANAGER ROUTES ==================== */}
@@ -171,7 +172,7 @@ function LayoutWrapper() {
         >
           <Route index element={<ManagerDashboard />} />
           <Route path="services" element={<ManageService />} />
-          <Route path="rules" element={<ManagerRules />} />
+
           <Route path="create-account" element={<CreateAccount />} />
           <Route path="accounts" element={<CreatedAccountsList />} />
           <Route path="profile" element={<ManagerProfile />} />

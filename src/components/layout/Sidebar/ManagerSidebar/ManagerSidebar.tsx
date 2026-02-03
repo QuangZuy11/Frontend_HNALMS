@@ -56,7 +56,7 @@ const MENU_ITEMS = [
     subItems: []
   },
   {
-    title: "Điện & Nước",
+    title: "Chỉ Số Điện & Nước",
     icon: <Zap size={20} />,
     path: "/manager/utilities",
     subItems: []

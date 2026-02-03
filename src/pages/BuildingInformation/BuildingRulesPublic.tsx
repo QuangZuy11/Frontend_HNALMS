@@ -37,7 +37,7 @@ const BuildingRulesPublic = () => {
   // Kiểm tra quyền admin/manager
   const { user } = useAuth();
   const isAdminOrManager =
-    user && (user.role === "admin" || user.role === "manager");
+    user && (user.role === "owner");
 
   // State quản lý dữ liệu nội quy
   const [rulesData, setRulesData] = useState(null);
