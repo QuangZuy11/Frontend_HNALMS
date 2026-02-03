@@ -532,6 +532,7 @@ const BuildingConfig = () => {
                   <label>Số người tối đa</label>
                   <div className="info-value">{viewingType.personMax} người</div>
                 </div>
+                
                 <div className="info-item full-width">
                   <label>Mô tả</label>
                   <div className="info-value text-desc">{viewingType.description || "Không có mô tả"}</div>

@@ -375,9 +375,9 @@
 .text-muted {
     color: var(--text-secondary);
     max-width: 250px;
-    white-space: nowrap;
+    /* white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
+    text-overflow: ellipsis; */
 }
 
 /* Action buttons in Table */
@@ -713,6 +713,15 @@ input::placeholder, textarea::placeholder {
 
 .info-value.text-bold { font-weight: 700; font-size: 16px; }
 .info-value.text-desc { font-size: 14px; line-height: 1.5; }
+
+.info-item.full-width .info-value {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: none;
+  overflow: visible;
+  white-space: normal;
+}
 
 /* Grid hiển thị ảnh trong chi tiết */
 .detail-images-section {
