@@ -10,6 +10,7 @@ import "./App.css";
 // Context
 import { AuthProvider } from "./context/AuthContext";
 import { PrivateRoute } from "./routes/PrivateRoute";
+import { PublicRoute } from "./routes/PublicRoute";
 
 // Layout Components
 import Hero from "./components/layout/Hero/Hero";
@@ -80,16 +81,16 @@ function LayoutWrapper() {
         {/* Redirect root */}
         <Route path="/" element={<Navigate to="/homepage" replace />} />
 
-        {/* Homepage */}
+        {/* Homepage - Redirect authenticated users to their dashboard */}
         <Route
           path="/homepage"
           element={
-            <>
+            <PublicRoute redirectAuthenticated={true}>
               <Header />
               <Hero />
               <About />
               <Contact />
-            </>
+            </PublicRoute>
           }
         />
 
@@ -101,7 +102,15 @@ function LayoutWrapper() {
         <Route path="/rules" element={<><Header /><BuildingRulesPublic /></>} />
 
         {/* ==================== AUTH ROUTES ==================== */}
-        <Route path="/login" element={<Login />} />
+        {/* Login - Redirect authenticated users to their dashboard */}
+        <Route
+          path="/login"
+          element={
+            <PublicRoute redirectAuthenticated={true}>
+              <Login />
+            </PublicRoute>
+          }
+        />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
 

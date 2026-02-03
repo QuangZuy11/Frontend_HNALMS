@@ -377,6 +377,32 @@ main.min-h-screen {
   cursor: not-allowed;
 }
 
+/* Home Button */
+.login-home-button {
+  width: 100%;
+  padding: 12px 20px;
+  background: transparent;
+  color: #3579c6;
+  border: 2px solid #3579c6;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 12px;
+}
+
+.login-home-button:hover {
+  background: #3579c6;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(53, 121, 198, 0.3);
+}
+
+.login-home-button:active {
+  transform: translateY(0);
+}
+
 /* Footer */
 .login-footer {
   text-align: center;

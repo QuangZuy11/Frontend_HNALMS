@@ -409,6 +409,15 @@ export default function LoginPage() {
                 {loading ? "Đang đăng nhập..." : "Đăng nhập"}
               </button>
 
+              {/* Home Button */}
+              <button
+                type="button"
+                onClick={() => navigate("/homepage")}
+                className="login-home-button"
+              >
+                Trang chủ
+              </button>
+
               <p className="login-footer"></p>
             </form>
           ) : (
