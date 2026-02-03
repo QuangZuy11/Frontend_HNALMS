@@ -37,7 +37,12 @@ interface Room {
   isActive: boolean;
 }
 
-const ManageRoom = () => {
+// Props interface để phân quyền
+interface ManageRoomProps {
+  readOnly?: boolean; // true = chỉ xem (Manager), false = full quyền (Owner)
+}
+
+const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   // --- States ---
   const [rooms, setRooms] = useState<Room[]>([]);
   const [floors, setFloors] = useState<Floor[]>([]);
@@ -262,8 +267,10 @@ const ManageRoom = () => {
 
       <div className="page-header">
         <div>
-          <h2 className="page-title">Quản lý danh sách phòng</h2>
-          <p className="page-subtitle">Nhóm theo tầng - Xem dạng bảng</p>
+          <h2 className="page-title">{readOnly ? 'Danh sách phòng' : 'Quản lý danh sách phòng'}</h2>
+          <p className="page-subtitle">
+            {readOnly ? 'Xem thông tin phòng theo tầng' : 'Nhóm theo tầng - Xem dạng bảng'}
+          </p>
         </div>
 
         <div className="stats-summary">
@@ -284,32 +291,34 @@ const ManageRoom = () => {
         </div>
       </div>
 
-      {/* THANH CÔNG CỤ (TOOLBAR) */}
-      <div className="toolbar-actions">
+      {/* THANH CÔNG CỤ (TOOLBAR) - Ẩn khi readOnly */}
+      {!readOnly && (
+        <div className="toolbar-actions">
 
-        {/* [MỚI] Button Tải Mẫu */}
-        <button className="btn-secondary" onClick={handleDownloadTemplate}>
-          <Download size={18} /> Tải mẫu Excel
-        </button>
+          {/* [MỚI] Button Tải Mẫu */}
+          <button className="btn-secondary" onClick={handleDownloadTemplate}>
+            <Download size={18} /> Tải mẫu Excel
+          </button>
 
-        {/* [MỚI] Button Nhập File */}
-        <button className="btn-success" onClick={triggerFileInput}>
-          <FileSpreadsheet size={18} /> Nhập Excel
-        </button>
-        {/* Input ẩn */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          style={{ display: 'none' }}
-          accept=".xlsx, .xls"
-          onChange={handleFileUpload}
-        />
+          {/* [MỚI] Button Nhập File */}
+          <button className="btn-success" onClick={triggerFileInput}>
+            <FileSpreadsheet size={18} /> Nhập Excel
+          </button>
+          {/* Input ẩn */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            accept=".xlsx, .xls"
+            onChange={handleFileUpload}
+          />
 
-        {/* Button Thêm thủ công */}
-        <button className="btn-primary" onClick={handleOpenAdd}>
-          <Plus size={18} /> Thêm phòng mới
-        </button>
-      </div>
+          {/* Button Thêm thủ công */}
+          <button className="btn-primary" onClick={handleOpenAdd}>
+            <Plus size={18} /> Thêm phòng mới
+          </button>
+        </div>
+      )}
 
       <div className="floor-list-container">
         {floors.length === 0 && !loading && <div className="empty-floor">Chưa có dữ liệu tầng.</div>}
@@ -344,7 +353,7 @@ const ManageRoom = () => {
                           <th style={{ width: '120px' }}>Giá niêm yết</th>
                           <th style={{ width: '120px' }}>Trạng thái</th>
                           <th>Mô tả</th>
-                          <th style={{ width: '140px', textAlign: 'center' }}>Thao tác</th>
+                          <th style={{ width: readOnly ? '80px' : '140px', textAlign: 'center' }}>Thao tác</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -374,23 +383,35 @@ const ManageRoom = () => {
 
                               <td>
                                 <div className="action-group">
-                                  <button
-                                    className={`btn-icon-sm power ${room.isActive ? 'active' : 'inactive'}`}
-                                    onClick={() => handleToggleActive(room)}
-                                    title={room.isActive ? "Vô hiệu hóa" : "Kích hoạt lại"}
-                                  >
-                                    <Power size={16} />
-                                  </button>
+                                  {/* Nút Power - Ẩn khi readOnly */}
+                                  {!readOnly && (
+                                    <button
+                                      className={`btn-icon-sm power ${room.isActive ? 'active' : 'inactive'}`}
+                                      onClick={() => handleToggleActive(room)}
+                                      title={room.isActive ? "Vô hiệu hóa" : "Kích hoạt lại"}
+                                    >
+                                      <Power size={16} />
+                                    </button>
+                                  )}
 
+                                  {/* Nút Xem chi tiết - Luôn hiện */}
                                   <button className="btn-icon-sm view" onClick={() => handleViewDetail(room)} title="Chi tiết">
                                     <Eye size={16} />
                                   </button>
-                                  <button className="btn-icon-sm edit" onClick={() => handleOpenEdit(room)} title="Sửa">
-                                    <Edit size={16} />
-                                  </button>
-                                  <button className="btn-icon-sm delete" onClick={() => handleDelete(room._id)} title="Xóa">
-                                    <Trash2 size={16} />
-                                  </button>
+
+                                  {/* Nút Sửa - Ẩn khi readOnly */}
+                                  {!readOnly && (
+                                    <button className="btn-icon-sm edit" onClick={() => handleOpenEdit(room)} title="Sửa">
+                                      <Edit size={16} />
+                                    </button>
+                                  )}
+
+                                  {/* Nút Xóa - Ẩn khi readOnly */}
+                                  {!readOnly && (
+                                    <button className="btn-icon-sm delete" onClick={() => handleDelete(room._id)} title="Xóa">
+                                      <Trash2 size={16} />
+                                    </button>
+                                  )}
                                 </div>
                               </td>
                             </tr>
@@ -408,8 +429,8 @@ const ManageRoom = () => {
         })}
       </div>
 
-      {/* --- MODAL ADD/EDIT --- */}
-      {showModal && (
+      {/* --- MODAL ADD/EDIT --- Ẩn khi readOnly */}
+      {!readOnly && showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
@@ -532,9 +553,12 @@ const ManageRoom = () => {
             </div>
             <div className="modal-actions">
               <button className="btn-secondary" onClick={() => setShowDetailModal(false)}>Đóng</button>
-              <button className="btn-primary" onClick={() => { setShowDetailModal(false); handleOpenEdit(viewingRoom); }}>
-                <Edit size={16} /> Chỉnh sửa
-              </button>
+              {/* Nút Chỉnh sửa - Ẩn khi readOnly */}
+              {!readOnly && (
+                <button className="btn-primary" onClick={() => { setShowDetailModal(false); handleOpenEdit(viewingRoom); }}>
+                  <Edit size={16} /> Chỉnh sửa
+                </button>
+              )}
             </div>
           </div>
         </div>

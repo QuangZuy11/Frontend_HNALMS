@@ -170,6 +170,7 @@ function LayoutWrapper() {
           }
         >
           <Route index element={<ManagerDashboard />} />
+          <Route path="rooms" element={<ManageRoom readOnly={true} />} />
           <Route path="residents" element={<CreatedAccountsList />} />
           <Route path="services" element={<ManageService />} />
 
