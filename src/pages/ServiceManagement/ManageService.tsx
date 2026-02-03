@@ -210,7 +210,7 @@ const ManageService = () => {
 
             <div className="card-footer">
               <span className={`type-badge ${service.type === 'Fixed' ? 'badge-fixed' : 'badge-extension'}`}>
-                {service.type === 'Fixed' ? 'Cố định / Lần' : 'Điện / Nước'}
+                {service.type === 'Fixed' ? 'Cố định / Tháng' : 'Điện / Nước'}
               </span>
 
               <div className="card-actions">
