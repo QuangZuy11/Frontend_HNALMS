@@ -1,5 +1,6 @@
 import { MapPin, Shield, Wifi, ParkingCircle } from "lucide-react";
 import "./About.css";
+import hoangNamBuilding from "../../../assets/images/Gate2.jpg";
 
 // Card Components
 function Card({ className = "", ...props }) {
@@ -28,22 +29,22 @@ export default function About() {
     {
       icon: ParkingCircle,
       title: "Nhà Để Xe An Toàn",
-      description: "Tầng 1 với hệ thống camera 24/7",
+      description: "Có khu vực riêng cho xe điện",
     },
     {
       icon: Wifi,
-      title: "Internet Cao Tốc",
-      description: "Đường truyền ổn định 100Mbps",
+      title: "Internet Tốc Độ Cao",
+      description: "Trang bị Wifi riên cho từng phòng",
     },
     {
       icon: Shield,
-      title: "Bảo Mật Tuyệt Đối",
-      description: "Hệ thống kiểm soát ra vào hiện đại",
+      title: "An Ninh Đảm Bảo",
+      description: "Hệ thống camera giám sát 24/7",
     },
     {
       icon: MapPin,
-      title: "Vị Trí Chiến Lược",
-      description: "Gần trung tâm thành phố, tiện di chuyển",
+      title: "Vị Trí ",
+      description: "Cách Trường ĐH FPT 3km",
     },
   ];
 
@@ -54,8 +55,7 @@ export default function About() {
         <div className="about-header">
           <h2 className="about-title">Về Tòa Nhà Hoàng Nam</h2>
           <p className="about-subtitle">
-            Tòa nhà căn hộ hiện đại với 5 tầng, tích hợp các tiện ích hàng đầu
-            cho cuộc sống chất lượng cao
+            Tòa nhà căn hộ hiện đại với 5 tầng,đáp ứng đầy đủ nhu cầu sinh hoạt hàng ngày
           </p>
         </div>
 
@@ -66,10 +66,10 @@ export default function About() {
             <ul className="about-features-list">
               {[
                 "Tầng 1: Nhà để xe + Căn hộ",
-                "Tầng 2-4: Căn hộ với view thoáng",
+                "Tầng 2-4: Căn hộ ",
                 "Tầng 5: Sân thượng + Căn hộ",
-                "Hệ thống điện, nước hiện đại",
-                "Internet, truyền hình cáp",
+                "Hệ thống điện, nước minh bạch",
+                "Internet tốc độ cao",
                 "Gửi xe an toàn 24/7",
               ].map((item, index) => (
                 <li key={index} className="about-feature-item">
@@ -81,10 +81,21 @@ export default function About() {
           </div>
 
           <div className="about-stats">
-            <div className="about-stats-content">
-              <div className="about-stats-number">5</div>
-              <p className="about-stats-label">Tầng</p>
-              <p className="about-stats-description">Với hơn 20 căn hộ</p>
+            <div
+              className="about-stats-background"
+              style={{
+                backgroundImage: `url(${hoangNamBuilding})`,
+              }}
+            >
+              <div className="about-stats-overlay">
+                <div className="about-stats-content">
+                  <div className="about-stats-number">5</div>
+                  <div className="about-stats-text">
+                    <p className="about-stats-label">Tầng</p>
+                    <p className="about-stats-description">Với 250 căn hộ</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

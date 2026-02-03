@@ -4,6 +4,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Slot } from "@radix-ui/react-slot";
 import "./Hero.css";
 import { Link } from "react-router-dom";
+import buildingOverview from "../../../assets/images/Overview.jpg";
+import rooftopArea from "../../../assets/images/Tang5.png";
+import parkingArea from "../../../assets/images/NhaXe.jpg";
 
 // Button Component
 function Button({
@@ -29,21 +32,21 @@ export default function Hero() {
   const slides = [
     {
       id: 1,
-      title: "Tổng Quan Tòa Nhà",
-      description: "Khám phá vẻ đẹp kiến trúc hiện đại",
-      image: "hero-gradient-1",
+      title: "Căn Hộ Hoàng Nam",
+      description: "Một không gian sống gọn gàng, thoải mái và đầy đủ tiện nghi",
+      image: buildingOverview,
     },
     {
       id: 2,
-      title: "Tiện Nghi Đẳng Cấp",
-      description: "Nhà để xe, Sân thượng, Phòng Gym...",
-      image: "hero-gradient-2",
+      title: "Sân Thượng ",
+      description: "",
+      image: rooftopArea,
     },
     {
       id: 3,
-      title: "Căn Hộ Hiện Đại",
-      description: "Không gian sống thoải mái và tiện nghi",
-      image: "hero-gradient-3",
+      title: "Bãi Đỗ Xe Rộng Rãi",
+      description: "",
+      image: parkingArea,
     },
   ];
 
@@ -64,9 +67,22 @@ export default function Hero() {
             key={slide.id}
             className={`hero-slide ${index === currentSlide ? "hero-slide-active" : ""}`}
           >
-            <div className={`hero-slide-content ${slide.image}`}>
-              <h2 className="hero-title">{slide.title}</h2>
-              <p className="hero-description">{slide.description}</p>
+            <div
+              className={`hero-slide-content ${typeof slide.image === 'string' && slide.image.startsWith('hero-gradient') ? slide.image : ''}`}
+              style={typeof slide.image === 'string' && slide.image.startsWith('hero-gradient') ? {} : {
+                backgroundImage: `url(${slide.image})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
+              }}
+            >
+              <div className="hero-content-container">
+                <div className="hero-text-wrapper">
+                  <h2 className="hero-title">{slide.title}</h2>
+                  <p className="hero-description">{slide.description}</p>
+                  <div className="hero-divider"></div>
+                </div>
+              </div>
             </div>
           </div>
         ))}

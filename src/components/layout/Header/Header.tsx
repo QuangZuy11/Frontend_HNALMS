@@ -29,7 +29,6 @@ export default function Header() {
   const navItems = [
     { label: "Trang Chủ", to: "/" },
     { label: "Tầng & Phòng", to: "/rooms" },
-    { label: "Tin Tức", to: "/news" },
     { label: "Nội Quy", to: "/rules" },
   ];
 

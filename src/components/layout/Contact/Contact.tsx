@@ -1,4 +1,4 @@
-import { Phone, MessageCircle, MapPin, Clock } from "lucide-react";
+import { Phone, Mail, MapPin, Clock } from "lucide-react";
 import { Slot } from "@radix-ui/react-slot";
 import "./Contact.css";
 
@@ -56,11 +56,11 @@ export default function Contact() {
       label: "Gọi Ngay",
     },
     {
-      icon: MessageCircle,
-      title: "Chat Zalo",
-      value: "@hoangnambuilding",
-      action: "https://zalo.me/0869048066",
-      label: "Nhắn Tin",
+      icon: Mail,
+      title: "Email",
+      value: "toanhahoangnam@gmail.com",
+      action: "mailto:toanhahoangnam@gmail.com",
+      label: "Gửi Email",
     },
     {
       icon: MapPin,
