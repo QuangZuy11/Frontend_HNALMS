@@ -359,6 +359,73 @@
   word-break: break-word;
 }
 
+/* Manager chi tiết: phân chia section dễ nhìn, thoáng và cân đối */
+.detail-content-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0.25rem 0;
+}
+
+.detail-content-manager .detail-row-standalone {
+  padding: 0.5rem 0 1rem 0;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.detail-content-manager .detail-section-divider {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary, #3579C6);
+  padding: 1rem 0 0.5rem 0;
+  margin-top: 0.5rem;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+}
+
+.detail-content-manager .detail-section-divider:first-of-type {
+  margin-top: 0;
+}
+
+.detail-content-manager .detail-section-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0.5rem 0 1rem 0;
+}
+
+.detail-content-manager .detail-section-block:last-child {
+  padding-bottom: 0.5rem;
+}
+
+.detail-content-manager .detail-section-block .detail-row {
+  padding: 0.45rem 0;
+  gap: 0.5rem;
+  align-items: baseline;
+  line-height: 1.5;
+}
+
+.detail-content-manager .detail-row {
+  gap: 0.5rem;
+}
+
+.detail-content-manager .detail-label {
+  color: #374151;
+  font-weight: 500;
+  flex: 0 0 auto;
+  min-width: 0;
+  margin-right: 0.25rem;
+}
+
+.detail-content-manager .detail-value,
+.detail-content-manager .detail-value-black {
+  flex: 1;
+  min-width: 0;
+  color: #111827;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
 .detail-actions {
   margin-top: 0.5rem;
   padding-top: 1rem;
@@ -459,6 +526,19 @@
 .create-account-modal-body .form-group select:focus {
   outline: none;
   border-color: var(--primary);
+}
+
+.readonly-role {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  color: #111827;
+  background: #f9fafb;
+  display: flex;
+  align-items: center;
+  min-height: 2.5rem;
 }
 
 .create-account-modal-body .form-actions {

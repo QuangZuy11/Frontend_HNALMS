@@ -187,7 +187,7 @@ export default function CreateAccount() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="role">Vai trò *</label>
+            <label htmlFor="role">Vai trò </label>
             <select
               id="role"
               name="role"

@@ -145,7 +145,6 @@ function LayoutWrapper() {
           <Route index element={<BuildingOwnerDashboard />} />
           <Route path="building-config" element={<BuildingConfig />} />
           <Route path="rooms" element={<ManageRoom />} />
-          <Route path="create-account" element={<CreateAccount />} />
           <Route path="accounts" element={<CreatedAccountsList />} />
           <Route path="profile" element={<ViewProfile />} />
           <Route path="profile/update" element={<UpdateProfile />} />
@@ -161,6 +160,7 @@ function LayoutWrapper() {
           }
         >
           <Route index element={<ManagerDashboard />} />
+          <Route path="residents" element={<CreatedAccountsList />} />
           <Route path="services" element={<ManageService />} />
           <Route path="rules" element={<ManagerRules />} />
           <Route path="create-account" element={<CreateAccount />} />
