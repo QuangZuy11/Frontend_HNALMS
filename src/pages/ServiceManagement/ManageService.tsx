@@ -3,13 +3,23 @@ import axios from 'axios';
 import {
   Plus, Search, Edit, Trash2,
   Package, Zap, X,
-  Filter, ArrowUpDown // [MỚI] Thêm icon
+  Filter, ArrowUpDown,
+  History, CalendarClock // [MỚI] Thêm icon
 } from 'lucide-react';
 import './ManageService.css';
 
 const API_BASE_URL = 'http://localhost:9999/api';
 
-// ... (Interface Service giữ nguyên) ...
+// [MỚI] Interface cho lịch sử giá
+interface PriceHistory {
+  _id: string;
+  name: string; // Tên đợt cập nhật (VD: Giá khởi tạo, Cập nhật...)
+  price: number;
+  startDate: string;
+  endDate: string | null;
+}
+
+// ... (Interface Service Cập nhật thêm histories) ...
 interface Service {
   _id: string;
   name: string;
@@ -17,6 +27,7 @@ interface Service {
   description?: string;
   type: 'Fixed' | 'Extension';
   isActive: boolean;
+  histories?: PriceHistory[]; // [MỚI] Thêm trường histories
 }
 
 const ManageService = () => {
@@ -39,6 +50,10 @@ const ManageService = () => {
   const [formData, setFormData] = useState({
     name: '', currentPrice: 0, description: '', type: 'Fixed', isActive: true
   });
+
+  // [MỚI] Modal History States
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [viewingHistoryService, setViewingHistoryService] = useState<Service | null>(null);
 
   // --- Fetch Data (Giữ nguyên) ---
   const fetchServices = async () => {
@@ -104,6 +119,13 @@ const ManageService = () => {
     });
     setShowModal(true);
   };
+
+  // [MỚI] Mở modal lịch sử
+  const handleViewHistory = (service: Service) => {
+    setViewingHistoryService(service);
+    setShowHistoryModal(true);
+  };
+
   const handleDelete = async (id: string) => { /* ...code cũ */
     if (window.confirm("Xóa?")) {
       try { await axios.delete(`${API_BASE_URL}/services/${id}`); fetchServices(); }
@@ -119,6 +141,14 @@ const ManageService = () => {
     } catch (e) { alert("Lỗi lưu"); }
   };
   const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+  
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "Hiện tại";
+    return new Date(dateString).toLocaleDateString('vi-VN', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+  };
 
 
   return (
@@ -131,6 +161,10 @@ const ManageService = () => {
           <div className="service-stats">
             <span className="stat-badge">Tổng số: {services.length}</span>
             <span className="stat-badge" style={{ color: '#2563eb' }}>Cố định: {services.filter(s => s.type === 'Fixed').length}</span>
+            {/* [MỚI] Thêm thống kê Extension */}
+            <span className="stat-badge" style={{ color: '#d97706' }}>
+                Phụ trội: {services.filter(s => s.type === 'Extension').length}
+            </span>
           </div>
         </div>
         <button className="btn-primary" onClick={handleOpenAdd}>
@@ -210,10 +244,15 @@ const ManageService = () => {
 
             <div className="card-footer">
               <span className={`type-badge ${service.type === 'Fixed' ? 'badge-fixed' : 'badge-extension'}`}>
-                {service.type === 'Fixed' ? 'Cố định / Tháng' : 'Điện / Nước'}
+                {service.type === 'Fixed' ? 'Cố định / Lần' : 'Điện / Nước'}
               </span>
 
               <div className="card-actions">
+                {/* [MỚI] Nút xem lịch sử giá */}
+                <button className="btn-icon btn-history" onClick={() => handleViewHistory(service)} title="Lịch sử thay đổi giá">
+                    <History size={16} />
+                </button>
+
                 <button className="btn-icon btn-edit" onClick={() => handleOpenEdit(service)}>
                   <Edit size={16} />
                 </button>
@@ -277,8 +316,70 @@ const ManageService = () => {
           </div>
         </div>
       )}
+
+      {/* --- [MỚI] MODAL LỊCH SỬ GIÁ --- */}
+      {showHistoryModal && viewingHistoryService && (
+        <div className="modal-overlay" style={{ zIndex: 1100 }}>
+          <div className="modal-content" style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <CalendarClock size={24} style={{color: '#3579c6'}} />
+                <h3>Lịch sử thay đổi giá: {viewingHistoryService.name}</h3>
+              </div>
+              <button onClick={() => setShowHistoryModal(false)}><X size={20}/></button>
+            </div>
+            
+            <div className="detail-body" style={{ padding: '24px 32px', overflowY: 'auto' }}>
+              {viewingHistoryService.histories && viewingHistoryService.histories.length > 0 ? (
+                <div className="history-list" style={{ border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+                  {/* Header Row */}
+                  <div className="history-header-row" style={{ 
+                      display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 1fr', 
+                      padding: '12px 16px', backgroundColor: '#f1f5f9', 
+                      fontWeight: 700, fontSize: 13, color: '#64748b', textTransform: 'uppercase'
+                  }}>
+                    <span>Ngày bắt đầu</span>
+                    <span>Ngày kết thúc</span>
+                    <span style={{textAlign: 'right'}}>Giá áp dụng</span>
+                  </div>
+                  
+                  {/* Data Rows (Đảo ngược để cái mới nhất lên đầu) */}
+                  {[...viewingHistoryService.histories].reverse().map((history) => (
+                    <div key={history._id} className="history-item" style={{ 
+                        display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 1fr', 
+                        padding: '12px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', fontSize: 14,
+                        backgroundColor: !history.endDate ? '#f0fdf4' : 'transparent' // Highlight dòng hiện tại
+                    }}>
+                      <div>{formatDate(history.startDate)}</div>
+                      <div>
+                        {history.endDate ? formatDate(history.endDate) : (
+                            <span style={{ backgroundColor: '#dcfce7', color: '#166534', fontSize: 11, padding: '2px 8px', borderRadius: 12, fontWeight: 700 }}>
+                                Đang áp dụng
+                            </span>
+                        )}
+                      </div>
+                      <div style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 600, color: !history.endDate ? '#16a34a' : '#1e293b' }}>
+                        {formatCurrency(history.price)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-empty" style={{ textAlign: 'center', padding: 40, color: '#64748b', fontStyle: 'italic', background: '#f8fafc', borderRadius: 8, border: '1px dashed #e2e8f0' }}>
+                    Chưa có dữ liệu lịch sử giá.
+                </div>
+              )}
+            </div>
+
+            <div className="modal-actions">
+              <button type="button" className="btn-secondary" onClick={() => setShowHistoryModal(false)}>Đóng</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
 
-export default ManageService;
+export default ManageService; 
