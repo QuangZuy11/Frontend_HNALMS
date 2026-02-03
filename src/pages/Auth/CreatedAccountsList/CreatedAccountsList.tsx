@@ -248,7 +248,7 @@ export default function CreatedAccountsList() {
             <h1>{isManager ? 'Danh sách tài khoản cư dân' : 'Danh sách tài khoản đã tạo'}</h1>
             <p className="created-accounts-subtitle">
               {currentRole === 'admin' && 'Các tài khoản Chủ nhà (Owner) do bạn tạo'}
-              {currentRole === 'owner' && 'Các tài khoản Quản lý, Kế toán do bạn tạo'}
+              {currentRole === 'owner' && 'Các tài khoản Quản lý, Kế toán'}
               {isManager && 'Danh sách tài khoản cư dân (tenant) trong tòa nhà'}
             </p>
           </div>
