@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowLeft,
   User as UserIcon,
   CreditCard,
   Lock,
@@ -99,10 +98,10 @@ export default function ViewProfile() {
       const errorResponse =
         err && typeof err === "object" && "response" in err
           ? (
-              err as {
-                response?: { status?: number; data?: { message?: string } };
-              }
-            ).response
+            err as {
+              response?: { status?: number; data?: { message?: string } };
+            }
+          ).response
           : undefined;
       if (errorResponse?.status === 401) {
         const errorMessage =
@@ -242,7 +241,7 @@ export default function ViewProfile() {
       const errorMessage =
         err && typeof err === "object" && "response" in err
           ? (err as { response?: { data?: { message?: string } } }).response
-              ?.data?.message
+            ?.data?.message
           : undefined;
       setFormError(errorMessage || "Không thể cập nhật thông tin");
     } finally {
@@ -323,9 +322,9 @@ export default function ViewProfile() {
   const getRoleDashboardPath = (role: string): string => {
     const map: Record<string, string> = {
       admin: "/admin",
-      manager: "/managerdashboard",
-      owner: "/building-owner",
-      tenant: "/tenant",
+      manager: "/manager",
+      owner: "/owner",
+      tenant: "/homepage",
       accountant: "/accountant",
     };
     return map[role] || "/homepage";
@@ -469,8 +468,8 @@ export default function ViewProfile() {
               <span className="profile-detail-value">
                 {profile.gender ? (
                   profile.gender.toLowerCase() === "male" ? "Nam" :
-                  profile.gender.toLowerCase() === "female" ? "Nữ" :
-                  "Khác"
+                    profile.gender.toLowerCase() === "female" ? "Nữ" :
+                      "Khác"
                 ) : "Chưa cập nhật"}
               </span>
             </div>
@@ -595,9 +594,7 @@ export default function ViewProfile() {
                       </select>
                     </div>
                     <div className="profile-item full-width">
-                      <label htmlFor="address">
-                        Địa chỉ thường trú
-                      </label>
+                      <label htmlFor="address">Địa chỉ thường trú</label>
                       <textarea
                         id="address"
                         name="address"
@@ -605,14 +602,10 @@ export default function ViewProfile() {
                         onChange={handleFormChange}
                         placeholder="Nhập địa chỉ thường trú"
                         rows={3}
-                        className={
-                          fieldErrors.address ? "input-error" : ""
-                        }
+                        className={fieldErrors.address ? "input-error" : ""}
                       />
                       {fieldErrors.address && (
-                        <p className="field-error">
-                          {fieldErrors.address}
-                        </p>
+                        <p className="field-error">{fieldErrors.address}</p>
                       )}
                     </div>
                   </div>

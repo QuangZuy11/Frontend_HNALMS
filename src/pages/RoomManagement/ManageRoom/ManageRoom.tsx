@@ -1,16 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import {
   Plus, Edit, Trash2, Eye,
   ChevronDown, ChevronRight,
   CheckCircle, AlertCircle, Wrench, X,
-  Building, Home, Tag, // Icon cho phần thống kê
-  Power, // Icon cho nút vô hiệu hóa
-  Image as ImageIcon
+  Building, Home, Tag,
+  Power,
+  Download, FileSpreadsheet
 } from 'lucide-react';
 import './ManageRoom.css';
-
-import ManagerSidebar from '../../../components/layout/Sidebar/ManagerSidebar/ManagerSidebar';
 
 const API_BASE_URL = 'http://localhost:9999/api';
 
@@ -36,7 +34,7 @@ interface Room {
   roomTypeId: string | RoomType;
   status: 'Available' | 'Occupied' | 'Maintenance';
   description?: string;
-  isActive: boolean; // [MỚI] Trạng thái kích hoạt
+  isActive: boolean;
 }
 
 const ManageRoom = () => {
@@ -45,6 +43,9 @@ const ManageRoom = () => {
   const [floors, setFloors] = useState<Floor[]>([]);
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // [MỚI] Ref cho input file ẩn
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // State đóng/mở tầng
   const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
@@ -61,7 +62,7 @@ const ManageRoom = () => {
   const [formData, setFormData] = useState({
     roomCode: '',
     name: '', floorId: '', roomTypeId: '', status: 'Available', description: '',
-    isActive: true // Mặc định là true
+    isActive: true
   });
 
   // --- FETCH DATA ---
@@ -92,7 +93,7 @@ const ManageRoom = () => {
     fetchData();
   }, []);
 
-  // --- TÍNH TOÁN THỐNG KÊ (MỚI) ---
+  // --- TÍNH TOÁN THỐNG KÊ ---
   const totalFloors = floors.length;
   const totalRooms = rooms.length;
   const totalTypes = roomTypes.length;
@@ -104,7 +105,6 @@ const ManageRoom = () => {
     );
   };
 
-  // Helper lấy thông tin Type từ ID/Object (Đã fix lỗi object thiếu data)
   const getRoomTypeDetail = (idOrObj: string | RoomType | any) => {
     if (typeof idOrObj === 'object' && idOrObj !== null) {
       if (idOrObj.typeName) return idOrObj as RoomType;
@@ -130,6 +130,64 @@ const ManageRoom = () => {
       case 'Occupied': return <span className="status-badge occupied"><AlertCircle size={12} /> Đang thuê</span>;
       case 'Maintenance': return <span className="status-badge maintenance"><Wrench size={12} /> Bảo trì</span>;
       default: return <span>{status}</span>;
+    }
+  };
+
+  // --- [MỚI] HANDLERS EXCEL ---
+
+  // 1. Tải mẫu Excel
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/excel/template`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'Mau_Nhap_Phong.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+    } catch (error) {
+      alert("Lỗi tải file mẫu.");
+    }
+  };
+
+  // 2. Kích hoạt input file
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  // 3. Upload file Excel
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset value để cho phép chọn lại file cũ
+    e.target.value = '';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      setLoading(true);
+      const res = await axios.post(`${API_BASE_URL}/excel/import`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      alert(res.data.message);
+      fetchData(); // Load lại dữ liệu sau khi nhập
+    } catch (error: any) {
+      console.error(error);
+      const msg = error.response?.data?.message || "Lỗi khi nhập file.";
+      const detailErrors = error.response?.data?.errors;
+
+      if (detailErrors && detailErrors.length > 0) {
+        alert(`${msg}\n\nChi tiết lỗi:\n- ${detailErrors.join('\n- ')}`);
+      } else {
+        alert(msg);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -168,15 +226,13 @@ const ManageRoom = () => {
     setShowDetailModal(true);
   };
 
-  // [MỚI] Hàm xử lý bật/tắt kích hoạt phòng
   const handleToggleActive = async (room: Room) => {
     const action = room.isActive ? "vô hiệu hóa" : "kích hoạt";
     if (!window.confirm(`Bạn có chắc muốn ${action} phòng ${room.name} không?`)) return;
 
     try {
-      // Chỉ gửi trường isActive cần update
       await axios.put(`${API_BASE_URL}/room/${room._id}`, { isActive: !room.isActive });
-      fetchData(); // Load lại dữ liệu
+      fetchData();
     } catch (error: any) {
       alert("Lỗi cập nhật trạng thái: " + error.message);
     }
@@ -202,144 +258,155 @@ const ManageRoom = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#ffffff' }}>
-      <ManagerSidebar />
+    <div className="room-container">
 
-      <main style={{ flex: 1, marginLeft: '280px', width: 'calc(100% - 280px)' }}>
-        <div className="room-container">
+      <div className="page-header">
+        <div>
+          <h2 className="page-title">Quản lý danh sách phòng</h2>
+          <p className="page-subtitle">Nhóm theo tầng - Xem dạng bảng</p>
+        </div>
 
-          <div className="page-header">
-            <div>
-              <h2 className="page-title">Quản lý danh sách phòng</h2>
-              <p className="page-subtitle">Nhóm theo tầng - Xem dạng bảng</p>
-            </div>
-
-            {/* [MỚI] PHẦN THỐNG KÊ (Giống BuildingConfig) */}
-            <div className="stats-summary">
-              <div className="stat-item">
-                <Building size={16} className="stat-icon icon-primary" />
-                <div className="stat-text"><span className="stat-value">{totalFloors}</span><span className="stat-label">Tầng</span></div>
-              </div>
-              <div className="stat-divider"></div>
-              <div className="stat-item">
-                <Home size={16} className="stat-icon icon-accent" />
-                <div className="stat-text"><span className="stat-value">{totalRooms}</span><span className="stat-label">Phòng</span></div>
-              </div>
-              <div className="stat-divider"></div>
-              <div className="stat-item">
-                <Tag size={16} className="stat-icon icon-success" />
-                <div className="stat-text"><span className="stat-value">{totalTypes}</span><span className="stat-label">Loại phòng</span></div>
-              </div>
-            </div>
+        <div className="stats-summary">
+          <div className="stat-item">
+            <Building size={16} className="stat-icon icon-primary" />
+            <div className="stat-text"><span className="stat-value">{totalFloors}</span><span className="stat-label">Tầng</span></div>
           </div>
-
-          {/* Nút Thêm mới (Đưa xuống dưới Header 1 chút cho thoáng) */}
-          <div className="toolbar-actions" style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-            <button className="btn-primary" onClick={handleOpenAdd}>
-              <Plus size={18} /> Thêm phòng mới
-            </button>
+          <div className="stat-divider"></div>
+          <div className="stat-item">
+            <Home size={16} className="stat-icon icon-accent" />
+            <div className="stat-text"><span className="stat-value">{totalRooms}</span><span className="stat-label">Phòng</span></div>
           </div>
+          <div className="stat-divider"></div>
+          <div className="stat-item">
+            <Tag size={16} className="stat-icon icon-success" />
+            <div className="stat-text"><span className="stat-value">{totalTypes}</span><span className="stat-label">Loại phòng</span></div>
+          </div>
+        </div>
+      </div>
 
-          <div className="floor-list-container">
-            {floors.length === 0 && !loading && <div className="empty-floor">Chưa có dữ liệu tầng.</div>}
+      {/* THANH CÔNG CỤ (TOOLBAR) */}
+      <div className="toolbar-actions">
 
-            {floors.map(floor => {
-              const floorRooms = rooms.filter(r => {
-                const fId = typeof r.floorId === 'object' ? r.floorId._id : r.floorId;
-                return fId === floor._id;
-              });
+        {/* [MỚI] Button Tải Mẫu */}
+        <button className="btn-secondary" onClick={handleDownloadTemplate}>
+          <Download size={18} /> Tải mẫu Excel
+        </button>
 
-              const isExpanded = expandedFloors.includes(floor._id);
+        {/* [MỚI] Button Nhập File */}
+        <button className="btn-success" onClick={triggerFileInput}>
+          <FileSpreadsheet size={18} /> Nhập Excel
+        </button>
+        {/* Input ẩn */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          accept=".xlsx, .xls"
+          onChange={handleFileUpload}
+        />
 
-              return (
-                <div key={floor._id} className="floor-group">
-                  <div className={`floor-header ${isExpanded ? 'active' : ''}`} onClick={() => toggleFloor(floor._id)}>
-                    <div className="floor-title">
-                      {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                      <span>{floor.name}</span>
-                      <span className="room-count-badge">{floorRooms.length} phòng</span>
-                    </div>
-                  </div>
+        {/* Button Thêm thủ công */}
+        <button className="btn-primary" onClick={handleOpenAdd}>
+          <Plus size={18} /> Thêm phòng mới
+        </button>
+      </div>
 
-                  {isExpanded && (
-                    <div className="floor-body">
-                      {floorRooms.length > 0 ? (
-                        <table className="room-table">
-                          <thead>
-                            <tr>
-                              <th style={{ width: '100px' }}>Mã phòng</th>
-                              <th style={{ width: '150px' }}>Tên phòng</th>
-                              <th style={{ width: '150px' }}>Loại phòng</th>
-                              <th style={{ width: '120px' }}>Giá niêm yết</th>
-                              <th style={{ width: '120px' }}>Trạng thái</th>
-                              <th>Mô tả</th>
-                              <th style={{ width: '140px', textAlign: 'center' }}>Thao tác</th>
+      <div className="floor-list-container">
+        {floors.length === 0 && !loading && <div className="empty-floor">Chưa có dữ liệu tầng.</div>}
+
+        {floors.map(floor => {
+          const floorRooms = rooms.filter(r => {
+            const fId = typeof r.floorId === 'object' ? r.floorId._id : r.floorId;
+            return fId === floor._id;
+          });
+
+          const isExpanded = expandedFloors.includes(floor._id);
+
+          return (
+            <div key={floor._id} className="floor-group">
+              <div className={`floor-header ${isExpanded ? 'active' : ''}`} onClick={() => toggleFloor(floor._id)}>
+                <div className="floor-title">
+                  {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                  <span>{floor.name}</span>
+                  <span className="room-count-badge">{floorRooms.length} phòng</span>
+                </div>
+              </div>
+
+              {isExpanded && (
+                <div className="floor-body">
+                  {floorRooms.length > 0 ? (
+                    <table className="room-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: '100px' }}>Mã phòng</th>
+                          <th style={{ width: '150px' }}>Tên phòng</th>
+                          <th style={{ width: '150px' }}>Loại phòng</th>
+                          <th style={{ width: '120px' }}>Giá niêm yết</th>
+                          <th style={{ width: '120px' }}>Trạng thái</th>
+                          <th>Mô tả</th>
+                          <th style={{ width: '140px', textAlign: 'center' }}>Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {floorRooms.map(room => {
+                          const typeDetail = getRoomTypeDetail(room.roomTypeId);
+                          const rowOpacity = room.isActive ? 1 : 0.5;
+
+                          return (
+                            <tr key={room._id} style={{ opacity: rowOpacity }}>
+                              <td style={{ fontFamily: 'monospace', color: '#64748b', fontWeight: 600 }}>
+                                {room.roomCode || '---'}
+                              </td>
+
+                              <td className="font-bold">{room.name}</td>
+
+                              <td>{typeDetail ? typeDetail.typeName : <span style={{ color: 'red' }}>Lỗi</span>}</td>
+
+                              <td className="text-price">
+                                {typeDetail ? formatCurrency(typeDetail.currentPrice) : '---'}
+                              </td>
+
+                              <td>{renderStatus(room.status)}</td>
+
+                              <td className="text-desc">
+                                {room.description || <span className="text-muted-italic">Không có mô tả</span>}
+                              </td>
+
+                              <td>
+                                <div className="action-group">
+                                  <button
+                                    className={`btn-icon-sm power ${room.isActive ? 'active' : 'inactive'}`}
+                                    onClick={() => handleToggleActive(room)}
+                                    title={room.isActive ? "Vô hiệu hóa" : "Kích hoạt lại"}
+                                  >
+                                    <Power size={16} />
+                                  </button>
+
+                                  <button className="btn-icon-sm view" onClick={() => handleViewDetail(room)} title="Chi tiết">
+                                    <Eye size={16} />
+                                  </button>
+                                  <button className="btn-icon-sm edit" onClick={() => handleOpenEdit(room)} title="Sửa">
+                                    <Edit size={16} />
+                                  </button>
+                                  <button className="btn-icon-sm delete" onClick={() => handleDelete(room._id)} title="Xóa">
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              </td>
                             </tr>
-                          </thead>
-                          <tbody>
-                            {floorRooms.map(room => {
-                              const typeDetail = getRoomTypeDetail(room.roomTypeId);
-                              // Nếu room bị inactive thì làm mờ cả dòng
-                              const rowOpacity = room.isActive ? 1 : 0.5;
-
-                              return (
-                                <tr key={room._id} style={{ opacity: rowOpacity }}>
-                                  <td style={{ fontFamily: 'monospace', color: '#64748b', fontWeight: 600 }}>
-                                    {room.roomCode || '---'}
-                                  </td>
-
-                                  <td className="font-bold">{room.name}</td>
-
-                                  <td>{typeDetail ? typeDetail.typeName : <span style={{ color: 'red' }}>Lỗi</span>}</td>
-
-                                  <td className="text-price">
-                                    {typeDetail ? formatCurrency(typeDetail.currentPrice) : '---'}
-                                  </td>
-
-                                  <td>{renderStatus(room.status)}</td>
-
-                                  <td className="text-desc">
-                                    {room.description || <span className="text-muted-italic">Không có mô tả</span>}
-                                  </td>
-
-                                  <td>
-                                    <div className="action-group">
-                                      <button className="btn-icon-sm view" onClick={() => handleViewDetail(room)} title="Chi tiết">
-                                        <Eye size={16} />
-                                      </button>
-                                      <button className="btn-icon-sm edit" onClick={() => handleOpenEdit(room)} title="Sửa">
-                                        <Edit size={16} />
-                                      </button>
-                                      <button className="btn-icon-sm delete" onClick={() => handleDelete(room._id)} title="Xóa">
-                                        <Trash2 size={16} />
-                                      </button>
-                                      {/* Nút Vô hiệu hóa (Power) */}
-                                      <button
-                                        className={`btn-icon-sm power ${room.isActive ? 'active' : 'inactive'}`}
-                                        onClick={() => handleToggleActive(room)}
-                                        title={room.isActive ? "Vô hiệu hóa" : "Kích hoạt lại"}
-                                      >
-                                        <Power size={16} />
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      ) : (
-                        <div className="empty-floor">Chưa có phòng nào ở tầng này.</div>
-                      )}
-                    </div>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="empty-floor">Chưa có phòng nào ở tầng này.</div>
                   )}
                 </div>
-              );
-            })}
-          </div>
-
-        </div>
-      </main>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       {/* --- MODAL ADD/EDIT --- */}
       {showModal && (
@@ -383,7 +450,6 @@ const ManageRoom = () => {
                 </select>
               </div>
 
-              {/* [MỚI] Checkbox kích hoạt trong form sửa */}
               {isEditing && (
                 <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <input

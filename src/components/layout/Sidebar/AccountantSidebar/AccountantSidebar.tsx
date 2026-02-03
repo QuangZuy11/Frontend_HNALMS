@@ -17,7 +17,7 @@ const MENU_ITEMS = [
     {
         title: "Tổng quan",
         icon: <LayoutDashboard size={20} />,
-        path: "/accountant/dashboard",
+        path: "/accountant",
         subItems: []
     },
     {

@@ -1,0 +1,77 @@
+/* ========== Owner Dashboard Wrapper ========== */
+.owner-dashboard-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+.owner-dashboard-body {
+  flex: 1;
+  margin-left: 260px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: margin-left 0.3s ease;
+}
+
+.owner-dashboard-main {
+  flex: 1;
+  overflow-y: auto;
+  background-color: #f8fafc;
+  border-top-left-radius: 16px;
+}
+
+@media (max-width: 1024px) {
+  .owner-dashboard-body {
+    margin-left: 0;
+  }
+}
+
+.owner-dashboard-content {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ========== Dashboard Header ========== */
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.dashboard-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dashboard-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.dashboard-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* ========== Placeholder Content ========== */
+.placeholder-content {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 48px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.placeholder-content p {
+  font-size: 16px;
+  color: #64748b;
+  margin: 0;
+}

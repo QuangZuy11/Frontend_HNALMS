@@ -2,79 +2,44 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard,
-    Building2,
     Users,
-    FileText,
-
-    BarChart3,
-    Bell,
+    Settings,
     ChevronDown,
     ChevronRight,
 } from 'lucide-react';
-import './OwnerSidebar.css';
+// Sử dụng chung CSS với OwnerSidebar
+import '../OwnerSidebar/OwnerSidebar.css';
 import logo from '../../../../assets/images/Logo.png';
 
-// Định nghĩa cấu trúc menu cho Chủ sở hữu
+// Định nghĩa cấu trúc menu cho Admin
 const MENU_ITEMS = [
     {
-        title: "Tổng quan", //Dashboard
+        title: "Tổng quan",
         icon: <LayoutDashboard size={20} />,
-        path: "/owner",
+        path: "/admin",
         subItems: []
     },
     {
-        title: "Quản lý tòa nhà",
-        icon: <Building2 size={20} />,
-        path: "/owner/buildings",
-        subItems: [
-            { title: "Danh sách phòng", path: "/owner/rooms" },
-            { title: "Cấu hình tòa nhà", path: "/owner/building-config" }, // tầng & loại phòng 
-            { title: "Nội quy tòa nhà", path: "/owner/rules" },
-        ]
-    },
-    {
-        title: "Quản lý nhân sự",
+        title: "Quản lý tài khoản",
         icon: <Users size={20} />,
-        path: "/owner/staff",
+        path: "/admin/accounts",
         subItems: [
-            { title: "Tạo tài khoản", path: "/owner/create-account" },
-            { title: "Danh sách tài khoản", path: "/owner/accounts" },
+            { title: "Tạo tài khoản", path: "/admin/create-account" },
+            { title: "Danh sách tài khoản", path: "/admin/accounts" },
         ]
     },
     {
-        title: "Hợp đồng & Cư dân",
-        icon: <FileText size={20} />,
-        path: "/owner/contracts",
-        subItems: [
-            { title: "Danh sách hợp đồng", path: "/owner/contracts/list" },
-            { title: "Danh sách cư dân", path: "/owner/contracts/tenants" },
-        ]
-    },
-
-    {
-        title: "Báo cáo & Thống kê",
-        icon: <BarChart3 size={20} />,
-        path: "/owner/reports",
-        subItems: [
-            { title: "Dòng tiền", path: "/owner/reports/summary" },
-            { title: "Doanh thu", path: "/owner/reports/revenue" },
-            { title: "Hiệu suất", path: "/owner/reports/occupancy" },
-            { title: "Sửa chữa & Bảo trì", path: "/owner/reports/maintenance" },
-        ]
-    },
-    {
-        title: "Quản lý thông báo",
-        icon: <Bell size={20} />,
-        path: "/owner/notifications",
+        title: "Cài đặt hệ thống",
+        icon: <Settings size={20} />,
+        path: "/admin/settings",
         subItems: []
     },
 ];
 
-const OwnerSidebar = () => {
+const AdminSidebar = () => {
     const [expandedMenus, setExpandedMenus] = useState<{ [key: number]: boolean }>({});
     const location = useLocation();
 
-    // Xử lý đóng mở menu con
     const toggleMenu = (index: number) => {
         setExpandedMenus((prev) => ({
             ...prev,
@@ -89,7 +54,7 @@ const OwnerSidebar = () => {
                 <img src={logo} alt="Hoàng Nam Apartment" className="brand-logo" />
             </div>
 
-            {/* Menu Items (Scrollable) */}
+            {/* Menu Items */}
             <div className="sidebar-nav-scroll">
                 <nav className="sidebar-nav">
                     {MENU_ITEMS.map((item, index) => {
@@ -99,7 +64,6 @@ const OwnerSidebar = () => {
 
                         return (
                             <div key={index} className="menu-group">
-                                {/* Parent Item */}
                                 <div
                                     onClick={() => hasSubItems ? toggleMenu(index) : null}
                                     className={`menu-item ${isActiveParent && !hasSubItems ? 'active' : ''} ${hasSubItems && isExpanded ? 'expanded' : ''}`}
@@ -120,7 +84,6 @@ const OwnerSidebar = () => {
                                     )}
                                 </div>
 
-                                {/* Sub Items (Dropdown) */}
                                 {hasSubItems && isExpanded && (
                                     <div className="submenu-container">
                                         {item.subItems.map((sub, subIndex) => {
@@ -146,4 +109,4 @@ const OwnerSidebar = () => {
     );
 };
 
-export default OwnerSidebar;
+export default AdminSidebar;

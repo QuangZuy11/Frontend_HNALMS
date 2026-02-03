@@ -288,7 +288,8 @@ textarea {
     border-top: 1px solid #f1f5f9;
 }
 
-.btn-primary {
+/* Scoped button styles for ManageRoom */
+.room-container .btn-primary {
     background-color: #3579c6;
     color: white;
     border: none;
@@ -303,12 +304,12 @@ textarea {
     transition: all 0.2s;
 }
 
-.btn-primary:hover {
+.room-container .btn-primary:hover {
     background-color: #2a62a3;
     transform: translateY(-1px);
 }
 
-.btn-secondary {
+.room-container .btn-secondary {
     background-color: white;
     border: 1px solid #e2e8f0;
     color: #64748b;
@@ -318,12 +319,35 @@ textarea {
     font-size: 14px;
     cursor: pointer;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.btn-secondary:hover {
+.room-container .btn-secondary:hover {
     background-color: #f8fafc;
     color: #1e293b;
     border-color: #cbd5e1;
+}
+
+.room-container .btn-success {
+    background-color: #10b981;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.room-container .btn-success:hover {
+    background-color: #059669;
+    transform: translateY(-1px);
 }
 
 /* --- BUTTON ICONS (Edit/Delete) --- */
@@ -445,7 +469,8 @@ textarea {
     transform: scale(1.1);
 }
 
-.stats-summary {
+/* Stats Summary - Scoped to room-container */
+.room-container .stats-summary {
     display: flex;
     align-items: center;
     background-color: white;
@@ -453,50 +478,62 @@ textarea {
     border-radius: 10px;
     border: 1px solid #e2e8f0;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    flex-shrink: 0;
 }
 
-.stat-item {
+.room-container .stat-item {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 0 16px;
 }
 
-.stat-text {
+.room-container .stat-text {
     display: flex;
     flex-direction: column;
     line-height: 1.2;
 }
 
-.stat-value {
+.room-container .stat-value {
     font-size: 18px;
     font-weight: 700;
     color: #1e293b;
 }
 
-.stat-label {
+.room-container .stat-label {
     font-size: 11px;
     color: #64748b;
     text-transform: uppercase;
     font-weight: 600;
 }
 
-.stat-divider {
+.room-container .stat-divider {
     width: 1px;
     height: 32px;
     background-color: #e2e8f0;
 }
 
-.stat-icon {
+.room-container .stat-icon {
     padding: 8px;
     border-radius: 8px;
     width: 36px;
     height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.icon-primary { color: #3579c6; background-color: #e6f0ff; }
-.icon-accent { color: #0ea5e9; background-color: #e0f2fe; }
-.icon-success { color: #10b981; background-color: #d1fae5; }
+.room-container .icon-primary { color: #3579c6; background-color: #e6f0ff; }
+.room-container .icon-accent { color: #0ea5e9; background-color: #e0f2fe; }
+.room-container .icon-success { color: #10b981; background-color: #d1fae5; }
+
+/* Toolbar Actions */
+.room-container .toolbar-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 16px;
+}
 
 /* [MỚI] Button Power (Active/Inactive) */
 .btn-icon-sm.power {
