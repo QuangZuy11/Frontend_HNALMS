@@ -176,7 +176,7 @@ function LayoutWrapper() {
           <Route path="create-account" element={<CreateAccount />} />
           <Route path="accounts" element={<CreatedAccountsList />} />
           <Route path="profile" element={<ManagerProfile />} />
-          <Route path="profile/update" element={<UpdateProfile />} />
+          {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
         </Route>
 
         {/* ==================== ACCOUNTANT ROUTES ==================== */}
@@ -190,7 +190,7 @@ function LayoutWrapper() {
         >
           <Route index element={<AccountantDashboard />} />
           <Route path="profile" element={<ViewProfile />} />
-          <Route path="profile/update" element={<UpdateProfile />} />
+          {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
         </Route>
 
         {/* ==================== SHARED PROFILE ROUTES (Legacy support) ==================== */}
