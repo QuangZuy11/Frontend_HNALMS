@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { roomService } from "../../../../services/roomService";
+import RoomInfoModal from "./RoomInfoModal";
 import "./Room-filters.css";
 
 // Interfaces
@@ -120,7 +121,7 @@ function Radio({
       id={id}
       name={name}
       checked={checked}
-      onChange={() => {}} // Required for controlled component
+      onChange={() => { }} // Required for controlled component
       onClick={() => onCheckedChange?.(!checked)} // Allow toggle on click
       className={`rf-radio ${className}`}
       {...props}
@@ -149,6 +150,8 @@ export default function RoomFilters({
 }: RoomFiltersProps) {
   const [floors, setFloors] = useState<Floor[]>([]);
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
+  const [allRooms, setAllRooms] = useState<any[]>([]);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   const fetchFiltersData = async () => {
     try {
@@ -158,9 +161,12 @@ export default function RoomFilters({
         roomService.getRooms(), // Fetch rooms to get prices
       ]);
       setFloors(floorsData.data || []);
+      const rooms = roomsData.data || [];
+      setAllRooms(rooms);
+
 
       const rawRoomTypes = roomTypesData.data || [];
-      const rooms = roomsData.data || [];
+      // const rooms = roomsData.data || []; // Removed duplicate declaration
 
       // Map prices to room types based on actual room data or room type definition
       const roomTypesWithPrice = rawRoomTypes.map((rt: any) => {
@@ -256,6 +262,23 @@ export default function RoomFilters({
     }
   };
 
+  // Determine which room types are available on the selected floor
+  const availableTypeIds = new Set<string>();
+  if (allRooms.length > 0 && selectedFloors.length > 0) {
+    const selectedFloorId = selectedFloors[0];
+    allRooms.forEach((room: any) => {
+      // Handle potential populated object or direct ID
+      const rFloorId = room.floorId?._id || room.floorId;
+      if (rFloorId === selectedFloorId) {
+        const rTypeId = room.roomTypeId?._id || room.roomTypeId;
+        if (rTypeId) availableTypeIds.add(rTypeId);
+      }
+    });
+  } else {
+    // If no data or no floor selected, assume all are available (or let them be clicked to find out)
+    roomTypes.forEach(rt => availableTypeIds.add(rt._id));
+  }
+
   return (
     <div className="rf-sticky-container">
       <Card>
@@ -287,27 +310,46 @@ export default function RoomFilters({
           <CardTitle className="rf-filter-title">LOẠI PHÒNG</CardTitle>
         </CardHeader>
         <CardContent className="rf-checkbox-group">
-          {roomTypes.map((roomType) => (
-            <div key={roomType._id} className="rf-checkbox-item">
-              <Radio
-                id={`roomtype-${roomType._id}`}
-                name="roomTypeGroup"
-                checked={selectedRoomTypes.includes(roomType._id)}
-                onCheckedChange={() => handleRoomTypeToggle(roomType._id)}
-              />
-              <Label
-                htmlFor={`roomtype-${roomType._id}`}
-                className="rf-checkbox-label"
+          {roomTypes.map((roomType) => {
+            const isAvailable = availableTypeIds.has(roomType._id);
+            return (
+              <div
+                key={roomType._id}
+                className={`rf-checkbox-item ${!isAvailable ? "disabled" : ""}`}
+                title={!isAvailable ? "Không có phòng loại này ở tầng đã chọn" : ""}
+                style={!isAvailable ? { opacity: 0.4 } : {}} // Fallback inline in case CSS hasn't reloaded
               >
-                {roomType.typeName}{" "}
-                <span style={{ opacity: 1, fontWeight: 500 }}>
-                  {roomType.price
-                    ? `(${formatPriceShort(roomType.price)})`
-                    : ""}
-                </span>
-              </Label>
-            </div>
-          ))}
+                <Radio
+                  id={`roomtype-${roomType._id}`}
+                  name="roomTypeGroup"
+                  checked={selectedRoomTypes.includes(roomType._id)}
+                  onCheckedChange={() => {
+                    if (isAvailable) handleRoomTypeToggle(roomType._id);
+                  }}
+                  disabled={!isAvailable}
+                  className={!isAvailable ? "cursor-not-allowed" : ""}
+                />
+                <Label
+                  htmlFor={`roomtype-${roomType._id}`}
+                  className={`rf-checkbox-label ${!isAvailable ? "cursor-not-allowed" : ""}`}
+                >
+                  {roomType.typeName}{" "}
+                  <span style={{ opacity: 1, fontWeight: 500 }}>
+                    {roomType.price
+                      ? `(${formatPriceShort(roomType.price)})`
+                      : ""}
+                  </span>
+                </Label>
+              </div>
+            );
+          })}
+          <button
+            className="rf-info-text-btn footer-link"
+            onClick={() => setShowInfoModal(true)}
+            title="Xem thông tin chi tiết các loại phòng"
+          >
+            (Giải thích chi tiết các loại phòng)
+          </button>
         </CardContent>
       </Card>
 
@@ -346,6 +388,9 @@ export default function RoomFilters({
       >
         Xóa Bộ Lọc
       </Button>
-    </div>
+
+      {/* Modal - Rendered via Portal or conditionally here if z-index handles it */}
+      {showInfoModal && <RoomInfoModal onClose={() => setShowInfoModal(false)} />}
+    </div >
   );
 }

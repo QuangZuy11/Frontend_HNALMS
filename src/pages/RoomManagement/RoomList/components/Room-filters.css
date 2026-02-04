@@ -11,6 +11,34 @@
 }
 
 /* Premium Card Style */
+.rf-info-text-btn {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  /* Blue link color */
+  font-size: 0.8rem;
+  font-style: italic;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  transition: color 0.2s;
+  opacity: 0.9;
+}
+
+.rf-info-text-btn.footer-link {
+  grid-column: 1 / -1;
+  /* Span all columns */
+  text-align: right;
+  margin-top: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.rf-info-text-btn:hover {
+  color: #1d4ed8;
+  opacity: 1;
+}
+
 .rf-card {
   background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
   border: 1px solid rgba(226, 232, 240, 0.8);
@@ -96,6 +124,15 @@
   box-shadow: 0 2px 8px -2px rgba(59, 130, 246, 0.3);
 }
 
+/* Disabled State */
+.rf-checkbox-item.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  filter: grayscale(100%);
+}
+
 /* Custom Checkbox Styling */
 .rf-checkbox {
   width: 0.8rem;
@@ -140,9 +177,11 @@
   0% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.2);
   }
+
   100% {
     transform: scale(1);
   }
