@@ -162,112 +162,152 @@ export default function RoomDetail() {
         {/* Back Button */}
         <button onClick={() => navigate("/rooms")} className="back-button">
           <ChevronLeft className="icon" />
-          Quay Lại Danh Sách
+          Quay lại danh sách
         </button>
+
+        {/* Gallery - Full Width */}
+        <div className="gallery-card full-width">
+          {room.images && room.images.length > 0 ? (
+            <div className="image-gallery">
+              {/* Main Image */}
+              <div className="main-image-container">
+                <img
+                  src={room.images[currentImageIndex]}
+                  alt={`${room.roomCode} - Ảnh ${currentImageIndex + 1}`}
+                  className="main-gallery-image"
+                />
+
+                {/* Room Info Overlay */}
+                <div className="gallery-overlay">
+                  <div className="overlay-info">
+                    <h1 className="overlay-title">
+                      Phòng {room.roomCode || room.name}
+                    </h1>
+                    <div className="overlay-location">
+                      <MapPin size={14} />
+                      <span>{room.floorLabel}</span>
+                    </div>
+                  </div>
+                  <span
+                    className={`overlay-status ${room.status === "Available" || room.status === "Trống" ? "available" : "occupied"}`}
+                  >
+                    {room.status === "Available" || room.status === "Trống"
+                      ? "Còn trống"
+                      : "Đã thuê"}
+                  </span>
+                </div>
+
+                {/* Navigation Buttons */}
+                {room.images.length > 1 && (
+                  <>
+                    <button
+                      className="gallery-nav-button prev"
+                      onClick={handlePrevImage}
+                      aria-label="Ảnh trước"
+                    >
+                      <ChevronLeft size={24} />
+                    </button>
+                    <button
+                      className="gallery-nav-button next"
+                      onClick={handleNextImage}
+                      aria-label="Ảnh tiếp theo"
+                    >
+                      <ChevronRight size={24} />
+                    </button>
+                  </>
+                )}
+
+                {/* Image Counter */}
+                <div className="image-counter">
+                  {currentImageIndex + 1} / {room.images.length}
+                </div>
+              </div>
+
+              {/* Thumbnails */}
+              {room.images.length > 1 && (
+                <div className="thumbnails-container">
+                  {room.images.map((image, index) => (
+                    <div
+                      key={index}
+                      className={`thumbnail-wrapper ${
+                        index === currentImageIndex ? "active" : ""
+                      }`}
+                      onClick={() => setCurrentImageIndex(index)}
+                    >
+                      <img
+                        src={image}
+                        alt={`Thumbnail ${index + 1}`}
+                        className="thumbnail-image"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="gallery-placeholder">
+              {/* Room Info Overlay for placeholder */}
+              <div className="gallery-overlay">
+                <div className="overlay-info">
+                  <h1 className="overlay-title">
+                    Phòng {room.roomCode || room.name}
+                  </h1>
+                  <div className="overlay-location">
+                    <MapPin size={14} />
+                    <span>{room.floorLabel}</span>
+                  </div>
+                </div>
+                <span
+                  className={`overlay-status ${room.status === "Available" || room.status === "Trống" ? "available" : "occupied"}`}
+                >
+                  {room.status === "Available" || room.status === "Trống"
+                    ? "Còn trống"
+                    : "Đã thuê"}
+                </span>
+              </div>
+              <span className="gallery-text">Hình Ảnh Phòng</span>
+            </div>
+          )}
+        </div>
 
         <div className="detail-grid">
           {/* Main Content */}
           <div className="main-content">
-            {/* Gallery with Images from Cloudinary */}
-            <div className="gallery-card">
-              {room.images && room.images.length > 0 ? (
-                <div className="image-gallery">
-                  {/* Main Image */}
-                  <div className="main-image-container">
-                    <img
-                      src={room.images[currentImageIndex]}
-                      alt={`${room.roomCode} - Ảnh ${currentImageIndex + 1}`}
-                      className="main-gallery-image"
-                    />
-
-                    {/* Navigation Buttons */}
-                    {room.images.length > 1 && (
-                      <>
-                        <button
-                          className="gallery-nav-button prev"
-                          onClick={handlePrevImage}
-                          aria-label="Ảnh trước"
-                        >
-                          <ChevronLeft size={24} />
-                        </button>
-                        <button
-                          className="gallery-nav-button next"
-                          onClick={handleNextImage}
-                          aria-label="Ảnh tiếp theo"
-                        >
-                          <ChevronRight size={24} />
-                        </button>
-                      </>
-                    )}
-
-                    {/* Image Counter */}
-                    <div className="image-counter">
-                      {currentImageIndex + 1} / {room.images.length}
-                    </div>
-                  </div>
-
-                  {/* Thumbnails */}
-                  {room.images.length > 1 && (
-                    <div className="thumbnails-container">
-                      {room.images.map((image, index) => (
-                        <div
-                          key={index}
-                          className={`thumbnail-wrapper ${
-                            index === currentImageIndex ? "active" : ""
-                          }`}
-                          onClick={() => setCurrentImageIndex(index)}
-                        >
-                          <img
-                            src={image}
-                            alt={`Thumbnail ${index + 1}`}
-                            className="thumbnail-image"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="gallery-placeholder">
-                  <span className="gallery-text">Hình Ảnh Phòng</span>
-                </div>
-              )}
-            </div>
-
-            {/* Room Info */}
+            {/* Room Info Card */}
             <div className="info-card">
               <h3 className="card-title">Thông Tin Phòng</h3>
-              <p className="detail-room-description">
-                {room.description ||
-                  `Phòng ${room.roomCode} là một căn phòng thoáng mát nằm tại ${room.floorLabel} của tòa nhà. Với diện tích ${room.area}m², phòng có cửa sổ lớn nhìn ra đường chính, đảm bảo ánh sáng tự nhiên suốt cả ngày. Phòng được trang bị đầy đủ các tiện nghi cơ bản.`}
-              </p>
 
+              {room.description && (
+                <p className="detail-room-description">{room.description}</p>
+              )}
+
+              {/* Specs Grid */}
               <div className="specs-grid-detail">
                 <div className="spec-box">
                   <Home className="spec-icon-large" />
                   <div className="spec-value-large">{room.area}m²</div>
-                  <p className="spec-label">Diện tích</p>
+                  <div className="spec-label">Diện tích</div>
                 </div>
                 <div className="spec-box">
                   <Users className="spec-icon-large" />
                   <div className="spec-value-large">{room.capacity || 2}</div>
-                  <p className="spec-label">Tối đa người</p>
+                  <div className="spec-label">Tối đa người</div>
                 </div>
                 <div className="spec-box">
                   <div className="spec-number">
                     {room.amenities?.length || 4}
                   </div>
-                  <p className="spec-label">Tiện nghi</p>
+                  <div className="spec-label">Tiện nghi</div>
                 </div>
               </div>
             </div>
 
-            {/* Amenities */}
+            {/* Amenities Card */}
             <div className="info-card">
               <h3 className="card-title">Tiện Nghi Phòng</h3>
               <div className="amenities-grid">
                 {(
-                  room.amenities || ["Giường đơn", "Điều hòa", "Tủ", "Ban công"]
+                  room.amenities || ["Giường đơn", "Tủ", "Điều hòa", "Ban công"]
                 ).map((amenity, index) => (
                   <div key={index} className="amenity-item">
                     <span className="check-icon">✓</span>
@@ -277,30 +317,43 @@ export default function RoomDetail() {
               </div>
             </div>
 
-            {/* Services */}
+            {/* Services Card */}
             <div className="info-card">
               <h3 className="card-title">Dịch Vụ Kèm Theo</h3>
               <div className="services-grid">
                 {[
-                  { name: "Điện", description: "Cung cấp 24/7, giá hợp lý" },
-                  { name: "Nước", description: "Nước sạch, có bể mắt nước" },
-                  { name: "Internet", description: "100Mbps, WiFi miễn phí" },
+                  {
+                    name: "Điện",
+                    desc: "Cung cấp 24/7, giá hợp lý",
+                    icon: Zap,
+                  },
+                  {
+                    name: "Nước",
+                    desc: "Nước sạch, có bể mặt nước",
+                    icon: Droplet,
+                  },
+                  {
+                    name: "Internet",
+                    desc: "100Mbps, WiFi miễn phí",
+                    icon: Wifi,
+                  },
                   {
                     name: "Điều hòa không khí",
-                    description: "Máy lạnh tích hợp",
+                    desc: "Máy lạnh tích hợp",
+                    icon: Wind,
                   },
                 ].map((service, index) => {
-                  const Icon = getServiceIcon(service.name);
+                  const Icon = service.icon;
                   return (
                     <div key={index} className="service-item">
                       <div className="service-icon-box">
                         <Icon className="service-icon" />
                       </div>
                       <div className="service-info">
-                        <p className="service-name">{service.name}</p>
-                        <p className="service-description">
-                          {service.description}
-                        </p>
+                        <div className="service-name">{service.name}</div>
+                        <div className="service-description">
+                          {service.desc}
+                        </div>
                       </div>
                     </div>
                   );
@@ -308,44 +361,47 @@ export default function RoomDetail() {
               </div>
             </div>
 
-            {/* Rules */}
+            {/* Rules Card */}
             <div className="info-card">
               <h3 className="card-title">Nội Quy Phòng</h3>
               <ul className="rules-list">
-                {[
-                  "Không nuôi thú cưng",
-                  "Không khiếu khích",
-                  "Giờ yên tĩnh 23:00 - 7:00",
-                ].map((rule, index) => (
-                  <li key={index} className="rule-item">
-                    <span className="bullet">•</span>
-                    <span>{rule}</span>
-                  </li>
-                ))}
+                <li className="rule-item">
+                  <span className="bullet">●</span>
+                  <span>Không nuôi thú cưng</span>
+                </li>
+                <li className="rule-item">
+                  <span className="bullet">●</span>
+                  <span>Không khiêu khích</span>
+                </li>
+                <li className="rule-item">
+                  <span className="bullet">●</span>
+                  <span>Giờ yên tĩnh 23:00 - 7:00</span>
+                </li>
               </ul>
             </div>
           </div>
 
-          {/* Sidebar - Booking */}
+          {/* Sidebar */}
           <div className="sidebar">
             <div className="sticky-sidebar">
               {/* Booking Card */}
               <div className="booking-card">
-                <h3 className="price-title">
+                <div className="price-title">
                   {room.price > 0
-                    ? `${room.price.toLocaleString("vi-VN")}đ/tháng`
+                    ? `${room.price.toLocaleString("vi-VN")}`
                     : "Liên hệ"}
-                </h3>
+                  <span className="price-unit">đ/tháng</span>
+                </div>
                 <p className="price-subtitle">Tiền thuê nhà hàng tháng</p>
 
-                <div className="deposit-box">
-                  <p className="deposit-label">TIỀN CỌC YÊU CẦU</p>
-                  <p className="deposit-amount">
+                <div className="deposit-row">
+                  <span className="deposit-label">TIỀN CỌC YÊU CẦU:</span>
+                  <span className="deposit-amount">
                     {room.price > 0
                       ? `${depositAmount.toLocaleString("vi-VN")}đ`
                       : "Liên hệ"}
-                  </p>
-                  <p className="deposit-note">= 1 tháng tiền nhà</p>
+                  </span>
+                  <span className="deposit-note">= 1 tháng tiền nhà</span>
                 </div>
 
                 <div className="benefits-list">
@@ -368,7 +424,7 @@ export default function RoomDetail() {
                 <button className="contact-button">Gọi Tư Vấn</button>
               </div>
 
-              {/* Contact Card */}
+              {/* Help Card */}
               <div className="help-card">
                 <h4 className="help-title">Cần Hỗ Trợ?</h4>
                 <p className="help-description">
