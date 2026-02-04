@@ -120,7 +120,8 @@ function Radio({
       id={id}
       name={name}
       checked={checked}
-      onChange={(e) => onCheckedChange?.(e.target.checked)}
+      onChange={() => {}} // Required for controlled component
+      onClick={() => onCheckedChange?.(!checked)} // Allow toggle on click
       className={`rf-radio ${className}`}
       {...props}
     />
@@ -214,13 +215,18 @@ export default function RoomFilters({
   }, []);
 
   const handleFloorToggle = (floorId: string) => {
-    // Single selection mode logic including "all" case handling implies clearing or specific logic,
-    // but here we just follow the pattern of selecting one.
+    // Single selection mode - floor always has a value (default to first floor)
     if (floorId === "all") {
-      onFloorsChange([]);
+      // Reset to first floor instead of empty
+      if (floors.length > 0) {
+        onFloorsChange([floors[0]._id]);
+      }
     } else {
       if (selectedFloors.includes(floorId)) {
-        onFloorsChange([]); // Deselect if already selected
+        // If clicking the selected floor, go back to first floor (Tầng 1)
+        if (floors.length > 0) {
+          onFloorsChange([floors[0]._id]);
+        }
       } else {
         onFloorsChange([floorId]); // Select only this one
       }

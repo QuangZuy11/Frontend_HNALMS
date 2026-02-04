@@ -1,0 +1,131 @@
+/* Inherit styles from FloorMap.css where possible, 
+   but define specific grid for Level 4 */
+
+.floor-map-container.level-4 {
+  /* Specific overrides if needed */
+  transition: all 0.3s ease;
+}
+
+.map-layout-l4 {
+  display: flex;
+  gap: 2rem;
+  overflow-x: auto;
+}
+
+.grid-l4 {
+  flex: 1;
+  display: grid;
+  /* 15 Columns: 8 Left + 1 Elevator + 6 Right */
+  grid-template-columns: repeat(15, 1fr);
+  gap: 0.75rem 0.625rem;
+  align-content: start;
+  width: 100%;
+  min-width: 1000px;
+  /* Ensure it doesn't get too squished */
+  transition: all 0.3s ease;
+}
+
+/* Seamless Elevator Node (Spans all rows) */
+.elevator-node-seamless {
+  grid-column: 9;
+  grid-row: 1 / 6;
+  /* Spans Row 1-4 + Spacer */
+  background-color: #d1d5db;
+  color: #4b5563;
+  font-weight: 800;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-radius: 6px;
+  letter-spacing: 0.1em;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  height: 210%;
+  z-index: 10;
+  white-space: nowrap;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Invisible placeholder to occupy the grid cell in the flow */
+.elevator-placeholder {
+  visibility: hidden;
+}
+
+/* Legacy node (unused but kept for safety) */
+.elevator-node {
+  display: none;
+}
+
+.grid-spacer-row {
+  grid-column: 1 / -1;
+  height: 2rem;
+  /* Spacer height */
+}
+
+/* Reuse room-node styles from FloorMap.css via global import or copy if scoped.
+   Assuming FloorMap.css is imported globally or we need to import it.
+   Since FloorMapLevel4 imports ./FloorMapLevel4.css, we should ensure the base styles are available.
+   Ideally, we should rely on the classes being same.
+*/
+
+.room-node.placeholder {
+  border: 1px dashed #e5e7eb;
+  color: #9ca3af;
+  background: #f9fafb;
+  cursor: default;
+  box-shadow: none;
+}
+
+.room-node.placeholder:hover {
+  transform: none;
+}
+
+.empty-node {
+  /* Just empty space */
+}
+
+/* Compact Mode */
+.floor-map-container.level-4.compact .grid-l4 {
+  min-width: unset;
+  /* Remove min-width or reduce it */
+  width: 100%;
+  gap: 4px 4px;
+  /* Tighter layout */
+}
+
+.floor-map-container.level-4.compact .room-node {
+  min-height: 40px;
+  /* Smaller nodes */
+  padding: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.floor-map-container.level-4.compact .room-node-name {
+  font-size: 0.7rem;
+}
+
+.floor-map-container.level-4.compact .grid-spacer-row {
+  height: 1rem;
+  /* Smaller spacer */
+}
+
+.floor-map-container.level-4.compact .elevator-node-seamless {
+  font-size: 0.8rem;
+  width: 100%;
+  padding: 0;
+}
+
+/* Ghosted State (Filtered out) */
+.room-node.ghosted {
+  opacity: 0.25;
+  filter: grayscale(100%);
+  pointer-events: none;
+  /* Make them unclickable if desired, or keep clickable but dim */
+  border-color: #e5e7eb !important;
+  /* Force grey border */
+  background-color: #f3f4f6 !important;
+  /* Force grey bg */
+  color: #9ca3af !important;
+}

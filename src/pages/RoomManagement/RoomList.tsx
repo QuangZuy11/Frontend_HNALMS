@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { roomService } from "../../services/roomService";
 import FloorMap from "./RoomList/components/FloorMap";
 import FloorMapLevel2 from "./RoomList/components/FloorMapLevel2";
+import FloorMapLevel3 from "./RoomList/components/FloorMapLevel3";
+import FloorMapLevel4 from "./RoomList/components/FloorMapLevel4";
+import FloorMapLevel5 from "./RoomList/components/FloorMapLevel5";
 import RoomFilters from "./RoomList/components/Room-filters";
 import RoomCard from "./RoomList/components/Room-card";
 import RoomTypeDetail from "./RoomList/components/RoomTypeDetail";
@@ -229,6 +232,27 @@ export default function RoomList() {
                           floorName={currentFloorLabel || `Tầng`}
                           compact={true}
                         />
+                      ) : currentFloorLabel.includes("3") ? (
+                        <FloorMapLevel3
+                          rooms={floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms}
+                          highlightedRooms={rooms}
+                          floorName={currentFloorLabel || `Tầng`}
+                          compact={true}
+                        />
+                      ) : currentFloorLabel.includes("4") ? (
+                        <FloorMapLevel4
+                          rooms={floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms}
+                          highlightedRooms={rooms}
+                          floorName={currentFloorLabel || `Tầng`}
+                          compact={true}
+                        />
+                      ) : currentFloorLabel.includes("5") ? (
+                        <FloorMapLevel5
+                          rooms={floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms}
+                          highlightedRooms={rooms}
+                          floorName={currentFloorLabel || `Tầng`}
+                          compact={true}
+                        />
                       ) : (
                         <FloorMap
                           rooms={rooms} // FloorMap 1 doesn't assume complex layout yet, can leave as is or update later
@@ -240,6 +264,24 @@ export default function RoomList() {
                   ) : showFloorMap ? (
                     currentFloorLabel.includes("2") ? (
                       <FloorMapLevel2
+                        rooms={floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms}
+                        highlightedRooms={rooms}
+                        floorName={currentFloorLabel || `Tầng`}
+                      />
+                    ) : currentFloorLabel.includes("3") ? (
+                      <FloorMapLevel3
+                        rooms={floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms}
+                        highlightedRooms={rooms}
+                        floorName={currentFloorLabel || `Tầng`}
+                      />
+                    ) : currentFloorLabel.includes("4") ? (
+                      <FloorMapLevel4
+                        rooms={floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms}
+                        highlightedRooms={rooms}
+                        floorName={currentFloorLabel || `Tầng`}
+                      />
+                    ) : currentFloorLabel.includes("5") ? (
+                      <FloorMapLevel5
                         rooms={floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms}
                         highlightedRooms={rooms}
                         floorName={currentFloorLabel || `Tầng`}
