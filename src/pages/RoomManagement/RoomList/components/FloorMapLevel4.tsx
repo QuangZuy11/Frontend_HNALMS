@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import "./FloorMapLevel2.css";
+import "./FloorMapLevel4.css";
 
 interface Room {
     _id: string;
@@ -16,25 +16,25 @@ interface Room {
     [key: string]: any;
 }
 
-interface FloorMapLevel2Props {
+interface FloorMapLevel4Props {
     rooms: Room[];
     floorName?: string;
 }
 
 // Row Configuration: Number of rooms on Left vs Right of Elevator
 const ROW_CONFIG = [
-    { left: 8, right: 5 }, // Row 1: 254-247 | Elevator | 246-242
-    { left: 8, right: 5 }, // Row 2: 241-234 | Elevator | 233-229
+    { left: 8, right: 5 }, // Row 1
+    { left: 8, right: 5 }, // Row 2
     "SPACER",              // Spacer Row
-    { left: 8, right: 6 }, // Row 3: 228-221 | Elevator | 220-215
-    { left: 8, right: 6 }, // Row 4: 214-207 | Elevator | 206-201
+    { left: 8, right: 6 }, // Row 3
+    { left: 8, right: 6 }, // Row 4
 ];
 
 const ROOM_TYPE_COLORS = [
     "#2dd4bf", "#818cf8", "#fb7185", "#fbbf24", "#34d399", "#a78bfa", "#38bdf8", "#f472b6",
 ];
 
-export default function FloorMapLevel2({ rooms, floorName, highlightedRooms, compact = false }: FloorMapLevel2Props & { highlightedRooms?: Room[], compact?: boolean }) {
+export default function FloorMapLevel4({ rooms, floorName, highlightedRooms, compact = false }: FloorMapLevel4Props & { highlightedRooms?: Room[], compact?: boolean }) {
     const navigate = useNavigate();
 
     // 1. Sort Rooms Descending (254 -> 201)
@@ -104,9 +104,9 @@ export default function FloorMapLevel2({ rooms, floorName, highlightedRooms, com
     });
 
     return (
-        <div className={`floor-map-container level-2 ${compact ? "compact" : ""}`}>
+        <div className={`floor-map-container level-4 ${compact ? "compact" : ""}`}>
             <div className="map-header">
-                <h3 className="map-title">SƠ ĐỒ {floorName || "TẦNG 2"}</h3>
+                <h3 className="map-title">SƠ ĐỒ {floorName || "TẦNG 4"}</h3>
                 <div className="map-legends-container">
                     {/* Legend Reuse */}
                     <div className="map-legend status-legend">
@@ -126,8 +126,8 @@ export default function FloorMapLevel2({ rooms, floorName, highlightedRooms, com
                 </div>
             </div>
 
-            <div className="map-layout-l2">
-                <div className="grid-l2">
+            <div className="map-layout-l4">
+                <div className="grid-l4">
                     {/* Fixed seamless elevator column */}
                     <div className="elevator-node-seamless">THANG MÁY</div>
 

@@ -1,18 +1,18 @@
 /* Inherit styles from FloorMap.css where possible, 
-   but define specific grid for Level 2 */
+   but define specific grid for Level 4 */
 
-.floor-map-container.level-2 {
+.floor-map-container.level-4 {
   /* Specific overrides if needed */
   transition: all 0.3s ease;
 }
 
-.map-layout-l2 {
+.map-layout-l4 {
   display: flex;
   gap: 2rem;
   overflow-x: auto;
 }
 
-.grid-l2 {
+.grid-l4 {
   flex: 1;
   display: grid;
   /* 15 Columns: 8 Left + 1 Elevator + 6 Right */
@@ -66,7 +66,7 @@
 
 /* Reuse room-node styles from FloorMap.css via global import or copy if scoped.
    Assuming FloorMap.css is imported globally or we need to import it.
-   Since FloorMapLevel2 imports ./FloorMapLevel2.css, we should ensure the base styles are available.
+   Since FloorMapLevel4 imports ./FloorMapLevel4.css, we should ensure the base styles are available.
    Ideally, we should rely on the classes being same.
 */
 
@@ -87,7 +87,7 @@
 }
 
 /* Compact Mode */
-.floor-map-container.level-2.compact .grid-l2 {
+.floor-map-container.level-4.compact .grid-l4 {
   min-width: unset;
   /* Remove min-width or reduce it */
   width: 100%;
@@ -95,23 +95,23 @@
   /* Tighter layout */
 }
 
-.floor-map-container.level-2.compact .room-node {
+.floor-map-container.level-4.compact .room-node {
   min-height: 40px;
   /* Smaller nodes */
   padding: 0.25rem;
   font-size: 0.75rem;
 }
 
-.floor-map-container.level-2.compact .room-node-name {
+.floor-map-container.level-4.compact .room-node-name {
   font-size: 0.7rem;
 }
 
-.floor-map-container.level-2.compact .grid-spacer-row {
+.floor-map-container.level-4.compact .grid-spacer-row {
   height: 1rem;
   /* Smaller spacer */
 }
 
-.floor-map-container.level-2.compact .elevator-node-seamless {
+.floor-map-container.level-4.compact .elevator-node-seamless {
   font-size: 0.8rem;
   width: 100%;
   padding: 0;

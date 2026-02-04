@@ -1,0 +1,105 @@
+.floor-map-container.level-5 {
+    transition: all 0.3s ease;
+}
+
+.map-layout-l5 {
+    display: flex;
+    gap: 2rem;
+    overflow-x: auto;
+}
+
+.grid-l5 {
+    flex: 1;
+    display: grid;
+    /* 15 Columns: 8 Left + 1 Elevator + 6 Right */
+    grid-template-columns: repeat(15, 1fr);
+    gap: 0.75rem 0.625rem;
+    align-content: start;
+    width: 100%;
+    min-width: 1000px;
+    transition: all 0.3s ease;
+}
+
+.elevator-node-seamless {
+    grid-column: 9;
+    grid-row: 1 / 6;
+    background-color: #d1d5db;
+    color: #4b5563;
+    font-weight: 800;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-radius: 6px;
+    letter-spacing: 0.1em;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    height: 210%;
+    z-index: 10;
+    white-space: nowrap;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.elevator-placeholder {
+    visibility: hidden;
+}
+
+.elevator-node {
+    display: none;
+}
+
+.grid-spacer-row {
+    grid-column: 1 / -1;
+    height: 2rem;
+}
+
+.room-node.placeholder {
+    border: 1px dashed #e5e7eb;
+    color: #9ca3af;
+    background: #f9fafb;
+    cursor: default;
+    box-shadow: none;
+}
+
+.room-node.placeholder:hover {
+    transform: none;
+}
+
+.empty-node {}
+
+/* Compact Mode */
+.floor-map-container.level-5.compact .grid-l5 {
+    min-width: unset;
+    width: 100%;
+    gap: 4px 4px;
+}
+
+.floor-map-container.level-5.compact .room-node {
+    min-height: 40px;
+    padding: 0.25rem;
+    font-size: 0.75rem;
+}
+
+.floor-map-container.level-5.compact .room-node-name {
+    font-size: 0.7rem;
+}
+
+.floor-map-container.level-5.compact .grid-spacer-row {
+    height: 1rem;
+}
+
+.floor-map-container.level-5.compact .elevator-node-seamless {
+    font-size: 0.8rem;
+    width: 100%;
+    padding: 0;
+}
+
+.room-node.ghosted {
+    opacity: 0.25;
+    filter: grayscale(100%);
+    pointer-events: none;
+    border-color: #e5e7eb !important;
+    background-color: #f3f4f6 !important;
+    color: #9ca3af !important;
+}

@@ -111,7 +111,7 @@ export default function FloorMap({ rooms, floorName }: FloorMapProps) {
                   ></span>
                   <span>
                     {type.name}{" "}
-                    <span style={{ opacity: 0.7, fontWeight: 400 }}>
+                    <span style={{ opacity: 1, fontWeight: 500 }}>
                       ({formatPriceShort(type.price)})
                     </span>
                   </span>

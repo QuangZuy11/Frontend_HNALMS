@@ -5,7 +5,7 @@
 }
 
 .room-detail-container {
-  max-width: 1280px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 2rem 1rem;
 }
@@ -18,7 +18,7 @@
 
 @media (min-width: 1024px) {
   .room-detail-container {
-    padding: 3rem 2rem;
+    padding: 2rem 1rem;
   }
 }
 
@@ -50,12 +50,12 @@
 .detail-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 @media (min-width: 1024px) {
   .detail-grid {
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1fr 320px;
   }
 }
 
@@ -560,7 +560,7 @@
 .booking-button {
   width: 100%;
   padding: 0.75rem 1rem;
-  background: #3579c6;
+  background: #111827;
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -572,7 +572,7 @@
 }
 
 .booking-button:hover:not(:disabled) {
-  background: #2b6bb0;
+  background: #1f2937;
 }
 
 .booking-button:disabled {

@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import "./FloorMapLevel2.css";
+import "./FloorMapLevel3.css";
 
 interface Room {
     _id: string;
@@ -16,28 +16,28 @@ interface Room {
     [key: string]: any;
 }
 
-interface FloorMapLevel2Props {
+interface FloorMapLevel3Props {
     rooms: Room[];
     floorName?: string;
 }
 
 // Row Configuration: Number of rooms on Left vs Right of Elevator
 const ROW_CONFIG = [
-    { left: 8, right: 5 }, // Row 1: 254-247 | Elevator | 246-242
-    { left: 8, right: 5 }, // Row 2: 241-234 | Elevator | 233-229
+    { left: 8, right: 5 }, // Row 1
+    { left: 8, right: 5 }, // Row 2
     "SPACER",              // Spacer Row
-    { left: 8, right: 6 }, // Row 3: 228-221 | Elevator | 220-215
-    { left: 8, right: 6 }, // Row 4: 214-207 | Elevator | 206-201
+    { left: 8, right: 6 }, // Row 3
+    { left: 8, right: 6 }, // Row 4
 ];
 
 const ROOM_TYPE_COLORS = [
     "#2dd4bf", "#818cf8", "#fb7185", "#fbbf24", "#34d399", "#a78bfa", "#38bdf8", "#f472b6",
 ];
 
-export default function FloorMapLevel2({ rooms, floorName, highlightedRooms, compact = false }: FloorMapLevel2Props & { highlightedRooms?: Room[], compact?: boolean }) {
+export default function FloorMapLevel3({ rooms, floorName, highlightedRooms, compact = false }: FloorMapLevel3Props & { highlightedRooms?: Room[], compact?: boolean }) {
     const navigate = useNavigate();
 
-    // 1. Sort Rooms Descending (254 -> 201)
+    // 1. Sort Rooms Descending
     const sortedRooms = [...rooms].sort((a, b) => {
         return b.name.localeCompare(a.name, undefined, { numeric: true, sensitivity: 'base' });
     });
@@ -83,11 +83,11 @@ export default function FloorMapLevel2({ rooms, floorName, highlightedRooms, com
                 rowItems.push(sortedRooms[roomIndex]);
                 roomIndex++;
             } else {
-                rowItems.push(null); // Explicit empty slot if run out of rooms
+                rowItems.push(null);
             }
         }
 
-        // Add Elevator Marker (Logic only, UI handled by seamless node or hidden node)
+        // Add Elevator Marker
         rowItems.push("ELEVATOR_MARKER");
 
         // Fill Right Side
@@ -104,11 +104,10 @@ export default function FloorMapLevel2({ rooms, floorName, highlightedRooms, com
     });
 
     return (
-        <div className={`floor-map-container level-2 ${compact ? "compact" : ""}`}>
+        <div className={`floor-map-container level-3 ${compact ? "compact" : ""}`}>
             <div className="map-header">
-                <h3 className="map-title">SƠ ĐỒ {floorName || "TẦNG 2"}</h3>
+                <h3 className="map-title">SƠ ĐỒ {floorName || "TẦNG 3"}</h3>
                 <div className="map-legends-container">
-                    {/* Legend Reuse */}
                     <div className="map-legend status-legend">
                         <div className="legend-item"><span className="legend-color available"></span><span>Trống</span></div>
                         <div className="legend-item"><span className="legend-color occupied"></span><span>Đã Thuê</span></div>
@@ -126,8 +125,8 @@ export default function FloorMapLevel2({ rooms, floorName, highlightedRooms, com
                 </div>
             </div>
 
-            <div className="map-layout-l2">
-                <div className="grid-l2">
+            <div className="map-layout-l3">
+                <div className="grid-l3">
                     {/* Fixed seamless elevator column */}
                     <div className="elevator-node-seamless">THANG MÁY</div>
 
