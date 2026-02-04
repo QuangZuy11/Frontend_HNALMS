@@ -28,6 +28,7 @@ interface Room {
 
 export default function RoomList() {
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [floorLayoutRooms, setFloorLayoutRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<{
@@ -96,7 +97,7 @@ export default function RoomList() {
         let filteredRooms = response.data || [];
 
         // Transform backend data to match frontend expectations
-        filteredRooms = filteredRooms.map((room: any) => ({
+        const transformedRooms = filteredRooms.map((room: any) => ({
           ...room,
           title: room.name,
           floor: room.floorId?.name || "N/A",
@@ -114,31 +115,41 @@ export default function RoomList() {
           images: room.roomTypeId?.images || [],
         }));
 
-        // Filter theo tầng
+        let currentFloorRooms: Room[] = [];
+        let displayRooms = transformedRooms;
+
+        // 1. Filter theo tầng (Primary Structure)
         if (filters.selectedFloors.length > 0) {
-          filteredRooms = filteredRooms.filter((room: any) =>
+          displayRooms = displayRooms.filter((room: any) =>
             filters.selectedFloors.includes(room.floorId?._id),
           );
+          // Save these rooms as the "Structure" for the map
+          // If only 1 floor is selected, this is our map layout source
+          if (filters.selectedFloors.length === 1) {
+            currentFloorRooms = [...displayRooms];
+          }
         }
 
-        // Filter theo loại phòng
+        // 2. Filter theo loại phòng (Visual Filter)
         if (filters.selectedRoomTypes.length > 0) {
-          filteredRooms = filteredRooms.filter((room: any) =>
+          displayRooms = displayRooms.filter((room: any) =>
             filters.selectedRoomTypes.includes(room.roomTypeId?._id),
           );
         }
 
-        // Filter theo tình trạng
+        // 3. Filter theo tình trạng (Visual Filter)
         if (filters.selectedStatus.length > 0) {
-          filteredRooms = filteredRooms.filter((room: any) =>
+          displayRooms = displayRooms.filter((room: any) =>
             filters.selectedStatus.includes(room.status),
           );
         }
 
-        setRooms(filteredRooms);
+        setRooms(displayRooms);
+        setFloorLayoutRooms(currentFloorRooms);
       } else {
         setError("Không thể tải danh sách phòng");
       }
+
     } catch (err) {
       console.error("Error fetching rooms:", err);
       setError("Đã xảy ra lỗi khi tải dữ liệu");
@@ -205,18 +216,32 @@ export default function RoomList() {
                 </button>
               </div>
             ) : (
-              <>
-                {/* 
-                  SPLIT VIEW: If Map active AND Type selected -> Show Map + Detail 
-                  MAP ONLY: If Map active but NO Type selected -> Show Map
-                  GRID: Standard list
-                */}
 
-                {showTypeDetail ? (
-                  <div className="split-view-container" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1rem' }}>
-                    {currentFloorLabel.includes("2") ? (
+              <>
+
+                {
+                  showTypeDetail ? (
+                    <div className="split-view-container" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: '1rem', alignItems: 'start' }}>
+                      {currentFloorLabel.includes("2") ? (
+                        <FloorMapLevel2
+                          rooms={floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms}
+                          highlightedRooms={rooms}
+                          floorName={currentFloorLabel || `Tầng`}
+                          compact={true}
+                        />
+                      ) : (
+                        <FloorMap
+                          rooms={rooms} // FloorMap 1 doesn't assume complex layout yet, can leave as is or update later
+                          floorName={currentFloorLabel || `Tầng`}
+                        />
+                      )}
+                      <RoomTypeDetail room={rooms[0]} />
+                    </div>
+                  ) : showFloorMap ? (
+                    currentFloorLabel.includes("2") ? (
                       <FloorMapLevel2
-                        rooms={rooms}
+                        rooms={floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms}
+                        highlightedRooms={rooms}
                         floorName={currentFloorLabel || `Tầng`}
                       />
                     ) : (
@@ -224,28 +249,14 @@ export default function RoomList() {
                         rooms={rooms}
                         floorName={currentFloorLabel || `Tầng`}
                       />
-                    )}
-                    <RoomTypeDetail room={rooms[0]} />
-                  </div>
-                ) : showFloorMap ? (
-                  currentFloorLabel.includes("2") ? (
-                    <FloorMapLevel2
-                      rooms={rooms}
-                      floorName={currentFloorLabel || `Tầng`}
-                    />
+                    )
                   ) : (
-                    <FloorMap
-                      rooms={rooms}
-                      floorName={currentFloorLabel || `Tầng`}
-                    />
-                  )
-                ) : (
-                  <div className="room-grid">
-                    {rooms.map((room) => (
-                      <RoomCard key={room._id} room={room} />
-                    ))}
-                  </div>
-                )}
+                    <div className="room-grid">
+                      {rooms.map((room) => (
+                        <RoomCard key={room._id} room={room} />
+                      ))}
+                    </div>
+                  )}
               </>
             )}
 
@@ -255,8 +266,8 @@ export default function RoomList() {
               </div>
             )}
           </main>
-        </div>
-      </div>
-    </div>
+        </div >
+      </div >
+    </div >
   );
 }

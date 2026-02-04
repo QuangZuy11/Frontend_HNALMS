@@ -3,6 +3,7 @@
 
 .floor-map-container.level-2 {
   /* Specific overrides if needed */
+  transition: all 0.3s ease;
 }
 
 .map-layout-l2 {
@@ -21,6 +22,7 @@
   width: 100%;
   min-width: 1000px;
   /* Ensure it doesn't get too squished */
+  transition: all 0.3s ease;
 }
 
 /* Seamless Elevator Node (Spans all rows) */
@@ -82,4 +84,48 @@
 
 .empty-node {
   /* Just empty space */
+}
+
+/* Compact Mode */
+.floor-map-container.level-2.compact .grid-l2 {
+  min-width: unset;
+  /* Remove min-width or reduce it */
+  width: 100%;
+  gap: 4px 4px;
+  /* Tighter layout */
+}
+
+.floor-map-container.level-2.compact .room-node {
+  min-height: 40px;
+  /* Smaller nodes */
+  padding: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.floor-map-container.level-2.compact .room-node-name {
+  font-size: 0.7rem;
+}
+
+.floor-map-container.level-2.compact .grid-spacer-row {
+  height: 1rem;
+  /* Smaller spacer */
+}
+
+.floor-map-container.level-2.compact .elevator-node-seamless {
+  font-size: 0.8rem;
+  width: 100%;
+  padding: 0;
+}
+
+/* Ghosted State (Filtered out) */
+.room-node.ghosted {
+  opacity: 0.25;
+  filter: grayscale(100%);
+  pointer-events: none;
+  /* Make them unclickable if desired, or keep clickable but dim */
+  border-color: #e5e7eb !important;
+  /* Force grey border */
+  background-color: #f3f4f6 !important;
+  /* Force grey bg */
+  color: #9ca3af !important;
 }

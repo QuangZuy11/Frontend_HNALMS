@@ -34,13 +34,10 @@ const ROOM_TYPE_COLORS = [
     "#2dd4bf", "#818cf8", "#fb7185", "#fbbf24", "#34d399", "#a78bfa", "#38bdf8", "#f472b6",
 ];
 
-export default function FloorMapLevel2({ rooms, floorName }: FloorMapLevel2Props) {
+export default function FloorMapLevel2({ rooms, floorName, highlightedRooms, compact = false }: FloorMapLevel2Props & { highlightedRooms?: Room[], compact?: boolean }) {
     const navigate = useNavigate();
 
     // 1. Sort Rooms Descending (254 -> 201)
-    // Handling B vs A: "252B" should come before "252A"? 
-    // User list: 254 252B 252A 251...
-    // Descending sort: 254 > 252B > 252A > 251
     const sortedRooms = [...rooms].sort((a, b) => {
         return b.name.localeCompare(a.name, undefined, { numeric: true, sensitivity: 'base' });
     });
@@ -107,7 +104,7 @@ export default function FloorMapLevel2({ rooms, floorName }: FloorMapLevel2Props
     });
 
     return (
-        <div className="floor-map-container level-2">
+        <div className={`floor-map-container level-2 ${compact ? "compact" : ""}`}>
             <div className="map-header">
                 <h3 className="map-title">SƠ ĐỒ {floorName || "TẦNG 2"}</h3>
                 <div className="map-legends-container">
@@ -141,17 +138,6 @@ export default function FloorMapLevel2({ rooms, floorName }: FloorMapLevel2Props
                             ) : (
                                 Array.isArray(row) && row.map((item, colIndex) => {
                                     if (item === "ELEVATOR_MARKER") {
-                                        // This slot is occupied by the seamless column visually
-                                        // We just render nothing or an empty placeholder to keep grid count correct if needed
-                                        // But since we use explicit grid-placement for seamless, 
-                                        // we actually DO NOT want to render a div here that takes up space 
-                                        // unless it's `display: none` or invisible, 
-                                        // because grid items auto-flow.
-
-                                        // WAIT: The seamless node is explicitly placed at col 9.
-                                        // These items are auto-placed. 
-                                        // If we don't render a div here, the next item (room) will slide into col 9 underneath the elevator.
-                                        // So we MUST render a placeholder div to occupy Grid Column 9 in the auto-flow.
                                         return <div key={`${rowIndex}-${colIndex}-elv`} className="elevator-placeholder"></div>;
                                     }
 
@@ -163,10 +149,13 @@ export default function FloorMapLevel2({ rooms, floorName }: FloorMapLevel2Props
                                     const isAvailable = room.status === "Available" || room.status === "Trống";
                                     const typeColor = getRoomTypeColor(room.roomTypeId?._id);
 
+                                    // Check if highlighted
+                                    const isGhosted = highlightedRooms && !highlightedRooms.some(r => r._id === room._id);
+
                                     return (
                                         <div
                                             key={room._id}
-                                            className={`room-node ${isAvailable ? "status-available" : "status-occupied"}`}
+                                            className={`room-node ${isAvailable ? "status-available" : "status-occupied"} ${isGhosted ? "ghosted" : ""}`}
                                             onClick={() => handleRoomClick(room._id)}
                                             style={isAvailable ? {
                                                 borderColor: typeColor,
