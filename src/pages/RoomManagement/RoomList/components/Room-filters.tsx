@@ -14,6 +14,7 @@ interface RoomType {
   _id: string;
   typeName: string;
   price?: number;
+  currentPrice?: number;
 }
 
 interface RoomFiltersProps {
@@ -30,7 +31,7 @@ interface RoomFiltersProps {
 const formatPriceShort = (price?: number) => {
   if (!price) return "";
   if (price >= 1000000) {
-    return `${(price / 1000000).toFixed(1).replace(/\.0$/, '')}tr`;
+    return `${(price / 1000000).toFixed(1).replace(/\.0$/, "")}tr`;
   }
   return `${(price / 1000).toFixed(0)}k`;
 };
@@ -49,7 +50,12 @@ function Button({
 }) {
   const Comp = asChild ? Slot : "button";
   // Changed base class from "button" to "rf-button"
-  const classes = ["rf-button", `rf-button-${variant}`, `rf-button-${size}`, className]
+  const classes = [
+    "rf-button",
+    `rf-button-${variant}`,
+    `rf-button-${size}`,
+    className,
+  ]
     .filter(Boolean)
     .join(" ");
   return <Comp data-slot="button" className={classes} {...props} />;
@@ -155,22 +161,47 @@ export default function RoomFilters({
       const rawRoomTypes = roomTypesData.data || [];
       const rooms = roomsData.data || [];
 
-      // Map prices to room types based on actual room data
+      // Map prices to room types based on actual room data or room type definition
       const roomTypesWithPrice = rawRoomTypes.map((rt: any) => {
-        const matchingRoom = rooms.find((r: any) =>
-          (r.roomType?._id === rt._id) || (r.roomTypeId?._id === rt._id) || (r.roomTypeId === rt._id)
+        // First try to use currentPrice from room type
+        if (
+          rt.currentPrice !== undefined &&
+          rt.currentPrice !== null &&
+          rt.currentPrice > 0
+        ) {
+          return {
+            ...rt,
+            price: rt.currentPrice,
+          };
+        }
+
+        // Then try price field
+        if (rt.price !== undefined && rt.price !== null && rt.price > 0) {
+          return rt;
+        }
+
+        // Fallback: Find a room of this type to get the price
+        const matchingRoom = rooms.find(
+          (r: any) =>
+            r.roomType?._id === rt._id ||
+            r.roomTypeId?._id === rt._id ||
+            r.roomTypeId === rt._id,
         );
         return {
           ...rt,
-          price: matchingRoom?.price || 0
+          price: matchingRoom?.price || matchingRoom?.currentPrice || 0,
         };
       });
 
       // Sort by type name ascending (Loại 1 -> Loại 2 ...)
       roomTypesWithPrice.sort((a: any, b: any) =>
-        a.typeName.localeCompare(b.typeName, undefined, { numeric: true, sensitivity: 'base' })
+        a.typeName.localeCompare(b.typeName, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        }),
       );
 
+      console.log("Room types with price:", roomTypesWithPrice);
       setRoomTypes(roomTypesWithPrice);
     } catch (error) {
       console.error("Error fetching filters data:", error);
@@ -234,7 +265,10 @@ export default function RoomFilters({
                 checked={selectedFloors.includes(floor._id)}
                 onCheckedChange={() => handleFloorToggle(floor._id)}
               />
-              <Label htmlFor={`floor-${floor._id}`} className="rf-checkbox-label">
+              <Label
+                htmlFor={`floor-${floor._id}`}
+                className="rf-checkbox-label"
+              >
                 {floor.name}
               </Label>
             </div>
@@ -259,7 +293,12 @@ export default function RoomFilters({
                 htmlFor={`roomtype-${roomType._id}`}
                 className="rf-checkbox-label"
               >
-                {roomType.typeName} <span style={{ opacity: 0.7, fontWeight: 400 }}>{roomType.price ? `(${formatPriceShort(roomType.price)})` : ''}</span>
+                {roomType.typeName}{" "}
+                <span style={{ opacity: 1, fontWeight: 500 }}>
+                  {roomType.price
+                    ? `(${formatPriceShort(roomType.price)})`
+                    : ""}
+                </span>
               </Label>
             </div>
           ))}

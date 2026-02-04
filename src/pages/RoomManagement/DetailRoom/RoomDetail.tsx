@@ -52,9 +52,23 @@ export default function RoomDetail() {
       if (response.data) {
         const roomData = response.data;
 
-        console.log("🏠 Room Detail Data:", roomData.name);
-        console.log("📸 roomTypeId.images:", roomData.roomTypeId?.images);
-        console.log("📊 Images count:", roomData.roomTypeId?.images?.length);
+        console.log("🏠 Room Detail Data:", roomData);
+        console.log("📸 roomTypeId:", roomData.roomTypeId);
+        console.log("💰 currentPrice raw:", roomData.roomTypeId?.currentPrice);
+
+        // Parse price - handle Decimal128 object format
+        let price = 0;
+        const rawPrice = roomData.roomTypeId?.currentPrice;
+        if (rawPrice) {
+          if (typeof rawPrice === "object" && rawPrice.$numberDecimal) {
+            price = parseFloat(rawPrice.$numberDecimal);
+          } else if (typeof rawPrice === "string") {
+            price = parseFloat(rawPrice);
+          } else {
+            price = Number(rawPrice);
+          }
+        }
+        console.log("💰 Parsed price:", price);
 
         // Transform data to match component expectations
         const transformedRoom = {
@@ -62,7 +76,7 @@ export default function RoomDetail() {
           roomCode: roomData.roomCode || roomData.name,
           floor: roomData.floorId?.name || "N/A",
           floorLabel: `Tầng ${roomData.floorId?.name || "N/A"}`,
-          price: roomData.roomTypeId?.currentPrice || 0,
+          price: price,
           area: roomData.roomTypeId?.area || 30,
           capacity: roomData.roomTypeId?.personMax || 2,
           description:
@@ -71,7 +85,7 @@ export default function RoomDetail() {
           amenities: roomData.amenities || [],
         };
 
-        console.log("✅ Transformed images:", transformedRoom.images);
+        console.log("✅ Transformed room price:", transformedRoom.price);
         console.log("✅ Images length:", transformedRoom.images.length);
 
         setRoom(transformedRoom);
@@ -154,28 +168,6 @@ export default function RoomDetail() {
         <div className="detail-grid">
           {/* Main Content */}
           <div className="main-content">
-            {/* Room Header */}
-            <div className="room-header-card">
-              <div className="room-header-content">
-                <div className="room-title-section">
-                  <h1 className="detail-room-title">{room.roomCode}</h1>
-                  <p className="detail-room-location">
-                    <MapPin className="icon-small" />
-                    {room.floorLabel}
-                  </p>
-                </div>
-                <span
-                  className={`status-badge ${
-                    room.status === "Available" || room.status === "Trống"
-                      ? "available"
-                      : "occupied"
-                  }`}
-                >
-                  {room.status}
-                </span>
-              </div>
-            </div>
-
             {/* Gallery with Images from Cloudinary */}
             <div className="gallery-card">
               {room.images && room.images.length > 0 ? (
@@ -237,7 +229,7 @@ export default function RoomDetail() {
                 </div>
               ) : (
                 <div className="gallery-placeholder">
-                  <span className="gallery-text">Chưa có hình ảnh</span>
+                  <span className="gallery-text">Hình Ảnh Phòng</span>
                 </div>
               )}
             </div>
@@ -340,14 +332,18 @@ export default function RoomDetail() {
               {/* Booking Card */}
               <div className="booking-card">
                 <h3 className="price-title">
-                  {(room.price / 1000000).toFixed(1)}M/tháng
+                  {room.price > 0
+                    ? `${room.price.toLocaleString("vi-VN")}đ/tháng`
+                    : "Liên hệ"}
                 </h3>
                 <p className="price-subtitle">Tiền thuê nhà hàng tháng</p>
 
                 <div className="deposit-box">
                   <p className="deposit-label">TIỀN CỌC YÊU CẦU</p>
                   <p className="deposit-amount">
-                    {(depositAmount / 1000000).toFixed(1)}M
+                    {room.price > 0
+                      ? `${depositAmount.toLocaleString("vi-VN")}đ`
+                      : "Liên hệ"}
                   </p>
                   <p className="deposit-note">= 1 tháng tiền nhà</p>
                 </div>
