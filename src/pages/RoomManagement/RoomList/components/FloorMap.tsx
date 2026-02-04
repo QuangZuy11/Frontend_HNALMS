@@ -17,7 +17,9 @@ interface Room {
 
 interface FloorMapProps {
   rooms: Room[];
+  highlightedRooms?: Room[];
   floorName?: string;
+  compact?: boolean;
 }
 
 // Premium Soft/Modern Palette
@@ -32,7 +34,12 @@ const ROOM_TYPE_COLORS = [
   "#f472b6", // Pink
 ];
 
-export default function FloorMap({ rooms, floorName }: FloorMapProps) {
+export default function FloorMap({
+  rooms,
+  highlightedRooms,
+  floorName,
+  compact = false,
+}: FloorMapProps) {
   const navigate = useNavigate();
 
   // 1. Identify Unique Room Types present in this list
@@ -125,29 +132,59 @@ export default function FloorMap({ rooms, floorName }: FloorMapProps) {
       <div className="map-layout">
         <div className="rooms-grid">
           {sortedRooms.length > 0 ? (
-            sortedRooms.map((room) => {
+            sortedRooms.map((room, index) => {
               const isAvailable =
                 room.status === "Available" || room.status === "Trống";
               const typeColor = getRoomTypeColor(room.roomTypeId?._id);
 
+              // Check if highlighted
+              const isGhosted =
+                highlightedRooms &&
+                !highlightedRooms.some((r) => r._id === room._id);
+
+              // logic for inserting corridors
               return (
-                <div
-                  key={room._id}
-                  className={`room-node ${isAvailable ? "status-available" : "status-occupied"}`}
-                  onClick={() => handleRoomClick(room._id)}
-                  title={`${room.name} - ${room.roomTypeId?.typeName || room.roomTypeId?.name || ""}`}
-                  style={
-                    isAvailable
-                      ? {
-                          borderColor: typeColor,
-                          color: typeColor,
-                          backgroundColor: `${typeColor}0D`, // Very faint tint (approx 5% opacity)
-                        }
-                      : undefined
-                  }
-                >
-                  <span className="room-node-name">{room.name}</span>
-                </div>
+                <React.Fragment key={room._id}>
+                  {/* Render the room node */}
+                  <div
+                    className={`room-node ${isAvailable ? "status-available" : "status-occupied"} ${isGhosted ? "ghosted" : ""}`}
+                    onClick={() => handleRoomClick(room._id)}
+                    title={`${room.name} - ${room.roomTypeId?.typeName || room.roomTypeId?.name || ""}`}
+                    style={
+                      isAvailable
+                        ? {
+                            borderColor: typeColor,
+                            color: typeColor,
+                            backgroundColor: `${typeColor}0D`, // Very faint tint
+                          }
+                        : undefined
+                    }
+                  >
+                    <span className="room-node-name">{room.name}</span>
+                  </div>
+
+                  {/* Insert Corridor 1 after first row (index 7) */}
+                  {index === 7 && (
+                    <div className="map-corridor">
+                      <span>
+                        ====================== HÀNH LANG ======================
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Insert Corridor 2 after third row (index 23 of total items, but indices shift? No, index in map) */}
+                  {/* Wait, sortedRooms map index is 0-31. */}
+                  {/* R1: 0-7. R2: 8-15. R3: 16-23. R4: 24-31. */}
+                  {/* User wants corridor between R1-R2 (after 7) and R3-R4 (after 23). */}
+
+                  {index === 23 && (
+                    <div className="map-corridor">
+                      <span>
+                        ====================== HÀNH LANG ======================
+                      </span>
+                    </div>
+                  )}
+                </React.Fragment>
               );
             })
           ) : (
@@ -169,7 +206,9 @@ export default function FloorMap({ rooms, floorName }: FloorMapProps) {
         </div>
 
         <div className="map-sidebar-area">
-          <div className="area-label">Nhà Xe</div>
+          <div className="area-label">
+            {floorName?.includes("5") ? "Sân Phơi" : "Nhà Xe"}
+          </div>
         </div>
       </div>
     </div>

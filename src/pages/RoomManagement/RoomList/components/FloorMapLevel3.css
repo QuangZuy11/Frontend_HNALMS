@@ -1,4 +1,9 @@
+/* Inherit styles from FloorMap.css where possible */
+@import url("./FloorMap.css");
+/* Ensure .map-corridor is available */
+
 .floor-map-container.level-3 {
+    /* Specific overrides if needed */
     transition: all 0.3s ease;
 }
 
@@ -11,7 +16,7 @@
 .grid-l3 {
     flex: 1;
     display: grid;
-    /* 15 Columns: 8 Left + 1 Elevator + 6 Right */
+    /* 15 Columns: 8 Left + 1 Separator + 6 Right */
     grid-template-columns: repeat(15, 1fr);
     gap: 0.75rem 0.625rem;
     align-content: start;
@@ -20,38 +25,52 @@
     transition: all 0.3s ease;
 }
 
-.elevator-node-seamless {
-    grid-column: 9;
-    grid-row: 1 / 6;
-    background-color: #d1d5db;
-    color: #4b5563;
-    font-weight: 800;
-    font-size: 1rem;
+/* Corridor Styling (Level 3 Override/Reuse) */
+.floor-map-container.level-3 .map-corridor {
+    background-color: #E8E9ED;
+    /* Reverted to Gray */
+    color: #6b7280;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+    border-radius: 0.4rem;
+}
+
+/* Inline Separator Nodes */
+.separator-node {
     display: flex;
     align-items: center;
     justify-content: center;
+    font-weight: 700;
+    font-size: 0.7rem;
+    color: #6b7280;
+    background: #f3f4f6;
+    border: 1px dashed #d1d5db;
+    border-radius: 4px;
     text-align: center;
-    border-radius: 6px;
-    letter-spacing: 0.1em;
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    height: 210%;
-    z-index: 10;
+    letter-spacing: 0.05em;
+    user-select: none;
     white-space: nowrap;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.elevator-placeholder {
-    visibility: hidden;
+.separator-node.elevator {
+    background: #dbeafe;
+    /* Reverted to Light Blue */
+    color: #3b82f6;
+    border-color: #93c5fd;
+    border-style: solid;
 }
 
-.elevator-node {
-    display: none;
+.separator-node.gap {
+    background: #f9fafb;
+    /* Reverted to Light Gray */
+    color: #9ca3af;
 }
+
 
 .grid-spacer-row {
     grid-column: 1 / -1;
     height: 2rem;
+    /* Spacer height */
 }
 
 .room-node.placeholder {
@@ -66,17 +85,22 @@
     transform: none;
 }
 
-.empty-node {}
+.empty-node {
+    /* Just empty space */
+}
 
 /* Compact Mode */
 .floor-map-container.level-3.compact .grid-l3 {
     min-width: unset;
+    /* Remove min-width or reduce it */
     width: 100%;
     gap: 4px 4px;
+    /* Tighter layout */
 }
 
 .floor-map-container.level-3.compact .room-node {
     min-height: 40px;
+    /* Smaller nodes */
     padding: 0.25rem;
     font-size: 0.75rem;
 }
@@ -87,6 +111,7 @@
 
 .floor-map-container.level-3.compact .grid-spacer-row {
     height: 1rem;
+    /* Smaller spacer */
 }
 
 .floor-map-container.level-3.compact .elevator-node-seamless {
@@ -95,11 +120,15 @@
     padding: 0;
 }
 
+/* Ghosted State (Filtered out) */
 .room-node.ghosted {
     opacity: 0.25;
     filter: grayscale(100%);
     pointer-events: none;
+    /* Make them unclickable if desired, or keep clickable but dim */
     border-color: #e5e7eb !important;
+    /* Force grey border */
     background-color: #f3f4f6 !important;
+    /* Force grey bg */
     color: #9ca3af !important;
 }
