@@ -55,6 +55,12 @@ export const authService = {
         return response.data
     },
 
+    // Enable Account - Mở lại tài khoản
+    enableAccount: async (accountId: string) => {
+        const response = await api.put(`/auth/enable-account/${accountId}`)
+        return response.data
+    },
+
     // Change Password - Backend expects oldPassword and newPassword
     changePassword: async (data: {
         currentPassword: string;

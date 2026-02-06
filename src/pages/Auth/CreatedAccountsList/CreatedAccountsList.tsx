@@ -54,6 +54,60 @@ interface FormData {
   role: string;
 }
 
+const EyeIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path
+      d="M1.5 12C3.1 7.9 7.2 5 12 5s8.9 2.9 10.5 7c-1.6 4.1-5.7 7-10.5 7S3.1 16.1 1.5 12Z"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="12" cy="12" r="3" strokeWidth="1.8" />
+  </svg>
+);
+
+const LockIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <rect
+      x="5"
+      y="10"
+      width="14"
+      height="10"
+      rx="2"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M8 10V8a4 4 0 0 1 8 0v2"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const UnlockIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <rect
+      x="5"
+      y="10"
+      width="14"
+      height="10"
+      rx="2"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M9 10V8a4 4 0 0 1 7.5-2"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 export default function CreatedAccountsList() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -68,6 +122,7 @@ export default function CreatedAccountsList() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailAccount, setDetailAccount] = useState<AccountDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [filterRole, setFilterRole] = useState<string>('');
 
   const currentRole = (user?.role || '').toLowerCase();
   const roleOptions = ROLE_OPTIONS[currentRole] || [];
@@ -92,7 +147,7 @@ export default function CreatedAccountsList() {
         return validRole ? prev : { ...prev, role: roleOptions[0].value };
       });
     }
-  }, [currentRole]);
+  }, [currentRole, roleOptions]);
 
   const fetchAccounts = async () => {
     try {
@@ -210,15 +265,59 @@ export default function CreatedAccountsList() {
     }
     try {
       setDisablingId(accountId);
-      await authService.disableAccount(accountId);
-      fetchAccounts();
+      const response = await authService.disableAccount(accountId);
+      const updated = response.data;
+
+      if (updated?._id) {
+        // Cập nhật lại danh sách tài khoản tại chỗ, không reload toàn bộ
+        setAccounts((prev) =>
+          prev.map((acc) =>
+            acc._id === updated._id ? { ...acc, status: updated.status } : acc
+          )
+        );
+      }
+
       if (detailAccount?._id === accountId) {
-        handleCloseDetailModal();
+        setDetailAccount((prev) =>
+          prev ? { ...prev, status: updated?.status || prev.status } : prev
+        );
       }
     } catch (err: unknown) {
       console.error('Disable account error:', err);
       const errObj = err as { response?: { data?: { message?: string } } };
       alert(errObj?.response?.data?.message || 'Không thể đóng tài khoản');
+    } finally {
+      setDisablingId(null);
+    }
+  };
+
+  const handleEnableAccount = async (accountId: string) => {
+    if (!window.confirm('Bạn có chắc muốn mở lại tài khoản này? Tài khoản sẽ có thể đăng nhập trở lại.')) {
+      return;
+    }
+    try {
+      setDisablingId(accountId);
+      const response = await authService.enableAccount(accountId);
+      const updated = response.data;
+
+      if (updated?._id) {
+        // Cập nhật lại danh sách tài khoản tại chỗ, không reload toàn bộ
+        setAccounts((prev) =>
+          prev.map((acc) =>
+            acc._id === updated._id ? { ...acc, status: updated.status } : acc
+          )
+        );
+      }
+
+      if (detailAccount?._id === accountId) {
+        setDetailAccount((prev) =>
+          prev ? { ...prev, status: updated?.status || prev.status } : prev
+        );
+      }
+    } catch (err: unknown) {
+      console.error('Enable account error:', err);
+      const errObj = err as { response?: { data?: { message?: string } } };
+      alert(errObj?.response?.data?.message || 'Không thể mở lại tài khoản');
     } finally {
       setDisablingId(null);
     }
@@ -239,6 +338,24 @@ export default function CreatedAccountsList() {
   }
 
   const isManager = currentRole === 'manager';
+  const isAdmin = currentRole === 'admin';
+
+  const availableFilterRoles = (() => {
+    if (currentRole === 'admin') {
+      return Object.keys(ROLE_LABELS);
+    }
+    if (currentRole === 'owner') {
+      return ['manager', 'accountant'];
+    }
+    if (currentRole === 'manager') {
+      return ['Tenant'];
+    }
+    return [];
+  })();
+
+  const filteredAccounts = filterRole
+    ? accounts.filter((acc) => acc.role === filterRole)
+    : accounts;
 
   return (
     <div className="created-accounts-page">
@@ -247,16 +364,33 @@ export default function CreatedAccountsList() {
           <div>
             <h1>{isManager ? 'Danh sách tài khoản cư dân' : 'Danh Sách Nhân Sự Tòa Nhà'}</h1>
             <p className="created-accounts-subtitle">
-              {currentRole === 'admin' && 'Các tài khoản Chủ nhà (Owner) do bạn tạo'}
+              {currentRole === 'admin' && 'Tất cả tài khoản người dùng trong hệ thống'}
               {currentRole === 'owner' && 'Các tài khoản Quản lý, Kế toán'}
               {isManager && 'Danh sách tài khoản cư dân (tenant) trong tòa nhà'}
             </p>
           </div>
-          {!isManager && (
-            <button onClick={handleCreateNew} className="btn-create">
-              + Tạo tài khoản mới
-            </button>
-          )}
+          <div className="created-accounts-actions">
+            <div className="filter-role-group">
+            
+              <select
+                id="filter-role"
+                value={filterRole}
+                onChange={(e) => setFilterRole(e.target.value)}
+              >
+                <option value="">Tất cả</option>
+                {availableFilterRoles.map((role) => (
+                  <option key={role} value={role}>
+                    {ROLE_LABELS[role] || role}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {!isManager && (
+              <button onClick={handleCreateNew} className="btn-create">
+                + Tạo tài khoản mới
+              </button>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -311,7 +445,7 @@ export default function CreatedAccountsList() {
                 </tr>
               </thead>
               <tbody>
-                {accounts.map((acc, index) => (
+                {filteredAccounts.map((acc, index) => (
                   <tr key={acc._id}>
                     <td>{index + 1}</td>
                     {isManager ? (
@@ -362,18 +496,29 @@ export default function CreatedAccountsList() {
                             >
                               Xem chi tiết
                             </button>
-                            {acc.status === 'active' ? (
-                              <button
-                                type="button"
-                                className="btn-disable"
-                                onClick={() => handleDisableAccount(acc._id)}
-                                disabled={disablingId === acc._id}
-                                title="Đóng tài khoản"
-                              >
-                                {disablingId === acc._id ? 'Đang xử lý...' : 'Đóng tài khoản'}
-                              </button>
-                            ) : (
-                              <span className="disabled-label">Đã đóng</span>
+                            {/* Admin chỉ được đóng/mở tài khoản Chủ nhà (owner) */}
+                            {(!isAdmin || acc.role === 'owner') && (
+                              acc.status === 'active' ? (
+                                <button
+                                  type="button"
+                                  className="btn-disable"
+                                  onClick={() => handleDisableAccount(acc._id)}
+                                  disabled={disablingId === acc._id}
+                                  title="Đóng tài khoản"
+                                >
+                                  {disablingId === acc._id ? 'Đang xử lý...' : 'Đóng tài khoản'}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="btn-enable"
+                                  onClick={() => handleEnableAccount(acc._id)}
+                                  disabled={disablingId === acc._id}
+                                  title="Mở lại tài khoản"
+                                >
+                                  {disablingId === acc._id ? 'Đang xử lý...' : 'Mở lại'}
+                                </button>
+                              )
                             )}
                           </div>
                         </td>
