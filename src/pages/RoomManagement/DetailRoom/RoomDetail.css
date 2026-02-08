@@ -509,7 +509,7 @@
 .booking-button {
   width: 100%;
   padding: 0.875rem 1rem;
-  background: #3579C6;
+  background: #3579c6;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -521,7 +521,7 @@
 }
 
 .booking-button:hover:not(:disabled) {
-  background: #2B6BB0;
+  background: #2b6bb0;
 }
 
 .booking-button:disabled {
@@ -533,8 +533,8 @@
   width: 100%;
   padding: 0.875rem 1rem;
   background: #fff;
-  color: #3579C6;
-  border: 2px solid #3579C6;
+  color: #3579c6;
+  border: 2px solid #3579c6;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 500;
@@ -543,9 +543,9 @@
 }
 
 .contact-button:hover {
-  background: #3579C6;
+  background: #3579c6;
   color: #fff;
-  border-color: #2B6BB0;
+  border-color: #2b6bb0;
 }
 
 /* Help Card */
@@ -578,8 +578,8 @@
   width: 100%;
   padding: 0.75rem 1rem;
   background: #fff;
-  color: #3579C6;
-  border: 1px solid #3579C6;
+  color: #3579c6;
+  border: 1px solid #3579c6;
   border-radius: 8px;
   font-size: 0.9rem;
   font-weight: 500;
@@ -593,8 +593,8 @@
 }
 
 .help-button:hover {
-  background: #2B6BB0;
-  border-color: #2B6BB0;
+  background: #2b6bb0;
+  border-color: #2b6bb0;
   color: #fff;
 }
 
