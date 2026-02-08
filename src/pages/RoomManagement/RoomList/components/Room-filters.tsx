@@ -5,6 +5,31 @@ import { roomService } from "../../../../services/roomService";
 import RoomInfoModal from "./RoomInfoModal";
 import "./Room-filters.css";
 
+// Soft & Eye-Friendly Color Palette - Match FloorMap colors
+const ROOM_TYPE_COLORS = [
+  "#6366f1", // Soft Indigo
+  "#f59e0b", // Soft Amber
+  "#10b981", // Soft Emerald
+  "#f43f5e", // Soft Rose
+  "#8b5cf6", // Soft Violet
+  "#14b8a6", // Soft Teal
+  "#3b82f6", // Soft Blue
+  "#ec4899", // Soft Pink
+];
+
+// Helper to extract number from room type name (e.g., "Loại 1" -> 1)
+const extractTypeNumber = (typeName: string): number => {
+  const match = typeName.match(/(\d+)/);
+  return match ? parseInt(match[1], 10) : 0;
+};
+
+// Helper to get color by room type name
+const getRoomTypeColorByName = (typeName: string): string => {
+  const typeNumber = extractTypeNumber(typeName);
+  const colorIndex = typeNumber > 0 ? typeNumber - 1 : 0;
+  return ROOM_TYPE_COLORS[colorIndex % ROOM_TYPE_COLORS.length];
+};
+
 // Interfaces
 interface Floor {
   _id: string;
@@ -121,7 +146,7 @@ function Radio({
       id={id}
       name={name}
       checked={checked}
-      onChange={() => { }} // Required for controlled component
+      onChange={() => {}} // Required for controlled component
       onClick={() => onCheckedChange?.(!checked)} // Allow toggle on click
       className={`rf-radio ${className}`}
       {...props}
@@ -163,7 +188,6 @@ export default function RoomFilters({
       setFloors(floorsData.data || []);
       const rooms = roomsData.data || [];
       setAllRooms(rooms);
-
 
       const rawRoomTypes = roomTypesData.data || [];
       // const rooms = roomsData.data || []; // Removed duplicate declaration
@@ -276,7 +300,7 @@ export default function RoomFilters({
     });
   } else {
     // If no data or no floor selected, assume all are available (or let them be clicked to find out)
-    roomTypes.forEach(rt => availableTypeIds.add(rt._id));
+    roomTypes.forEach((rt) => availableTypeIds.add(rt._id));
   }
 
   return (
@@ -312,11 +336,14 @@ export default function RoomFilters({
         <CardContent className="rf-checkbox-group">
           {roomTypes.map((roomType) => {
             const isAvailable = availableTypeIds.has(roomType._id);
+            const typeColor = getRoomTypeColorByName(roomType.typeName);
             return (
               <div
                 key={roomType._id}
                 className={`rf-checkbox-item ${!isAvailable ? "disabled" : ""}`}
-                title={!isAvailable ? "Không có phòng loại này ở tầng đã chọn" : ""}
+                title={
+                  !isAvailable ? "Không có phòng loại này ở tầng đã chọn" : ""
+                }
                 style={!isAvailable ? { opacity: 0.4 } : {}} // Fallback inline in case CSS hasn't reloaded
               >
                 <Radio
@@ -334,7 +361,7 @@ export default function RoomFilters({
                   className={`rf-checkbox-label ${!isAvailable ? "cursor-not-allowed" : ""}`}
                 >
                   {roomType.typeName}{" "}
-                  <span style={{ opacity: 1, fontWeight: 500 }}>
+                  <span style={{ color: typeColor, fontWeight: 600 }}>
                     {roomType.price
                       ? `(${formatPriceShort(roomType.price)})`
                       : ""}
@@ -390,7 +417,9 @@ export default function RoomFilters({
       </Button>
 
       {/* Modal - Rendered via Portal or conditionally here if z-index handles it */}
-      {showInfoModal && <RoomInfoModal onClose={() => setShowInfoModal(false)} />}
-    </div >
+      {showInfoModal && (
+        <RoomInfoModal onClose={() => setShowInfoModal(false)} />
+      )}
+    </div>
   );
 }

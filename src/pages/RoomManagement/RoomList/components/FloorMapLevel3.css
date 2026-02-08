@@ -3,132 +3,133 @@
 /* Ensure .map-corridor is available */
 
 .floor-map-container.level-3 {
-    /* Specific overrides if needed */
-    transition: all 0.3s ease;
+  /* Specific overrides if needed */
+  transition: all 0.3s ease;
 }
 
 .map-layout-l3 {
-    display: flex;
-    gap: 2rem;
-    overflow-x: auto;
+  display: flex;
+  gap: 2rem;
+  overflow-x: auto;
 }
 
 .grid-l3 {
-    flex: 1;
-    display: grid;
-    /* 15 Columns: 8 Left + 1 Separator + 6 Right */
-    grid-template-columns: repeat(15, 1fr);
-    gap: 0.75rem 0.625rem;
-    align-content: start;
-    width: 100%;
-    min-width: 1000px;
-    transition: all 0.3s ease;
+  flex: 1;
+  display: grid;
+  /* 15 Columns: 8 Left + 1 Separator + 6 Right */
+  grid-template-columns: repeat(15, 1fr);
+  gap: 0.75rem 0.625rem;
+  align-content: start;
+  width: 100%;
+  min-width: 1000px;
+  transition: all 0.3s ease;
+  padding-top: 0.5rem;
+  /* Space for hover effect on first row */
 }
 
 /* Corridor Styling (Level 3 Override/Reuse) */
 .floor-map-container.level-3 .map-corridor {
-    background-color: #E8E9ED;
-    /* Reverted to Gray */
-    color: #6b7280;
-    font-size: 0.85rem;
-    padding: 0.5rem;
-    border-radius: 0.4rem;
+  background-color: #e8e9ed;
+  /* Reverted to Gray */
+  color: #6b7280;
+  font-size: 0.85rem;
+  padding: 0.5rem;
+  border-radius: 0.4rem;
 }
 
 /* Inline Separator Nodes */
 .separator-node {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 0.7rem;
-    color: #6b7280;
-    background: #f3f4f6;
-    border: 1px dashed #d1d5db;
-    border-radius: 4px;
-    text-align: center;
-    letter-spacing: 0.05em;
-    user-select: none;
-    white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.7rem;
+  color: #6b7280;
+  background: #f3f4f6;
+  border: 1px dashed #d1d5db;
+  border-radius: 4px;
+  text-align: center;
+  letter-spacing: 0.05em;
+  user-select: none;
+  white-space: nowrap;
 }
 
 .separator-node.elevator {
-    background: #dbeafe;
-    /* Reverted to Light Blue */
-    color: #3b82f6;
-    border-color: #93c5fd;
-    border-style: solid;
+  background: #dbeafe;
+  /* Reverted to Light Blue */
+  color: #3b82f6;
+  border-color: #93c5fd;
+  border-style: solid;
 }
 
 .separator-node.gap {
-    background: #f9fafb;
-    /* Reverted to Light Gray */
-    color: #9ca3af;
+  background: #f9fafb;
+  /* Reverted to Light Gray */
+  color: #9ca3af;
 }
 
-
 .grid-spacer-row {
-    grid-column: 1 / -1;
-    height: 2rem;
-    /* Spacer height */
+  grid-column: 1 / -1;
+  height: 2rem;
+  /* Spacer height */
 }
 
 .room-node.placeholder {
-    border: 1px dashed #e5e7eb;
-    color: #9ca3af;
-    background: #f9fafb;
-    cursor: default;
-    box-shadow: none;
+  border: 1px dashed #e5e7eb;
+  color: #9ca3af;
+  background: #f9fafb;
+  cursor: default;
+  box-shadow: none;
 }
 
 .room-node.placeholder:hover {
-    transform: none;
+  transform: none;
 }
 
 .empty-node {
-    /* Just empty space */
+  /* Just empty space */
 }
 
 /* Compact Mode */
 .floor-map-container.level-3.compact .grid-l3 {
-    min-width: unset;
-    /* Remove min-width or reduce it */
-    width: 100%;
-    gap: 4px 4px;
-    /* Tighter layout */
+  min-width: unset;
+  /* Remove min-width or reduce it */
+  width: 100%;
+  gap: 4px 4px;
+  /* Tighter layout */
 }
 
 .floor-map-container.level-3.compact .room-node {
-    min-height: 40px;
-    /* Smaller nodes */
-    padding: 0.25rem;
-    font-size: 0.75rem;
+  min-height: 40px;
+  /* Smaller nodes */
+  padding: 0.25rem;
+  font-size: 0.75rem;
 }
 
 .floor-map-container.level-3.compact .room-node-name {
-    font-size: 0.7rem;
+  font-size: 0.7rem;
 }
 
 .floor-map-container.level-3.compact .grid-spacer-row {
-    height: 1rem;
-    /* Smaller spacer */
+  height: 1rem;
+  /* Smaller spacer */
 }
 
 .floor-map-container.level-3.compact .elevator-node-seamless {
-    font-size: 0.8rem;
-    width: 100%;
-    padding: 0;
+  font-size: 0.8rem;
+  width: 100%;
+  padding: 0;
 }
 
 /* Ghosted State (Filtered out) */
 .room-node.ghosted {
-    opacity: 0.25;
-    filter: grayscale(100%);
-    pointer-events: none;
-    /* Make them unclickable if desired, or keep clickable but dim */
-    border-color: #e5e7eb !important;
-    /* Force grey border */
-    background-color: #f3f4f6 !important;
-    /* Force grey bg */
-    color: #9ca3af !important;
+  opacity: 0.25;
+  filter: grayscale(100%);
+  pointer-events: none;
+  /* Make them unclickable if desired, or keep clickable but dim */
+  border-color: #e5e7eb !important;
+  /* Force grey border */
+  background-color: #f3f4f6 !important;
+  /* Force grey bg */
+  color: #9ca3af !important;
 }

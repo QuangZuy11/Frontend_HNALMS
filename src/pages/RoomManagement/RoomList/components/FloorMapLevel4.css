@@ -23,11 +23,13 @@
   width: 100%;
   min-width: 1000px;
   transition: all 0.3s ease;
+  padding-top: 0.5rem;
+  /* Space for hover effect on first row */
 }
 
 /* Corridor Styling (Level 4 Override/Reuse) */
 .floor-map-container.level-4 .map-corridor {
-  background-color: #E8E9ED;
+  background-color: #e8e9ed;
   /* Reverted to Gray */
   color: #6b7280;
   font-size: 0.85rem;
@@ -65,7 +67,6 @@
   /* Reverted to Light Gray */
   color: #9ca3af;
 }
-
 
 .grid-spacer-row {
   grid-column: 1 / -1;

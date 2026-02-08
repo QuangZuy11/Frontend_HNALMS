@@ -246,27 +246,27 @@ const BuildingRulesPublic = () => {
     setEditingCategory({ ...editingCategory, rules: newRules });
   };
 
-  // Hiển thị loading khi đang tải dữ liệu
+  // Đang tải dữ liệu
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="loading-content">
-          <div className="spinner"></div>
-          <p className="loading-text">Đang tải nội quy...</p>
+      <div className="brp-loading-container">
+        <div className="brp-loading-content">
+          <div className="brp-spinner"></div>
+          <p className="brp-loading-text">Đang tải nội quy...</p>
         </div>
       </div>
     );
   }
 
-  // Hiển thị thông báo lỗi nếu có lỗi xảy ra
+  // Lỗi
   if (error) {
     return (
-      <div className="error-container">
-        <div className="error-content">
-          <AlertCircle className="error-icon" />
-          <h2 className="error-title">Có lỗi xảy ra</h2>
-          <p className="error-message">{error}</p>
-          <button onClick={fetchRules} className="retry-button">
+      <div className="brp-error-container">
+        <div className="brp-error-content">
+          <AlertCircle className="brp-error-icon" />
+          <h2 className="brp-error-title">Có lỗi xảy ra</h2>
+          <p className="brp-error-message">{error}</p>
+          <button onClick={fetchRules} className="brp-retry-button">
             Thử lại
           </button>
         </div>
@@ -274,24 +274,28 @@ const BuildingRulesPublic = () => {
     );
   }
 
-  // Hiển thị thông báo khi không có dữ liệu
+  // Không có dữ liệu
   if (!rulesData) {
     return (
-      <div className="no-data-container">
-        <div className="no-data-content">
-          <p className="no-data-text">Không có dữ liệu nội quy</p>
+      <div className="brp-no-data-container">
+        <div className="brp-no-data-content">
+          <p className="brp-no-data-text">Không có dữ liệu nội quy</p>
         </div>
       </div>
     );
   }
 
   return (
-    <main className="rules-page">
-      <div className="rules-container">
-        {/* Page Header với nút Chỉnh sửa cho Admin/Manager */}
-        <div className="page-header" style={{ position: "relative" }}>
-          <h1 className="page-title">{rulesData.title}</h1>
-          <p className="page-description">{rulesData.description}</p>
+    <main className="brp-page">
+      <div className="brp-container">
+        {/* Header */}
+        <div className="brp-header" style={{ position: "relative" }}>
+          <h1 className="brp-title">Nội Quy Tòa Nhà</h1>
+          <p className="brp-description">
+            Để đảm bảo môi trường sống thoải mái và an toàn cho
+            <br />
+            tất cả cư dân, vui lòng tuân thủ các quy định dưới đây
+          </p>
 
           {/* Nút chỉnh sửa cho Admin/Manager */}
           {isAdminOrManager && (

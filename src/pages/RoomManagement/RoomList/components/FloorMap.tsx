@@ -22,17 +22,23 @@ interface FloorMapProps {
   compact?: boolean;
 }
 
-// Premium Soft/Modern Palette
+// Soft & Eye-Friendly Color Palette - Easy to distinguish
 const ROOM_TYPE_COLORS = [
-  "#2dd4bf", // Soft Teal
-  "#818cf8", // Soft Indigo
-  "#fb7185", // Soft Rose
-  "#fbbf24", // Warm Amber
-  "#34d399", // Mint Green
-  "#a78bfa", // Soft Violet
-  "#38bdf8", // Sky Blue
-  "#f472b6", // Pink
+  "#059669", // Emerald Green (Tầng 1)
+  "#f59e0b", // Soft Amber
+  "#10b981", // Soft Emerald
+  "#f43f5e", // Soft Rose
+  "#8b5cf6", // Soft Violet
+  "#14b8a6", // Soft Teal
+  "#3b82f6", // Soft Blue
+  "#ec4899", // Soft Pink
 ];
+
+// Helper to extract number from room type name (e.g., "Loại 1" -> 1)
+const extractTypeNumber = (typeName: string): number => {
+  const match = typeName.match(/(\d+)/);
+  return match ? parseInt(match[1], 10) : 0;
+};
 
 export default function FloorMap({
   rooms,
@@ -66,12 +72,15 @@ export default function FloorMap({
     return `${(price / 1000).toFixed(0)}k`;
   };
 
-  // 2. Helper to get color for a type
+  // 2. Helper to get color for a type based on type name number
   const getRoomTypeColor = (typeId?: string) => {
     if (!typeId) return "#6b7280"; // Default gray
-    const index = uniqueRoomTypes.findIndex((t) => t.id === typeId);
-    if (index === -1) return "#6b7280";
-    return ROOM_TYPE_COLORS[index % ROOM_TYPE_COLORS.length];
+    const roomType = uniqueRoomTypes.find((t) => t.id === typeId);
+    if (!roomType) return "#6b7280";
+    const typeNumber = extractTypeNumber(roomType.name);
+    // Use typeNumber - 1 as index (Loại 1 -> index 0)
+    const colorIndex = typeNumber > 0 ? typeNumber - 1 : 0;
+    return ROOM_TYPE_COLORS[colorIndex % ROOM_TYPE_COLORS.length];
   };
 
   // Sort rooms by name Descending
@@ -112,8 +121,9 @@ export default function FloorMap({
                   <span
                     className="legend-color"
                     style={{
-                      backgroundColor: "white",
-                      border: `2px solid ${getRoomTypeColor(type.id)}`,
+                      backgroundColor: getRoomTypeColor(type.id),
+                      border: "none",
+                      borderRadius: "0.25rem",
                     }}
                   ></span>
                   <span>
@@ -153,9 +163,7 @@ export default function FloorMap({
                     style={
                       isAvailable
                         ? {
-                            borderColor: typeColor,
-                            color: typeColor,
-                            backgroundColor: `${typeColor}0D`, // Very faint tint
+                            background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
                           }
                         : undefined
                     }

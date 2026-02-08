@@ -1,205 +1,239 @@
 .floor-map-container {
-    background: white;
-    /* Clean white background */
-    border-radius: 0.75rem;
-    padding: 1rem;
-    margin-bottom: 2rem;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    /* Soft elevation */
+  background: white;
+  /* Clean white background */
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  border: 1px solid #e5e7eb;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  /* Soft elevation */
 }
 
 .map-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    border-bottom: 2px solid #f3f4f6;
-    padding-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #f3f4f6;
+  padding-bottom: 1rem;
 }
 
 .map-corridor {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #e5e7eb;
-    /* Light gray to match "Nhà Xe" styling context */
-    color: #6b7280;
-    font-weight: 700;
-    font-size: 0.85rem;
-    padding: 0.5rem;
-    border-radius: 0.4rem;
-    letter-spacing: 0.05em;
-    user-select: none;
-    margin: 0.25rem 0;
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e5e7eb;
+  /* Light gray to match "Nhà Xe" styling context */
+  color: #6b7280;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.5rem;
+  border-radius: 0.4rem;
+  letter-spacing: 0.05em;
+  user-select: none;
+  margin: 0.25rem 0;
 }
 
 .map-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #111827;
-    /* Darker, sharper text */
-    text-transform: uppercase;
-    margin: 0;
-    letter-spacing: 0.025em;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  /* Darker, sharper text */
+  text-transform: uppercase;
+  margin: 0;
+  letter-spacing: 0.025em;
 }
 
 .map-legends-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
 }
 
 .map-legend {
-    display: flex;
-    gap: 1.5rem;
-    flex-wrap: wrap;
-    justify-content: flex-end;
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: #4b5563;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #4b5563;
 }
 
 .legend-color {
-    width: 0.75rem;
-    height: 0.75rem;
-    border-radius: 0.2rem;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 0.2rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .legend-color.available {
-    background-color: #ffffff;
-    border: 2px solid #22c55e;
-    /* Green Border */
+  background: linear-gradient(145deg, #22c55e 0%, #16a34a 100%);
+  border: none;
+  border-radius: 0.25rem;
 }
 
 .legend-color.occupied {
-    background-color: #e5e7eb;
-    /* Light Gray */
-    border: 2px solid #9ca3af;
-    /* Darker Gray Border */
+  background: linear-gradient(145deg, #e5e7eb 0%, #d1d5db 100%);
+  border: none;
+  border-radius: 0.25rem;
 }
 
 .legend-color.selected {
-    background-color: #eff6ff;
-    border: 2px solid #3b82f6;
-    /* Blue Border */
+  background-color: #eff6ff;
+  border: 2px solid #3b82f6;
+  /* Blue Border */
 }
 
 /* Map Layout */
 .map-layout {
-    display: flex;
-    gap: 2rem;
-    overflow-x: auto;
-    /* Allow scroll if screen too small for 8 cols */
+  display: flex;
+  gap: 2rem;
+  overflow-x: auto;
+  /* Allow scroll if screen too small for 8 cols */
 }
 
 .rooms-grid {
-    flex: 1;
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    /* Strictly 8 columns */
-    grid-template-rows: repeat(4, auto);
-    /* Implicitly 4 rows or auto */
-    gap: 0.75rem 0.625rem;
-    /* Tighter gaps: 0.75rem Row, 0.625rem Col */
-    align-content: start;
-    align-content: start;
-    width: 100%;
-    /* Fill the container width */
-    /* Ensure enough space for 8 cols so it doesn't squish */
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  /* Strictly 8 columns */
+  grid-template-rows: repeat(4, auto);
+  /* Implicitly 4 rows or auto */
+  gap: 0.75rem 0.625rem;
+  /* Tighter gaps: 0.75rem Row, 0.625rem Col */
+  align-content: start;
+  width: 100%;
+  /* Fill the container width */
+  padding-top: 0.5rem;
+  /* Space for hover effect on first row */
 }
 
-/* Room Node - Professional Card Style */
+/* Room Node - Modern Filled Card Style */
 .room-node {
-    width: 100%;
-    /* Fill the grid cell */
-    height: 4.5rem;
-    /* Taller (approx 72px) */
-    border-radius: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    /* Center multi-line text */
-    font-weight: 700;
-    font-size: 1rem;
-    /* Larger font */
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    position: relative;
-    overflow: hidden;
+  width: 100%;
+  /* Fill the grid cell */
+  height: 4.5rem;
+  /* Taller (approx 72px) */
+  border-radius: 0.625rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  /* Center multi-line text */
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  position: relative;
+  overflow: hidden;
+  border: none;
+}
+
+.room-node::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    transparent 50%
+  );
+  pointer-events: none;
 }
 
 .room-node:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
 }
 
-/* Status: Available */
+.room-node-name {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.room-node-label {
+  font-size: 0.65rem;
+  font-weight: 500;
+  opacity: 0.9;
+  margin-top: 0.125rem;
+}
+
+/* Status: Available - Filled with room type color */
 .room-node.status-available {
-    background-color: #ffffff;
-    color: #1f2937;
-    border: 2px solid #22c55e;
-    /* Green Border implies 'Open/Go' */
+  color: #ffffff;
+  /* White text for contrast */
 }
 
 .room-node.status-available:hover {
-    background-color: #f0fdf4;
-    /* Very light green hover */
-    border-color: #16a34a;
+  filter: brightness(1.1);
 }
 
 /* Status: Occupied */
 .room-node.status-occupied {
-    background-color: #f3f4f6;
-    /* Light Gray */
-    color: #6b7280;
-    /* Muted text */
-    border: 1px dashed #d1d5db;
-    /* Dashed border implies unavailable */
-    cursor: not-allowed;
-    /* Optional: or just weaker cursor */
-    box-shadow: none;
+  background: linear-gradient(145deg, #e5e7eb 0%, #d1d5db 100%);
+  color: #6b7280;
+  cursor: not-allowed;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.room-node.status-occupied::before {
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(0, 0, 0, 0.03) 4px,
+    rgba(0, 0, 0, 0.03) 8px
+  );
+}
+
+.room-node.status-occupied .room-node-name {
+  text-shadow: none;
 }
 
 .room-node.status-occupied:hover {
-    transform: none;
-    /* No lift effect */
-    background-color: #e5e7eb;
+  transform: none;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 /* Sidebar Area (Nhà Xe) */
 .map-sidebar-area {
-    width: 3.5rem;
-    /* Increased width */
-    background: linear-gradient(to bottom, #f3f4f6, #e5e7eb);
-    border: 1px solid #d1d5db;
-    border-radius: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #6b7280;
-    font-weight: 700;
-    text-align: center;
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    letter-spacing: 0.1em;
-    /* Reduced slightly */
-    text-transform: uppercase;
-    font-size: 0.9rem;
-    /* Increased font size for visibility */
-    white-space: nowrap;
-    /* Prevent wrapping */
-    min-height: 100px;
-    /* Ensure minimum height */
+  width: 3.5rem;
+  /* Increased width */
+  background: linear-gradient(to bottom, #f3f4f6, #e5e7eb);
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-weight: 700;
+  text-align: center;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0.1em;
+  /* Reduced slightly */
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  /* Increased font size for visibility */
+  white-space: nowrap;
+  /* Prevent wrapping */
+  min-height: 100px;
+  /* Ensure minimum height */
 }

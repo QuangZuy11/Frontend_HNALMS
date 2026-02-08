@@ -209,11 +209,10 @@
   font-weight: 600;
 }
 
-/* Price tag styling */
+/* Price tag styling - color applied inline per room type */
 .rf-label.rf-checkbox-label span {
-  color: #059669;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 /* Reset Button - Modern Style */
