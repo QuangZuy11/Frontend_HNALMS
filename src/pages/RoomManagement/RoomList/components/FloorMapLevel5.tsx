@@ -20,6 +20,7 @@ interface FloorMapProps {
   highlightedRooms?: Room[];
   floorName?: string;
   compact?: boolean;
+  onRoomSelect?: (room: Room) => void;
 }
 
 // Soft & Eye-Friendly Color Palette - Easy to distinguish
@@ -45,6 +46,7 @@ export default function FloorMapLevel5({
   highlightedRooms,
   floorName,
   compact = false,
+  onRoomSelect,
 }: FloorMapProps) {
   const navigate = useNavigate();
 
@@ -91,7 +93,12 @@ export default function FloorMapLevel5({
   });
 
   const handleRoomClick = (roomId: string) => {
-    navigate(`/rooms/${roomId}`);
+    if (onRoomSelect) {
+      const room = rooms.find((r) => r._id === roomId);
+      if (room) onRoomSelect(room);
+    } else {
+      navigate(`/rooms/${roomId}`);
+    }
   };
 
   return (
@@ -162,8 +169,8 @@ export default function FloorMapLevel5({
                     style={
                       isAvailable
                         ? {
-                            background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
-                          }
+                          background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
+                        }
                         : undefined
                     }
                   >

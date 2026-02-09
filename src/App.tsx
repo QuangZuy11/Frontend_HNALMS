@@ -64,6 +64,10 @@ import CreateAccount from "./pages/Auth/CreateAccount/CreateAccount";
 import CreatedAccountsList from "./pages/Auth/CreatedAccountsList/CreatedAccountsList";
 import Header from "./components/layout/Header/Header";
 
+// Pages - Contract Management
+import CreateContract from "./pages/ContractManagement/CreateContract";
+import ContractList from "./pages/ContractManagement/ContractList";
+
 // ================= Layout Wrapper =================
 function LayoutWrapper() {
   const location = useLocation();
@@ -157,7 +161,10 @@ function LayoutWrapper() {
           <Route path="accounts" element={<CreatedAccountsList />} />
           <Route path="profile" element={<ViewProfile />} />
           <Route path="profile/update" element={<UpdateProfile />} />
+          <Route path="profile/update" element={<UpdateProfile />} />
           <Route path="rules" element={<ManagerRules />} />
+          <Route path="contracts" element={<ContractList />} />
+          <Route path="contracts/create" element={<CreateContract />} />
         </Route>
 
         {/* ==================== MANAGER ROUTES ==================== */}
@@ -177,6 +184,10 @@ function LayoutWrapper() {
           <Route path="create-account" element={<CreateAccount />} />
           <Route path="accounts" element={<CreatedAccountsList />} />
           <Route path="profile" element={<ManagerProfile />} />
+          <Route path="accounts" element={<CreatedAccountsList />} />
+          <Route path="profile" element={<ManagerProfile />} />
+          <Route path="contracts" element={<ContractList />} />
+          <Route path="contracts/create" element={<CreateContract />} />
           {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
         </Route>
 

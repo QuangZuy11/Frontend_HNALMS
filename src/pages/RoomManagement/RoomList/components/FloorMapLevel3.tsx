@@ -18,6 +18,7 @@ interface Room {
 interface FloorMapLevel3Props {
   rooms: Room[];
   floorName?: string;
+  onRoomSelect?: (room: Room) => void;
 }
 
 // Detailed Layout Configuration
@@ -82,7 +83,8 @@ export default function FloorMapLevel3({
   floorName,
   highlightedRooms,
   compact = false,
-}: FloorMapLevel3Props & { highlightedRooms?: Room[]; compact?: boolean }) {
+  onRoomSelect,
+}: FloorMapLevel3Props & { highlightedRooms?: Room[]; compact?: boolean; onRoomSelect?: (room: Room) => void }) {
   const navigate = useNavigate();
 
   // 1. Sort Rooms Descending (254 -> 201)
@@ -122,7 +124,12 @@ export default function FloorMapLevel3({
   };
 
   const handleRoomClick = (roomId: string) => {
-    navigate(`/rooms/${roomId}`);
+    if (onRoomSelect) {
+      const room = rooms.find((r) => r._id === roomId);
+      if (room) onRoomSelect(room);
+    } else {
+      navigate(`/rooms/${roomId}`);
+    }
   };
 
   // 3. Generate Layout Grid
@@ -257,8 +264,8 @@ export default function FloorMapLevel3({
                                 flex: 1, // Expand to fill space
                                 ...(isAvailable
                                   ? {
-                                      background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
-                                    }
+                                    background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
+                                  }
                                   : {}),
                               }}
                               title={room.name}
@@ -330,8 +337,8 @@ export default function FloorMapLevel3({
                       style={
                         isAvailable
                           ? {
-                              background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
-                            }
+                            background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
+                          }
                           : undefined
                       }
                       title={room.name}
