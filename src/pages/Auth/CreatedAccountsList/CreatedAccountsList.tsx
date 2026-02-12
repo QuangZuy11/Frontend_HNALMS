@@ -342,6 +342,7 @@ export default function CreatedAccountsList() {
   const canToggleAccountStatus = (accRole: string) => {
     if (isAdmin) return accRole === 'owner';
     if (currentRole === 'owner') return accRole === 'manager' || accRole === 'accountant';
+    if (currentRole === 'manager') return accRole === 'Tenant';
     return false;
   };
 
@@ -475,6 +476,30 @@ export default function CreatedAccountsList() {
                             >
                               Xem chi tiết
                             </button>
+                            {/* Manager có thể đóng/mở tài khoản Tenant ngay tại danh sách */}
+                            {canToggleAccountStatus(acc.role) && (
+                              acc.status === 'active' ? (
+                                <button
+                                  type="button"
+                                  className="btn-disable"
+                                  onClick={() => handleDisableAccount(acc._id)}
+                                  disabled={disablingId === acc._id}
+                                  title="Đóng tài khoản"
+                                >
+                                  {disablingId === acc._id ? 'Đang xử lý...' : 'Đóng tài khoản'}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="btn-enable"
+                                  onClick={() => handleEnableAccount(acc._id)}
+                                  disabled={disablingId === acc._id}
+                                  title="Mở lại tài khoản"
+                                >
+                                  {disablingId === acc._id ? 'Đang xử lý...' : 'Mở lại'}
+                                </button>
+                              )
+                            )}
                           </div>
                         </td>
                       </>
@@ -670,18 +695,6 @@ export default function CreatedAccountsList() {
                             <span className="detail-value">{detailAccount.address || '-'}</span>
                           </div>
                         </div>
-                        {detailAccount.status === 'active' && (
-                          <div className="detail-actions">
-                            <button
-                              type="button"
-                              className="btn-disable"
-                              onClick={() => handleDisableAccount(detailAccount._id)}
-                              disabled={disablingId === detailAccount._id}
-                            >
-                              {disablingId === detailAccount._id ? 'Đang xử lý...' : 'Đóng tài khoản'}
-                            </button>
-                          </div>
-                        )}
                       </>
                     )}
                   </div>
