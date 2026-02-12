@@ -15,7 +15,7 @@ const ROLE_OPTIONS: Record<string, { value: string; label: string }[]> = {
 
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Admin',
-  owner: 'Chủ nhà',
+  owner: 'Chủ căn hộ',
   manager: 'Quản lý',
   Tenant: 'Người thuê',
   accountant: 'Kế toán',
@@ -339,13 +339,19 @@ export default function CreatedAccountsList() {
 
   const isManager = currentRole === 'manager';
   const isAdmin = currentRole === 'admin';
+  const canToggleAccountStatus = (accRole: string) => {
+    if (isAdmin) return accRole === 'owner';
+    if (currentRole === 'owner') return accRole === 'manager' || accRole === 'accountant';
+    return false;
+  };
 
   const availableFilterRoles = (() => {
     if (currentRole === 'admin') {
       return Object.keys(ROLE_LABELS);
     }
     if (currentRole === 'owner') {
-      return ['manager', 'accountant'];
+      // Chủ nhà xem được Manager, Kế toán và Tenant
+      return ['manager', 'accountant', 'Tenant'];
     }
     if (currentRole === 'manager') {
       return ['Tenant'];
@@ -496,8 +502,8 @@ export default function CreatedAccountsList() {
                             >
                               Xem chi tiết
                             </button>
-                            {/* Admin chỉ được đóng/mở tài khoản Chủ nhà (owner) */}
-                            {(!isAdmin || acc.role === 'owner') && (
+                            {/* Chỉ hiện đóng/mở cho role được phép (ẩn Tenant) */}
+                            {canToggleAccountStatus(acc.role) && (
                               acc.status === 'active' ? (
                                 <button
                                   type="button"
