@@ -18,6 +18,23 @@
     padding-bottom: 1rem;
 }
 
+.map-corridor {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e5e7eb;
+    /* Light gray to match "Nhà Xe" styling context */
+    color: #6b7280;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+    border-radius: 0.4rem;
+    letter-spacing: 0.05em;
+    user-select: none;
+    margin: 0.25rem 0;
+}
+
 .map-title {
     font-size: 1.25rem;
     font-weight: 700;

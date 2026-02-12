@@ -2,18 +2,18 @@
 @import url("./FloorMap.css");
 /* Ensure .map-corridor is available */
 
-.floor-map-container.level-2 {
+.floor-map-container.level-4 {
   /* Specific overrides if needed */
   transition: all 0.3s ease;
 }
 
-.map-layout-l2 {
+.map-layout-l4 {
   display: flex;
   gap: 2rem;
   overflow-x: auto;
 }
 
-.grid-l2 {
+.grid-l4 {
   flex: 1;
   display: grid;
   /* 15 Columns: 8 Left + 1 Separator + 6 Right */
@@ -25,15 +25,14 @@
   transition: all 0.3s ease;
 }
 
-/* Corridor Styling (Level 2 Override) */
-.floor-map-container.level-2 .map-corridor {
+/* Corridor Styling (Level 4 Override/Reuse) */
+.floor-map-container.level-4 .map-corridor {
   background-color: #E8E9ED;
   /* Reverted to Gray */
   color: #6b7280;
   font-size: 0.85rem;
   padding: 0.5rem;
   border-radius: 0.4rem;
-  /* Removed text-transform: uppercase if it was there by default, keeping it simple as per request */
 }
 
 /* Inline Separator Nodes */
@@ -91,7 +90,7 @@
 }
 
 /* Compact Mode */
-.floor-map-container.level-2.compact .grid-l2 {
+.floor-map-container.level-4.compact .grid-l4 {
   min-width: unset;
   /* Remove min-width or reduce it */
   width: 100%;
@@ -99,23 +98,23 @@
   /* Tighter layout */
 }
 
-.floor-map-container.level-2.compact .room-node {
+.floor-map-container.level-4.compact .room-node {
   min-height: 40px;
   /* Smaller nodes */
   padding: 0.25rem;
   font-size: 0.75rem;
 }
 
-.floor-map-container.level-2.compact .room-node-name {
+.floor-map-container.level-4.compact .room-node-name {
   font-size: 0.7rem;
 }
 
-.floor-map-container.level-2.compact .grid-spacer-row {
+.floor-map-container.level-4.compact .grid-spacer-row {
   height: 1rem;
   /* Smaller spacer */
 }
 
-.floor-map-container.level-2.compact .elevator-node-seamless {
+.floor-map-container.level-4.compact .elevator-node-seamless {
   font-size: 0.8rem;
   width: 100%;
   padding: 0;

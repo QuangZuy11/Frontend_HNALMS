@@ -1,5 +1,5 @@
 /* ============================================
-   ROOM FILTERS - PREMIUM COMPACT GRID
+   ROOM FILTERS - PREMIUM MODERN DESIGN
    ============================================ */
 
 .rf-sticky-container {
@@ -7,139 +7,304 @@
   top: 5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  /* Spacious gap between cards */
+  gap: 1rem;
 }
 
 /* Premium Card Style */
+.rf-info-text-btn {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  /* Blue link color */
+  font-size: 0.8rem;
+  font-style: italic;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  transition: color 0.2s;
+  opacity: 0.9;
+}
+
+.rf-info-text-btn.footer-link {
+  grid-column: 1 / -1;
+  /* Span all columns */
+  text-align: right;
+  margin-top: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.rf-info-text-btn:hover {
+  color: #1d4ed8;
+  opacity: 1;
+}
+
 .rf-card {
-  background: white;
-  border: 1px solid rgba(229, 231, 235, 0.5);
-  /* Subtle border */
-  border-radius: 0.75rem;
-  /* Larger radius for modern feel */
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 1rem;
   overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  /* Soft, elevated shadow */
-  transition: box-shadow 0.2s ease;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.07),
+    0 2px 4px -1px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .rf-card:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05),
-    0 4px 6px -2px rgba(0, 0, 0, 0.025);
-  /* Slight lift on hover */
+  box-shadow:
+    0 10px 25px -5px rgba(59, 130, 246, 0.15),
+    0 8px 10px -6px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(59, 130, 246, 0.1);
+  transform: translateY(-2px);
+  border-color: rgba(59, 130, 246, 0.2);
 }
 
-/* Header with Gradient/Accent */
+/* Header with Gradient Accent */
 .rf-card-header.rf-filter-header {
-  padding: 0.65rem 1rem;
-  border-bottom: 1px solid #f3f4f6;
-  background: linear-gradient(to right, #ffffff, #f9fafb);
+  padding: 0.875rem 1.25rem;
+  border-bottom: none;
+  background: #3579c6;
   display: flex;
   align-items: center;
+  position: relative;
+  border-radius: 1rem 1rem 0 0;
+}
+
+.rf-card-header.rf-filter-header::before {
+  display: none;
 }
 
 .rf-card-title.rf-filter-title {
-  font-size: 1.1rem;
-  /* Increased size for prominence */
+  font-size: 0.8rem;
   font-weight: 700;
-  color: #374151;
-  /* Softer dark gray */
+  color: #ffffff;
   margin: 0;
-  line-height: 1;
-  letter-spacing: 0.05em;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 /* Content: 2-Column Grid Layout */
 .rf-card-content.rf-checkbox-group {
-  padding: 0.75rem;
+  padding: 0.5rem;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  /* Two equal columns */
-  gap: 0.5rem 0.75rem;
-  /* Row gap, Column gap */
+  gap: 0.4rem;
+  background: #ffffff;
+  border-radius: 0 0 1rem 1rem;
 }
 
 /* Interactive Item Base */
 .rf-checkbox-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.5rem;
-  border-radius: 0.375rem;
-  transition: background-color 0.15s ease;
+  gap: 0.2rem;
+  padding: 0.2rem 0.3rem;
+  border-radius: 0.35rem;
+  transition: all 0.2s ease;
   cursor: pointer;
-  border: 1px solid transparent;
-  /* Prevent layout shift on hover interaction if borders added later */
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  position: relative;
 }
 
 .rf-checkbox-item:hover {
-  background-color: #f3f4f6;
-  /* Light gray hover */
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-color: #93c5fd;
+}
+
+.rf-checkbox-item:has(.rf-radio:checked),
+.rf-checkbox-item:has(.rf-checkbox:checked) {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px -2px rgba(59, 130, 246, 0.3);
+}
+
+/* Disabled State */
+.rf-checkbox-item.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  filter: grayscale(100%);
 }
 
 /* Custom Checkbox Styling */
 .rf-checkbox {
-  width: 1.125rem;
-  /* Large clickable area ~18px */
-  height: 1.125rem;
+  width: 0.8rem;
+  height: 0.8rem;
   cursor: pointer;
   accent-color: #2563eb;
-  /* Cleaner blue */
   margin: 0;
   flex-shrink: 0;
+  border-radius: 0.2rem;
+  transition: transform 0.15s ease;
+}
+
+.rf-checkbox:hover {
+  transform: scale(1.1);
+}
+
+.rf-checkbox:checked {
+  animation: checkPop 0.2s ease;
 }
 
 /* Custom Radio */
 .rf-radio {
-  width: 1.125rem;
-  height: 1.125rem;
+  width: 0.8rem;
+  height: 0.8rem;
   cursor: pointer;
   accent-color: #2563eb;
   margin: 0;
   flex-shrink: 0;
   border-radius: 50%;
-  /* Round for radio */
+  transition: transform 0.15s ease;
+}
+
+.rf-radio:hover {
+  transform: scale(1.1);
+}
+
+.rf-radio:checked {
+  animation: checkPop 0.2s ease;
+}
+
+@keyframes checkPop {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Label Typography */
 .rf-label.rf-checkbox-label {
-  font-size: 0.925rem;
-  /* ~15px readable text */
-  font-weight: 500;
-  color: #4b5563;
+  font-size: 0.87rem;
+  font-weight: 400;
+  color: #475569;
   cursor: pointer;
-  line-height: 1.25;
+  line-height: 1.15;
   user-select: none;
+  transition: color 0.15s ease;
+  white-space: nowrap;
 }
 
-/* Reset Button - Full Width & Modern */
+.rf-checkbox-item:hover .rf-label.rf-checkbox-label {
+  color: #1e40af;
+}
+
+.rf-checkbox-item:has(.rf-radio:checked) .rf-label.rf-checkbox-label,
+.rf-checkbox-item:has(.rf-checkbox:checked) .rf-label.rf-checkbox-label {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+/* Price tag styling */
+.rf-label.rf-checkbox-label span {
+  color: #059669;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Reset Button - Modern Style */
 .rf-reset-button.rf-button {
   width: 100%;
-  margin-top: 0.5rem;
-  background-color: white;
-  border: 1px dashed #d1d5db;
-  color: #6b7280;
+  margin-top: -0.25rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  border: 2px dashed #cbd5e1;
+  color: #64748b;
   font-weight: 600;
-  padding: 0.6rem;
-  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
   box-shadow: none;
   font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .rf-reset-button.rf-button:hover {
-  background-color: #eff6ff;
-  color: #2563eb;
-  border-color: #93c5fd;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  color: #dc2626;
+  border-color: #fca5a5;
   border-style: solid;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(220, 38, 38, 0.2);
 }
 
-/* Responsive adjustment if screen really narrow */
+.rf-reset-button.rf-button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Scrollbar styling for filter area */
+.rf-sticky-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.rf-sticky-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.rf-sticky-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #94a3b8, #64748b);
+  border-radius: 3px;
+}
+
+/* Responsive adjustment */
 @media (max-width: 1024px) {
   .rf-card-content.rf-checkbox-group {
     grid-template-columns: 1fr;
-    /* Fallback to 1 column only on smaller screens */
+  }
+
+  .rf-checkbox-item {
+    padding: 0.625rem 0.875rem;
+  }
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+  .rf-card {
+    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+    border-color: rgba(51, 65, 85, 0.8);
+  }
+
+  .rf-card-header.rf-filter-header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #172554 100%);
+    border-bottom-color: #334155;
+  }
+
+  .rf-card-title.rf-filter-title {
+    color: #93c5fd;
+  }
+
+  .rf-card-content.rf-checkbox-group {
+    background: #1e293b;
+  }
+
+  .rf-checkbox-item {
+    background: #334155;
+  }
+
+  .rf-checkbox-item:hover {
+    background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+  }
+
+  .rf-label.rf-checkbox-label {
+    color: #cbd5e1;
   }
 }

@@ -1,0 +1,12 @@
+/* Inherit styles from FloorMap.css directly */
+@import url("./FloorMap.css");
+
+.floor-map-container.level-5 {
+    /* Inherits everything from .floor-map-container */
+    /* Add specific overrides if needed */
+}
+
+/* Ensure sidebar label specific to Level 5 if needed, 
+   but since it's just text change in TSX, this CSS can remain minimal 
+   or just identical to FloorMap.css structure.
+*/
