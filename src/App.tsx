@@ -45,6 +45,7 @@ import AdminDashboard from "./pages/Dashboard/AdminDashboard";
 import BuildingOwnerDashboard from "./pages/Dashboard/OwnerDashboard/BuildingOwnerDashboard";
 import BuildingConfig from "./pages/RoomManagement/BuildingConfig/BuildingConfig";
 import ManageRoom from "./pages/RoomManagement/ManageRoom/ManageRoom";
+import ManageDevice from "./pages/DeviceManagement/ManagementDevice";
 
 // Pages - Manager Dashboard
 import ManagerDashboard from "./pages/Dashboard/ManagerDashboard/ManagerDashboard";
@@ -158,6 +159,7 @@ function LayoutWrapper() {
           <Route path="profile" element={<ViewProfile />} />
           <Route path="profile/update" element={<UpdateProfile />} />
           <Route path="rules" element={<ManagerRules />} />
+          <Route path="devices" element={<ManageDevice />} />
         </Route>
 
         {/* ==================== MANAGER ROUTES ==================== */}
