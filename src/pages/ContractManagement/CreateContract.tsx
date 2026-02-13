@@ -74,7 +74,6 @@ const CreateContract = () => {
     const [rooms, setRooms] = useState([]);
     const [selectedRoom, setSelectedRoom] = useState<any>(null);
     const [activeFloorTab, setActiveFloorTab] = useState(0);
-    const [services, setServices] = useState<any[]>([]); // Fetch from DB
     const [assets, setAssets] = useState<any[]>([]); // Fetch from Room/Device
 
     // Pre-fill from navigation state (e.g., from Room Detail or Deposit)
@@ -114,7 +113,7 @@ const CreateContract = () => {
         name: "coResidents"
     });
 
-    // Fetch Rooms & Services on Mount
+    // Fetch Rooms on Mount
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -132,20 +131,6 @@ const CreateContract = () => {
 
                 setRooms(mappedRooms);
 
-                // Mock Services for now if API not ready
-                const servicesRes = await axios.get(`${API_URL}/services`);
-                if (servicesRes.data.success) {
-                    setServices(servicesRes.data.data);
-                } else {
-                    setServices([]);
-                }
-                // setServices([
-                //     { _id: "1", name: "Internet", price: 50000, type: "fixed" },
-                //     { _id: "2", name: "Thang máy", price: 50000, type: "fixed" },
-                //     { _id: "3", name: "Vệ sinh", price: 30000, type: "fixed" },
-                //     { _id: "4", name: "Gửi xe", price: 100000, type: "fixed" },
-                // ]);
-
                 if (preFilledRoomId) {
                     const room = mappedRooms?.find((r: any) => r._id === preFilledRoomId);
                     if (room) handleRoomSelect(room);
@@ -157,22 +142,54 @@ const CreateContract = () => {
         fetchData();
     }, [preFilledRoomId]);
 
-    const handleRoomSelect = (room: any) => {
+    const handleRoomSelect = async (roomData: any) => {
         // Prevent selecting Occupied rooms
-        if (room.status === "Occupied" || room.status === "Đang thuê") {
+        if (roomData.status === "Occupied" || roomData.status === "Đang thuê") {
             alert("Phòng này đã có người thuê! Vui lòng chọn phòng Trống hoặc Đã cọc.");
             return;
         }
-        setSelectedRoom(room);
-        setValue("roomId", room._id);
-        setValue("financials.roomPrice", room.price);
-        setValue("financials.depositAmount", room.price); // Default 1 month
 
-        // Validating assets (Mock)
-        setAssets([
-            { name: "Điều hòa", quantity: 1, condition: "Tốt" },
-            { name: "Bình nóng lạnh", quantity: 1, condition: "Tốt" }
-        ]);
+        try {
+            // Fetch full room details to get assets
+            const res = await axios.get(`${API_URL}/rooms/${roomData._id}`);
+            const fullRoom = res.data.data;
+
+            setSelectedRoom(fullRoom);
+            setValue("roomId", fullRoom._id);
+            console.log("Setting price:", fullRoom.roomTypeId?.currentPrice, "or", roomData.price);
+            const price = fullRoom.roomTypeId?.currentPrice || roomData.price || 0;
+            setValue("financials.roomPrice", price);
+            setValue("financials.depositAmount", price); // Default 1 month
+
+            // Map assets from API response
+            console.log("Room details fetched:", fullRoom);
+            if (fullRoom.assets && fullRoom.assets.length > 0) {
+                console.log("Assets found:", fullRoom.assets);
+                const mappedAssets = fullRoom.assets.map((a: any) => ({
+                    deviceId: a.deviceId?._id,
+                    name: a.deviceId?.name || "Thiết bị",
+                    brand: a.deviceId?.brand || "",
+                    model: a.deviceId?.model || "",
+                    quantity: a.quantity || 1,
+                    condition: a.condition || "Tốt",
+                    unit: a.deviceId?.unit || "cái",
+                    checked: true
+                }));
+                setAssets(mappedAssets);
+            } else {
+                console.log("No assets found in room details.");
+                setAssets([]);
+            }
+
+        } catch (error) {
+            console.error("Error fetching room details:", error);
+            // Fallback if API fails, use basic data
+            setSelectedRoom(roomData);
+            setValue("roomId", roomData._id);
+            setValue("financials.roomPrice", roomData.price);
+            setValue("financials.depositAmount", roomData.price);
+            setAssets([]);
+        }
     };
 
     const watchRoomId = watch("roomId");
@@ -208,18 +225,6 @@ const CreateContract = () => {
 
     const onSubmit = async (data: any) => {
         try {
-            // Map selected service IDs to full service objects
-            const selectedServiceIds = data.services || [];
-            const selectedServices = services
-                .filter(s => selectedServiceIds.includes(s._id))
-                .map(s => ({
-                    serviceId: s._id,
-                    name: s.name,
-                    price: s.price,
-                    type: s.type,
-                    quantity: 1
-                }));
-
             const payload = {
                 ...data,
                 depositId: preFilledDepositId,
@@ -228,10 +233,10 @@ const CreateContract = () => {
                     duration: Number(data.duration),
                     roomPrice: Number(data.financials.roomPrice),
                     depositAmount: Number(data.financials.depositAmount),
-                    services: selectedServices, // Send full objects
+                    services: [], // Services removed as per request
                     paymentCycle: 1 // Default
                 },
-                assets: assets,
+                assets: assets.filter(a => a.checked !== false),
                 initialPayment: {
                     rentAmount: paymentDetails.rentAmount,
                     total: paymentDetails.total,
@@ -241,7 +246,7 @@ const CreateContract = () => {
 
             const res = await axios.post(`${API_URL}/contracts/create`, payload);
             if (res.data.success) {
-                alert(`Tạo hợp đồng thành công! \nTài khoản Tenant: ${res.data.data.account.username} \nMật khẩu: ${res.data.data.account.password}`);
+                alert(`Đã tạo hợp đồng thành công.\nĐã gửi tài khoản và mật khẩu đến email đăng ký: ${data.tenantInfo?.email || 'của khách hàng'}.`);
                 // Redirect
                 navigate("/manager/contracts");
             }
@@ -314,40 +319,7 @@ const CreateContract = () => {
                 {/* STEP 2: CONTRACT DETAILS */}
                 {activeStep === 1 && (
                     <Box>
-                        {/* Contract Configuration */}
-                        <Paper elevation={3} sx={{ p: 3, mb: 4, bgcolor: '#fff' }}>
-                            <Typography variant="h6" gutterBottom color="primary">2. Cấu hình Hợp đồng</Typography>
-                            <Grid container spacing={2}>
-                                <Grid size={{ xs: 12, md: 3 }}>
-                                    <TextField
-                                        fullWidth
-                                        size="small"
-                                        type="date"
-                                        label="Ngày bắt đầu*"
-                                        InputLabelProps={{ shrink: true }}
-                                        {...register("startDate", { required: true })}
-                                    />
-                                </Grid>
-                                <Grid size={{ xs: 12, md: 2 }}>
-                                    <TextField
-                                        fullWidth
-                                        size="small"
-                                        type="number"
-                                        label="Thời hạn (tháng)*"
-                                        {...register("duration", { required: true, min: 6 })}
-                                    />
-                                </Grid>
-                                <Grid size={{ xs: 12, md: 3 }}>
-                                    <TextField
-                                        fullWidth
-                                        size="small"
-                                        type="number"
-                                        label="Tiền cọc (mặc định 1 tháng)*"
-                                        {...register("financials.depositAmount", { required: true })}
-                                    />
-                                </Grid>
-                            </Grid>
-                        </Paper>
+                        {/* Contract Configuration Removed - Merged into Document */}
 
                         {/* Paper Document Representation */}
                         <Paper elevation={3} sx={{ p: 5, minHeight: '800px', mx: 'auto', maxWidth: '900px', fontFamily: '"Times New Roman", Times, serif' }}>
@@ -428,34 +400,91 @@ const CreateContract = () => {
                                     Hai bên cùng thỏa thuận ký kết hợp đồng thuê nhà với các điều khoản sau:
                                 </Typography>
 
-                                <Typography paragraph>
+                                <Typography component="div" sx={{ mb: 2 }}>
                                     <strong>Điều 1:</strong> Bên A đồng ý cho Bên B thuê phòng số <strong>{selectedRoom?.name || "..."}</strong>.
                                     <br />
-                                    Giá thuê phòng là:
+                                    - Thời hạn thuê:
                                     <TextField
                                         variant="standard"
                                         type="number"
-                                        sx={{ width: 150, mx: 1 }}
-                                        inputProps={{ style: { textAlign: 'right', fontWeight: 'bold' } }}
-                                        /* READONLY as requested */
-                                        disabled
-                                        {...register("financials.roomPrice")}
+                                        sx={{ width: 60, mx: 1 }}
+                                        inputProps={{ style: { textAlign: 'center', fontWeight: 'bold' } }}
+                                        {...register("duration", { required: true, min: 6 })}
+                                    />
+                                    tháng, bắt đầu từ ngày
+                                    <TextField
+                                        variant="standard"
+                                        type="date"
+                                        sx={{ mx: 1 }}
+                                        {...register("startDate", { required: true })}
+                                    />.
+                                    <br />
+                                    - Giá thuê phòng là:
+                                    <Controller
+                                        name="financials.roomPrice"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <TextField
+                                                {...field}
+                                                variant="standard"
+                                                type="text"
+                                                sx={{ width: 120, mx: 1 }}
+                                                inputProps={{ style: { textAlign: 'right', fontWeight: 'bold', color: '#d32f2f' } }}
+                                                InputProps={{ readOnly: true }}
+                                                value={!isNaN(Number(field.value)) ? Number(field.value).toLocaleString() : "0"}
+                                            />
+                                        )}
                                     />
                                     VNĐ/tháng. (Giá này cố định theo loại phòng).
+                                    <br />
+                                    - Tiền đặt cọc:
+                                    <Controller
+                                        name="financials.depositAmount"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <TextField
+                                                {...field}
+                                                variant="standard"
+                                                type="text"
+                                                sx={{ width: 120, mx: 1 }}
+                                                inputProps={{ style: { textAlign: 'right', fontWeight: 'bold' } }}
+                                                InputProps={{ readOnly: true }}
+                                                value={!isNaN(Number(field.value)) ? Number(field.value).toLocaleString() : "0"}
+                                            />
+                                        )}
+                                    />
+                                    VNĐ (Tương đương 01 tháng tiền phòng).
                                 </Typography>
 
-                                <Typography paragraph>
-                                    <strong>Điều 2:</strong> Các dịch vụ đi kèm bao gồm:
+                                <Typography component="div" sx={{ mb: 1 }}>
+                                    <strong>Điều 2:</strong> Các trang thiết bị/tài sản bàn giao kèm theo phòng:
                                 </Typography>
                                 <Grid container spacing={1} sx={{ pl: 3 }}>
-                                    {services.map((svc) => (
-                                        <Grid size={{ xs: 6, md: 4 }} key={svc._id}>
-                                            <FormControlLabel
-                                                control={<Checkbox value={svc._id} {...register("services")} />}
-                                                label={<Typography sx={{ fontFamily: '"Times New Roman", serif' }}>{svc.name} ({svc.price?.toLocaleString()}đ)</Typography>}
-                                            />
-                                        </Grid>
-                                    ))}
+                                    {assets.length > 0 ? (
+                                        assets.map((asset, index) => (
+                                            <Grid size={{ xs: 12, md: 6 }} key={index}>
+                                                <FormControlLabel
+                                                    control={
+                                                        <Checkbox
+                                                            defaultChecked
+                                                            onChange={(e) => {
+                                                                const newAssets = [...assets];
+                                                                newAssets[index].checked = e.target.checked;
+                                                                setAssets(newAssets);
+                                                            }}
+                                                        />
+                                                    }
+                                                    label={
+                                                        <Typography sx={{ fontFamily: '"Times New Roman", serif', fontSize: '1.1rem' }}>
+                                                            {asset.name} {asset.brand ? `(${asset.brand})` : ""} - SL: <strong>{asset.quantity}</strong> {asset.unit || "cái"} ({asset.condition})
+                                                        </Typography>
+                                                    }
+                                                />
+                                            </Grid>
+                                        ))
+                                    ) : (
+                                        <Typography sx={{ pl: 2, fontStyle: 'italic' }}>Chưa có thiết bị nào được ghi nhận.</Typography>
+                                    )}
                                 </Grid>
 
                                 <Typography paragraph sx={{ mt: 2 }}>
