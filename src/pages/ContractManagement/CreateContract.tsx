@@ -82,6 +82,7 @@ const CreateContract = () => {
     const preFilledDepositId = location.state?.depositId;
 
     const { control, handleSubmit, watch, setValue, getValues, register, formState: { errors } } = useForm<ContractFormValues>({
+        mode: "onChange",
         defaultValues: {
             roomId: preFilledRoomId || "",
             startDate: new Date().toISOString().split("T")[0],
@@ -376,36 +377,69 @@ const CreateContract = () => {
                                     <Typography sx={{ fontWeight: 'bold', textDecoration: 'underline' }}>BÊN B (Bên thuê):</Typography>
                                     <Grid container spacing={1} alignItems="center">
                                         <Grid size={{ xs: 12, md: 6 }}>
-                                            <TextField variant="standard" fullWidth placeholder="Họ và tên..." {...register("tenantInfo.fullName", { required: true })} InputProps={{ style: { fontSize: '1.1rem', fontWeight: 'bold' } }} />
+                                            <TextField variant="standard" fullWidth placeholder="Họ và tên..."
+                                                {...register("tenantInfo.fullName", { required: "Họ và tên là bắt buộc" })}
+                                                error={!!errors.tenantInfo?.fullName}
+                                                helperText={errors.tenantInfo?.fullName?.message as string}
+                                                InputProps={{ style: { fontSize: '1.1rem', fontWeight: 'bold' } }} />
                                         </Grid>
                                         <Grid size={{ xs: 12, md: 6 }}>
                                             <Grid container alignItems="center">
                                                 <Typography component="span" sx={{ mr: 1 }}>Sinh ngày:</Typography>
-                                                <TextField variant="standard" type="date" {...register("tenantInfo.dob")} InputProps={{ style: { fontSize: '1.1rem' } }} sx={{ flex: 1 }} />
+                                                <TextField variant="standard" type="date"
+                                                    {...register("tenantInfo.dob", { required: "Ngày sinh là bắt buộc" })}
+                                                    error={!!errors.tenantInfo?.dob}
+                                                    helperText={errors.tenantInfo?.dob?.message as string}
+                                                    InputProps={{ style: { fontSize: '1.1rem' } }} sx={{ flex: 1 }} />
                                             </Grid>
                                         </Grid>
                                         <Grid size={{ xs: 12, md: 6 }}>
                                             <Grid container alignItems="center">
                                                 <Typography component="span" sx={{ mr: 1 }}>CCCD/CMND:</Typography>
-                                                <TextField variant="standard" fullWidth placeholder="Số CCCD..." {...register("tenantInfo.cccd", { required: true })} InputProps={{ style: { fontSize: '1.1rem' } }} sx={{ flex: 1 }} />
+                                                <TextField variant="standard" fullWidth placeholder="Số CCCD..."
+                                                    {...register("tenantInfo.cccd", {
+                                                        required: "CCCD là bắt buộc",
+                                                        pattern: { value: /^[0-9]{12}$/, message: "CCCD phải gồm đúng 12 chữ số" }
+                                                    })}
+                                                    error={!!errors.tenantInfo?.cccd}
+                                                    helperText={errors.tenantInfo?.cccd?.message as string}
+                                                    InputProps={{ style: { fontSize: '1.1rem' } }} sx={{ flex: 1 }} />
                                             </Grid>
                                         </Grid>
                                         <Grid size={{ xs: 12, md: 6 }}>
                                             <Grid container alignItems="center">
                                                 <Typography component="span" sx={{ mr: 1 }}>Điện thoại:</Typography>
-                                                <TextField variant="standard" fullWidth placeholder="SĐT liên hệ..." {...register("tenantInfo.phone", { required: true })} InputProps={{ style: { fontSize: '1.1rem' } }} sx={{ flex: 1 }} />
+                                                <TextField variant="standard" fullWidth placeholder="SĐT liên hệ..."
+                                                    {...register("tenantInfo.phone", {
+                                                        required: "Số điện thoại là bắt buộc",
+                                                        pattern: { value: /^0[0-9]{9}$/, message: "SĐT phải gồm 10 chữ số, bắt đầu bằng 0" }
+                                                    })}
+                                                    error={!!errors.tenantInfo?.phone}
+                                                    helperText={errors.tenantInfo?.phone?.message as string}
+                                                    InputProps={{ style: { fontSize: '1.1rem' } }} sx={{ flex: 1 }} />
                                             </Grid>
                                         </Grid>
                                         <Grid size={12}>
                                             <Grid container alignItems="center">
                                                 <Typography component="span" sx={{ mr: 1 }}>Email:</Typography>
-                                                <TextField variant="standard" fullWidth placeholder="Email nhận thông báo..." {...register("tenantInfo.email", { required: true })} InputProps={{ style: { fontSize: '1.1rem' } }} sx={{ flex: 1 }} />
+                                                <TextField variant="standard" fullWidth placeholder="Email nhận thông báo..."
+                                                    {...register("tenantInfo.email", {
+                                                        required: "Email là bắt buộc",
+                                                        pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Email không đúng định dạng" }
+                                                    })}
+                                                    error={!!errors.tenantInfo?.email}
+                                                    helperText={errors.tenantInfo?.email?.message as string}
+                                                    InputProps={{ style: { fontSize: '1.1rem' } }} sx={{ flex: 1 }} />
                                             </Grid>
                                         </Grid>
                                         <Grid size={12}>
                                             <Grid container alignItems="center">
                                                 <Typography component="span" sx={{ mr: 1 }}>Hộ khẩu thường trú:</Typography>
-                                                <TextField variant="standard" fullWidth placeholder="Địa chỉ..." {...register("tenantInfo.address")} InputProps={{ style: { fontSize: '1.1rem' } }} sx={{ flex: 1 }} />
+                                                <TextField variant="standard" fullWidth placeholder="Địa chỉ..."
+                                                    {...register("tenantInfo.address", { required: "Hộ khẩu thường trú là bắt buộc" })}
+                                                    error={!!errors.tenantInfo?.address}
+                                                    helperText={errors.tenantInfo?.address?.message as string}
+                                                    InputProps={{ style: { fontSize: '1.1rem' } }} sx={{ flex: 1 }} />
                                             </Grid>
                                         </Grid>
                                     </Grid>
@@ -423,16 +457,20 @@ const CreateContract = () => {
                                     <TextField
                                         variant="standard"
                                         type="number"
-                                        sx={{ width: 60, mx: 1 }}
-                                        inputProps={{ style: { textAlign: 'center', fontWeight: 'bold' } }}
-                                        {...register("duration", { required: true, min: 6 })}
+                                        sx={{ width: 80, mx: 1 }}
+                                        inputProps={{ style: { textAlign: 'center', fontWeight: 'bold' }, min: 6 }}
+                                        {...register("duration", { required: "Bắt buộc", min: { value: 6, message: "Tối thiểu 6 tháng" }, valueAsNumber: true })}
+                                        error={!!errors.duration}
+                                        helperText={errors.duration?.message as string}
                                     />
                                     tháng, bắt đầu từ ngày
                                     <TextField
                                         variant="standard"
                                         type="date"
                                         sx={{ mx: 1 }}
-                                        {...register("startDate", { required: true })}
+                                        {...register("startDate", { required: "Ngày bắt đầu là bắt buộc" })}
+                                        error={!!errors.startDate}
+                                        helperText={errors.startDate?.message as string}
                                     />.
                                     <br />
                                     - Giá thuê phòng là:
@@ -528,8 +566,19 @@ const CreateContract = () => {
                                     {coResidentFields.map((item, index) => (
                                         <Box key={item.id} sx={{ display: 'flex', gap: 2, mb: 1, alignItems: 'flex-end' }}>
                                             <Typography>{index + 1}.</Typography>
-                                            <TextField variant="standard" placeholder="Họ tên" {...register(`coResidents.${index}.fullName` as const)} />
-                                            <TextField variant="standard" placeholder="CCCD" {...register(`coResidents.${index}.cccd` as const)} />
+                                            <TextField variant="standard" placeholder="Họ tên"
+                                                {...register(`coResidents.${index}.fullName` as const, { required: "Bắt buộc" })}
+                                                error={!!errors.coResidents?.[index]?.fullName}
+                                                helperText={errors.coResidents?.[index]?.fullName?.message as string}
+                                            />
+                                            <TextField variant="standard" placeholder="CCCD"
+                                                {...register(`coResidents.${index}.cccd` as const, {
+                                                    required: "Bắt buộc",
+                                                    pattern: { value: /^[0-9]{12}$/, message: "CCCD 12 số" }
+                                                })}
+                                                error={!!errors.coResidents?.[index]?.cccd}
+                                                helperText={errors.coResidents?.[index]?.cccd?.message as string}
+                                            />
                                             <Button size="small" color="error" onClick={() => removeCoResident(index)}>X</Button>
                                         </Box>
                                     ))}
