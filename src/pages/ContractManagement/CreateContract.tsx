@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
     Box,
     Button,
@@ -9,18 +9,11 @@ import {
     Paper,
     Checkbox,
     FormControlLabel,
-    Divider,
-    Alert,
     Stepper,
     Step,
     StepLabel,
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableRow,
 } from "@mui/material";
-import { useForm, Controller, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import FloorMap from "../RoomManagement/RoomList/components/FloorMap";
@@ -41,19 +34,25 @@ interface CoResident {
     cccd: string;
 }
 
+interface ServiceItem {
+    _id: string;
+    name: string;
+    currentPrice: number;
+    type: string;
+    description?: string;
+}
+
+interface SelectedService {
+    serviceId: string;
+    name: string;
+    price: number;
+    type: string;
+}
+
 interface ContractFormValues {
     roomId: string;
     startDate: string;
     duration: number;
-    financials: {
-        roomPrice: number;
-        depositAmount: number;
-    };
-    services: string[];
-    initialReadings: {
-        electricity: number;
-        water: number;
-    };
     tenantInfo: {
         fullName: string;
         phone: string;
@@ -75,6 +74,8 @@ const CreateContract = () => {
     const [selectedRoom, setSelectedRoom] = useState<any>(null);
     const [activeFloorTab, setActiveFloorTab] = useState(0);
     const [assets, setAssets] = useState<any[]>([]); // Fetch from Room/Device
+    const [availableServices, setAvailableServices] = useState<ServiceItem[]>([]);
+    const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
 
     // Pre-fill from navigation state (e.g., from Room Detail or Deposit)
     const preFilledRoomId = location.state?.roomId;
@@ -96,15 +97,6 @@ const CreateContract = () => {
                 contactRef: "" // Bố mẹ
             },
             coResidents: [],
-            services: [],
-            initialReadings: {
-                electricity: 0,
-                water: 0
-            },
-            financials: {
-                depositAmount: 0,
-                roomPrice: 0
-            }
         }
     });
 
@@ -113,11 +105,14 @@ const CreateContract = () => {
         name: "coResidents"
     });
 
-    // Fetch Rooms on Mount
+    // Fetch Rooms and Services on Mount
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const roomsRes = await axios.get(`${API_URL}/rooms`); // Need filtered functionality
+                const [roomsRes, servicesRes] = await Promise.all([
+                    axios.get(`${API_URL}/rooms`),
+                    axios.get(`${API_URL}/services?type=Fixed&isActive=true`)
+                ]);
 
                 // Show all rooms (Occupied ones should be styled differently and unselectable)
                 const rawRooms = roomsRes.data.data || [];
@@ -130,6 +125,17 @@ const CreateContract = () => {
                 }));
 
                 setRooms(mappedRooms);
+
+                // Set available monthly services
+                const services = servicesRes.data.data || [];
+                setAvailableServices(services);
+                // Auto-select all services
+                setSelectedServices(services.map((s: ServiceItem) => ({
+                    serviceId: s._id,
+                    name: s.name,
+                    price: s.currentPrice,
+                    type: s.type
+                })));
 
                 if (preFilledRoomId) {
                     const room = mappedRooms?.find((r: any) => r._id === preFilledRoomId);
@@ -156,16 +162,13 @@ const CreateContract = () => {
 
             setSelectedRoom(fullRoom);
             setValue("roomId", fullRoom._id);
-            console.log("Setting price:", fullRoom.roomTypeId?.currentPrice, "or", roomData.price);
-            const price = fullRoom.roomTypeId?.currentPrice || roomData.price || 0;
-            setValue("financials.roomPrice", price);
-            setValue("financials.depositAmount", price); // Default 1 month
 
             // Map assets from API response
             console.log("Room details fetched:", fullRoom);
             if (fullRoom.assets && fullRoom.assets.length > 0) {
                 console.log("Assets found:", fullRoom.assets);
                 const mappedAssets = fullRoom.assets.map((a: any) => ({
+                    roomDeviceId: a._id, // RoomDevice ID for saving to contract
                     deviceId: a.deviceId?._id,
                     name: a.deviceId?.name || "Thiết bị",
                     brand: a.deviceId?.brand || "",
@@ -183,11 +186,8 @@ const CreateContract = () => {
 
         } catch (error) {
             console.error("Error fetching room details:", error);
-            // Fallback if API fails, use basic data
             setSelectedRoom(roomData);
             setValue("roomId", roomData._id);
-            setValue("financials.roomPrice", roomData.price);
-            setValue("financials.depositAmount", roomData.price);
             setAssets([]);
         }
     };
@@ -200,17 +200,15 @@ const CreateContract = () => {
         }
     }, [watchRoomId, rooms]);
 
-    // Financial Calculation
+    // Financial Calculation (using selectedRoom price from roomType)
     const calculateInitialPayment = () => {
         const vals = getValues();
-        const price = Number(vals.financials.roomPrice) || 0;
-        const deposit = Number(vals.financials.depositAmount) || 0;
+        const price = Number(selectedRoom?.roomTypeId?.currentPrice || selectedRoom?.price || 0);
+        const deposit = price; // Deposit = 1 month rent
         const start = new Date(vals.startDate);
 
 
         // Calculate remaining days in month
-        // Logic: If start date is 15th, pay for 15th to end of month.
-        // JS Date month is 0-indexed.
         const endOfMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0);
         const totalDaysInMonth = endOfMonth.getDate();
         const daysRemaining = totalDaysInMonth - start.getDate() + 1; // inclusive
@@ -218,10 +216,27 @@ const CreateContract = () => {
         const rentAmount = Math.round((price / totalDaysInMonth) * daysRemaining);
         const total = rentAmount + deposit;
 
-        return { rentAmount, deposit, total, daysRemaining };
+        return { rentAmount, deposit, total, daysRemaining, roomPrice: price };
     };
 
     const paymentDetails = calculateInitialPayment();
+
+    // Service toggle handler
+    const handleServiceToggle = (service: ServiceItem) => {
+        setSelectedServices(prev => {
+            const exists = prev.find(s => s.serviceId === service._id);
+            if (exists) {
+                return prev.filter(s => s.serviceId !== service._id);
+            } else {
+                return [...prev, {
+                    serviceId: service._id,
+                    name: service.name,
+                    price: service.currentPrice,
+                    type: service.type
+                }];
+            }
+        });
+    };
 
     const onSubmit = async (data: any) => {
         try {
@@ -231,18 +246,19 @@ const CreateContract = () => {
                 contractDetails: {
                     startDate: data.startDate,
                     duration: Number(data.duration),
-                    roomPrice: Number(data.financials.roomPrice),
-                    depositAmount: Number(data.financials.depositAmount),
-                    services: [], // Services removed as per request
+                    services: selectedServices,
                     paymentCycle: 1 // Default
                 },
-                assets: assets.filter(a => a.checked !== false),
+                assets: assets.filter(a => a.checked !== false).map(a => a.roomDeviceId),
                 initialPayment: {
                     rentAmount: paymentDetails.rentAmount,
                     total: paymentDetails.total,
                     paymentMethod: "cash"
                 }
             };
+
+            // Remove financials from spread if present
+            delete payload.financials;
 
             const res = await axios.post(`${API_URL}/contracts/create`, payload);
             if (res.data.success) {
@@ -420,38 +436,24 @@ const CreateContract = () => {
                                     />.
                                     <br />
                                     - Giá thuê phòng là:
-                                    <Controller
-                                        name="financials.roomPrice"
-                                        control={control}
-                                        render={({ field }) => (
-                                            <TextField
-                                                {...field}
-                                                variant="standard"
-                                                type="text"
-                                                sx={{ width: 120, mx: 1 }}
-                                                inputProps={{ style: { textAlign: 'right', fontWeight: 'bold', color: '#d32f2f' } }}
-                                                InputProps={{ readOnly: true }}
-                                                value={!isNaN(Number(field.value)) ? Number(field.value).toLocaleString() : "0"}
-                                            />
-                                        )}
+                                    <TextField
+                                        variant="standard"
+                                        type="text"
+                                        sx={{ width: 120, mx: 1 }}
+                                        inputProps={{ style: { textAlign: 'right', fontWeight: 'bold', color: '#d32f2f' } }}
+                                        InputProps={{ readOnly: true }}
+                                        value={paymentDetails.roomPrice ? paymentDetails.roomPrice.toLocaleString() : "0"}
                                     />
                                     VNĐ/tháng. (Giá này cố định theo loại phòng).
                                     <br />
                                     - Tiền đặt cọc:
-                                    <Controller
-                                        name="financials.depositAmount"
-                                        control={control}
-                                        render={({ field }) => (
-                                            <TextField
-                                                {...field}
-                                                variant="standard"
-                                                type="text"
-                                                sx={{ width: 120, mx: 1 }}
-                                                inputProps={{ style: { textAlign: 'right', fontWeight: 'bold' } }}
-                                                InputProps={{ readOnly: true }}
-                                                value={!isNaN(Number(field.value)) ? Number(field.value).toLocaleString() : "0"}
-                                            />
-                                        )}
+                                    <TextField
+                                        variant="standard"
+                                        type="text"
+                                        sx={{ width: 120, mx: 1 }}
+                                        inputProps={{ style: { textAlign: 'right', fontWeight: 'bold' } }}
+                                        InputProps={{ readOnly: true }}
+                                        value={paymentDetails.roomPrice ? paymentDetails.roomPrice.toLocaleString() : "0"}
                                     />
                                     VNĐ (Tương đương 01 tháng tiền phòng).
                                 </Typography>
@@ -488,19 +490,39 @@ const CreateContract = () => {
                                 </Grid>
 
                                 <Typography paragraph sx={{ mt: 2 }}>
-                                    <strong>Điều 3:</strong> Chỉ số điện/nước ban đầu khi bàn giao phòng:
+                                    <strong>Điều 3:</strong> Các dịch vụ hàng tháng đi kèm:
                                 </Typography>
-                                <Grid container spacing={2} sx={{ pl: 3 }}>
-                                    <Grid size={6}>
-                                        Điện: <TextField variant="standard" type="number" sx={{ width: 100 }} {...register("initialReadings.electricity")} /> kWh
-                                    </Grid>
-                                    <Grid size={6}>
-                                        Nước: <TextField variant="standard" type="number" sx={{ width: 100 }} {...register("initialReadings.water")} /> m3
-                                    </Grid>
+                                <Grid container spacing={1} sx={{ pl: 3 }}>
+                                    {availableServices.length > 0 ? (
+                                        availableServices.map((service) => {
+                                            const selected = selectedServices.find(s => s.serviceId === service._id);
+                                            return (
+                                                <Grid size={{ xs: 12, md: 6 }} key={service._id}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <FormControlLabel
+                                                            control={
+                                                                <Checkbox
+                                                                    checked={!!selected}
+                                                                    onChange={() => handleServiceToggle(service)}
+                                                                />
+                                                            }
+                                                            label={
+                                                                <Typography sx={{ fontFamily: '"Times New Roman", serif', fontSize: '1.1rem' }}>
+                                                                    {service.name} - <strong>{service.currentPrice.toLocaleString()}</strong> VNĐ/tháng
+                                                                </Typography>
+                                                            }
+                                                        />
+                                                    </Box>
+                                                </Grid>
+                                            );
+                                        })
+                                    ) : (
+                                        <Typography sx={{ pl: 2, fontStyle: 'italic' }}>Chưa có dịch vụ hàng tháng nào được cấu hình.</Typography>
+                                    )}
                                 </Grid>
 
                                 <Typography paragraph sx={{ mt: 2 }}>
-                                    <strong>Điều 4:</strong> Danh sách người ở cùng:
+                                    <strong>Điều 4:</strong> Danh sách người ở cùng (tối đa {(selectedRoom?.roomTypeId?.personMax || 1)} người/phòng):
                                 </Typography>
                                 <Box sx={{ pl: 3 }}>
                                     {coResidentFields.map((item, index) => (
@@ -511,7 +533,19 @@ const CreateContract = () => {
                                             <Button size="small" color="error" onClick={() => removeCoResident(index)}>X</Button>
                                         </Box>
                                     ))}
-                                    <Button size="small" onClick={() => appendCoResident({ fullName: "", cccd: "" })} startIcon={<PersonAddIcon />}>Thêm người ở</Button>
+                                    <Button
+                                        size="small"
+                                        onClick={() => appendCoResident({ fullName: "", cccd: "" })}
+                                        startIcon={<PersonAddIcon />}
+                                        disabled={coResidentFields.length + 1 >= (selectedRoom?.roomTypeId?.personMax || 1)}
+                                    >
+                                        Thêm người ở ({coResidentFields.length + 1}/{selectedRoom?.roomTypeId?.personMax || 1})
+                                    </Button>
+                                    {coResidentFields.length + 1 >= (selectedRoom?.roomTypeId?.personMax || 1) && (
+                                        <Typography variant="caption" color="warning.main" sx={{ ml: 1 }}>
+                                            Đã đạt giới hạn số người cho loại phòng này.
+                                        </Typography>
+                                    )}
                                 </Box>
                             </Box>
 

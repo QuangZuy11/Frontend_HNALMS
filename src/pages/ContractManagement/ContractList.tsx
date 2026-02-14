@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Container,
     Typography,
@@ -36,7 +36,7 @@ const ContractList = () => {
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
             <Paper sx={{ p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Typography variant="h5">Danh sách Hợp đồng</Typography>
-                <Button variant="contained" component={Link} to="/manager/contracts/create">
+                <Button variant="contained" component={Link} to="create">
                     Tạo Hợp đồng Mới
                 </Button>
             </Paper>
@@ -71,7 +71,7 @@ const ContractList = () => {
                                         <Chip label={contract.status} color={contract.status === "active" ? "success" : "default"} />
                                     </TableCell>
                                     <TableCell>
-                                        <Button size="small">Xem</Button>
+                                        <Button size="small" component={Link} to={`${contract._id}`}>Xem</Button>
                                     </TableCell>
                                 </TableRow>
                             ))

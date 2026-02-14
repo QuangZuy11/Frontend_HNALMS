@@ -67,6 +67,7 @@ import Header from "./components/layout/Header/Header";
 // Pages - Contract Management
 import CreateContract from "./pages/ContractManagement/CreateContract";
 import ContractList from "./pages/ContractManagement/ContractList";
+import ContractDetail from "./pages/ContractManagement/ContractDetail";
 
 // ================= Layout Wrapper =================
 function LayoutWrapper() {
@@ -165,6 +166,7 @@ function LayoutWrapper() {
           <Route path="rules" element={<ManagerRules />} />
           <Route path="contracts" element={<ContractList />} />
           <Route path="contracts/create" element={<CreateContract />} />
+          <Route path="contracts/:id" element={<ContractDetail />} />
         </Route>
 
         {/* ==================== MANAGER ROUTES ==================== */}
@@ -188,6 +190,7 @@ function LayoutWrapper() {
           <Route path="profile" element={<ManagerProfile />} />
           <Route path="contracts" element={<ContractList />} />
           <Route path="contracts/create" element={<CreateContract />} />
+          <Route path="contracts/:id" element={<ContractDetail />} />
           {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
         </Route>
 
