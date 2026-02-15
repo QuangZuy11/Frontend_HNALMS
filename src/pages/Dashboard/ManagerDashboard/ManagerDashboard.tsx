@@ -39,26 +39,57 @@ export default function ManagerDashboard() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/rooms");
-      const rooms = response.data.data || [];
 
-      const occupiedRooms = rooms.filter(
-        (r: any) => r.status === "Đã thuê",
-      ).length;
-      const vacantRooms = rooms.filter((r: any) => r.status === "Trống").length;
-      const maintenanceRooms = rooms.filter(
-        (r: any) => r.status === "Đang bảo trì",
-      ).length;
+      // Fetch rooms and contracts in parallel
+      const [roomsRes, contractsRes] = await Promise.all([
+        api.get("/rooms"),
+        api.get("/contracts"),
+      ]);
+
+      const rooms = roomsRes.data.data || [];
+      const contracts = contractsRes.data.data || [];
+
+      // Room stats based on status field
       const totalRooms = rooms.length;
+      const occupiedRooms = rooms.filter(
+        (r: any) => r.status === "Occupied",
+      ).length;
+      const vacantRooms = rooms.filter(
+        (r: any) => r.status === "Available" || r.status === "Deposited",
+      ).length;
+      const maintenanceRooms = rooms.filter(
+        (r: any) => r.status === "Maintenance",
+      ).length;
+
+      // Contract stats from real data
+      const activeContracts = contracts.filter(
+        (c: any) => c.status === "active",
+      );
+
+      // Expiring contracts: active contracts with endDate within next 30 days
+      const now = new Date();
+      const thirtyDaysLater = new Date();
+      thirtyDaysLater.setDate(now.getDate() + 30);
+
+      const expiringContracts = activeContracts.filter((c: any) => {
+        const endDate = new Date(c.endDate);
+        return endDate >= now && endDate <= thirtyDaysLater;
+      }).length;
+
+      // Total tenants: sum of personInRoom from active contracts
+      const totalTenants = activeContracts.reduce(
+        (sum: number, c: any) => sum + (c.personInRoom || 1),
+        0,
+      );
 
       setStats({
         totalRooms,
         occupiedRooms,
         vacantRooms,
         maintenanceRooms,
-        totalTenants: occupiedRooms * 2,
-        activeContracts: occupiedRooms,
-        expiringContracts: Math.floor(occupiedRooms * 0.15),
+        totalTenants,
+        activeContracts: activeContracts.length,
+        expiringContracts,
         occupancyRate:
           totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0,
       });
