@@ -9,10 +9,14 @@ import {
     Divider,
     Button,
     CircularProgress,
+    IconButton,
+    Modal,
+    Backdrop,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CloseIcon from "@mui/icons-material/Close";
 
 const API_URL = "http://localhost:9999/api";
 
@@ -21,6 +25,7 @@ const ContractDetail = () => {
     const navigate = useNavigate();
     const [contract, setContract] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchContract = async () => {
@@ -56,7 +61,6 @@ const ContractDetail = () => {
     }
 
     const roomPrice = parseFloat(contract.roomId?.roomTypeId?.currentPrice?.toString() || "0");
-    const depositAmount = roomPrice;
     const genderMap: Record<string, string> = { Male: "Nam", Female: "Nữ", Other: "Khác" };
 
     const statusColor = (status: string) => {
@@ -156,7 +160,7 @@ const ContractDetail = () => {
                     <br />
                     - Giá thuê phòng là: <strong style={{ color: "#d32f2f" }}>{roomPrice.toLocaleString()}</strong> VNĐ/tháng. (Giá này cố định theo loại phòng).
                     <br />
-                    - Tiền đặt cọc: <strong>{depositAmount.toLocaleString()}</strong> VNĐ (Tương đương 01 tháng tiền phòng).
+                    - Tiền đặt cọc: <strong>{roomPrice.toLocaleString()}</strong> VNĐ (Tương đương 01 tháng tiền phòng).
                 </Typography>
 
                 {/* Điều 2 - Assets */}
@@ -219,46 +223,112 @@ const ContractDetail = () => {
                     )}
                 </Box>
 
-                <Divider sx={{ my: 3 }} />
-
-                {/* Payment Info */}
-                <Typography variant="h6" sx={{ fontFamily: '"Times New Roman", serif', fontWeight: "bold", mb: 1 }}>
-                    Thông tin thanh toán ban đầu
-                </Typography>
-                {contract.financials?.initialPayment && (
-                    <Box sx={{ pl: 3 }}>
-                        <Typography>
-                            Tiền thuê (ngày lẻ): <strong>{(contract.financials.initialPayment.rentAmount || 0).toLocaleString()}</strong> VNĐ
+                {/* Contract Images */}
+                {contract.images && contract.images.length > 0 && (
+                    <>
+                        <Divider sx={{ my: 3 }} />
+                        <Typography variant="h6" sx={{ fontFamily: '"Times New Roman", serif', fontWeight: "bold", mb: 2, color: '#1976d2' }}>
+                            📷 Ảnh Hợp Đồng Bản Cứng
                         </Typography>
-                        <Typography>
-                            Tiền đặt cọc: <strong>{(contract.financials.initialPayment.depositAmount || 0).toLocaleString()}</strong> VNĐ
-                        </Typography>
-                        <Typography sx={{ fontWeight: "bold", color: "#d32f2f", fontSize: "1.2rem", mt: 1 }}>
-                            Tổng thanh toán: {(contract.financials.initialPayment.total || 0).toLocaleString()} VNĐ
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Phương thức: {contract.financials.initialPayment.paymentMethod === "cash" ? "Tiền mặt" : "Chuyển khoản"}
-                            {contract.financials.initialPayment.paidAt && (
-                                <> — Ngày thanh toán: {new Date(contract.financials.initialPayment.paidAt).toLocaleDateString("vi-VN")}</>
-                            )}
-                        </Typography>
-                    </Box>
+                        <Grid container spacing={2}>
+                            {contract.images.map((url: string, idx: number) => (
+                                <Grid size={{ xs: 6, sm: 4, md: 3 }} key={idx}>
+                                    <Box
+                                        onClick={() => setLightboxImage(url)}
+                                        sx={{
+                                            cursor: 'pointer',
+                                            border: '1px solid #ddd',
+                                            borderRadius: 2,
+                                            overflow: 'hidden',
+                                            transition: 'transform 0.2s, box-shadow 0.2s',
+                                            '&:hover': {
+                                                transform: 'scale(1.03)',
+                                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                                            }
+                                        }}
+                                    >
+                                        <img
+                                            src={url}
+                                            alt={`Hợp đồng ${idx + 1}`}
+                                            style={{
+                                                width: '100%',
+                                                height: 160,
+                                                objectFit: 'cover',
+                                                display: 'block'
+                                            }}
+                                        />
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                display: 'block',
+                                                textAlign: 'center',
+                                                py: 0.5,
+                                                bgcolor: '#f5f5f5',
+                                                fontFamily: '"Times New Roman", serif'
+                                            }}
+                                        >
+                                            Ảnh {idx + 1}
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    </>
                 )}
-
-                <Divider sx={{ my: 3 }} />
-
-                {/* Signatures */}
-                <Grid container sx={{ mt: 4 }}>
-                    <Grid size={6} sx={{ textAlign: "center" }}>
-                        <Typography sx={{ fontWeight: "bold" }}>BÊN A</Typography>
-                        <Typography variant="body2" sx={{ fontStyle: "italic" }}>(Ký và ghi rõ họ tên)</Typography>
-                    </Grid>
-                    <Grid size={6} sx={{ textAlign: "center" }}>
-                        <Typography sx={{ fontWeight: "bold" }}>BÊN B</Typography>
-                        <Typography variant="body2" sx={{ fontStyle: "italic" }}>(Ký và ghi rõ họ tên)</Typography>
-                    </Grid>
-                </Grid>
             </Paper>
+
+            {/* Lightbox Modal */}
+            <Modal
+                open={!!lightboxImage}
+                onClose={() => setLightboxImage(null)}
+                closeAfterTransition
+                slots={{ backdrop: Backdrop }}
+                slotProps={{ backdrop: { sx: { bgcolor: 'rgba(0,0,0,0.85)' } } }}
+            >
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100vw',
+                        height: '100vh',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        p: 2,
+                    }}
+                    onClick={() => setLightboxImage(null)}
+                >
+                    <IconButton
+                        onClick={() => setLightboxImage(null)}
+                        sx={{
+                            position: 'absolute',
+                            top: 16,
+                            right: 16,
+                            color: '#fff',
+                            bgcolor: 'rgba(255,255,255,0.15)',
+                            '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
+                            zIndex: 10,
+                        }}
+                    >
+                        <CloseIcon fontSize="large" />
+                    </IconButton>
+                    {lightboxImage && (
+                        <img
+                            src={lightboxImage}
+                            alt="Ảnh hợp đồng phóng to"
+                            style={{
+                                maxWidth: '90vw',
+                                maxHeight: '90vh',
+                                objectFit: 'contain',
+                                borderRadius: 8,
+                                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    )}
+                </Box>
+            </Modal>
         </Container>
     );
 };

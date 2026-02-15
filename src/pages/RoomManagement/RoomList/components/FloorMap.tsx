@@ -152,6 +152,7 @@ export default function FloorMap({
             sortedRooms.map((room, index) => {
               const isAvailable =
                 room.status === "Available" || room.status === "Trống";
+              const isDeposited = room.status === "Deposited";
               const typeColor = getRoomTypeColor(room.roomTypeId?._id);
 
               // Check if highlighted
@@ -159,16 +160,19 @@ export default function FloorMap({
                 highlightedRooms &&
                 !highlightedRooms.some((r) => r._id === room._id);
 
+              const statusClass = isAvailable ? "status-available" : isDeposited ? "status-deposited" : "status-occupied";
+
               // logic for inserting corridors
               return (
                 <React.Fragment key={room._id}>
                   {/* Render the room node */}
                   <div
-                    className={`room-node ${isAvailable ? "status-available" : "status-occupied"} ${isGhosted ? "ghosted" : ""}`}
+                    className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""}`}
                     onClick={() => handleRoomClick(room._id)}
                     title={`${room.name} - ${room.roomTypeId?.typeName || room.roomTypeId?.name || ""}`}
+                    data-color={typeColor}
                     style={
-                      isAvailable
+                      isAvailable || isDeposited
                         ? {
                           background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
                         }

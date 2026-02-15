@@ -250,21 +250,24 @@ export default function FloorMapLevel2({
                           const isAvailable =
                             room.status === "Available" ||
                             room.status === "Trống";
+                          const isDeposited = room.status === "Deposited";
                           const typeColor = getRoomTypeColor(
                             room.roomTypeId?._id,
                           );
                           const isGhosted =
                             highlightedRooms &&
                             !highlightedRooms.some((r) => r._id === room._id);
+                          const statusClass = isAvailable ? "status-available" : isDeposited ? "status-deposited" : "status-occupied";
 
                           return (
                             <div
                               key={room._id}
-                              className={`room-node ${isAvailable ? "status-available" : "status-occupied"} ${isGhosted ? "ghosted" : ""}`}
+                              className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""}`}
                               onClick={() => handleRoomClick(room._id)}
+                              data-color={typeColor}
                               style={{
                                 flex: 1, // Expand to fill space
-                                ...(isAvailable
+                                ...(isAvailable || isDeposited
                                   ? {
                                     background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
                                   }
@@ -326,18 +329,21 @@ export default function FloorMapLevel2({
                   const room = item as Room;
                   const isAvailable =
                     room.status === "Available" || room.status === "Trống";
+                  const isDeposited = room.status === "Deposited";
                   const typeColor = getRoomTypeColor(room.roomTypeId?._id);
                   const isGhosted =
                     highlightedRooms &&
                     !highlightedRooms.some((r) => r._id === room._id);
+                  const statusClass = isAvailable ? "status-available" : isDeposited ? "status-deposited" : "status-occupied";
 
                   return (
                     <div
                       key={room._id}
-                      className={`room-node ${isAvailable ? "status-available" : "status-occupied"} ${isGhosted ? "ghosted" : ""}`}
+                      className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""}`}
                       onClick={() => handleRoomClick(room._id)}
+                      data-color={typeColor}
                       style={
-                        isAvailable
+                        isAvailable || isDeposited
                           ? {
                             background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
                           }
