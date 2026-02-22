@@ -19,7 +19,7 @@
   overflow-y: auto;
   background-color: #f8fafc;
   border-top-left-radius: 16px;
-  padding: 24px 32px;
+  padding: 5px 24px;
 }
 
 @media (max-width: 1024px) {

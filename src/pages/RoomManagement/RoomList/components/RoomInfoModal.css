@@ -1,0 +1,156 @@
+/* Modal Overlay */
+.rim-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    /* Align top instead of center */
+    padding-top: 6rem;
+    /* Push down from header */
+    z-index: 9999;
+    /* Ensure it's above everything including map nodes */
+    animation: rim-fade-in 0.2s ease-out;
+}
+
+/* Modal Content Container */
+.rim-content {
+    background: white;
+    width: 95%;
+    max-width: 1400px;
+    max-height: 80vh;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    animation: rim-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+}
+
+/* Header */
+.rim-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: white;
+}
+
+.rim-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.rim-close-btn {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.rim-close-btn:hover {
+    background-color: #f1f5f9;
+    color: #0f172a;
+}
+
+/* Scrollable Body */
+.rim-scroll-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    background: #f8fafc;
+}
+
+/* The Grid (Reused style logic) */
+.rim-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+/* Card Styles */
+.rim-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.rim-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 0.5rem;
+}
+
+.rim-type-name {
+    font-weight: 700;
+    color: #334155;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+}
+
+.rim-price {
+    font-weight: 600;
+    color: #059669;
+    font-size: 0.85rem;
+    background: #ecfdf5;
+    padding: 0.15rem 0.5rem;
+    border-radius: 99px;
+}
+
+.rim-desc {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+/* Animations */
+@keyframes rim-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes rim-slide-up {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 640px) {
+    .rim-grid {
+        grid-template-columns: 1fr;
+        /* Stack on mobile */
+    }
+}

@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import "./FloorMapLevel2.css";
+import "./FloorMapLevel4.css";
 
 interface Room {
   _id: string;
@@ -15,14 +15,12 @@ interface Room {
   [key: string]: any;
 }
 
-interface FloorMapLevel2Props {
+interface FloorMapLevel4Props {
   rooms: Room[];
   floorName?: string;
   onRoomSelect?: (room: Room) => void;
 }
 
-// Detailed Layout Configuration
-// Total Grid Columns: 16 (9 Left + 1 Separator + 6 Right)
 // Detailed Layout Configuration
 // Total Grid Columns: 15 (8 Left + 1 Separator + 6 Right)
 const FLOOR_CONFIG = [
@@ -80,13 +78,13 @@ const extractTypeNumber = (typeName: string): number => {
   return match ? parseInt(match[1], 10) : 0;
 };
 
-export default function FloorMapLevel2({
+export default function FloorMapLevel4({
   rooms,
   floorName,
   highlightedRooms,
   compact = false,
   onRoomSelect,
-}: FloorMapLevel2Props & { highlightedRooms?: Room[]; compact?: boolean; onRoomSelect?: (room: Room) => void }) {
+}: FloorMapLevel4Props & { highlightedRooms?: Room[]; compact?: boolean; onRoomSelect?: (room: Room) => void }) {
   const navigate = useNavigate();
 
   // 1. Sort Rooms Descending (254 -> 201)
@@ -176,9 +174,9 @@ export default function FloorMapLevel2({
   });
 
   return (
-    <div className={`floor-map-container level-2 ${compact ? "compact" : ""}`}>
+    <div className={`floor-map-container level-4 ${compact ? "compact" : ""}`}>
       <div className="map-header">
-        <h3 className="map-title">SƠ ĐỒ {floorName || "TẦNG 2"}</h3>
+        <h3 className="map-title">SƠ ĐỒ {floorName || "TẦNG 4"}</h3>
         <div className="map-legends-container">
           <div className="map-legend status-legend">
             <div className="legend-item">
@@ -215,8 +213,8 @@ export default function FloorMapLevel2({
         </div>
       </div>
 
-      <div className="map-layout-l2">
-        <div className="grid-l2">
+      <div className="map-layout-l4">
+        <div className="grid-l4">
           {generatedLayout.map((row: any, rowIndex) => {
             if (row.type === "CORRIDOR") {
               return (
@@ -266,7 +264,7 @@ export default function FloorMapLevel2({
                               onClick={() => handleRoomClick(room._id)}
                               data-color={typeColor}
                               style={{
-                                flex: 1, // Expand to fill space
+                                flex: 1,
                                 ...(isAvailable || isDeposited
                                   ? {
                                     background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,

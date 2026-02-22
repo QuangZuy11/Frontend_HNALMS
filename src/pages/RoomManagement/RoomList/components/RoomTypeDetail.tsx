@@ -28,7 +28,13 @@ export default function RoomTypeDetail({ room }: RoomTypeDetailProps) {
     setCurrentImageIndex(index);
   };
 
-  const priceFormatted = room.priceLabel || "Liên hệ";
+  // Format price properly
+  const formatPrice = (price: number | undefined) => {
+    if (!price || price === 0) return "Liên hệ";
+    return `${price.toLocaleString("vi-VN")}đ`;
+  };
+
+  const priceFormatted = formatPrice(room.price);
 
   return (
     <div className="room-type-detail-card">
@@ -91,9 +97,7 @@ export default function RoomTypeDetail({ room }: RoomTypeDetailProps) {
           </div>
           <div className="rtd-spec-row">
             <span className="spec-label">Giá:</span>
-            <span className="spec-value price">
-              {priceFormatted.replace("M", ".000.000 đ")}
-            </span>
+            <span className="spec-value price">{priceFormatted}</span>
           </div>
         </div>
 

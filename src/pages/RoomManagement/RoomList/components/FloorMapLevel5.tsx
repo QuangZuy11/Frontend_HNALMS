@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import "./FloorMap.css";
+import "./FloorMapLevel5.css";
 
 interface Room {
   _id: string;
@@ -25,7 +25,7 @@ interface FloorMapProps {
 
 // Soft & Eye-Friendly Color Palette - Easy to distinguish
 const ROOM_TYPE_COLORS = [
-  "#059669", // Emerald Green (Tầng 1)
+  "#6366f1", // Soft Indigo
   "#f59e0b", // Soft Amber
   "#10b981", // Soft Emerald
   "#f43f5e", // Soft Rose
@@ -41,7 +41,7 @@ const extractTypeNumber = (typeName: string): number => {
   return match ? parseInt(match[1], 10) : 0;
 };
 
-export default function FloorMap({
+export default function FloorMapLevel5({
   rooms,
   highlightedRooms,
   floorName,
@@ -80,7 +80,6 @@ export default function FloorMap({
     const roomType = uniqueRoomTypes.find((t) => t.id === typeId);
     if (!roomType) return "#6b7280";
     const typeNumber = extractTypeNumber(roomType.name);
-    // Use typeNumber - 1 as index (Loại 1 -> index 0)
     const colorIndex = typeNumber > 0 ? typeNumber - 1 : 0;
     return ROOM_TYPE_COLORS[colorIndex % ROOM_TYPE_COLORS.length];
   };
@@ -103,9 +102,9 @@ export default function FloorMap({
   };
 
   return (
-    <div className="floor-map-container">
+    <div className="floor-map-container level-5">
       <div className="map-header">
-        <h3 className="map-title">SƠ ĐỒ {floorName || "TẦNG"}</h3>
+        <h3 className="map-title">SƠ ĐỒ {floorName || "TẦNG 5"}</h3>
 
         <div className="map-legends-container">
           {/* Status Legend */}
@@ -191,11 +190,7 @@ export default function FloorMap({
                     </div>
                   )}
 
-                  {/* Insert Corridor 2 after third row (index 23 of total items, but indices shift? No, index in map) */}
-                  {/* Wait, sortedRooms map index is 0-31. */}
-                  {/* R1: 0-7. R2: 8-15. R3: 16-23. R4: 24-31. */}
-                  {/* User wants corridor between R1-R2 (after 7) and R3-R4 (after 23). */}
-
+                  {/* Insert Corridor 2 after third row (index 23 of total items) */}
                   {index === 23 && (
                     <div className="map-corridor">
                       <span>
@@ -225,9 +220,7 @@ export default function FloorMap({
         </div>
 
         <div className="map-sidebar-area">
-          <div className="area-label">
-            {floorName?.includes("5") ? "Sân Phơi" : "Nhà Xe"}
-          </div>
+          <div className="area-label">Sân Phơi</div>
         </div>
       </div>
     </div>

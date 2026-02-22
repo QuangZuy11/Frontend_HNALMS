@@ -45,13 +45,13 @@ import AdminDashboard from "./pages/Dashboard/AdminDashboard";
 import BuildingOwnerDashboard from "./pages/Dashboard/OwnerDashboard/BuildingOwnerDashboard";
 import BuildingConfig from "./pages/RoomManagement/BuildingConfig/BuildingConfig";
 import ManageRoom from "./pages/RoomManagement/ManageRoom/ManageRoom";
-import ManageDevice from "./pages/DeviceManagement/ManagementDevice";
 
 // Pages - Manager Dashboard
 import ManagerDashboard from "./pages/Dashboard/ManagerDashboard/ManagerDashboard";
 import ManagerRules from "./pages/Dashboard/ManagerRules";
 import ManagerProfile from "./pages/Dashboard/ManagerProfile";
 import ManageService from "./pages/ServiceManagement/ManageService";
+import RepairRequestsList from "./pages/RequestManagement/RepairRequestsList";
 
 // Pages - Accountant Dashboard
 import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
@@ -64,6 +64,11 @@ import UpdateProfile from "./pages/Auth/Profile/UpdateProfile";
 import CreateAccount from "./pages/Auth/CreateAccount/CreateAccount";
 import CreatedAccountsList from "./pages/Auth/CreatedAccountsList/CreatedAccountsList";
 import Header from "./components/layout/Header/Header";
+
+// Pages - Contract Management
+import CreateContract from "./pages/ContractManagement/CreateContract";
+import ContractList from "./pages/ContractManagement/ContractList";
+import ContractDetail from "./pages/ContractManagement/ContractDetail";
 
 // ================= Layout Wrapper =================
 function LayoutWrapper() {
@@ -158,8 +163,11 @@ function LayoutWrapper() {
           <Route path="accounts" element={<CreatedAccountsList />} />
           <Route path="profile" element={<ViewProfile />} />
           <Route path="profile/update" element={<UpdateProfile />} />
+          <Route path="profile/update" element={<UpdateProfile />} />
           <Route path="rules" element={<ManagerRules />} />
-          <Route path="devices" element={<ManageDevice />} />
+          <Route path="contracts" element={<ContractList />} />
+          <Route path="contracts/create" element={<CreateContract />} />
+          <Route path="contracts/:id" element={<ContractDetail />} />
         </Route>
 
         {/* ==================== MANAGER ROUTES ==================== */}
@@ -175,10 +183,16 @@ function LayoutWrapper() {
           <Route path="rooms" element={<ManageRoom readOnly={true} />} />
           <Route path="residents" element={<CreatedAccountsList />} />
           <Route path="services" element={<ManageService />} />
+          <Route path="requests/repairs" element={<RepairRequestsList />} />
 
           <Route path="create-account" element={<CreateAccount />} />
           <Route path="accounts" element={<CreatedAccountsList />} />
           <Route path="profile" element={<ManagerProfile />} />
+          <Route path="accounts" element={<CreatedAccountsList />} />
+          <Route path="profile" element={<ManagerProfile />} />
+          <Route path="contracts" element={<ContractList />} />
+          <Route path="contracts/create" element={<CreateContract />} />
+          <Route path="contracts/:id" element={<ContractDetail />} />
           {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
         </Route>
 
