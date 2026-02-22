@@ -51,6 +51,7 @@ import ManagerDashboard from "./pages/Dashboard/ManagerDashboard/ManagerDashboar
 import ManagerRules from "./pages/Dashboard/ManagerRules";
 import ManagerProfile from "./pages/Dashboard/ManagerProfile";
 import ManageService from "./pages/ServiceManagement/ManageService";
+import RepairRequestsList from "./pages/RequestManagement/RepairRequestsList";
 
 // Pages - Accountant Dashboard
 import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
@@ -182,6 +183,7 @@ function LayoutWrapper() {
           <Route path="rooms" element={<ManageRoom readOnly={true} />} />
           <Route path="residents" element={<CreatedAccountsList />} />
           <Route path="services" element={<ManageService />} />
+          <Route path="requests/repairs" element={<RepairRequestsList />} />
 
           <Route path="create-account" element={<CreateAccount />} />
           <Route path="accounts" element={<CreatedAccountsList />} />
