@@ -8,8 +8,18 @@ export const requestService = {
   },
 
   // Cập nhật trạng thái yêu cầu sửa chữa
-  updateRepairStatus: async (requestId: string, status: 'Pending' | 'Processing' | 'Done') => {
-    const response = await api.put(`/requests/repair/${requestId}/status`, { status });
+  updateRepairStatus: async (
+    requestId: string,
+    status: 'Pending' | 'Processing' | 'Done',
+    cost?: number,
+    notes?: string
+  ) => {
+    const body: any = { status };
+    if (status === 'Done') {
+      if (cost !== undefined) body.cost = cost;
+      if (notes !== undefined) body.notes = notes;
+    }
+    const response = await api.put(`/requests/repair/${requestId}/status`, body);
     return response.data;
   },
 };

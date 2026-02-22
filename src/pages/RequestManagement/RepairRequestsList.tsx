@@ -8,6 +8,7 @@ interface RepairRequest {
   description: string;
   status: string;
   cost: number;
+  notes?: string;
   createdDate: string;
   tenantId?: {
     _id: string;
@@ -31,6 +32,14 @@ export default function RepairRequestsList() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<RepairRequest | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [completingRequest, setCompletingRequest] = useState<RepairRequest | null>(null);
+  const [completeForm, setCompleteForm] = useState({ cost: '', notes: '' });
+  const [formErrors, setFormErrors] = useState({ cost: '', notes: '' });
+  const [showEditCostModal, setShowEditCostModal] = useState(false);
+  const [editingCostRequest, setEditingCostRequest] = useState<RepairRequest | null>(null);
+  const [editCostValue, setEditCostValue] = useState('');
+  const [editCostError, setEditCostError] = useState('');
 
   useEffect(() => {
     fetchRequests();
@@ -82,6 +91,15 @@ export default function RepairRequestsList() {
     request: RepairRequest,
     nextStatus: 'Pending' | 'Processing' | 'Done',
   ) => {
+    // Nếu chuyển sang "Đã xử lý", hiện modal để nhập chi phí và ghi chú
+    if (nextStatus === 'Done') {
+      setCompletingRequest(request);
+      setCompleteForm({ cost: request.cost?.toString() || '', notes: request.notes || '' });
+      setShowCompleteModal(true);
+      setOpenMenuId(null);
+      return;
+    }
+
     const confirmText = `Bạn có chắc muốn chuyển yêu cầu này sang trạng thái "${nextStatus}"?`;
 
     if (!window.confirm(confirmText)) return;
@@ -109,6 +127,151 @@ export default function RepairRequestsList() {
     }
   };
 
+  const handleCompleteSubmit = async () => {
+    if (!completingRequest) return;
+
+    // Validate form
+    const errors = { cost: '', notes: '' };
+    let isValid = true;
+
+    if (!completeForm.cost || completeForm.cost.trim() === '') {
+      errors.cost = 'Vui lòng nhập chi phí';
+      isValid = false;
+    } else {
+      const costValue = parseFloat(completeForm.cost);
+      if (isNaN(costValue) || costValue < 0) {
+        errors.cost = 'Chi phí phải là số hợp lệ và lớn hơn hoặc bằng 0';
+        isValid = false;
+      }
+    }
+
+    setFormErrors(errors);
+
+    if (!isValid) {
+      return;
+    }
+
+    const cost = parseFloat(completeForm.cost);
+
+    try {
+      setUpdatingId(completingRequest._id);
+      const response = await requestService.updateRepairStatus(
+        completingRequest._id,
+        'Done',
+        cost,
+        completeForm.notes.trim() || undefined
+      );
+      const updated = response.data;
+
+      if (updated?._id) {
+        setRequests((prev) =>
+          prev.map((r) =>
+            r._id === updated._id
+              ? { ...r, status: updated.status, cost: updated.cost, notes: updated.notes }
+              : r
+          ),
+        );
+
+        if (selectedRequest && selectedRequest._id === updated._id) {
+          setSelectedRequest((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  status: updated.status,
+                  cost: updated.cost,
+                  notes: updated.notes,
+                }
+              : prev
+          );
+        }
+      }
+
+      setShowCompleteModal(false);
+      setCompletingRequest(null);
+      setCompleteForm({ cost: '', notes: '' });
+      setFormErrors({ cost: '', notes: '' });
+    } catch (err: any) {
+      console.error('Lỗi khi hoàn thành yêu cầu:', err);
+      alert(err?.response?.data?.message || 'Không thể hoàn thành yêu cầu');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleCloseCompleteModal = () => {
+    setShowCompleteModal(false);
+    setCompletingRequest(null);
+    setCompleteForm({ cost: '', notes: '' });
+    setFormErrors({ cost: '', notes: '' });
+  };
+
+  const handleEditCost = (request: RepairRequest) => {
+    if (request.status === 'Done') {
+      setEditingCostRequest(request);
+      setEditCostValue(request.cost?.toString() || '');
+      setEditCostError('');
+      setShowEditCostModal(true);
+    }
+  };
+
+  const handleSaveCost = async () => {
+    if (!editingCostRequest) return;
+
+    // Validate
+    if (!editCostValue || editCostValue.trim() === '') {
+      setEditCostError('Vui lòng nhập chi phí');
+      return;
+    }
+
+    const costValue = parseFloat(editCostValue);
+    if (isNaN(costValue) || costValue < 0) {
+      setEditCostError('Chi phí phải là số hợp lệ và lớn hơn hoặc bằng 0');
+      return;
+    }
+
+    try {
+      setUpdatingId(editingCostRequest._id);
+      const response = await requestService.updateRepairStatus(
+        editingCostRequest._id,
+        'Done',
+        costValue,
+        editingCostRequest.notes
+      );
+      const updated = response.data;
+
+      if (updated?._id) {
+        setRequests((prev) =>
+          prev.map((r) =>
+            r._id === updated._id ? { ...r, cost: updated.cost } : r
+          ),
+        );
+
+        if (selectedRequest && selectedRequest._id === updated._id) {
+          setSelectedRequest((prev) =>
+            prev ? { ...prev, cost: updated.cost } : prev
+          );
+        }
+      }
+
+      setShowEditCostModal(false);
+      setEditingCostRequest(null);
+      setEditCostValue('');
+      setEditCostError('');
+    } catch (err: any) {
+      console.error('Lỗi khi cập nhật chi phí:', err);
+      alert(err?.response?.data?.message || 'Không thể cập nhật chi phí');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleCloseEditCostModal = () => {
+    setShowEditCostModal(false);
+    setEditingCostRequest(null);
+    setEditCostValue('');
+    setEditCostError('');
+  };
+
   return (
     <div className="repair-requests-page">
       <div className="repair-requests-card">
@@ -119,9 +282,6 @@ export default function RepairRequestsList() {
               Các yêu cầu sửa chữa/bảo trì do cư dân gửi lên tòa nhà
             </p>
           </div>
-          <button className="btn-refresh" onClick={fetchRequests} disabled={loading}>
-            {loading ? 'Đang tải...' : 'Làm mới'}
-          </button>
         </div>
 
         {error && (
@@ -184,7 +344,20 @@ export default function RepairRequestsList() {
                         {r.status}
                       </span>
                     </td>
-                    <td>{r.cost?.toLocaleString('vi-VN') || 0}</td>
+                    <td>
+                      {r.status === 'Done' ? (
+                        <button
+                          type="button"
+                          className="cost-edit-btn"
+                          onClick={() => handleEditCost(r)}
+                          title="Click để sửa chi phí"
+                        >
+                          {r.cost?.toLocaleString('vi-VN') || 0}
+                        </button>
+                      ) : (
+                        r.cost?.toLocaleString('vi-VN') || 0
+                      )}
+                    </td>
                     <td>{formatDate(r.createdDate)}</td>
                     <td>
                       <div className="action-buttons">
@@ -316,6 +489,144 @@ export default function RepairRequestsList() {
                 <div className="detail-row detail-row-description">
                   <span className="detail-label">Mô tả:</span>
                   <span className="detail-value">{selectedRequest.description}</span>
+                </div>
+                {selectedRequest.notes && (
+                  <div className="detail-row detail-row-description">
+                    <span className="detail-label">Ghi chú:</span>
+                    <span className="detail-value">{selectedRequest.notes}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal sửa chi phí (chỉ sửa chi phí) */}
+        {showEditCostModal && editingCostRequest && (
+          <div className="repair-modal-overlay" onClick={handleCloseEditCostModal}>
+            <div className="repair-modal repair-edit-cost-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="repair-modal-header">
+                <h2>Sửa chi phí</h2>
+                <button
+                  type="button"
+                  className="modal-close-btn"
+                  onClick={handleCloseEditCostModal}
+                  aria-label="Đóng"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="repair-modal-body">
+                <div className="complete-form-group">
+                  <label htmlFor="edit-cost">Chi phí (VNĐ) *</label>
+                  <input
+                    type="number"
+                    id="edit-cost"
+                    value={editCostValue}
+                    onChange={(e) => {
+                      setEditCostValue(e.target.value);
+                      if (editCostError) {
+                        setEditCostError('');
+                      }
+                    }}
+                    placeholder="Nhập chi phí"
+                    min="0"
+                    step="1000"
+                    className={editCostError ? 'input-error' : ''}
+                  />
+                  {editCostError && (
+                    <span className="error-message">{editCostError}</span>
+                  )}
+                </div>
+                <div className="complete-form-actions">
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    onClick={handleCloseEditCostModal}
+                    disabled={updatingId === editingCostRequest._id}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-submit"
+                    onClick={handleSaveCost}
+                    disabled={updatingId === editingCostRequest._id || !editCostValue}
+                  >
+                    {updatingId === editingCostRequest._id ? 'Đang lưu...' : 'Lưu'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal hoàn thành yêu cầu (chi phí + ghi chú) */}
+        {showCompleteModal && completingRequest && (
+          <div className="repair-modal-overlay" onClick={handleCloseCompleteModal}>
+            <div className="repair-modal repair-complete-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="repair-modal-header">
+                <h2>Hoàn thành yêu cầu sửa chữa</h2>
+                <button
+                  type="button"
+                  className="modal-close-btn"
+                  onClick={handleCloseCompleteModal}
+                  aria-label="Đóng"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="repair-modal-body">
+                <div className="complete-form-group">
+                  <label htmlFor="complete-cost">Chi phí (VNĐ) *</label>
+                  <input
+                    type="number"
+                    id="complete-cost"
+                    value={completeForm.cost}
+                    onChange={(e) => {
+                      setCompleteForm({ ...completeForm, cost: e.target.value });
+                      if (formErrors.cost) {
+                        setFormErrors({ ...formErrors, cost: '' });
+                      }
+                    }}
+                    placeholder="Nhập chi phí"
+                    min="0"
+                    step="1000"
+                    className={formErrors.cost ? 'input-error' : ''}
+                  />
+                  {formErrors.cost && (
+                    <span className="error-message">{formErrors.cost}</span>
+                  )}
+                </div>
+                <div className="complete-form-group">
+                  <label htmlFor="complete-notes">Ghi chú</label>
+                  <textarea
+                    id="complete-notes"
+                    value={completeForm.notes}
+                    onChange={(e) =>
+                      setCompleteForm({ ...completeForm, notes: e.target.value })
+                    }
+                    placeholder="Nhập ghi chú (tùy chọn)"
+                    rows={4}
+                  />
+                </div>
+                <div className="complete-form-actions">
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    onClick={handleCloseCompleteModal}
+                    disabled={updatingId === completingRequest._id}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-submit"
+                    onClick={handleCompleteSubmit}
+                    disabled={updatingId === completingRequest._id || !completeForm.cost}
+                  >
+                    {updatingId === completingRequest._id ? 'Đang xử lý...' : 'Hoàn thành'}
+                  </button>
                 </div>
               </div>
             </div>

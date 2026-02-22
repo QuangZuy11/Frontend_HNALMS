@@ -92,10 +92,10 @@
   white-space: nowrap;
 }
 
-/* Căn phải cột Thao tác cho gọn */
+/* Căn giữa cột Thao tác */
 .repair-table th:last-child,
 .repair-table td:last-child {
-  text-align: right;
+  text-align: center;
 }
 
 .cell-main {
@@ -144,7 +144,7 @@
 .action-buttons {
   display: flex;
   flex-direction: row;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
   gap: 8px;
 }
@@ -301,5 +301,130 @@
   flex: 1;
   color: #0f172a;
   white-space: pre-line;
+}
+
+/* Modal hoàn thành yêu cầu */
+.repair-complete-modal {
+  max-width: 500px;
+}
+
+/* Modal sửa chi phí */
+.repair-edit-cost-modal {
+  max-width: 420px;
+}
+
+.complete-form-group {
+  margin-bottom: 20px;
+}
+
+.complete-form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #374151;
+  font-size: 14px;
+}
+
+.complete-form-group input,
+.complete-form-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.complete-form-group input:focus,
+.complete-form-group textarea:focus {
+  outline: none;
+  border-color: #3579C6;
+  box-shadow: 0 0 0 3px rgba(53, 121, 198, 0.1);
+}
+
+.complete-form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.complete-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.btn-cancel {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background-color: #f9fafb;
+}
+
+.btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-submit {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background-color: #16a34a;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background-color: #15803d;
+}
+
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #9ca3af;
+}
+
+/* Validation errors */
+.input-error {
+  border-color: #ef4444 !important;
+}
+
+.error-message {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #ef4444;
+}
+
+/* Nút sửa chi phí */
+.cost-edit-btn {
+  background: transparent;
+  border: none;
+  color: #3579C6;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: inherit;
+  padding: 0;
+  font-weight: 500;
+}
+
+.cost-edit-btn:hover {
+  color: #2b6bb0;
 }
 
