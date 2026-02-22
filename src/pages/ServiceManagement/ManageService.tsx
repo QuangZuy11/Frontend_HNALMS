@@ -1,25 +1,30 @@
-import React, { useState, useEffect, useMemo } from 'react'; // Thêm useMemo
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import {
   Plus, Search, Edit, Trash2,
   Package, Zap, X,
   Filter, ArrowUpDown,
-  History, CalendarClock // [MỚI] Thêm icon
+  History, CalendarClock,
+  AlertTriangle // [MỚI] Icon cảnh báo cho modal xóa
 } from 'lucide-react';
 import './ManageService.css';
 
+// [TOASTR] Import thư viện Toastr
+import toastr from 'toastr';
+import 'toastr/build/toastr.min.css';
+
 const API_BASE_URL = 'http://localhost:9999/api';
 
-// [MỚI] Interface cho lịch sử giá
+// Interface cho lịch sử giá
 interface PriceHistory {
   _id: string;
-  name: string; // Tên đợt cập nhật (VD: Giá khởi tạo, Cập nhật...)
+  name: string;
   price: number;
   startDate: string;
   endDate: string | null;
 }
 
-// ... (Interface Service Cập nhật thêm histories) ...
+// Interface Service
 interface Service {
   _id: string;
   name: string;
@@ -27,7 +32,7 @@ interface Service {
   description?: string;
   type: 'Fixed' | 'Extension';
   isActive: boolean;
-  histories?: PriceHistory[]; // [MỚI] Thêm trường histories
+  histories?: PriceHistory[];
 }
 
 const ManageService = () => {
@@ -39,11 +44,10 @@ const ManageService = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('ALL');
 
-  // [MỚI] Sort State
-  // values: 'newest', 'price-asc', 'price-desc', 'name-asc'
+  // Sort State
   const [sortOption, setSortOption] = useState('newest');
 
-  // Modal & Form States (Giữ nguyên)
+  // Modal & Form States
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
@@ -51,63 +55,69 @@ const ManageService = () => {
     name: '', currentPrice: 0, description: '', type: 'Fixed', isActive: true
   });
 
-  // [MỚI] Modal History States
+  // Modal History States
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [viewingHistoryService, setViewingHistoryService] = useState<Service | null>(null);
 
-  // --- Fetch Data (Giữ nguyên) ---
+  // [MỚI] State cho Modal Xóa (Thay thế window.confirm)
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
+  // --- Cấu hình Toastr & Fetch Data ---
+  useEffect(() => {
+    toastr.options = {
+      closeButton: true,
+      progressBar: true,
+      positionClass: "toast-top-right",
+      timeOut: 3000,
+      extendedTimeOut: 1000,
+    };
+    fetchServices();
+  }, []);
+
   const fetchServices = async () => {
     setLoading(true);
     try {
       const res = await axios.get(`${API_BASE_URL}/services`);
       setServices(res.data.data || res.data || []);
-    } catch (error) { console.error(error); }
-    finally { setLoading(false); }
+    } catch (error) { 
+      console.error(error);
+      toastr.error("Không thể tải danh sách dịch vụ!", "Lỗi kết nối"); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
-  useEffect(() => { fetchServices(); }, []);
-
-  // --- [MỚI] Logic Xử lý dữ liệu (Filter + Sort) ---
-  // Dùng useMemo để tối ưu hiệu năng, chỉ tính toán lại khi dependency thay đổi
+  // --- Logic Xử lý dữ liệu (Filter + Sort) ---
   const processedServices = useMemo(() => {
     let result = [...services];
 
-    // 1. Lọc theo Search & Type
+    // 1. Lọc
     result = result.filter(s => {
       const matchSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchType = filterType === 'ALL' || s.type === filterType;
       return matchSearch && matchType;
     });
 
-    // 2. Sắp xếp (Sort)
+    // 2. Sắp xếp
     switch (sortOption) {
-      case 'price-asc': // Giá thấp -> cao
-        result.sort((a, b) => a.currentPrice - b.currentPrice);
-        break;
-      case 'price-desc': // Giá cao -> thấp
-        result.sort((a, b) => b.currentPrice - a.currentPrice);
-        break;
-      case 'name-asc': // Tên A-Z
-        result.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case 'newest': // Mặc định (thường là mới nhất nếu API trả về đúng)
-      default:
-        // Nếu API trả về đã sort sẵn theo ngày tạo thì không cần làm gì, 
-        // hoặc có thể sort theo _id (MongoID chứa timestamp)
-        break;
+      case 'price-asc': result.sort((a, b) => a.currentPrice - b.currentPrice); break;
+      case 'price-desc': result.sort((a, b) => b.currentPrice - a.currentPrice); break;
+      case 'name-asc': result.sort((a, b) => a.name.localeCompare(b.name)); break;
+      case 'newest': default: break;
     }
-
     return result;
   }, [services, searchTerm, filterType, sortOption]);
 
 
-  // --- Handlers (CRUD - Giữ nguyên) ---
-  const handleOpenAdd = () => { /* ...code cũ */
+  // --- Handlers ---
+  const handleOpenAdd = () => {
     setIsEditing(false);
     setFormData({ name: '', currentPrice: 0, description: '', type: 'Fixed', isActive: true });
     setShowModal(true);
   };
-  const handleOpenEdit = (service: Service) => { /* ...code cũ */
+
+  const handleOpenEdit = (service: Service) => {
     setIsEditing(true);
     setCurrentId(service._id);
     setFormData({
@@ -120,28 +130,53 @@ const ManageService = () => {
     setShowModal(true);
   };
 
-  // [MỚI] Mở modal lịch sử
   const handleViewHistory = (service: Service) => {
     setViewingHistoryService(service);
     setShowHistoryModal(true);
   };
 
-  const handleDelete = async (id: string) => { /* ...code cũ */
-    if (window.confirm("Xóa?")) {
-      try { await axios.delete(`${API_BASE_URL}/services/${id}`); fetchServices(); }
-      catch (e) { alert("Lỗi xóa"); }
+  // [MỚI] 1. Khi bấm nút thùng rác -> Mở Modal (Không xóa ngay)
+  const handleDeleteClick = (id: string) => {
+    setItemToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  // [MỚI] 2. Khi bấm "Xóa" trong Modal -> Gọi API
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
+    
+    try { 
+      await axios.delete(`${API_BASE_URL}/services/${itemToDelete}`); 
+      toastr.success("Xóa dịch vụ thành công!", "Thành công");
+      fetchServices();
+      setShowDeleteModal(false); // Đóng modal
+      setItemToDelete(null);
+    }
+    catch (e) { 
+      toastr.error("Có lỗi xảy ra khi xóa dịch vụ.", "Lỗi"); 
     }
   };
-  const handleSubmit = async (e: React.FormEvent) => { /* ...code cũ */
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (isEditing && currentId) await axios.put(`${API_BASE_URL}/services/${currentId}`, formData);
-      else await axios.post(`${API_BASE_URL}/services`, formData);
-      setShowModal(false); fetchServices();
-    } catch (e) { alert("Lỗi lưu"); }
+      if (isEditing && currentId) {
+        await axios.put(`${API_BASE_URL}/services/${currentId}`, formData);
+        toastr.success("Cập nhật dịch vụ thành công!", "Thành công");
+      } else {
+        await axios.post(`${API_BASE_URL}/services`, formData);
+        toastr.success("Thêm mới dịch vụ thành công!", "Thành công");
+      }
+      setShowModal(false); 
+      fetchServices();
+    } catch (e: any) { 
+      const errorMessage = e.response?.data?.message || "Không thể lưu thông tin dịch vụ.";
+      toastr.error(errorMessage, "Lỗi hệ thống"); 
+    }
   };
-  const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
 
+  const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+  
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "Hiện tại";
     return new Date(dateString).toLocaleDateString('vi-VN', {
@@ -149,7 +184,6 @@ const ManageService = () => {
       hour: '2-digit', minute: '2-digit'
     });
   };
-
 
   return (
     <div className="service-container">
@@ -160,8 +194,9 @@ const ManageService = () => {
           <h2>Quản lý Dịch vụ & Tiện ích</h2>
           <div className="service-stats">
             <span className="stat-badge">Tổng số: {services.length}</span>
-            <span className="stat-badge" style={{ color: '#2563eb' }}>Cố định: {services.filter(s => s.type === 'Fixed').length}</span>
-            {/* [MỚI] Thêm thống kê Extension */}
+            <span className="stat-badge" style={{ color: '#2563eb' }}>
+              Cố định: {services.filter(s => s.type === 'Fixed').length}
+            </span>
             <span className="stat-badge" style={{ color: '#d97706' }}>
               Phụ trội: {services.filter(s => s.type === 'Extension').length}
             </span>
@@ -172,10 +207,8 @@ const ManageService = () => {
         </button>
       </div>
 
-      {/* --- [MỚI] TOOLBAR ĐẸP HƠN --- */}
+      {/* TOOLBAR */}
       <div className="service-toolbar-wrapper">
-
-        {/* Bên trái: Tìm kiếm */}
         <div className="toolbar-left">
           <div className="search-container">
             <Search className="search-icon" size={18} />
@@ -189,10 +222,7 @@ const ManageService = () => {
           </div>
         </div>
 
-        {/* Bên phải: Filter & Sort */}
         <div className="toolbar-right">
-
-          {/* Filter Loại */}
           <div className="control-group">
             <Filter size={16} className="text-gray-400" />
             <span className="control-label">Lọc:</span>
@@ -207,7 +237,6 @@ const ManageService = () => {
             </select>
           </div>
 
-          {/* Sort Giá */}
           <div className="control-group">
             <ArrowUpDown size={16} className="text-gray-400" />
             <span className="control-label">Xếp:</span>
@@ -222,11 +251,10 @@ const ManageService = () => {
               <option value="name-asc">Tên: A - Z</option>
             </select>
           </div>
-
         </div>
       </div>
 
-      {/* GRID VIEW (Dùng processedServices thay vì filteredServices) */}
+      {/* GRID VIEW */}
       <div className="service-grid">
         {processedServices.map(service => (
           <div key={service._id} className={`service-card ${!service.isActive ? 'inactive-card' : ''}`}>
@@ -248,15 +276,15 @@ const ManageService = () => {
               </span>
 
               <div className="card-actions">
-                {/* [MỚI] Nút xem lịch sử giá */}
-                <button className="btn-icon btn-history" onClick={() => handleViewHistory(service)} title="Lịch sử thay đổi giá">
-                  <History size={16} />
+                <button className="btn-icon btn-history" onClick={() => handleViewHistory(service)} title="Lịch sử giá">
+                    <History size={16} />
                 </button>
 
-                <button className="btn-icon btn-edit" onClick={() => handleOpenEdit(service)}>
+                <button className="btn-icon btn-edit" onClick={() => handleOpenEdit(service)} title="Sửa">
                   <Edit size={16} />
                 </button>
-                <button className="btn-icon btn-delete" onClick={() => handleDelete(service._id)}>
+                {/* Thay đổi handler: gọi handleDeleteClick thay vì window.confirm */}
+                <button className="btn-icon btn-delete" onClick={() => handleDeleteClick(service._id)} title="Xóa">
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -272,11 +300,9 @@ const ManageService = () => {
         </div>
       )}
 
-      {/* --- MODAL (Giữ nguyên code cũ, không thay đổi) --- */}
+      {/* --- MODAL ADD/EDIT --- */}
       {showModal && (
         <div className="modal-overlay">
-          {/* ... Paste lại nội dung Modal cũ vào đây ... */}
-          {/* (Vì phần này dài và không thay đổi logic nên tôi lược bớt để code gọn) */}
           <div className="modal-content" style={{ maxWidth: '500px' }}>
             <div className="modal-header">
               <h3>{isEditing ? 'Cập nhật Dịch vụ' : 'Thêm Dịch vụ Mới'}</h3>
@@ -317,7 +343,7 @@ const ManageService = () => {
         </div>
       )}
 
-      {/* --- [MỚI] MODAL LỊCH SỬ GIÁ --- */}
+      {/* --- MODAL LỊCH SỬ GIÁ --- */}
       {showHistoryModal && viewingHistoryService && (
         <div className="modal-overlay" style={{ zIndex: 1100 }}>
           <div className="modal-content" style={{ maxWidth: '600px' }}>
@@ -332,23 +358,21 @@ const ManageService = () => {
             <div className="detail-body" style={{ padding: '24px 32px', overflowY: 'auto' }}>
               {viewingHistoryService.histories && viewingHistoryService.histories.length > 0 ? (
                 <div className="history-list" style={{ border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
-                  {/* Header Row */}
-                  <div className="history-header-row" style={{
-                    display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 1fr',
-                    padding: '12px 16px', backgroundColor: '#f1f5f9',
-                    fontWeight: 700, fontSize: 13, color: '#64748b', textTransform: 'uppercase'
+                  <div className="history-header-row" style={{ 
+                      display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 1fr', 
+                      padding: '12px 16px', backgroundColor: '#f1f5f9', 
+                      fontWeight: 700, fontSize: 13, color: '#64748b', textTransform: 'uppercase'
                   }}>
                     <span>Ngày bắt đầu</span>
                     <span>Ngày kết thúc</span>
                     <span style={{ textAlign: 'right' }}>Giá áp dụng</span>
                   </div>
-
-                  {/* Data Rows (Đảo ngược để cái mới nhất lên đầu) */}
+                  
                   {[...viewingHistoryService.histories].reverse().map((history) => (
-                    <div key={history._id} className="history-item" style={{
-                      display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 1fr',
-                      padding: '12px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', fontSize: 14,
-                      backgroundColor: !history.endDate ? '#f0fdf4' : 'transparent' // Highlight dòng hiện tại
+                    <div key={history._id} className="history-item" style={{ 
+                        display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 1fr', 
+                        padding: '12px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', fontSize: 14,
+                        backgroundColor: !history.endDate ? '#f0fdf4' : 'transparent'
                     }}>
                       <div>{formatDate(history.startDate)}</div>
                       <div>
@@ -378,8 +402,43 @@ const ManageService = () => {
         </div>
       )}
 
+      {/* --- [MỚI] MODAL XÁC NHẬN XÓA (Thay thế window.confirm) --- */}
+      {showDeleteModal && (
+        <div className="modal-overlay" style={{ zIndex: 1200 }}>
+          <div className="modal-content" style={{ maxWidth: '400px', padding: '24px', textAlign: 'center' }}>
+            <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+                <div style={{ backgroundColor: '#fee2e2', padding: '12px', borderRadius: '50%' }}>
+                    <AlertTriangle size={32} color="#ef4444" />
+                </div>
+            </div>
+            
+            <h3 style={{ marginBottom: '8px', fontSize: '18px', color: '#1e293b' }}>Xác nhận xóa?</h3>
+            <p style={{ color: '#64748b', marginBottom: '24px', fontSize: '14px' }}>
+                Bạn có chắc chắn muốn xóa dịch vụ này không? Hành động này không thể hoàn tác.
+            </p>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button 
+                className="btn-secondary" 
+                onClick={() => { setShowDeleteModal(false); setItemToDelete(null); }}
+                style={{ width: '100px' }}
+              >
+                Hủy
+              </button>
+              <button 
+                className="btn-primary" 
+                onClick={handleConfirmDelete}
+                style={{ backgroundColor: '#ef4444', borderColor: '#ef4444', width: '100px', justifyContent: 'center' }}
+              >
+                Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
 
-export default ManageService; 
+export default ManageService;
