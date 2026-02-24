@@ -9,21 +9,24 @@ import {
   Zap,
   Droplet,
   Wifi,
-  Wind,
+  Sparkles,
+  ArrowUpDown,
   Phone,
   MessageCircle,
 } from "lucide-react";
 import { roomService } from "../../../services/roomService";
+import { serviceService } from "../../../services/serviceService";
 
 import "./RoomDetail.css";
 
 export default function RoomDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [room, setRoom] = useState(null);
+  const [room, setRoom] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [services, setServices] = useState<any[]>([]);
 
   // Scroll thumbnail into view when image changes
   useEffect(() => {
@@ -41,6 +44,7 @@ export default function RoomDetail() {
 
   useEffect(() => {
     fetchRoomDetail();
+    fetchServices();
   }, [id]);
 
   const fetchRoomDetail = async () => {
@@ -83,6 +87,7 @@ export default function RoomDetail() {
             roomData.description || roomData.roomTypeId?.description || "",
           images: roomData.roomTypeId?.images || [],
           amenities: roomData.amenities || [],
+          assets: roomData.assets || [],
         };
 
         console.log("✅ Transformed room price:", transformedRoom.price);
@@ -100,14 +105,32 @@ export default function RoomDetail() {
     }
   };
 
-  const getServiceIcon = (serviceName) => {
-    const iconMap = {
-      Điện: Zap,
-      Nước: Droplet,
-      Internet: Wifi,
-      "Điều hòa không khí": Wind,
-    };
-    return iconMap[serviceName] || Zap;
+  const fetchServices = async () => {
+    try {
+      const response = await serviceService.getServices();
+      if (response.data) {
+        // Filter only the services we want to display
+        const allowedNames = ["Điện", "Nước", "Internet", "Vệ Sinh", "Thang máy"];
+        const filtered = response.data.filter((svc: any) =>
+          allowedNames.some((name) =>
+            svc.name.toLowerCase().includes(name.toLowerCase())
+          )
+        );
+        setServices(filtered);
+      }
+    } catch (err) {
+      console.error("Error fetching services:", err);
+    }
+  };
+
+  const getServiceIcon = (serviceName: string) => {
+    const lowerName = serviceName.toLowerCase();
+    if (lowerName.includes("điện")) return Zap;
+    if (lowerName.includes("nước")) return Droplet;
+    if (lowerName.includes("internet") || lowerName.includes("wifi")) return Wifi;
+    if (lowerName.includes("vệ sinh")) return Sparkles;
+    if (lowerName.includes("thang máy")) return ArrowUpDown;
+    return Zap;
   };
 
   const handlePrevImage = () => {
@@ -229,9 +252,8 @@ export default function RoomDetail() {
                   {room.images.map((image, index) => (
                     <div
                       key={index}
-                      className={`thumbnail-wrapper ${
-                        index === currentImageIndex ? "active" : ""
-                      }`}
+                      className={`thumbnail-wrapper ${index === currentImageIndex ? "active" : ""
+                        }`}
                       onClick={() => setCurrentImageIndex(index)}
                     >
                       <img
@@ -295,90 +317,77 @@ export default function RoomDetail() {
                 </div>
                 <div className="spec-box">
                   <div className="spec-number">
-                    {room.amenities?.length || 4}
+                    {room.assets?.length || 0}
                   </div>
-                  <div className="spec-label">Tiện nghi</div>
+                  <div className="spec-label">Thiết bị</div>
                 </div>
               </div>
             </div>
 
-            {/* Amenities Card */}
+            {/* Amenities Card - Real device data from RoomDevice collection */}
             <div className="info-card">
-              <h3 className="card-title">Tiện Nghi Phòng</h3>
+              <h3 className="card-title">Thiết Bị Phòng</h3>
               <div className="amenities-grid">
-                {(
-                  room.amenities || ["Giường đơn", "Tủ", "Điều hòa", "Ban công"]
-                ).map((amenity, index) => (
-                  <div key={index} className="amenity-item">
-                    <span className="check-icon">✓</span>
-                    <span>{amenity}</span>
+                {room.assets && room.assets.length > 0 ? (
+                  room.assets.map((asset: any) => (
+                    <div key={asset._id} className="amenity-item">
+                      <span className="check-icon">✓</span>
+                      <span>
+                        {asset.deviceId?.name || "N/A"}
+                        {asset.deviceId?.brand ? ` (${asset.deviceId.brand})` : ""}
+                        {asset.quantity > 1 ? ` x${asset.quantity}` : ""}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="amenity-item" style={{ opacity: 0.6 }}>
+                    <span>Chưa có dữ liệu thiết bị</span>
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
-            {/* Services Card */}
+            {/* Services Card - Real data from services collection */}
             <div className="info-card">
               <h3 className="card-title">Dịch Vụ Kèm Theo</h3>
               <div className="services-grid">
-                {[
-                  {
-                    name: "Điện",
-                    desc: "Cung cấp 24/7, giá hợp lý",
-                    icon: Zap,
-                  },
-                  {
-                    name: "Nước",
-                    desc: "Nước sạch, có bể mặt nước",
-                    icon: Droplet,
-                  },
-                  {
-                    name: "Internet",
-                    desc: "100Mbps, WiFi miễn phí",
-                    icon: Wifi,
-                  },
-                  {
-                    name: "Điều hòa không khí",
-                    desc: "Máy lạnh tích hợp",
-                    icon: Wind,
-                  },
-                ].map((service, index) => {
-                  const Icon = service.icon;
-                  return (
-                    <div key={index} className="service-item">
-                      <div className="service-icon-box">
-                        <Icon className="service-icon" />
-                      </div>
-                      <div className="service-info">
-                        <div className="service-name">{service.name}</div>
-                        <div className="service-description">
-                          {service.desc}
+                {services.length > 0 ? (
+                  services
+                    .filter((svc) => {
+                      // Exclude "Thang máy" for floor 1
+                      if (svc.name.toLowerCase().includes("thang máy")) {
+                        const floorName = room?.floor || room?.floorLabel || "";
+                        if (floorName === "1" || floorName === "Tầng 1") {
+                          return false;
+                        }
+                      }
+                      return true;
+                    })
+                    .map((svc: any) => {
+                      const Icon = getServiceIcon(svc.name);
+                      return (
+                        <div key={svc._id} className="service-item">
+                          <div className="service-icon-box">
+                            <Icon className="service-icon" />
+                          </div>
+                          <div className="service-info">
+                            <div className="service-name">{svc.name}</div>
+                            <div className="service-description">
+                              {svc.description || `${svc.currentPrice?.toLocaleString("vi-VN")}đ/${svc.type === "Extension" ? "đơn vị" : "tháng"}`}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    })
+                ) : (
+                  <div style={{ opacity: 0.6, fontSize: "0.9rem" }}>
+                    Đang tải dịch vụ...
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Rules Card */}
-            <div className="info-card">
-              <h3 className="card-title">Nội Quy Phòng</h3>
-              <ul className="rules-list">
-                <li className="rule-item">
-                  <span className="bullet">●</span>
-                  <span>Không nuôi thú cưng</span>
-                </li>
-                <li className="rule-item">
-                  <span className="bullet">●</span>
-                  <span>Không khiêu khích</span>
-                </li>
-                <li className="rule-item">
-                  <span className="bullet">●</span>
-                  <span>Giờ yên tĩnh 23:00 - 7:00</span>
-                </li>
-              </ul>
-            </div>
+
           </div>
 
           {/* Sidebar */}
@@ -415,6 +424,7 @@ export default function RoomDetail() {
                   disabled={
                     room.status !== "Available" && room.status !== "Trống"
                   }
+                  onClick={() => navigate(`/rooms/${id}/booking`)}
                 >
                   {room.status === "Available" || room.status === "Trống"
                     ? "Đặt Cọc Ngay"

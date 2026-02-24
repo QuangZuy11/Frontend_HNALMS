@@ -146,7 +146,7 @@ function Radio({
       id={id}
       name={name}
       checked={checked}
-      onChange={() => {}} // Required for controlled component
+      onChange={() => { }} // Required for controlled component
       onClick={() => onCheckedChange?.(!checked)} // Allow toggle on click
       className={`rf-radio ${className}`}
       {...props}
@@ -261,6 +261,8 @@ export default function RoomFilters({
         onFloorsChange([floorId]); // Select only this one
       }
     }
+    // Clear room type filter when switching floors so stale filters don't carry over
+    onRoomTypesChange([]);
   };
 
   const handleRoomTypeToggle = (roomTypeId: string) => {

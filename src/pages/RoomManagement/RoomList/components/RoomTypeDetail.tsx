@@ -1,6 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { roomService } from "../../../../services/roomService";
 import "./RoomTypeDetail.css";
+
+interface DeviceAsset {
+  _id: string;
+  deviceId: {
+    _id: string;
+    name: string;
+    brand?: string;
+    model?: string;
+  };
+  quantity: number;
+  condition?: string;
+}
 
 interface RoomTypeDetailProps {
   room: any;
@@ -8,6 +21,35 @@ interface RoomTypeDetailProps {
 
 export default function RoomTypeDetail({ room }: RoomTypeDetailProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [devices, setDevices] = useState<DeviceAsset[]>([]);
+  const [loadingDevices, setLoadingDevices] = useState(false);
+
+  // Fetch real device data when room changes
+  useEffect(() => {
+    if (!room?._id) {
+      setDevices([]);
+      return;
+    }
+
+    const fetchDevices = async () => {
+      setLoadingDevices(true);
+      try {
+        const response = await roomService.getRoomById(room._id);
+        if (response.data?.assets) {
+          setDevices(response.data.assets);
+        } else {
+          setDevices([]);
+        }
+      } catch (error) {
+        console.error("Error fetching room devices:", error);
+        setDevices([]);
+      } finally {
+        setLoadingDevices(false);
+      }
+    };
+
+    fetchDevices();
+  }, [room?._id]);
 
   if (!room) return null;
 
@@ -79,10 +121,9 @@ export default function RoomTypeDetail({ room }: RoomTypeDetailProps) {
       )}
 
       <div className="rtd-content">
-        <h2 className="rtd-title">Phòng {room.title || room.name}</h2>
-        <p className="rtd-subtitle">
-          {room.roomTypeId?.name || "Phòng Tiêu Chuẩn"}
-        </p>
+        <h2 className="rtd-title">
+          Phòng {room.roomTypeId?.typeName || room.title || room.name}
+        </h2>
 
         <div className="rtd-specs">
           <div className="rtd-spec-row">
@@ -107,16 +148,25 @@ export default function RoomTypeDetail({ room }: RoomTypeDetailProps) {
         </div>
 
         <div className="rtd-amenities-section">
-          <p className="amenities-label">Tiện nghi:</p>
+          <p className="amenities-label">Thiết bị phòng:</p>
           <div className="amenities-tags">
-            {(room.amenities && room.amenities.length > 0
-              ? room.amenities
-              : ["WiFi", "TV 4K", "AC", "Bồn tắm jacuzzi"]
-            ).map((am: string, idx: number) => (
-              <span key={idx} className="amenity-tag">
-                {am}
+            {loadingDevices ? (
+              <span className="amenity-tag" style={{ opacity: 0.6 }}>
+                Đang tải...
               </span>
-            ))}
+            ) : devices.length > 0 ? (
+              devices.map((asset) => (
+                <span key={asset._id} className="amenity-tag">
+                  {asset.deviceId?.name || "N/A"}
+                  {asset.deviceId?.brand ? ` (${asset.deviceId.brand})` : ""}
+                  {asset.quantity > 1 ? ` x${asset.quantity}` : ""}
+                </span>
+              ))
+            ) : (
+              <span className="amenity-tag" style={{ opacity: 0.6 }}>
+                Chưa có dữ liệu thiết bị
+              </span>
+            )}
           </div>
         </div>
       </div>

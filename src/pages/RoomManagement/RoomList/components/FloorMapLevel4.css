@@ -123,13 +123,12 @@
 
 /* Ghosted State (Filtered out) */
 .room-node.ghosted {
-  opacity: 0.25;
-  filter: grayscale(100%);
+  opacity: 0.5;
+  filter: grayscale(60%) brightness(1.1);
   pointer-events: none;
-  /* Make them unclickable if desired, or keep clickable but dim */
-  border-color: #e5e7eb !important;
-  /* Force grey border */
-  background-color: #f3f4f6 !important;
-  /* Force grey bg */
+  border-color: #d1d5db !important;
+  background-color: #e5e7eb !important;
   color: #9ca3af !important;
+  box-shadow: none;
+  transition: opacity 0.3s ease, filter 0.3s ease;
 }
