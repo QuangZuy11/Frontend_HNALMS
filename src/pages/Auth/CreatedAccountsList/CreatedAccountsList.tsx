@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { authService } from '../../../services/authService';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { accountService, type AccountGroup } from '../../../services/accountService';
 import { useAuth } from '../../../context/AuthContext';
 import './CreatedAccountsList.css';
 
@@ -54,62 +54,9 @@ interface FormData {
   role: string;
 }
 
-const EyeIcon = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path
-      d="M1.5 12C3.1 7.9 7.2 5 12 5s8.9 2.9 10.5 7c-1.6 4.1-5.7 7-10.5 7S3.1 16.1 1.5 12Z"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <circle cx="12" cy="12" r="3" strokeWidth="1.8" />
-  </svg>
-);
-
-const LockIcon = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <rect
-      x="5"
-      y="10"
-      width="14"
-      height="10"
-      rx="2"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M8 10V8a4 4 0 0 1 8 0v2"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const UnlockIcon = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <rect
-      x="5"
-      y="10"
-      width="14"
-      height="10"
-      rx="2"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M9 10V8a4 4 0 0 1 7.5-2"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
 export default function CreatedAccountsList() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [accounts, setAccounts] = useState<CreatedAccount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,7 +72,12 @@ export default function CreatedAccountsList() {
   const [filterRole, setFilterRole] = useState<string>('');
 
   const currentRole = (user?.role || '').toLowerCase();
-  const roleOptions = ROLE_OPTIONS[currentRole] || [];
+  const accountGroup: AccountGroup = location.pathname.startsWith('/admin')
+    ? 'owners'
+    : location.pathname.startsWith('/owner')
+      ? 'managers'
+      : 'tenants';
+  const roleOptions = useMemo(() => ROLE_OPTIONS[currentRole] || [], [currentRole]);
   const singleRoleOption = roleOptions.length === 1 ? roleOptions[0] : null;
 
   const [formData, setFormData] = useState<FormData>({
@@ -136,24 +88,11 @@ export default function CreatedAccountsList() {
     role: roleOptions[0]?.value || '',
   });
 
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
-
-  useEffect(() => {
-    if (roleOptions.length > 0) {
-      setFormData((prev) => {
-        const validRole = roleOptions.some((o) => o.value === prev.role);
-        return validRole ? prev : { ...prev, role: roleOptions[0].value };
-      });
-    }
-  }, [currentRole, roleOptions]);
-
-  const fetchAccounts = async () => {
+  const fetchAccounts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await authService.getCreatedAccounts();
+      const response = await accountService.list(accountGroup);
       if (response.success && response.data) {
         setAccounts(response.data);
       } else {
@@ -167,7 +106,22 @@ export default function CreatedAccountsList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [accountGroup]);
+
+  useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
+
+  useEffect(() => {
+    if (roleOptions.length > 0) {
+      setFormData((prev) => {
+        const validRole = roleOptions.some((o) => o.value === prev.role);
+        return validRole ? prev : { ...prev, role: roleOptions[0].value };
+      });
+    }
+  }, [currentRole, roleOptions]);
+
+  // fetchAccounts is defined above via useCallback
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '-';
@@ -210,13 +164,21 @@ export default function CreatedAccountsList() {
 
     try {
       setFormSaving(true);
-      await authService.createAccount({
+      const payload = {
         username: formData.username.trim(),
         phoneNumber: formData.phoneNumber.trim(),
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
-        role: formData.role,
-      });
+      };
+
+      if (currentRole === 'admin') {
+        await accountService.createOwner(payload);
+      } else {
+        await accountService.createManagerOrAccountant({
+          ...payload,
+          role: formData.role as 'manager' | 'accountant',
+        });
+      }
       setFormSuccess('Tạo tài khoản thành công!');
       setFormData({
         username: '',
@@ -240,7 +202,7 @@ export default function CreatedAccountsList() {
       setDetailLoading(true);
       setDetailAccount(null);
       setShowDetailModal(true);
-      const response = await authService.getAccountDetail(accountId);
+      const response = await accountService.detail(accountGroup, accountId);
       if (response.success && response.data) {
         setDetailAccount(response.data);
       }
@@ -265,7 +227,7 @@ export default function CreatedAccountsList() {
     }
     try {
       setDisablingId(accountId);
-      const response = await authService.disableAccount(accountId);
+      const response = await accountService.disable(accountGroup, accountId);
       const updated = response.data;
 
       if (updated?._id) {
@@ -297,7 +259,7 @@ export default function CreatedAccountsList() {
     }
     try {
       setDisablingId(accountId);
-      const response = await authService.enableAccount(accountId);
+      const response = await accountService.enable(accountGroup, accountId);
       const updated = response.data;
 
       if (updated?._id) {
@@ -347,17 +309,9 @@ export default function CreatedAccountsList() {
   };
 
   const availableFilterRoles = (() => {
-    if (currentRole === 'admin') {
-      return Object.keys(ROLE_LABELS);
-    }
-    if (currentRole === 'owner') {
-      // Chủ nhà xem được Manager, Kế toán và Tenant
-      return ['manager', 'accountant', 'Tenant'];
-    }
-    if (currentRole === 'manager') {
-      return ['Tenant'];
-    }
-    return [];
+    if (accountGroup === 'owners') return ['owner'];
+    if (accountGroup === 'managers') return ['manager', 'accountant'];
+    return ['Tenant'];
   })();
 
   const filteredAccounts = filterRole
