@@ -53,6 +53,7 @@ import ManagerRules from "./pages/Dashboard/ManagerRules";
 import ManagerProfile from "./pages/Dashboard/ManagerProfile";
 import ManageService from "./pages/ServiceManagement/ManageService";
 import RepairRequestsList from "./pages/RequestManagement/RepairRequestsList";
+import ManagerInvoice from "./pages/InvoiceManagement/InvoiceManage";
 
 // Pages - Accountant Dashboard
 import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
@@ -180,6 +181,7 @@ function LayoutWrapper() {
           <Route path="contracts" element={<ContractList />} />
           <Route path="contracts/create" element={<CreateContract />} />
           <Route path="contracts/:id" element={<ContractDetail />} />
+          
         </Route>
 
         {/* ==================== MANAGER ROUTES ==================== */}
@@ -201,6 +203,7 @@ function LayoutWrapper() {
           <Route path="contracts" element={<ContractList />} />
           <Route path="contracts/create" element={<CreateContract />} />
           <Route path="contracts/:id" element={<ContractDetail />} />
+          <Route path="invoices" element={<ManagerInvoice />} />
           {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
         </Route>
 
