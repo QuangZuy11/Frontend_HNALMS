@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { authService } from '../../../services/authService';
+import { accountService } from '../../../services/accountService';
 import { useAuth } from '../../../context/AuthContext';
 import './CreateAccount.css';
 
@@ -62,13 +62,21 @@ export default function CreateAccount() {
 
     try {
       setSaving(true);
-      await authService.createAccount({
+      const payload = {
         username: formData.username.trim(),
         phoneNumber: formData.phoneNumber.trim(),
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
-        role: formData.role,
-      });
+      };
+
+      if (currentRole === 'admin') {
+        await accountService.createOwner(payload);
+      } else {
+        await accountService.createManagerOrAccountant({
+          ...payload,
+          role: formData.role as 'manager' | 'accountant',
+        });
+      }
       setSuccess('Tạo tài khoản thành công!');
       setFormData({
         username: '',
@@ -115,7 +123,10 @@ export default function CreateAccount() {
               {currentRole === 'owner' && 'Tạo tài khoản Quản lý hoặc Kế toán'}
             </p>
           </div>
-          <Link to="/created-accounts" className="btn-secondary">
+          <Link
+            to={currentRole === 'admin' ? '/admin/accounts' : '/owner/accounts'}
+            className="btn-secondary"
+          >
             Xem danh sách đã tạo
           </Link>
         </div>
