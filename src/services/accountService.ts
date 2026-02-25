@@ -2,6 +2,11 @@ import api from "./api";
 
 export type AccountGroup = "owners" | "managers" | "tenants";
 
+export interface ListAccountsParams {
+  offset?: number;
+  limit?: number;
+}
+
 export interface CreateOwnerPayload {
   username: string;
   phoneNumber: string;
@@ -14,8 +19,8 @@ export interface CreateManagerPayload extends CreateOwnerPayload {
 }
 
 export const accountService = {
-  list: async (group: AccountGroup) => {
-    const response = await api.get(`/accounts/${group}`);
+  list: async (group: AccountGroup, params?: ListAccountsParams) => {
+    const response = await api.get(`/accounts/${group}`, { params });
     return response.data;
   },
 

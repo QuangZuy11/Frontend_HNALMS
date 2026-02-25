@@ -14,6 +14,10 @@ export default function OwnerAccountList() {
   const [accounts, setAccounts] = useState<AccountItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [total, setTotal] = useState(0);
   const [disablingId, setDisablingId] = useState<string | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailAccount, setDetailAccount] = useState<AccountDetail | null>(null);
@@ -33,11 +37,14 @@ export default function OwnerAccountList() {
     try {
       setLoading(true);
       setError(null);
-      const response = await accountService.list('owners');
+      const offset = (page - 1) * limit;
+      const response = await accountService.list('owners', { offset, limit });
       if (response.success && response.data) {
         setAccounts(response.data);
+        setTotal(response.total ?? response.data.length);
       } else {
         setAccounts([]);
+        setTotal(0);
       }
     } catch (err) {
       console.error('Error fetching owners:', err);
@@ -47,11 +54,21 @@ export default function OwnerAccountList() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, limit]);
 
   useEffect(() => {
     fetchAccounts();
   }, [fetchAccounts]);
+
+  const filteredAccounts = searchTerm.trim() === ''
+    ? accounts
+    : accounts.filter((acc) => {
+        const term = searchTerm.trim().toLowerCase();
+        const username = (acc.username ?? '').toLowerCase();
+        return username.includes(term);
+      });
+
+  const totalPages = Math.max(1, Math.ceil((total || 0) / limit));
 
   const handleViewDetail = async (accountId: string) => {
     try {
@@ -160,9 +177,23 @@ export default function OwnerAccountList() {
             <h1>Danh sách Chủ nhà</h1>
             <p className="created-accounts-subtitle">Tất cả tài khoản Chủ nhà trong hệ thống</p>
           </div>
-          <button type="button" className="btn-create" onClick={openCreateModal}>
-            + Tạo Tài Khoản 
-          </button>
+          <div className="created-accounts-actions">
+            {!loading && !error && accounts.length > 0 && (
+              <div className="created-accounts-search">
+                <input
+                  type="text"
+                  placeholder="Tìm theo tên đăng nhập..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="search-input"
+                  aria-label="Tìm kiếm theo tên đăng nhập"
+                />
+              </div>
+            )}
+            <button type="button" className="btn-create" onClick={openCreateModal}>
+              + Tạo Tài Khoản 
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -180,6 +211,10 @@ export default function OwnerAccountList() {
             <p>Chưa có tài khoản Chủ nhà nào.</p>
             <button type="button" className="btn-primary" onClick={openCreateModal}>Tạo Chủ nhà đầu tiên</button>
           </div>
+        ) : filteredAccounts.length === 0 ? (
+          <div className="created-accounts-empty">
+            <p>Không tìm thấy tài khoản phù hợp với từ khóa tìm kiếm.</p>
+          </div>
         ) : (
           <div className="created-accounts-table-wrap">
             <table className="created-accounts-table">
@@ -195,9 +230,9 @@ export default function OwnerAccountList() {
                 </tr>
               </thead>
               <tbody>
-                {accounts.map((acc, index) => (
+                {filteredAccounts.map((acc, index) => (
                   <tr key={acc._id}>
-                    <td>{index + 1}</td>
+                    <td>{(page - 1) * limit + index + 1}</td>
                     <td>{acc.username}</td>
                     <td>{acc.email}</td>
                     <td>{acc.phoneNumber || '-'}</td>
@@ -223,6 +258,38 @@ export default function OwnerAccountList() {
                 ))}
               </tbody>
             </table>
+            <div className="accounts-pagination">
+              <div className="accounts-pagination-info">
+              
+              </div>
+              <div className="accounts-pagination-controls">
+                <button
+                  type="button"
+                  className="pagination-arrow-btn"
+                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={page === 1 || loading}
+                  aria-label="Trang trước"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  className="pagination-current-page"
+                  disabled
+                >
+                  {page}
+                </button>
+                <button
+                  type="button"
+                  className="pagination-arrow-btn"
+                  onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={page >= totalPages || loading}
+                  aria-label="Trang sau"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -240,26 +307,19 @@ export default function OwnerAccountList() {
                   <div className="detail-content">
                     <div className="detail-section">
                       <h3>Thông tin đăng nhập</h3>
-                      <div className="detail-row"><span className="detail-label">Tên đăng nhập:</span><span className="detail-value">{detailAccount.username}</span></div>
-                      <div className="detail-row"><span className="detail-label">Email:</span><span className="detail-value">{detailAccount.email}</span></div>
-                      <div className="detail-row"><span className="detail-label">Số điện thoại:</span><span className="detail-value">{detailAccount.phoneNumber || '-'}</span></div>
-                      <div className="detail-row"><span className="detail-label">Trạng thái:</span>
+                      <div className="detail-row detail-row-tight"><span className="detail-label">Tên đăng nhập:</span><span className="detail-value">{detailAccount.username}</span></div>
+                      <div className="detail-row detail-row-tight"><span className="detail-label">Email:</span><span className="detail-value">{detailAccount.email}</span></div>
+                      <div className="detail-row detail-row-tight"><span className="detail-label">Số điện thoại:</span><span className="detail-value">{detailAccount.phoneNumber || '-'}</span></div>
+                      <div className="detail-row detail-row-tight"><span className="detail-label">Trạng thái:</span>
                         <span className={`status-badge status-${detailAccount.status}`}>{STATUS_LABELS[detailAccount.status] || detailAccount.status}</span>
                       </div>
-                      <div className="detail-row"><span className="detail-label">Ngày tạo:</span><span className="detail-value">{formatAccountDate(detailAccount.createdAt)}</span></div>
+                      <div className="detail-row detail-row-tight"><span className="detail-label">Ngày tạo:</span><span className="detail-value">{formatAccountDate(detailAccount.createdAt)}</span></div>
                     </div>
                     <div className="detail-section">
                       <h3>Thông tin cá nhân</h3>
-                      <div className="detail-row"><span className="detail-label">Họ và tên:</span><span className="detail-value">{detailAccount.fullname || '-'}</span></div>
-                      <div className="detail-row"><span className="detail-label">CCCD:</span><span className="detail-value">{detailAccount.cccd || '-'}</span></div>
-                      <div className="detail-row"><span className="detail-label">Địa chỉ:</span><span className="detail-value">{detailAccount.address || '-'}</span></div>
-                    </div>
-                    <div className="detail-actions">
-                      {detailAccount.status === 'active' ? (
-                        <button type="button" className="btn-disable" onClick={() => handleDisable(detailAccount._id)} disabled={disablingId === detailAccount._id}>Đóng tài khoản</button>
-                      ) : (
-                        <button type="button" className="btn-enable" onClick={() => handleEnable(detailAccount._id)} disabled={disablingId === detailAccount._id}>Mở lại</button>
-                      )}
+                      <div className="detail-row detail-row-tight"><span className="detail-label">Họ và tên:</span><span className="detail-value">{detailAccount.fullname || '-'}</span></div>
+                      <div className="detail-row detail-row-tight"><span className="detail-label">CCCD:</span><span className="detail-value">{detailAccount.cccd || '-'}</span></div>
+                      <div className="detail-row detail-row-tight"><span className="detail-label">Địa chỉ:</span><span className="detail-value">{detailAccount.address || '-'}</span></div>
                     </div>
                   </div>
                 ) : null}
