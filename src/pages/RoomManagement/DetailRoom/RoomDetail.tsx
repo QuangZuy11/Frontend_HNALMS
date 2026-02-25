@@ -6,6 +6,7 @@ import {
   MapPin,
   Home,
   Users,
+  Monitor,
   Zap,
   Droplet,
   Wifi,
@@ -316,7 +317,8 @@ export default function RoomDetail() {
                   <div className="spec-label">Tối đa người</div>
                 </div>
                 <div className="spec-box">
-                  <div className="spec-number">
+                  <Monitor className="spec-icon-large" />
+                  <div className="spec-value-large">
                     {room.assets?.length || 0}
                   </div>
                   <div className="spec-label">Thiết bị</div>
@@ -334,7 +336,6 @@ export default function RoomDetail() {
                       <span className="check-icon">✓</span>
                       <span>
                         {asset.deviceId?.name || "N/A"}
-                        {asset.deviceId?.brand ? ` (${asset.deviceId.brand})` : ""}
                         {asset.quantity > 1 ? ` x${asset.quantity}` : ""}
                       </span>
                     </div>
