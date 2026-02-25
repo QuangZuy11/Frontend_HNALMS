@@ -6,6 +6,7 @@ interface RepairRequest {
   _id: string;
   type: string;
   description: string;
+  images: string[];
   status: string;
   cost: number;
   notes?: string;
@@ -40,6 +41,10 @@ export default function RepairRequestsList() {
   const [editingCostRequest, setEditingCostRequest] = useState<RepairRequest | null>(null);
   const [editCostValue, setEditCostValue] = useState('');
   const [editCostError, setEditCostError] = useState('');
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'Pending' | 'Processing' | 'Done'>(
+    'ALL',
+  );
 
   useEffect(() => {
     fetchRequests();
@@ -272,6 +277,19 @@ export default function RepairRequestsList() {
     setEditCostError('');
   };
 
+  const handleOpenImagePreview = (url: string) => {
+    setPreviewImageUrl(url);
+  };
+
+  const handleCloseImagePreview = () => {
+    setPreviewImageUrl(null);
+  };
+
+  const filteredRequests =
+    statusFilter === 'ALL'
+      ? requests
+      : requests.filter((r) => r.status === statusFilter);
+
   return (
     <div className="repair-requests-page">
       <div className="repair-requests-card">
@@ -282,6 +300,24 @@ export default function RepairRequestsList() {
               Các yêu cầu sửa chữa/bảo trì do cư dân gửi lên tòa nhà
             </p>
           </div>
+            <div className="repair-filter-wrapper">
+              <label htmlFor="status-filter" className="repair-filter-label">
+                Trạng thái:
+              </label>
+              <select
+                id="status-filter"
+                className="repair-filter-select"
+                value={statusFilter}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as 'ALL' | 'Pending' | 'Processing' | 'Done')
+                }
+              >
+                <option value="ALL">Tất cả</option>
+                <option value="Pending">Chờ xử lý</option>
+                <option value="Processing">Đang xử lý</option>
+                <option value="Done">Đã xử lý</option>
+              </select>
+            </div>
         </div>
 
         {error && (
@@ -304,8 +340,6 @@ export default function RepairRequestsList() {
                   <th>STT</th>
                   <th>Cư dân</th>
                   <th>Thiết bị</th>
-                  <th>Loại</th>
-                  <th>Mô tả</th>
                   <th>Trạng thái</th>
                   <th>Chi phí (VNĐ)</th>
                   <th>Ngày tạo</th>
@@ -313,7 +347,7 @@ export default function RepairRequestsList() {
                 </tr>
               </thead>
               <tbody>
-                {requests.map((r, index) => (
+                {filteredRequests.map((r, index) => (
                   <tr key={r._id}>
                     <td>{index + 1}</td>
                     <td>
@@ -322,8 +356,7 @@ export default function RepairRequestsList() {
                           {r.tenantId?.fullname || r.tenantId?.username || '-'}
                         </div>
                         <div className="cell-sub">
-                          {r.tenantId?.email}
-                          {r.tenantId?.phoneNumber ? ` · ${r.tenantId.phoneNumber}` : ''}
+                          {r.tenantId?.phoneNumber || ''}
                         </div>
                       </div>
                     </td>
@@ -337,8 +370,6 @@ export default function RepairRequestsList() {
                         )}
                       </div>
                     </td>
-                    <td>{r.type}</td>
-                    <td className="col-description">{r.description}</td>
                     <td>
                       <span className={`status-badge status-${r.status.toLowerCase()}`}>
                         {r.status}
@@ -496,7 +527,42 @@ export default function RepairRequestsList() {
                     <span className="detail-value">{selectedRequest.notes}</span>
                   </div>
                 )}
+                {selectedRequest.images && selectedRequest.images.length > 0 && (
+                  <div className="detail-row detail-row-description">
+                    <span className="detail-label">Hình ảnh:</span>
+                    <span className="detail-value">
+                      <div className="repair-images-grid">
+                        {selectedRequest.images.map((url, idx) => (
+                          <button
+                            type="button"
+                            key={idx}
+                            className="repair-image-item"
+                            onClick={() => handleOpenImagePreview(url)}
+                          >
+                            <img src={url} alt={`Ảnh yêu cầu ${idx + 1}`} />
+                          </button>
+                        ))}
+                      </div>
+                    </span>
+                  </div>
+                )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {previewImageUrl && (
+          <div className="repair-modal-overlay" onClick={handleCloseImagePreview}>
+            <div className="repair-image-preview-modal" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={handleCloseImagePreview}
+                aria-label="Đóng"
+              >
+                ×
+              </button>
+              <img src={previewImageUrl} alt="Xem ảnh yêu cầu" className="repair-image-preview" />
             </div>
           </div>
         )}
