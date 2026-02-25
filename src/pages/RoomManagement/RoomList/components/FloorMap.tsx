@@ -108,16 +108,85 @@ export default function FloorMap({
         <h3 className="map-title">SƠ ĐỒ {floorName || "TẦNG"}</h3>
 
         <div className="map-legends-container">
-          {/* Status Legend */}
-          <div className="map-legend status-legend">
-            <div className="legend-item">
-              <span className="legend-color available"></span>
-              <span>Trống</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-color occupied"></span>
-              <span>Đã Thuê</span>
-            </div>
+          {/* Instruction Legend */}
+          <div
+            className="map-legend status-legend"
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: "1.5rem",
+              flexWrap: "wrap",
+            }}
+          >
+            <span style={{ fontSize: "0.8rem", color: "#374151" }}>
+              Phòng sáng màu = chưa có hợp đồng, click để tạo HĐ mới.
+            </span>
+            <span
+              style={{
+                fontSize: "0.8rem",
+                color: "#374151",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.35rem",
+              }}
+            >
+              <span
+                style={{
+                  display: "inline-block",
+                  width: "16px",
+                  height: "16px",
+                  borderRadius: "3px",
+                  background:
+                    "repeating-linear-gradient(135deg, #ffffff, #ffffff 3px, #c5cdd6 3px, #c5cdd6 6px)",
+                  border: "1px solid #d1d5db",
+                }}
+              />
+              Đã thuê → Click để xem HĐ
+            </span>
+            <span
+              style={{
+                fontSize: "0.8rem",
+                color: "#374151",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.35rem",
+              }}
+            >
+              <span
+                style={{
+                  position: "relative",
+                  display: "inline-block",
+                  width: "16px",
+                  height: "16px",
+                  borderRadius: "3px",
+                  background:
+                    "linear-gradient(145deg, #f59e0b 0%, #d97706 100%)",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                }}
+              >
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "-4px",
+                    right: "-4px",
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    background: "#ef4444",
+                    color: "white",
+                    fontSize: "7px",
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    lineHeight: 1,
+                  }}
+                >
+                  !
+                </span>
+              </span>
+              Đã cọc → Click để tạo HĐ
+            </span>
           </div>
 
           {/* Room Type Legend (Dynamic) */}
@@ -160,7 +229,11 @@ export default function FloorMap({
                 highlightedRooms &&
                 !highlightedRooms.some((r) => r._id === room._id);
 
-              const statusClass = isAvailable ? "status-available" : isDeposited ? "status-deposited" : "status-occupied";
+              const statusClass = isAvailable
+                ? "status-available"
+                : isDeposited
+                  ? "status-deposited"
+                  : "status-occupied";
 
               // logic for inserting corridors
               return (
@@ -174,8 +247,8 @@ export default function FloorMap({
                     style={
                       isAvailable || isDeposited
                         ? {
-                          background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
-                        }
+                            background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
+                          }
                         : undefined
                     }
                   >
