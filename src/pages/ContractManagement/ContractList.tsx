@@ -27,11 +27,25 @@ const ContractList = () => {
     ])
       .then(([roomsRes, contractsRes]) => {
         const rawRooms = roomsRes.data.data || [];
-        const mappedRooms = rawRooms.map((room: any) => ({
-          ...room,
-          price: room.roomTypeId?.currentPrice || 0,
-          floorLabel: room.floorId?.name || "N/A",
-        }));
+        const mappedRooms = rawRooms.map((room: any) => {
+          let priceNum = 0;
+          if (room.roomTypeId && typeof room.roomTypeId.currentPrice === "object" && room.roomTypeId.currentPrice.$numberDecimal) {
+            priceNum = parseFloat(room.roomTypeId.currentPrice.$numberDecimal);
+          } else if (typeof room.roomTypeId?.currentPrice === "number") {
+            priceNum = room.roomTypeId.currentPrice;
+          } else if (typeof room.price === "number") {
+            priceNum = room.price;
+          }
+
+          return {
+            ...room,
+            price: priceNum,
+            priceLabel: priceNum > 0
+              ? `${(priceNum / 1000000).toFixed(1)}M`
+              : "Chưa có giá",
+            floorLabel: room.floorId?.name || "N/A",
+          };
+        });
         setRooms(mappedRooms);
 
         if (contractsRes.data.success) {
