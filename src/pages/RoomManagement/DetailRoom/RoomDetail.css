@@ -80,7 +80,7 @@
 .main-image-container {
   position: relative;
   width: 100%;
-  height: 500px;
+  height: 650px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   overflow: hidden;
   display: flex;
@@ -155,11 +155,9 @@
   align-items: flex-start;
   justify-content: space-between;
   padding: 1.25rem 1.5rem;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.5) 0%,
-    transparent 100%
-  );
+  background: linear-gradient(to bottom,
+      rgba(0, 0, 0, 0.5) 0%,
+      transparent 100%);
   z-index: 5;
 }
 
@@ -664,6 +662,7 @@
 }
 
 @media (max-width: 480px) {
+
   .main-image-container,
   .gallery-placeholder {
     height: 300px;
