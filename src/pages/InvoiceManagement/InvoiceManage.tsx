@@ -112,6 +112,7 @@ const InvoiceManager = () => {
   };
 
   // Lưu song song Điện và Nước
+// Hàm handleSaveReading
   const handleSaveReading = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -123,22 +124,23 @@ const InvoiceManager = () => {
 
       // Kiểm tra nếu có nhập số điện
       if (elecService && dualReadingForm.elecNew > dualReadingForm.elecOld) {
-        apiCalls.push(axios.post(`${API_BASE_URL}/meter-readings`, {
+        // [SỬA LẠI] Không đẩy Promise chưa chạy vào mảng nữa, mà tạo object cấu hình
+        apiCalls.push({
           roomId: rId,
           utilityId: elecService._id,
           oldIndex: dualReadingForm.elecOld,
           newIndex: dualReadingForm.elecNew
-        }));
+        });
       }
 
       // Kiểm tra nếu có nhập số nước
       if (waterService && dualReadingForm.waterNew > dualReadingForm.waterOld) {
-        apiCalls.push(axios.post(`${API_BASE_URL}/meter-readings`, {
+        apiCalls.push({
           roomId: rId,
           utilityId: waterService._id,
           oldIndex: dualReadingForm.waterOld,
           newIndex: dualReadingForm.waterNew
-        }));
+        });
       }
 
       if (apiCalls.length === 0) {
@@ -146,8 +148,11 @@ const InvoiceManager = () => {
         return;
       }
 
-      // Gửi cả 2 request cùng lúc
-      await Promise.all(apiCalls);
+      // [SỬA ĐỔI QUAN TRỌNG Ở ĐÂY] Chạy Vòng lặp tuần tự thay vì Promise.all
+      // Vòng lặp này đảm bảo API 1 chạy xong, DB lưu xong rồi mới chạy API 2
+      for (const payload of apiCalls) {
+        await axios.post(`${API_BASE_URL}/meter-readings`, payload);
+      }
       
       toastr.success("Lưu chỉ số điện/nước và tính tiền thành công!");
       setShowReadingModal(false);
