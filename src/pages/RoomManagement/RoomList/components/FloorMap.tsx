@@ -12,6 +12,7 @@ interface Room {
     name?: string;
     typeName?: string;
   };
+  contractEndDate?: string;
   [key: string]: any;
 }
 
@@ -36,6 +37,17 @@ const ROOM_TYPE_COLORS = [
 ];
 
 // Helper to extract number from room type name (e.g., "Loại 1" -> 1)
+// Format contract expiry: endDate + 1 day => "Trống từ DD/MM"
+const getExpiryLabel = (contractEndDate?: string): string | null => {
+  if (!contractEndDate) return null;
+  const endDate = new Date(contractEndDate);
+  const vacantDate = new Date(endDate);
+  vacantDate.setDate(vacantDate.getDate() + 1);
+  const day = vacantDate.getDate().toString().padStart(2, "0");
+  const month = (vacantDate.getMonth() + 1).toString().padStart(2, "0");
+  return `Trống từ ${day}/${month}`;
+};
+
 const extractTypeNumber = (typeName: string): number => {
   const match = typeName.match(/(\d+)/);
   return match ? parseInt(match[1], 10) : 0;
@@ -247,12 +259,17 @@ export default function FloorMap({
                     style={
                       isAvailable || isDeposited
                         ? {
-                            background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
-                          }
+                          background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
+                        }
                         : undefined
                     }
                   >
                     <span className="room-node-name">{room.name}</span>
+                    {getExpiryLabel(room.contractEndDate) && (
+                      <span className="room-expiry-label">
+                        {getExpiryLabel(room.contractEndDate)}
+                      </span>
+                    )}
                   </div>
 
                   {/* Insert Corridor 1 after first row (index 7) */}

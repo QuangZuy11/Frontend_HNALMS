@@ -3,14 +3,16 @@
 /* Ensure .map-corridor is available */
 
 .floor-map-container.level-2 {
-  /* Specific overrides if needed */
   transition: all 0.3s ease;
+  overflow: hidden;
 }
 
 .map-layout-l2 {
   display: flex;
   gap: 2rem;
   overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
 }
 
 .grid-l2 {
@@ -18,24 +20,55 @@
   display: grid;
   /* 15 Columns: 8 Left + 1 Separator + 6 Right */
   grid-template-columns: repeat(15, 1fr);
-  gap: 0.75rem 0.625rem;
+  gap: 0.6rem 0.5rem;
   align-content: start;
   width: 100%;
-  min-width: 1000px;
+  min-width: 0;
   transition: all 0.3s ease;
   padding-top: 0.5rem;
-  /* Space for hover effect on first row */
+}
+
+/* === Room node cho tầng 2 === */
+.floor-map-container.level-2 .room-node {
+  overflow: hidden;
+  box-sizing: border-box;
+  min-width: 0;
+  height: auto;
+  min-height: 3rem;
+  padding: 0.2rem 0.1rem;
+  border-radius: 0.5rem;
+}
+
+.floor-map-container.level-2 .room-node-name {
+  white-space: normal;
+  word-break: break-word;
+  overflow: hidden;
+  display: block;
+  max-width: 100%;
+  font-size: 0.7rem;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.floor-map-container.level-2 .room-expiry-label {
+  font-size: 0.48rem !important;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  display: block;
+  max-width: 100%;
+  padding: 1px 3px !important;
+  margin-top: 2px;
 }
 
 /* Corridor Styling (Level 2 Override) */
 .floor-map-container.level-2 .map-corridor {
   background-color: #e8e9ed;
-  /* Reverted to Gray */
   color: #6b7280;
   font-size: 0.85rem;
   padding: 0.5rem;
   border-radius: 0.4rem;
-  /* Removed text-transform: uppercase if it was there by default, keeping it simple as per request */
 }
 
 /* Inline Separator Nodes */
@@ -44,20 +77,20 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: #6b7280;
   background: #f3f4f6;
   border: 1px dashed #d1d5db;
   border-radius: 4px;
   text-align: center;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
   user-select: none;
   white-space: nowrap;
+  overflow: hidden;
 }
 
 .separator-node.elevator {
   background: #dbeafe;
-  /* Reverted to Light Blue */
   color: #3b82f6;
   border-color: #93c5fd;
   border-style: solid;
@@ -65,14 +98,12 @@
 
 .separator-node.gap {
   background: #f9fafb;
-  /* Reverted to Light Gray */
   color: #9ca3af;
 }
 
 .grid-spacer-row {
   grid-column: 1 / -1;
   height: 2rem;
-  /* Spacer height */
 }
 
 .room-node.placeholder {
@@ -88,36 +119,38 @@
 }
 
 .empty-node {
-  /* Just empty space */
+  visibility: hidden;
 }
 
 /* Compact Mode */
 .floor-map-container.level-2.compact .grid-l2 {
-  min-width: unset;
-  /* Remove min-width or reduce it */
+  min-width: 0;
   width: 100%;
-  gap: 4px 4px;
-  /* Tighter layout */
+  gap: 4px 3px;
 }
 
 .floor-map-container.level-2.compact .room-node {
-  min-height: 40px;
-  /* Smaller nodes */
-  padding: 0.25rem;
-  font-size: 0.75rem;
-}
-
-.floor-map-container.level-2.compact .room-node-name {
+  min-height: 2.8rem;
+  padding: 0.15rem 0.1rem;
   font-size: 0.7rem;
 }
 
+.floor-map-container.level-2.compact .room-node-name {
+  font-size: 0.65rem;
+}
+
+.floor-map-container.level-2.compact .room-expiry-label {
+  font-size: 0.42rem !important;
+  line-height: 1;
+  padding: 1px 2px !important;
+}
+
 .floor-map-container.level-2.compact .grid-spacer-row {
-  height: 1rem;
-  /* Smaller spacer */
+  height: 0.75rem;
 }
 
 .floor-map-container.level-2.compact .elevator-node-seamless {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   width: 100%;
   padding: 0;
 }

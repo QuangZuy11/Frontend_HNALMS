@@ -74,10 +74,6 @@ const ContractList = () => {
         >
           Quản lý Hợp đồng
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Chọn phòng trên sơ đồ để xem hợp đồng (phòng đã thuê) hoặc tạo hợp
-          đồng mới (phòng trống).
-        </Typography>
 
         {/* Floor Tabs */}
         <Tabs
@@ -159,7 +155,6 @@ const ContractList = () => {
             />
           )}
         </Box>
-
       </Paper>
     </Container>
   );

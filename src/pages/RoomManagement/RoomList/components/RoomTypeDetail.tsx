@@ -71,12 +71,23 @@ export default function RoomTypeDetail({ room }: RoomTypeDetailProps) {
   };
 
   // Format price properly
-  const formatPrice = (price: number | undefined) => {
-    if (!price || price === 0) return "Liên hệ";
-    return `${price.toLocaleString("vi-VN")}đ`;
+  const formatPrice = (priceVal: any): string => {
+    // Check if it's a mongo Decimal128 object format
+    if (priceVal && typeof priceVal === "object" && priceVal.$numberDecimal) {
+      priceVal = parseFloat(priceVal.$numberDecimal);
+    }
+
+    // Convert to number if it's a parseable string
+    const numericPrice = Number(priceVal);
+
+    if (!isNaN(numericPrice) && numericPrice > 0) {
+      return `${numericPrice.toLocaleString("vi-VN")}đ`;
+    }
+    return "Liên hệ";
   };
 
-  const priceFormatted = formatPrice(room.price);
+  const rawPrice = room.price || room.roomTypeId?.currentPrice || 0;
+  const priceFormatted = formatPrice(rawPrice);
 
   return (
     <div className="room-type-detail-card">
