@@ -12,12 +12,24 @@ export const requestService = {
     requestId: string,
     status: 'Pending' | 'Processing' | 'Done',
     cost?: number,
-    notes?: string
+    notes?: string,
+    invoice?: {
+      invoiceCode: string;
+      title: string;
+      totalAmount: number;
+      dueDate: string;
+    }
   ) => {
     const body: any = { status };
     if (status === 'Done') {
       if (cost !== undefined) body.cost = cost;
       if (notes !== undefined) body.notes = notes;
+      if (invoice) {
+        body.invoiceCode = invoice.invoiceCode;
+        body.invoiceTitle = invoice.title;
+        body.invoiceTotalAmount = invoice.totalAmount;
+        body.invoiceDueDate = invoice.dueDate;
+      }
     }
     const response = await api.put(`/requests/repair/${requestId}/status`, body);
     return response.data;

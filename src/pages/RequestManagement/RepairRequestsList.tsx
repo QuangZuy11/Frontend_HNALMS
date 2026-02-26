@@ -24,6 +24,11 @@ interface RepairRequest {
     brand?: string;
     model?: string;
   } | null;
+  room?: {
+    _id: string;
+    name: string;
+    roomCode?: string;
+  } | null;
 }
 
 export default function RepairRequestsList() {
@@ -35,8 +40,18 @@ export default function RepairRequestsList() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [completingRequest, setCompletingRequest] = useState<RepairRequest | null>(null);
-  const [completeForm, setCompleteForm] = useState({ cost: '', notes: '' });
-  const [formErrors, setFormErrors] = useState({ cost: '', notes: '' });
+  const [completeForm, setCompleteForm] = useState({
+    invoiceCode: '',
+    invoiceTitle: '',
+    invoiceTotalAmount: '',
+    invoiceDueDate: '',
+  });
+  const [formErrors, setFormErrors] = useState({
+    invoiceCode: '',
+    invoiceTitle: '',
+    invoiceTotalAmount: '',
+    invoiceDueDate: '',
+  });
   const [showEditCostModal, setShowEditCostModal] = useState(false);
   const [editingCostRequest, setEditingCostRequest] = useState<RepairRequest | null>(null);
   const [editCostValue, setEditCostValue] = useState('');
@@ -96,10 +111,15 @@ export default function RepairRequestsList() {
     request: RepairRequest,
     nextStatus: 'Pending' | 'Processing' | 'Done',
   ) => {
-    // Nếu chuyển sang "Đã xử lý", hiện modal để nhập chi phí và ghi chú
+    // Nếu chuyển sang "Đã xử lý", hiện modal để tạo hóa đơn
     if (nextStatus === 'Done') {
       setCompletingRequest(request);
-      setCompleteForm({ cost: request.cost?.toString() || '', notes: request.notes || '' });
+      setCompleteForm({
+        invoiceCode: '',
+        invoiceTitle: '',
+        invoiceTotalAmount: '',
+        invoiceDueDate: '',
+      });
       setShowCompleteModal(true);
       setOpenMenuId(null);
       return;
@@ -136,18 +156,38 @@ export default function RepairRequestsList() {
     if (!completingRequest) return;
 
     // Validate form
-    const errors = { cost: '', notes: '' };
+    const errors = {
+      invoiceCode: '',
+      invoiceTitle: '',
+      invoiceTotalAmount: '',
+      invoiceDueDate: '',
+    };
     let isValid = true;
 
-    if (!completeForm.cost || completeForm.cost.trim() === '') {
-      errors.cost = 'Vui lòng nhập chi phí';
+    if (!completeForm.invoiceCode.trim()) {
+      errors.invoiceCode = 'Vui lòng nhập mã hóa đơn';
+      isValid = false;
+    }
+
+    if (!completeForm.invoiceTitle.trim()) {
+      errors.invoiceTitle = 'Vui lòng nhập tiêu đề hóa đơn';
+      isValid = false;
+    }
+
+    if (!completeForm.invoiceTotalAmount || completeForm.invoiceTotalAmount.trim() === '') {
+      errors.invoiceTotalAmount = 'Vui lòng nhập tổng số tiền';
       isValid = false;
     } else {
-      const costValue = parseFloat(completeForm.cost);
-      if (isNaN(costValue) || costValue < 0) {
-        errors.cost = 'Chi phí phải là số hợp lệ và lớn hơn hoặc bằng 0';
+      const total = parseFloat(completeForm.invoiceTotalAmount);
+      if (isNaN(total) || total < 0) {
+        errors.invoiceTotalAmount = 'Tổng số tiền phải là số hợp lệ và lớn hơn hoặc bằng 0';
         isValid = false;
       }
+    }
+
+    if (!completeForm.invoiceDueDate) {
+      errors.invoiceDueDate = 'Vui lòng chọn ngày đến hạn';
+      isValid = false;
     }
 
     setFormErrors(errors);
@@ -156,7 +196,8 @@ export default function RepairRequestsList() {
       return;
     }
 
-    const cost = parseFloat(completeForm.cost);
+    const totalAmount = parseFloat(completeForm.invoiceTotalAmount);
+    const cost = totalAmount; // Chi phí trên request sẽ bằng tổng số tiền hóa đơn
 
     try {
       setUpdatingId(completingRequest._id);
@@ -164,7 +205,13 @@ export default function RepairRequestsList() {
         completingRequest._id,
         'Done',
         cost,
-        completeForm.notes.trim() || undefined
+        undefined,
+        {
+          invoiceCode: completeForm.invoiceCode.trim(),
+          title: completeForm.invoiceTitle.trim(),
+          totalAmount,
+          dueDate: completeForm.invoiceDueDate,
+        }
       );
       const updated = response.data;
 
@@ -172,7 +219,7 @@ export default function RepairRequestsList() {
         setRequests((prev) =>
           prev.map((r) =>
             r._id === updated._id
-              ? { ...r, status: updated.status, cost: updated.cost, notes: updated.notes }
+              ? { ...r, status: updated.status, cost: updated.cost }
               : r
           ),
         );
@@ -184,7 +231,6 @@ export default function RepairRequestsList() {
                   ...prev,
                   status: updated.status,
                   cost: updated.cost,
-                  notes: updated.notes,
                 }
               : prev
           );
@@ -193,8 +239,18 @@ export default function RepairRequestsList() {
 
       setShowCompleteModal(false);
       setCompletingRequest(null);
-      setCompleteForm({ cost: '', notes: '' });
-      setFormErrors({ cost: '', notes: '' });
+      setCompleteForm({
+        invoiceCode: '',
+        invoiceTitle: '',
+        invoiceTotalAmount: '',
+        invoiceDueDate: '',
+      });
+      setFormErrors({
+        invoiceCode: '',
+        invoiceTitle: '',
+        invoiceTotalAmount: '',
+        invoiceDueDate: '',
+      });
     } catch (err: any) {
       console.error('Lỗi khi hoàn thành yêu cầu:', err);
       alert(err?.response?.data?.message || 'Không thể hoàn thành yêu cầu');
@@ -206,8 +262,18 @@ export default function RepairRequestsList() {
   const handleCloseCompleteModal = () => {
     setShowCompleteModal(false);
     setCompletingRequest(null);
-    setCompleteForm({ cost: '', notes: '' });
-    setFormErrors({ cost: '', notes: '' });
+    setCompleteForm({
+      invoiceCode: '',
+      invoiceTitle: '',
+      invoiceTotalAmount: '',
+      invoiceDueDate: '',
+    });
+    setFormErrors({
+      invoiceCode: '',
+      invoiceTitle: '',
+      invoiceTotalAmount: '',
+      invoiceDueDate: '',
+    });
   };
 
   const handleEditCost = (request: RepairRequest) => {
@@ -339,6 +405,7 @@ export default function RepairRequestsList() {
                 <tr>
                   <th>STT</th>
                   <th>Cư dân</th>
+                  <th>Phòng</th>
                   <th>Thiết bị</th>
                   <th>Trạng thái</th>
                   <th>Chi phí (VNĐ)</th>
@@ -355,8 +422,12 @@ export default function RepairRequestsList() {
                         <div className="cell-title">
                           {r.tenantId?.fullname || r.tenantId?.username || '-'}
                         </div>
-                        <div className="cell-sub">
-                          {r.tenantId?.phoneNumber || ''}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="cell-main">
+                        <div className="cell-title">
+                          {r.room?.name || r.room?.roomCode || '-'}
                         </div>
                       </div>
                     </td>
@@ -478,6 +549,12 @@ export default function RepairRequestsList() {
                   </span>
                 </div>
                 <div className="detail-row">
+                  <span className="detail-label">Phòng:</span>
+                  <span className="detail-value">
+                    {selectedRequest.room?.name || selectedRequest.room?.roomCode || '-'}
+                  </span>
+                </div>
+                <div className="detail-row">
                   <span className="detail-label">Email:</span>
                   <span className="detail-value">{selectedRequest.tenantId?.email}</span>
                 </div>
@@ -521,12 +598,6 @@ export default function RepairRequestsList() {
                   <span className="detail-label">Mô tả:</span>
                   <span className="detail-value">{selectedRequest.description}</span>
                 </div>
-                {selectedRequest.notes && (
-                  <div className="detail-row detail-row-description">
-                    <span className="detail-label">Ghi chú:</span>
-                    <span className="detail-value">{selectedRequest.notes}</span>
-                  </div>
-                )}
                 {selectedRequest.images && selectedRequest.images.length > 0 && (
                   <div className="detail-row detail-row-description">
                     <span className="detail-label">Hình ảnh:</span>
@@ -632,7 +703,7 @@ export default function RepairRequestsList() {
           <div className="repair-modal-overlay" onClick={handleCloseCompleteModal}>
             <div className="repair-modal repair-complete-modal" onClick={(e) => e.stopPropagation()}>
               <div className="repair-modal-header">
-                <h2>Hoàn thành yêu cầu sửa chữa</h2>
+                <h2>Tạo hoá đơn sửa chữa</h2>
                 <button
                   type="button"
                   className="modal-close-btn"
@@ -644,37 +715,79 @@ export default function RepairRequestsList() {
               </div>
               <div className="repair-modal-body">
                 <div className="complete-form-group">
-                  <label htmlFor="complete-cost">Chi phí (VNĐ) *</label>
+                  <label htmlFor="invoice-code">Mã hóa đơn *</label>
                   <input
-                    type="number"
-                    id="complete-cost"
-                    value={completeForm.cost}
+                    type="text"
+                    id="invoice-code"
+                    value={completeForm.invoiceCode}
                     onChange={(e) => {
-                      setCompleteForm({ ...completeForm, cost: e.target.value });
-                      if (formErrors.cost) {
-                        setFormErrors({ ...formErrors, cost: '' });
+                      setCompleteForm({ ...completeForm, invoiceCode: e.target.value });
+                      if (formErrors.invoiceCode) {
+                        setFormErrors({ ...formErrors, invoiceCode: '' });
                       }
                     }}
-                    placeholder="Nhập chi phí"
-                    min="0"
-                    step="1000"
-                    className={formErrors.cost ? 'input-error' : ''}
+                    placeholder="Nhập mã hóa đơn (ví dụ: INV-XYZ-001)"
                   />
-                  {formErrors.cost && (
-                    <span className="error-message">{formErrors.cost}</span>
+                  {formErrors.invoiceCode && (
+                    <span className="error-message">{formErrors.invoiceCode}</span>
                   )}
                 </div>
                 <div className="complete-form-group">
-                  <label htmlFor="complete-notes">Ghi chú</label>
-                  <textarea
-                    id="complete-notes"
-                    value={completeForm.notes}
-                    onChange={(e) =>
-                      setCompleteForm({ ...completeForm, notes: e.target.value })
-                    }
-                    placeholder="Nhập ghi chú (tùy chọn)"
-                    rows={4}
+                  <label htmlFor="invoice-title">Tiêu đề hóa đơn *</label>
+                  <input
+                    type="text"
+                    id="invoice-title"
+                    value={completeForm.invoiceTitle}
+                    onChange={(e) => {
+                      setCompleteForm({ ...completeForm, invoiceTitle: e.target.value });
+                      if (formErrors.invoiceTitle) {
+                        setFormErrors({ ...formErrors, invoiceTitle: '' });
+                      }
+                    }}
+                    placeholder="Nhập tiêu đề hóa đơn"
                   />
+                  {formErrors.invoiceTitle && (
+                    <span className="error-message">{formErrors.invoiceTitle}</span>
+                  )}
+                </div>
+                <div className="complete-form-group">
+                  <label htmlFor="invoice-total">Tổng số tiền (VNĐ) *</label>
+                  <input
+                    type="number"
+                    id="invoice-total"
+                    value={completeForm.invoiceTotalAmount}
+                    onChange={(e) => {
+                      setCompleteForm({ ...completeForm, invoiceTotalAmount: e.target.value });
+                      if (formErrors.invoiceTotalAmount) {
+                        setFormErrors({ ...formErrors, invoiceTotalAmount: '' });
+                      }
+                    }}
+                    placeholder="Nhập tổng số tiền"
+                    min="0"
+                    step="1000"
+                    className={formErrors.invoiceTotalAmount ? 'input-error' : ''}
+                  />
+                  {formErrors.invoiceTotalAmount && (
+                    <span className="error-message">{formErrors.invoiceTotalAmount}</span>
+                  )}
+                </div>
+                <div className="complete-form-group">
+                  <label htmlFor="invoice-due-date">Ngày đến hạn *</label>
+                  <input
+                    type="date"
+                    id="invoice-due-date"
+                    value={completeForm.invoiceDueDate}
+                    onChange={(e) => {
+                      setCompleteForm({ ...completeForm, invoiceDueDate: e.target.value });
+                      if (formErrors.invoiceDueDate) {
+                        setFormErrors({ ...formErrors, invoiceDueDate: '' });
+                      }
+                    }}
+                    className={formErrors.invoiceDueDate ? 'input-error' : ''}
+                  />
+                  {formErrors.invoiceDueDate && (
+                    <span className="error-message">{formErrors.invoiceDueDate}</span>
+                  )}
                 </div>
                 <div className="complete-form-actions">
                   <button
@@ -689,7 +802,7 @@ export default function RepairRequestsList() {
                     type="button"
                     className="btn-submit"
                     onClick={handleCompleteSubmit}
-                    disabled={updatingId === completingRequest._id || !completeForm.cost}
+                    disabled={updatingId === completingRequest._id || !completeForm.invoiceTotalAmount}
                   >
                     {updatingId === completingRequest._id ? 'Đang xử lý...' : 'Hoàn thành'}
                   </button>
