@@ -176,14 +176,23 @@
   gap: 8px;
 }
 
-.btn-view-detail {
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid #cbd5f5;
-  background-color: #eff6ff;
-  color: #1d4ed8;
+.repair-requests-page .btn-view-detail {
+  padding: 0;
+  border: none !important;
+  background-color: transparent !important;
+  border-radius: 0 !important;
+  min-width: auto !important;
+  color: #2563eb !important; /* ép màu xanh như ảnh 2 */
   font-size: 12px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.repair-requests-page .btn-view-detail:hover {
+  color: #1d4ed8 !important;
+  background-color: transparent !important;
 }
 
 .status-dropdown {
@@ -269,6 +278,7 @@
   align-items: center;
   justify-content: center;
   z-index: 50;
+  animation: fadeInOverlay 0.18s ease-out;
 }
 
 .repair-modal {
@@ -279,6 +289,28 @@
   max-height: 90vh;
   overflow: hidden;
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+  transform-origin: center top;
+  animation: fadeInModal 0.2s ease-out;
+}
+
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInModal {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .repair-modal-header {
@@ -380,6 +412,75 @@
   max-height: 100%;
   object-fit: contain;
   display: block;
+}
+
+/* Cập nhật trạng thái trong modal chi tiết */
+.detail-status-actions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.detail-status-actions-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.detail-status-actions-select-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.detail-status-select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  background-color: #ffffff;
+  cursor: pointer;
+  min-width: auto;
+  width: auto; /* rộng vừa nội dung */
+}
+
+.detail-status-select:focus {
+  outline: none;
+  border-color: #3579c6;
+  box-shadow: 0 0 0 2px rgba(53, 121, 198, 0.15);
+}
+
+.detail-status-done-btn {
+  margin-left: auto;
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  background-color: #16a34a;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.detail-status-done-btn:hover {
+  background-color: #15803d;
+}
+
+.detail-status-done-btn:active {
+  background-color: #166534;
+}
+
+.detail-status-updating {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.detail-status-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6b7280;
 }
 
 /* Modal hoàn thành yêu cầu */

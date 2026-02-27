@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Eye } from 'lucide-react';
 import { requestService } from '../../services/requestService';
 import './RepairRequestsList.css';
 
@@ -443,7 +444,11 @@ export default function RepairRequestsList() {
                     </td>
                     <td>
                       <span className={`status-badge status-${r.status.toLowerCase()}`}>
-                        {r.status}
+                        {r.status === 'Pending'
+                          ? 'Chờ xử lý'
+                          : r.status === 'Processing'
+                          ? 'Đang xử lý'
+                          : 'Đã xử lý'}
                       </span>
                     </td>
                     <td>
@@ -467,54 +472,10 @@ export default function RepairRequestsList() {
                           type="button"
                           className="btn-view-detail"
                           onClick={() => handleViewDetail(r)}
+                          title="Xem chi tiết"
                         >
-                          Xem chi tiết
+                          <Eye size={18} />
                         </button>
-                        <div className="status-dropdown">
-                          <button
-                            type="button"
-                            className={`status-toggle ${
-                              r.status === 'Done'
-                                ? 'btn-done'
-                                : r.status === 'Processing'
-                                ? 'btn-processing'
-                                : 'btn-pending'
-                            }`}
-                            onClick={() => handleToggleMenu(r._id)}
-                            disabled={updatingId === r._id}
-                          >
-                            {updatingId === r._id
-                              ? 'Đang cập nhật...'
-                              : r.status === 'Pending'
-                              ? 'Chờ xử lý'
-                              : r.status === 'Processing'
-                              ? 'Đang xử lý'
-                              : 'Đã xử lý'}
-                          </button>
-                          {openMenuId === r._id && (
-                            <div className="status-menu">
-                              {(['Pending', 'Processing', 'Done'] as const).map((status) => (
-                                <button
-                                  key={status}
-                                  type="button"
-                                  className={`status-menu-item${
-                                    r.status === status ? ' status-menu-item--active' : ''
-                                  }`}
-                                  disabled={updatingId === r._id || r.status === status}
-                                  onClick={() =>
-                                    r.status === status ? undefined : handleUpdateStatus(r, status)
-                                  }
-                                >
-                                  {status === 'Pending'
-                                    ? 'Chờ xử lý'
-                                    : status === 'Processing'
-                                    ? 'Đang xử lý'
-                                    : 'Đã xử lý'}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
                       </div>
                     </td>
                   </tr>
@@ -580,7 +541,11 @@ export default function RepairRequestsList() {
                     <span
                       className={`status-badge status-${selectedRequest.status.toLowerCase()}`}
                     >
-                      {selectedRequest.status}
+                      {selectedRequest.status === 'Pending'
+                        ? 'Chờ xử lý'
+                        : selectedRequest.status === 'Processing'
+                        ? 'Đang xử lý'
+                        : 'Đã xử lý'}
                     </span>
                   </span>
                 </div>
@@ -617,6 +582,47 @@ export default function RepairRequestsList() {
                     </span>
                   </div>
                 )}
+                <div className="detail-status-actions">
+                  <div className="detail-status-actions-header">
+                    <span className="detail-label">Tình trạng xử lý</span>
+                  </div>
+                  <div className="detail-status-actions-select-row">
+                    <select
+                      className="detail-status-select"
+                      value={selectedRequest.status}
+                      onChange={(e) =>
+                        handleUpdateStatus(
+                          selectedRequest,
+                          e.target.value as 'Pending' | 'Processing' | 'Done',
+                        )
+                      }
+                      disabled={updatingId === selectedRequest._id}
+                    >
+                      <option value="Pending" disabled={selectedRequest.status === 'Pending'}>
+                        Chờ xử lý
+                      </option>
+                      <option
+                        value="Processing"
+                        disabled={selectedRequest.status === 'Processing'}
+                      >
+                        Đang xử lý
+                      </option>
+                      <option value="Done" disabled={selectedRequest.status === 'Done'}>
+                        Đã xử lý
+                      </option>
+                    </select>
+                    <button
+                      type="button"
+                      className="detail-status-done-btn"
+                      onClick={handleCloseDetail}
+                    >
+                      Xong
+                    </button>
+                    {updatingId === selectedRequest._id && (
+                      <span className="detail-status-updating">Đang cập nhật...</span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

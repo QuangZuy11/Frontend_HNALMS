@@ -54,6 +54,7 @@ import ManagerProfile from "./pages/Dashboard/ManagerProfile";
 import ManageService from "./pages/ServiceManagement/ManageService";
 import RepairRequestsList from "./pages/RequestManagement/RepairRequestsList";
 import ManagerInvoice from "./pages/InvoiceManagement/InvoiceManage";
+import ComplaintRequestList from "./pages/RequestManagement/ComplaintRequestlist";
 
 // Pages - Accountant Dashboard
 import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
@@ -199,6 +200,7 @@ function LayoutWrapper() {
           <Route path="residents/:id" element={<TenantAccountDetail />} />
           <Route path="services" element={<ManageService />} />
           <Route path="requests/repairs" element={<RepairRequestsList />} />
+          <Route path="requests/complaints" element={<ComplaintRequestList />} />
           <Route path="profile" element={<ManagerProfile />} />
           <Route path="contracts" element={<ContractList />} />
           <Route path="contracts/create" element={<CreateContract />} />
