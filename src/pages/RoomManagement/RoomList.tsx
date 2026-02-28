@@ -24,6 +24,7 @@ interface Room {
     images: string[];
   };
   description?: string;
+  contractEndDate?: string;
   // mapped props
   title: string;
   floor: string;
@@ -50,6 +51,7 @@ export default function RoomList() {
     selectedRoomTypes: [],
     selectedStatus: [],
   });
+  const [sidebarManualOpen, setSidebarManualOpen] = useState(false);
 
   const [defaultFloorId, setDefaultFloorId] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -89,23 +91,23 @@ export default function RoomList() {
   // Get floor label from floorsData instead of rooms (works even when no rooms match)
   const currentFloorLabel = showFloorMap
     ? (() => {
-        const selectedFloor = floorsData.find(
-          (f) => f._id === filters.selectedFloors[0],
-        );
-        if (selectedFloor) {
-          const name = selectedFloor.name;
-          // Check if name already starts with "Tầng"
-          if (name.toLowerCase().startsWith("tầng")) {
-            return name;
-          }
-          return `Tầng ${name}`;
+      const selectedFloor = floorsData.find(
+        (f) => f._id === filters.selectedFloors[0],
+      );
+      if (selectedFloor) {
+        const name = selectedFloor.name;
+        // Check if name already starts with "Tầng"
+        if (name.toLowerCase().startsWith("tầng")) {
+          return name;
         }
-        // Fallback to room data if floorsData not available
-        const roomFloorLabel = rooms.find(
-          (r) => r.floorId?._id === filters.selectedFloors[0],
-        )?.floorLabel;
-        return roomFloorLabel || "";
-      })()
+        return `Tầng ${name}`;
+      }
+      // Fallback to room data if floorsData not available
+      const roomFloorLabel = rooms.find(
+        (r) => r.floorId?._id === filters.selectedFloors[0],
+      )?.floorLabel;
+      return roomFloorLabel || "";
+    })()
     : "";
 
   useEffect(() => {
@@ -131,25 +133,37 @@ export default function RoomList() {
         let filteredRooms = response.data || [];
 
         // Transform backend data to match frontend expectations
-        const transformedRooms = filteredRooms.map((room: any) => ({
-          ...room,
-          title: room.name,
-          floor: room.floorId?.name || "N/A",
-          floorLabel: (room.floorId?.name || "")
-            .toLowerCase()
-            .startsWith("tầng")
-            ? room.floorId?.name
-            : `Tầng ${room.floorId?.name || "N/A"}`,
-          price: room.roomTypeId?.currentPrice || 0,
-          priceLabel: room.roomTypeId?.currentPrice
-            ? `${(room.roomTypeId.currentPrice / 1000000).toFixed(1)}M`
-            : "Chưa có giá",
-          area: room.roomTypeId?.area || 30,
-          capacity: room.roomTypeId?.personMax || 2,
-          description: room.description || room.roomTypeId?.description || "",
-          amenities: [],
-          images: room.roomTypeId?.images || [],
-        }));
+        const transformedRooms = filteredRooms.map((room: any) => {
+          let priceNum = 0;
+          if (room.roomTypeId && typeof room.roomTypeId.currentPrice === "object" && room.roomTypeId.currentPrice.$numberDecimal) {
+            priceNum = parseFloat(room.roomTypeId.currentPrice.$numberDecimal);
+          } else if (typeof room.roomTypeId?.currentPrice === "number") {
+            priceNum = room.roomTypeId.currentPrice;
+          } else if (typeof room.price === "number") {
+            priceNum = room.price;
+          }
+
+          return {
+            ...room,
+            title: room.name,
+            floor: room.floorId?.name || "N/A",
+            floorLabel: (room.floorId?.name || "")
+              .toLowerCase()
+              .startsWith("tầng")
+              ? room.floorId?.name
+              : `Tầng ${room.floorId?.name || "N/A"}`,
+            price: priceNum,
+            priceLabel: priceNum > 0
+              ? `${(priceNum / 1000000).toFixed(1)}M`
+              : "Chưa có giá",
+            area: room.roomTypeId?.area || 30,
+            capacity: room.roomTypeId?.personMax || 2,
+            description: room.description || room.roomTypeId?.description || "",
+            amenities: [],
+            images: room.roomTypeId?.images || [],
+            contractEndDate: room.contractEndDate || null,
+          };
+        });
 
         let currentFloorRooms: Room[] = [];
         let displayRooms = transformedRooms;
@@ -201,23 +215,58 @@ export default function RoomList() {
     });
   };
 
+  // Auto-collapse sidebar when split-view (type detail) is active
+  const sidebarCollapsed = showTypeDetail && !sidebarManualOpen;
+
   return (
     <div className="room-list-page">
       <div className="container">
         <div className="content-layout">
-          <aside className="filters-sidebar">
+          {/* Toggle button visible when sidebar is collapsed */}
+          {sidebarCollapsed && (
+            <button
+              className="filters-toggle-btn"
+              onClick={() => setSidebarManualOpen(true)}
+              title="Hiện bộ lọc"
+            >
+              <span className="toggle-icon">☰</span>
+              BỘ LỌC
+            </button>
+          )}
+
+          <aside className={`filters-sidebar ${sidebarCollapsed ? "collapsed" : ""}`}>
+            {/* Close button when manually opened in split-view */}
+            {showTypeDetail && sidebarManualOpen && (
+              <button
+                onClick={() => setSidebarManualOpen(false)}
+                style={{
+                  alignSelf: "flex-end",
+                  background: "#ef4444",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "0.375rem",
+                  padding: "0.25rem 0.75rem",
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  marginBottom: "0.25rem",
+                }}
+              >
+                ✕ Ẩn bộ lọc
+              </button>
+            )}
             <RoomFilters
               selectedFloors={filters.selectedFloors}
               onFloorsChange={(value) =>
-                setFilters({ ...filters, selectedFloors: value })
+                setFilters((prev) => ({ ...prev, selectedFloors: value }))
               }
               selectedRoomTypes={filters.selectedRoomTypes}
               onRoomTypesChange={(value) =>
-                setFilters({ ...filters, selectedRoomTypes: value })
+                setFilters((prev) => ({ ...prev, selectedRoomTypes: value }))
               }
               selectedStatus={filters.selectedStatus}
               onStatusChange={(value) =>
-                setFilters({ ...filters, selectedStatus: value })
+                setFilters((prev) => ({ ...prev, selectedStatus: value }))
               }
               onResetFilters={handleResetFilters}
             />
@@ -246,8 +295,8 @@ export default function RoomList() {
               <>
                 {/* Case: Floor selected + Room Type selected + No rooms match -> Show "No rooms found" instead of empty map */}
                 {showFloorMap &&
-                filters.selectedRoomTypes.length > 0 &&
-                rooms.length === 0 ? (
+                  filters.selectedRoomTypes.length > 0 &&
+                  rooms.length === 0 ? (
                   <div className="empty-state">
                     <p>Không có phòng loại này tại {currentFloorLabel}</p>
                   </div>
@@ -257,7 +306,7 @@ export default function RoomList() {
                     style={{
                       display: "grid",
                       gridTemplateColumns: "minmax(0, 1fr) 320px",
-                      gap: "1rem",
+                      gap: "0.75rem",
                       alignItems: "start",
                     }}
                   >
@@ -268,7 +317,6 @@ export default function RoomList() {
                         }
                         highlightedRooms={rooms}
                         floorName={currentFloorLabel || `Tầng`}
-                        compact={true}
                       />
                     ) : currentFloorLabel.includes("3") ? (
                       <FloorMapLevel3
@@ -277,7 +325,6 @@ export default function RoomList() {
                         }
                         highlightedRooms={rooms}
                         floorName={currentFloorLabel || `Tầng`}
-                        compact={true}
                       />
                     ) : currentFloorLabel.includes("4") ? (
                       <FloorMapLevel4
@@ -286,7 +333,6 @@ export default function RoomList() {
                         }
                         highlightedRooms={rooms}
                         floorName={currentFloorLabel || `Tầng`}
-                        compact={true}
                       />
                     ) : currentFloorLabel.includes("5") ? (
                       <FloorMapLevel5
@@ -295,7 +341,6 @@ export default function RoomList() {
                         }
                         highlightedRooms={rooms}
                         floorName={currentFloorLabel || `Tầng`}
-                        compact={true}
                       />
                     ) : (
                       <FloorMap

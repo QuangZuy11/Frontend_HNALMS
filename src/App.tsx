@@ -30,6 +30,7 @@ import {
 // Pages - Guest (Public - No Login Required)
 import RoomList from "./pages/RoomManagement/RoomList";
 import RoomDetail from "./pages/RoomManagement/DetailRoom/RoomDetail";
+import BookingPage from "./pages/RoomManagement/Booking/BookingPage";
 import BuildingRulesPublic from "./pages/BuildingInformation/BuildingRulesPublic";
 
 // Pages - Auth
@@ -111,6 +112,7 @@ function LayoutWrapper() {
         {/* Room List & Detail */}
         <Route path="/rooms" element={<><Header /><RoomList /></>} />
         <Route path="/rooms/:id" element={<><Header /><RoomDetail /></>} />
+        <Route path="/rooms/:id/booking" element={<><Header /><BookingPage /></>} />
 
         {/* Building Rules Public */}
         <Route path="/rules" element={<><Header /><BuildingRulesPublic /></>} />

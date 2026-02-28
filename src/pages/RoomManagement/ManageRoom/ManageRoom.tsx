@@ -1,5 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import axios from "axios";
+import { Tabs, Tab, Box } from "@mui/material";
+
+// Floor Maps
+import FloorMap from "../RoomList/components/FloorMap";
+import FloorMapLevel2 from "../RoomList/components/FloorMapLevel2";
+import FloorMapLevel3 from "../RoomList/components/FloorMapLevel3";
+import FloorMapLevel4 from "../RoomList/components/FloorMapLevel4";
+import FloorMapLevel5 from "../RoomList/components/FloorMapLevel5";
+import "../RoomList/components/FloorMap.css";
 import {
   Plus,
   Edit,
@@ -17,6 +26,8 @@ import {
   Power,
   Download,
   FileSpreadsheet,
+  List as ListIcon,
+  Map as MapIcon,
 } from "lucide-react";
 import "./ManageRoom.css";
 
@@ -58,6 +69,10 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const [floors, setFloors] = useState<Floor[]>([]);
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // View Mode
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const [activeMapFloor, setActiveMapFloor] = useState(0);
 
   // [MỚI] Ref cho input file ẩn
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -111,6 +126,44 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     fetchData();
   }, []);
 
+  const getRoomTypeDetail = (idOrObj: string | RoomType | any) => {
+    if (typeof idOrObj === "object" && idOrObj !== null) {
+      if (idOrObj.typeName) return idOrObj as RoomType;
+      return roomTypes.find((t) => t._id === idOrObj._id);
+    }
+    return roomTypes.find((t) => t._id === idOrObj);
+  };
+
+  const getFloorName = (idOrObj: string | Floor) => {
+    if (typeof idOrObj === "object") return idOrObj.name;
+    return floors.find((f) => f._id === idOrObj)?.name || "---";
+  };
+
+  // Prepare rooms for map view with parsed prices to avoid NaNk
+  const mappedRoomsForMap = useMemo(() => {
+    return rooms.map((room: any) => {
+      let priceNum = 0;
+      const rType = typeof room.roomTypeId === "object" ? room.roomTypeId : getRoomTypeDetail(room.roomTypeId);
+
+      if (rType && typeof rType.currentPrice === "object" && rType.currentPrice.$numberDecimal) {
+        priceNum = parseFloat(rType.currentPrice.$numberDecimal);
+      } else if (typeof rType?.currentPrice === "number") {
+        priceNum = rType.currentPrice;
+      } else if (typeof room.price === "number") {
+        priceNum = room.price;
+      }
+
+      return {
+        ...room,
+        price: priceNum,
+        priceLabel: priceNum > 0
+          ? `${(priceNum / 1000000).toFixed(1)}M`
+          : "Chưa có giá",
+        floorLabel: getFloorName(room.floorId)
+      };
+    });
+  }, [rooms, roomTypes, floors]);
+
   // --- TÍNH TOÁN THỐNG KÊ ---
   const totalFloors = floors.length;
   const totalRooms = rooms.length;
@@ -123,19 +176,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         ? prev.filter((id) => id !== floorId)
         : [...prev, floorId],
     );
-  };
-
-  const getRoomTypeDetail = (idOrObj: string | RoomType | any) => {
-    if (typeof idOrObj === "object" && idOrObj !== null) {
-      if (idOrObj.typeName) return idOrObj as RoomType;
-      return roomTypes.find((t) => t._id === idOrObj._id);
-    }
-    return roomTypes.find((t) => t._id === idOrObj);
-  };
-
-  const getFloorName = (idOrObj: string | Floor) => {
-    if (typeof idOrObj === "object") return idOrObj.name;
-    return floors.find((f) => f._id === idOrObj)?.name || "---";
   };
 
   const formatCurrency = (amount: any) => {
@@ -358,195 +398,299 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
 
       {/* THANH CÔNG CỤ (TOOLBAR) - Ẩn khi readOnly */}
       {!readOnly && (
-        <div className="toolbar-actions">
-          {/* [MỚI] Button Tải Mẫu */}
-          <button className="btn-secondary" onClick={handleDownloadTemplate}>
-            <Download size={18} /> Tải mẫu Excel
-          </button>
+        <div className="toolbar-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+          {/* VIEW TOGGLE */}
+          <div style={{ display: "flex", background: "#fff", borderRadius: "8px", border: "1px solid #ddd", padding: "4px", marginRight: 'auto' }}>
+            <button
+              onClick={() => setViewMode("list")}
+              style={{
+                display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", border: "none", borderRadius: "4px",
+                cursor: "pointer", background: viewMode === "list" ? "#3579C6" : "transparent",
+                color: viewMode === "list" ? "#fff" : "#666", fontWeight: viewMode === "list" ? "bold" : "normal"
+              }}
+            >
+              <ListIcon size={16} /> Danh sách
+            </button>
+            <button
+              onClick={() => setViewMode("map")}
+              style={{
+                display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", border: "none", borderRadius: "4px",
+                cursor: "pointer", background: viewMode === "map" ? "#3579C6" : "transparent",
+                color: viewMode === "map" ? "#fff" : "#666", fontWeight: viewMode === "map" ? "bold" : "normal"
+              }}
+            >
+              <MapIcon size={16} /> Sơ đồ
+            </button>
+          </div>
 
-          {/* [MỚI] Button Nhập File */}
-          <button className="btn-success" onClick={triggerFileInput}>
-            <FileSpreadsheet size={18} /> Nhập Excel
-          </button>
-          {/* Input ẩn */}
-          <input
-            type="file"
-            ref={fileInputRef}
-            style={{ display: "none" }}
-            accept=".xlsx, .xls"
-            onChange={handleFileUpload}
-          />
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            {/* [MỚI] Button Tải Mẫu */}
+            <button className="btn-secondary" onClick={handleDownloadTemplate}>
+              <Download size={18} /> Tải mẫu Excel
+            </button>
 
-          {/* Button Thêm thủ công */}
-          <button className="btn-primary" onClick={handleOpenAdd}>
-            <Plus size={18} /> Thêm phòng mới
-          </button>
+            {/* [MỚI] Button Nhập File */}
+            <button className="btn-success" onClick={triggerFileInput}>
+              <FileSpreadsheet size={18} /> Nhập Excel
+            </button>
+            {/* Input ẩn */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: "none" }}
+              accept=".xlsx, .xls"
+              onChange={handleFileUpload}
+            />
+
+            {/* Button Thêm thủ công */}
+            <button className="btn-primary" onClick={handleOpenAdd}>
+              <Plus size={18} /> Thêm phòng mới
+            </button>
+          </div>
         </div>
       )}
 
-      <div className="floor-list-container">
-        {floors.length === 0 && !loading && (
-          <div className="empty-floor">Chưa có dữ liệu tầng.</div>
-        )}
+      {/* VIEW TOGGLE KHI READONLY CHỈ CÓ NÚT TOGGLE */}
+      {readOnly && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1rem" }}>
+          <div style={{ display: "flex", background: "#fff", borderRadius: "8px", border: "1px solid #ddd", padding: "4px" }}>
+            <button
+              onClick={() => setViewMode("list")}
+              style={{
+                display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", border: "none", borderRadius: "4px",
+                cursor: "pointer", background: viewMode === "list" ? "#3579C6" : "transparent",
+                color: viewMode === "list" ? "#fff" : "#666", fontWeight: viewMode === "list" ? "bold" : "normal"
+              }}
+            >
+              <ListIcon size={16} /> Danh sách
+            </button>
+            <button
+              onClick={() => setViewMode("map")}
+              style={{
+                display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", border: "none", borderRadius: "4px",
+                cursor: "pointer", background: viewMode === "map" ? "#3579C6" : "transparent",
+                color: viewMode === "map" ? "#fff" : "#666", fontWeight: viewMode === "map" ? "bold" : "normal"
+              }}
+            >
+              <MapIcon size={16} /> Sơ đồ
+            </button>
+          </div>
+        </div>
+      )}
 
-        {floors.map((floor) => {
-          const floorRooms = rooms.filter((r) => {
-            const fId =
-              typeof r.floorId === "object" ? r.floorId._id : r.floorId;
-            return fId === floor._id;
-          });
+      {viewMode === "list" ? (
+        <div className="floor-list-container">
+          {floors.length === 0 && !loading && (
+            <div className="empty-floor">Chưa có dữ liệu tầng.</div>
+          )}
 
-          const isExpanded = expandedFloors.includes(floor._id);
+          {floors.map((floor) => {
+            const floorRooms = rooms.filter((r) => {
+              const fId =
+                typeof r.floorId === "object" ? r.floorId._id : r.floorId;
+              return fId === floor._id;
+            });
 
-          return (
-            <div key={floor._id} className="floor-group">
-              <div
-                className={`floor-header ${isExpanded ? "active" : ""}`}
-                onClick={() => toggleFloor(floor._id)}
-              >
-                <div className="floor-title">
-                  {isExpanded ? (
-                    <ChevronDown size={20} />
-                  ) : (
-                    <ChevronRight size={20} />
-                  )}
-                  <span>{floor.name}</span>
-                  <span className="room-count-badge">
-                    {floorRooms.length} phòng
-                  </span>
+            const isExpanded = expandedFloors.includes(floor._id);
+
+            return (
+              <div key={floor._id} className="floor-group">
+                <div
+                  className={`floor-header ${isExpanded ? "active" : ""}`}
+                  onClick={() => toggleFloor(floor._id)}
+                >
+                  <div className="floor-title">
+                    {isExpanded ? (
+                      <ChevronDown size={20} />
+                    ) : (
+                      <ChevronRight size={20} />
+                    )}
+                    <span>{floor.name}</span>
+                    <span className="room-count-badge">
+                      {floorRooms.length} phòng
+                    </span>
+                  </div>
                 </div>
+
+                {isExpanded && (
+                  <div className="floor-body">
+                    {floorRooms.length > 0 ? (
+                      <table className="room-table">
+                        <thead>
+                          <tr>
+                            <th style={{ width: "100px" }}>Mã phòng</th>
+                            <th style={{ width: "150px" }}>Tên phòng</th>
+                            <th style={{ width: "150px" }}>Loại phòng</th>
+                            <th style={{ width: "120px" }}>Giá niêm yết</th>
+                            <th style={{ width: "120px" }}>Trạng thái</th>
+                            <th>Mô tả</th>
+                            <th
+                              style={{
+                                width: readOnly ? "80px" : "140px",
+                                textAlign: "center",
+                              }}
+                            >
+                              Thao tác
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {floorRooms.map((room) => {
+                            const typeDetail = getRoomTypeDetail(room.roomTypeId);
+                            const rowOpacity = room.isActive ? 1 : 0.5;
+
+                            return (
+                              <tr key={room._id} style={{ opacity: rowOpacity }}>
+                                <td
+                                  style={{
+                                    fontFamily: "monospace",
+                                    color: "#64748b",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  {room.roomCode || "---"}
+                                </td>
+
+                                <td className="font-bold">{room.name}</td>
+
+                                <td>
+                                  {typeDetail ? (
+                                    typeDetail.typeName
+                                  ) : (
+                                    <span style={{ color: "red" }}>Lỗi</span>
+                                  )}
+                                </td>
+
+                                <td className="text-price">
+                                  {typeDetail
+                                    ? formatCurrency(typeDetail.currentPrice)
+                                    : "---"}
+                                </td>
+
+                                <td>{renderStatus(room.status)}</td>
+
+                                <td className="text-desc">
+                                  {room.description || (
+                                    <span className="text-muted-italic">
+                                      Không có mô tả
+                                    </span>
+                                  )}
+                                </td>
+
+                                <td>
+                                  <div className="action-group">
+                                    {/* Nút Power - Ẩn khi readOnly */}
+                                    {!readOnly && (
+                                      <button
+                                        className={`btn-icon-sm power ${room.isActive ? "active" : "inactive"}`}
+                                        onClick={() => handleToggleActive(room)}
+                                        title={
+                                          room.isActive
+                                            ? "Vô hiệu hóa"
+                                            : "Kích hoạt lại"
+                                        }
+                                      >
+                                        <Power size={16} />
+                                      </button>
+                                    )}
+
+                                    {/* Nút Xem chi tiết - Luôn hiện */}
+                                    <button
+                                      className="btn-icon-sm view"
+                                      onClick={() => handleViewDetail(room)}
+                                      title="Chi tiết"
+                                    >
+                                      <Eye size={16} />
+                                    </button>
+
+                                    {/* Nút Sửa - Ẩn khi readOnly */}
+                                    {!readOnly && (
+                                      <button
+                                        className="btn-icon-sm edit"
+                                        onClick={() => handleOpenEdit(room)}
+                                        title="Sửa"
+                                      >
+                                        <Edit size={16} />
+                                      </button>
+                                    )}
+
+                                    {/* Nút Xóa - Ẩn khi readOnly */}
+                                    {!readOnly && (
+                                      <button
+                                        className="btn-icon-sm delete"
+                                        onClick={() => handleDelete(room._id)}
+                                        title="Xóa"
+                                      >
+                                        <Trash2 size={16} />
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="empty-floor">
+                        Chưa có phòng nào ở tầng này.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="floor-map-view">
+          <Tabs
+            value={activeMapFloor}
+            onChange={(_, v) => setActiveMapFloor(v)}
+            sx={{ mb: 2, background: "#fff", borderRadius: "8px", border: "1px solid #eee" }}
+            variant="scrollable"
+          >
+            <Tab label="Tầng 1" />
+            <Tab label="Tầng 2" />
+            <Tab label="Tầng 3" />
+            <Tab label="Tầng 4" />
+            <Tab label="Tầng 5" />
+          </Tabs>
 
-              {isExpanded && (
-                <div className="floor-body">
-                  {floorRooms.length > 0 ? (
-                    <table className="room-table">
-                      <thead>
-                        <tr>
-                          <th style={{ width: "100px" }}>Mã phòng</th>
-                          <th style={{ width: "150px" }}>Tên phòng</th>
-                          <th style={{ width: "150px" }}>Loại phòng</th>
-                          <th style={{ width: "120px" }}>Giá niêm yết</th>
-                          <th style={{ width: "120px" }}>Trạng thái</th>
-                          <th>Mô tả</th>
-                          <th
-                            style={{
-                              width: readOnly ? "80px" : "140px",
-                              textAlign: "center",
-                            }}
-                          >
-                            Thao tác
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {floorRooms.map((room) => {
-                          const typeDetail = getRoomTypeDetail(room.roomTypeId);
-                          const rowOpacity = room.isActive ? 1 : 0.5;
-
-                          return (
-                            <tr key={room._id} style={{ opacity: rowOpacity }}>
-                              <td
-                                style={{
-                                  fontFamily: "monospace",
-                                  color: "#64748b",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                {room.roomCode || "---"}
-                              </td>
-
-                              <td className="font-bold">{room.name}</td>
-
-                              <td>
-                                {typeDetail ? (
-                                  typeDetail.typeName
-                                ) : (
-                                  <span style={{ color: "red" }}>Lỗi</span>
-                                )}
-                              </td>
-
-                              <td className="text-price">
-                                {typeDetail
-                                  ? formatCurrency(typeDetail.currentPrice)
-                                  : "---"}
-                              </td>
-
-                              <td>{renderStatus(room.status)}</td>
-
-                              <td className="text-desc">
-                                {room.description || (
-                                  <span className="text-muted-italic">
-                                    Không có mô tả
-                                  </span>
-                                )}
-                              </td>
-
-                              <td>
-                                <div className="action-group">
-                                  {/* Nút Power - Ẩn khi readOnly */}
-                                  {!readOnly && (
-                                    <button
-                                      className={`btn-icon-sm power ${room.isActive ? "active" : "inactive"}`}
-                                      onClick={() => handleToggleActive(room)}
-                                      title={
-                                        room.isActive
-                                          ? "Vô hiệu hóa"
-                                          : "Kích hoạt lại"
-                                      }
-                                    >
-                                      <Power size={16} />
-                                    </button>
-                                  )}
-
-                                  {/* Nút Xem chi tiết - Luôn hiện */}
-                                  <button
-                                    className="btn-icon-sm view"
-                                    onClick={() => handleViewDetail(room)}
-                                    title="Chi tiết"
-                                  >
-                                    <Eye size={16} />
-                                  </button>
-
-                                  {/* Nút Sửa - Ẩn khi readOnly */}
-                                  {!readOnly && (
-                                    <button
-                                      className="btn-icon-sm edit"
-                                      onClick={() => handleOpenEdit(room)}
-                                      title="Sửa"
-                                    >
-                                      <Edit size={16} />
-                                    </button>
-                                  )}
-
-                                  {/* Nút Xóa - Ẩn khi readOnly */}
-                                  {!readOnly && (
-                                    <button
-                                      className="btn-icon-sm delete"
-                                      onClick={() => handleDelete(room._id)}
-                                      title="Xóa"
-                                    >
-                                      <Trash2 size={16} />
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div className="empty-floor">
-                      Chưa có phòng nào ở tầng này.
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+          <Box sx={{ border: "1px solid #ddd", borderRadius: 2, overflow: "hidden", minHeight: "400px", background: "#fff" }}>
+            {activeMapFloor === 0 && (
+              <FloorMap
+                rooms={mappedRoomsForMap.filter(r => r.floorLabel === "1" || r.floorLabel === "Tầng 1" || r.name.startsWith("1"))}
+                onRoomSelect={(room) => readOnly ? handleViewDetail(room) : handleOpenEdit(room)}
+              />
+            )}
+            {activeMapFloor === 1 && (
+              <FloorMapLevel2
+                rooms={mappedRoomsForMap.filter(r => r.floorLabel === "2" || r.floorLabel === "Tầng 2" || r.name.startsWith("2"))}
+                onRoomSelect={(room) => readOnly ? handleViewDetail(room) : handleOpenEdit(room)}
+              />
+            )}
+            {activeMapFloor === 2 && (
+              <FloorMapLevel3
+                rooms={mappedRoomsForMap.filter(r => r.floorLabel === "3" || r.floorLabel === "Tầng 3" || r.name.startsWith("3"))}
+                onRoomSelect={(room) => readOnly ? handleViewDetail(room) : handleOpenEdit(room)}
+              />
+            )}
+            {activeMapFloor === 3 && (
+              <FloorMapLevel4
+                rooms={mappedRoomsForMap.filter(r => r.floorLabel === "4" || r.floorLabel === "Tầng 4" || r.name.startsWith("4"))}
+                onRoomSelect={(room) => readOnly ? handleViewDetail(room) : handleOpenEdit(room)}
+              />
+            )}
+            {activeMapFloor === 4 && (
+              <FloorMapLevel5
+                rooms={mappedRoomsForMap.filter(r => r.floorLabel === "5" || r.floorLabel === "Tầng 5" || r.name.startsWith("5"))}
+                onRoomSelect={(room) => readOnly ? handleViewDetail(room) : handleOpenEdit(room)}
+              />
+            )}
+          </Box>
+        </div>
+      )}
 
       {/* --- MODAL ADD/EDIT --- Ẩn khi readOnly */}
       {!readOnly && showModal && (
@@ -736,9 +880,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                   <span className="text-price">
                     {getRoomTypeDetail(viewingRoom.roomTypeId)
                       ? formatCurrency(
-                          getRoomTypeDetail(viewingRoom.roomTypeId)!
-                            .currentPrice,
-                        )
+                        getRoomTypeDetail(viewingRoom.roomTypeId)!
+                          .currentPrice,
+                      )
                       : "---"}
                   </span>
                 </div>

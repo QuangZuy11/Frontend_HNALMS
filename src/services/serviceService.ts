@@ -1,2 +1,9 @@
 // Service management API services
-export { }
+import api from "./api";
+
+export const serviceService = {
+    getServices: async (params?: any) => {
+        const response = await api.get("/services", { params });
+        return response.data;
+    },
+};

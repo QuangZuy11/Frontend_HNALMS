@@ -109,7 +109,7 @@ const CreateContract = () => {
             try {
                 const [roomsRes, servicesRes] = await Promise.all([
                     axios.get(`${API_URL}/rooms`),
-                    axios.get(`${API_URL}/services?type=Fixed&isActive=true`)
+                    axios.get(`${API_URL}/services?isActive=true`)
                 ]);
 
                 // Show all rooms (Occupied ones should be styled differently and unselectable)
@@ -127,13 +127,7 @@ const CreateContract = () => {
                 // Set available monthly services
                 const services = servicesRes.data.data || [];
                 setAvailableServices(services);
-                // Auto-select all services
-                setSelectedServices(services.map((s: ServiceItem) => ({
-                    serviceId: s._id,
-                    name: s.name,
-                    price: s.currentPrice,
-                    type: s.type
-                })));
+                // Note: We don't auto-select all services here anymore. The useEffect will enforce mandatory ones depending on the selected room.
 
                 if (preFilledRoomId) {
                     const room = mappedRooms?.find((r: any) => r._id === preFilledRoomId);
@@ -195,8 +189,58 @@ const CreateContract = () => {
         }
     }, [watchRoomId, rooms]);
 
+    // Enforce mandatory services based on room selection
+    useEffect(() => {
+        if (!selectedRoom || availableServices.length === 0) return;
+
+        const floorName = String(selectedRoom.floorId?.name || selectedRoom.floor?.name || selectedRoom.floorLabel || "").toLowerCase();
+        const isFloor1 = floorName === "1" || floorName === "tầng 1" || floorName.includes("tầng 1");
+
+        setSelectedServices(prev => {
+            let newSelected = [...prev];
+
+            availableServices.forEach(service => {
+                const nameLower = service.name.toLowerCase();
+                const isElevator = nameLower.includes("thang máy");
+
+                const isMandatory = nameLower.includes("điện") || nameLower.includes("nước") ||
+                    nameLower.includes("internet") || nameLower.includes("wifi") ||
+                    nameLower.includes("vệ sinh") ||
+                    (isElevator && !isFloor1);
+
+                const exists = newSelected.find(s => s.serviceId === service._id);
+
+                if (isMandatory && !exists) {
+                    newSelected.push({
+                        serviceId: service._id,
+                        name: service.name,
+                        price: service.currentPrice,
+                        type: service.type
+                    });
+                } else if (isElevator && isFloor1 && exists) {
+                    // Remove elevator from floor 1
+                    newSelected = newSelected.filter(s => s.serviceId !== service._id);
+                }
+            });
+
+            return newSelected;
+        });
+    }, [selectedRoom, availableServices]);
+
     // Service toggle handler
     const handleServiceToggle = (service: ServiceItem) => {
+        const floorName = String(selectedRoom?.floorId?.name || selectedRoom?.floor?.name || selectedRoom?.floorLabel || "").toLowerCase();
+        const isFloor1 = floorName === "1" || floorName === "tầng 1" || floorName.includes("tầng 1");
+        const nameLower = service.name.toLowerCase();
+        const isElevator = nameLower.includes("thang máy");
+
+        const isMandatory = nameLower.includes("điện") || nameLower.includes("nước") ||
+            nameLower.includes("internet") || nameLower.includes("wifi") ||
+            nameLower.includes("vệ sinh") ||
+            (isElevator && !isFloor1);
+
+        if (isMandatory) return; // Prevent toggling mandatory services
+        if (isElevator && isFloor1) return; // Prevent toggling elevator on floor 1
         setSelectedServices(prev => {
             const exists = prev.find(s => s.serviceId === service._id);
             if (exists) {
@@ -463,7 +507,42 @@ const CreateContract = () => {
                             </Typography>
                             <Grid container spacing={1} sx={{ pl: 3 }}>
                                 {availableServices.length > 0 ? (
-                                    availableServices.map((service) => {
+                                    availableServices.filter(service => {
+                                        const floorName = String(selectedRoom?.floorId?.name || selectedRoom?.floor?.name || selectedRoom?.floorLabel || "").toLowerCase();
+                                        const isFloor1 = floorName === "1" || floorName === "tầng 1" || floorName.includes("tầng 1");
+                                        const isElevator = service.name.toLowerCase().includes("thang máy");
+                                        if (isElevator && isFloor1) return false;
+                                        return true;
+                                    }).sort((a, b) => {
+                                        const floorName = String(selectedRoom?.floorId?.name || selectedRoom?.floor?.name || selectedRoom?.floorLabel || "").toLowerCase();
+                                        const isFloor1 = floorName === "1" || floorName === "tầng 1" || floorName.includes("tầng 1");
+
+                                        const getMandatoryStatus = (serviceName: string) => {
+                                            const nameLower = serviceName.toLowerCase();
+                                            const isElevator = nameLower.includes("thang máy");
+                                            return nameLower.includes("điện") || nameLower.includes("nước") ||
+                                                nameLower.includes("internet") || nameLower.includes("wifi") ||
+                                                nameLower.includes("vệ sinh") ||
+                                                (isElevator && !isFloor1);
+                                        };
+
+                                        const aMandatory = getMandatoryStatus(a.name);
+                                        const bMandatory = getMandatoryStatus(b.name);
+
+                                        if (aMandatory && !bMandatory) return -1;
+                                        if (!aMandatory && bMandatory) return 1;
+                                        return 0;
+                                    }).map((service) => {
+                                        const floorName = String(selectedRoom?.floorId?.name || selectedRoom?.floor?.name || selectedRoom?.floorLabel || "").toLowerCase();
+                                        const isFloor1 = floorName === "1" || floorName === "tầng 1" || floorName.includes("tầng 1");
+                                        const nameLower = service.name.toLowerCase();
+                                        const isElevator = nameLower.includes("thang máy");
+
+                                        const isMandatory = nameLower.includes("điện") || nameLower.includes("nước") ||
+                                            nameLower.includes("internet") || nameLower.includes("wifi") ||
+                                            nameLower.includes("vệ sinh") ||
+                                            (isElevator && !isFloor1);
+
                                         const selected = selectedServices.find(s => s.serviceId === service._id);
                                         return (
                                             <Grid size={{ xs: 12, md: 6 }} key={service._id}>
@@ -472,12 +551,14 @@ const CreateContract = () => {
                                                         control={
                                                             <Checkbox
                                                                 checked={!!selected}
+                                                                disabled={isMandatory}
                                                                 onChange={() => handleServiceToggle(service)}
                                                             />
                                                         }
                                                         label={
-                                                            <Typography sx={{ fontFamily: '"Times New Roman", serif', fontSize: '1.1rem' }}>
-                                                                {service.name} - <strong>{service.currentPrice.toLocaleString()}</strong> VNĐ/tháng
+                                                            <Typography sx={{ fontFamily: '"Times New Roman", serif', fontSize: '1.1rem', color: isMandatory ? 'text.secondary' : 'inherit' }}>
+                                                                {service.name} - <strong>{service.currentPrice.toLocaleString()}</strong> VNĐ/{service.type === "Extension" ? "đơn vị" : "tháng"}
+                                                                {isMandatory && <span style={{ color: '#d32f2f', fontSize: '0.9rem', marginLeft: '6px' }}>(Bắt buộc)</span>}
                                                             </Typography>
                                                         }
                                                     />
