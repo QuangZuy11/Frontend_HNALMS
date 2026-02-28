@@ -78,6 +78,10 @@ const CreateContract = () => {
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // FPT OCR State
+    const [ocrLoading, setOcrLoading] = useState(false);
+    const ocrFileInputRef = useRef<HTMLInputElement>(null);
+
     const { control, handleSubmit, watch, setValue, register, formState: { errors } } = useForm<ContractFormValues>({
         mode: "onChange",
         defaultValues: {
@@ -256,6 +260,61 @@ const CreateContract = () => {
         });
     };
 
+    // FPT.AI OCR upload handler
+    const handleOcrUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        setOcrLoading(true);
+        try {
+            const formData = new FormData();
+            formData.append("image", files[0]);
+
+            const res = await axios.post("https://api.fpt.ai/vision/idr/vnm", formData, {
+                headers: {
+                    "api-key": "UJ4VXI9R2N49AIyl2TCnofOH31cJP4Rw",
+                    "Content-Type": "multipart/form-data"
+                }
+            });
+
+            if (res.data?.errorCode === 0 && res.data?.data && res.data.data.length > 0) {
+                const data = res.data.data[0];
+
+                // Set fields
+                if (data.name) setValue("tenantInfo.fullName", data.name, { shouldValidate: true });
+                if (data.id) setValue("tenantInfo.cccd", data.id, { shouldValidate: true });
+                if (data.address || data.home) setValue("tenantInfo.address", data.address || data.home, { shouldValidate: true });
+
+                if (data.sex) {
+                    const sexLower = data.sex.toLowerCase();
+                    if (sexLower.includes("nam")) {
+                        setValue("tenantInfo.gender", "Male", { shouldValidate: true });
+                    } else if (sexLower.includes("nữ")) {
+                        setValue("tenantInfo.gender", "Female", { shouldValidate: true });
+                    }
+                }
+
+                if (data.dob) {
+                    // Format from DD/MM/YYYY to YYYY-MM-DD
+                    const parts = data.dob.split("/");
+                    if (parts.length === 3) {
+                        const formattedDob = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                        setValue("tenantInfo.dob", formattedDob, { shouldValidate: true });
+                    }
+                }
+                alert("Đã nhận diện và điền tự động dữ liệu CCCD thành công!");
+            } else {
+                alert("Không thể nhận diện CCCD. Vui lòng thử lại với ảnh rõ nét hơn.");
+            }
+        } catch (err: any) {
+            console.error("OCR Error:", err);
+            alert("Lỗi khi kết nối tới FPT.AI: " + (err.response?.data?.errorMessage || err.message));
+        } finally {
+            setOcrLoading(false);
+            if (ocrFileInputRef.current) ocrFileInputRef.current.value = "";
+        }
+    };
+
     // Upload contract images handler
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
@@ -365,7 +424,26 @@ const CreateContract = () => {
 
                             {/* BEN B */}
                             <Box sx={{ mb: 2 }}>
-                                <Typography sx={{ fontWeight: 'bold', textDecoration: 'underline' }}>BÊN B (Bên thuê):</Typography>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                    <Typography sx={{ fontWeight: 'bold', textDecoration: 'underline' }}>BÊN B (Bên thuê):</Typography>
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        color="secondary"
+                                        startIcon={ocrLoading ? <CircularProgress size={16} /> : <CloudUploadIcon />}
+                                        onClick={() => ocrFileInputRef.current?.click()}
+                                        disabled={ocrLoading}
+                                    >
+                                        {ocrLoading ? 'Đang nhận diện...' : 'Quét CCCD (Tự động điền)'}
+                                    </Button>
+                                    <input
+                                        type="file"
+                                        accept="image/jpg,image/jpeg,image/png"
+                                        ref={ocrFileInputRef}
+                                        style={{ display: 'none' }}
+                                        onChange={handleOcrUpload}
+                                    />
+                                </Box>
                                 <Grid container spacing={1} alignItems="center">
                                     <Grid size={{ xs: 12, md: 6 }}>
                                         <TextField variant="standard" fullWidth placeholder="Họ và tên..."
