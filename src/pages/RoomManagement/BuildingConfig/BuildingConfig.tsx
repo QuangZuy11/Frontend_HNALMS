@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import toastr from 'toastr';
 import {
   Plus,
   Edit,
@@ -265,8 +266,8 @@ const BuildingConfig = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
-      if (oldImages.length + newFiles.length + filesArray.length > 10) {
-        alert("Tối đa 10 ảnh!");
+      if (oldImages.length + newFiles.length + filesArray.length > 7) {
+        toastr.warning("Chỉ được phép tải lên tối đa 7 ảnh!");
         return;
       }
       setNewFiles((prev) => [...prev, ...filesArray]);
@@ -287,32 +288,52 @@ const BuildingConfig = () => {
     });
   };
 
-  const handleSaveType = async (e: React.FormEvent) => {
+const handleSaveType = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const totalImages = oldImages.length + newFiles.length;
+    if (totalImages !== 7) {
+      toastr.warning(`Vui lòng cung cấp đủ 7 ảnh cho loại phòng. (Hiện đang có ${totalImages} ảnh)`);
+      return; 
+    }
+
     try {
       const formData = new FormData();
       formData.append("typeName", typeForm.typeName);
       formData.append("currentPrice", typeForm.currentPrice.toString());
       formData.append("personMax", typeForm.personMax.toString());
       formData.append("description", typeForm.description);
-      oldImages.forEach((url) => formData.append("images", url));
+      
+      // Gửi link ảnh cũ và file ảnh mới
+      oldImages.forEach((url) => formData.append("oldImages", url));
       newFiles.forEach((file) => formData.append("images", file));
 
-      const config = { headers: { "Content-Type": "multipart/form-data" } };
-      if (editingType) {
-        await axios.put(
-          `${API_BASE_URL}/roomtypes/${editingType._id}`,
-          formData,
-          config,
-        );
-      } else {
-        await axios.post(`${API_BASE_URL}/roomtypes`, formData, config);
+      const url = editingType
+        ? `${API_BASE_URL}/roomtypes/${editingType._id}`
+        : `${API_BASE_URL}/roomtypes`;
+      
+      const method = editingType ? "PUT" : "POST";
+
+      // 🚀 SỬ DỤNG NATIVE FETCH ĐỂ BYPASS LỖI AXIOS
+      const response = await fetch(url, {
+        method: method,
+        body: formData, // Fetch tự động xử lý multipart boundary cực chuẩn
+      });
+
+      const data = await response.json();
+
+      // Kiểm tra nếu server trả về lỗi (400, 500, ...)
+      if (!response.ok) {
+        throw new Error(data.message || data.error?.message || "Lỗi lưu loại phòng.");
       }
+
+      toastr.success(editingType ? "Cập nhật loại phòng thành công!" : "Thêm mới loại phòng thành công!");
       setShowTypeModal(false);
       fetchData();
+      
     } catch (error: any) {
-      console.error(error);
-      alert("Lỗi lưu loại phòng.");
+      console.error("Lỗi:", error);
+      toastr.error(error.message || "Lỗi hệ thống khi lưu loại phòng.");
     }
   };
 
@@ -635,9 +656,18 @@ const BuildingConfig = () => {
                 />
               </div>
               <div className="form-group">
-                <label>
-                  Hình ảnh ({oldImages.length + newFiles.length}/10)
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  Hình ảnh ({oldImages.length + newFiles.length}/7)
+                  <span style={{ color: '#ef4444', fontSize: '13px', fontWeight: 'normal' }}>
+                    *Bắt buộc đủ 7 ảnh
+                  </span>
                 </label>
+                
+                {/* [MỚI] Dòng lưu ý thứ tự ảnh cho người dùng */}
+                <div style={{ fontSize: '13px', color: '#0369a1', background: '#e0f2fe', padding: '8px 12px', borderRadius: '6px', marginBottom: '12px', border: '1px solid #bae6fd' }}>
+                  <strong>*Lưu ý quan trọng:</strong> Vui lòng upload 7 ảnh theo đúng thứ tự: <br/>
+                  (1) Ảnh tổng quan, (2) Ảnh bếp, (3) Ảnh giường, (4) Ảnh bàn học, (5) Ảnh ban công (view), (6) Ảnh nhà vệ sinh, (7) Ảnh tiện ích khác.
+                </div>
                 <div className="image-upload-container">
                   <div className="upload-btn-wrapper">
                     <button type="button" className="btn-upload">

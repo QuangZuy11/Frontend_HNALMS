@@ -25,13 +25,9 @@ const InvoiceManager = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Modals
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  // Modals (Đã bỏ Generate Modal)
   const [showReadingModal, setShowReadingModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false); // [MỚI] State mở chi tiết
-  
-  // Data for Generate Drafts
-  const [generateData, setGenerateData] = useState({ month: new Date().getMonth() + 1, year: new Date().getFullYear(), dueDate: '' });
+  const [showDetailModal, setShowDetailModal] = useState(false); 
   
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [services, setServices] = useState<any[]>([]);
@@ -66,14 +62,18 @@ const InvoiceManager = () => {
     finally { setLoading(false); }
   };
 
-  const handleGenerateDrafts = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // [SỬA LẠI] Gọi API trực tiếp không cần input
+  const handleGenerateDrafts = async () => {
+    if(!window.confirm("Hệ thống sẽ tự động tạo hóa đơn nháp cho tháng hiện tại. Bạn có chắc chắn muốn tiếp tục?")) return;
+    
     try {
-      const res = await axios.post(`${API_BASE_URL}/invoices/generate-drafts`, generateData);
-      toastr.success(res.data.message);
-      setShowGenerateModal(false);
+      // Không cần gửi body data nữa
+      const res = await axios.post(`${API_BASE_URL}/invoices/generate-drafts`);
+      toastr.success(res.data.message || "Khởi tạo hóa đơn thành công!");
       fetchInvoices();
-    } catch (error: any) { toastr.error(error.response?.data?.message || "Lỗi tạo hóa đơn"); }
+    } catch (error: any) { 
+      toastr.error(error.response?.data?.message || "Lỗi tạo hóa đơn"); 
+    }
   };
 
   // Mở form và TỰ ĐỘNG GỌI API LẤY CHỈ SỐ CŨ
@@ -112,7 +112,6 @@ const InvoiceManager = () => {
   };
 
   // Lưu song song Điện và Nước
-// Hàm handleSaveReading
   const handleSaveReading = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -124,7 +123,6 @@ const InvoiceManager = () => {
 
       // Kiểm tra nếu có nhập số điện
       if (elecService && dualReadingForm.elecNew > dualReadingForm.elecOld) {
-        // [SỬA LẠI] Không đẩy Promise chưa chạy vào mảng nữa, mà tạo object cấu hình
         apiCalls.push({
           roomId: rId,
           utilityId: elecService._id,
@@ -148,8 +146,7 @@ const InvoiceManager = () => {
         return;
       }
 
-      // [SỬA ĐỔI QUAN TRỌNG Ở ĐÂY] Chạy Vòng lặp tuần tự thay vì Promise.all
-      // Vòng lặp này đảm bảo API 1 chạy xong, DB lưu xong rồi mới chạy API 2
+      // Chạy Vòng lặp tuần tự thay vì Promise.all
       for (const payload of apiCalls) {
         await axios.post(`${API_BASE_URL}/meter-readings`, payload);
       }
@@ -171,7 +168,6 @@ const InvoiceManager = () => {
     } catch (error: any) { toastr.error(error.response?.data?.message || "Lỗi phát hành"); }
   };
 
-  // [MỚI] Hàm lấy dữ liệu và mở Modal xem chi tiết hóa đơn
   const handleViewDetail = async (id: string) => {
     try {
       const res = await axios.get(`${API_BASE_URL}/invoices/${id}`);
@@ -187,7 +183,7 @@ const InvoiceManager = () => {
 
   const filteredInvoices = invoices.filter(inv => inv.invoiceCode.includes(searchTerm) || inv.title.includes(searchTerm));
 
-  // --- RENDERING DỮ LIỆU ĐIỆN NƯỚC CHO FORM ---
+  // --- RENDERING DỮ LIỆN ĐIỆN NƯỚC CHO FORM ---
   const elecServiceInfo = services.find(s => ['điện', 'dien'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
   const waterServiceInfo = services.find(s => ['nước', 'nuoc'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
 
@@ -207,8 +203,9 @@ const InvoiceManager = () => {
             style={{ width: '100%', padding: '10px 10px 10px 36px', borderRadius: 8, border: '1px solid #e2e8f0' }}/>
         </div>
 
-        <button className="btn btn-primary" onClick={() => setShowGenerateModal(true)}>
-          <Plus size={18} /> Tạo Hóa Đơn Tháng
+        {/* [SỬA ĐỔI] Gắn trực tiếp hàm handleGenerateDrafts vào nút */}
+        <button className="btn btn-primary" onClick={handleGenerateDrafts}>
+          <Plus size={18} /> Tạo Hóa Đơn Tháng Này
         </button>
       </div>
 
@@ -250,7 +247,6 @@ const InvoiceManager = () => {
                         </button>
                       </>
                     )}
-                    {/* [SỬA ĐỔI] Gắn sự kiện mở chi tiết */}
                     <button className="btn-icon" title="Xem chi tiết" onClick={() => handleViewDetail(inv._id)}>
                       <FileText size={18} color="#475569" />
                     </button>
@@ -261,41 +257,6 @@ const InvoiceManager = () => {
           </tbody>
         </table>
       </div>
-
-      {/* MODAL 1: TẠO HÓA ĐƠN */}
-      {showGenerateModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>Tạo Hóa Đơn Định Kỳ</h3>
-              <button onClick={() => setShowGenerateModal(false)} className="btn-icon"><X size={20}/></button>
-            </div>
-            <form onSubmit={handleGenerateDrafts}>
-              <div className="modal-body">
-                <p style={{marginBottom: 16, color: '#64748b'}}>Hệ thống sẽ tự động tạo hóa đơn trạng thái <b>Bản Nháp</b> cho tất cả các phòng đang thuê.</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  <div className="form-group">
-                    <label>Tháng</label>
-                    <input type="number" min="1" max="12" required value={generateData.month} onChange={e => setGenerateData({...generateData, month: Number(e.target.value)})} />
-                  </div>
-                  <div className="form-group">
-                    <label>Năm</label>
-                    <input type="number" min="2020" required value={generateData.year} onChange={e => setGenerateData({...generateData, year: Number(e.target.value)})} />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>Hạn thanh toán</label>
-                  <input type="date" required value={generateData.dueDate} onChange={e => setGenerateData({...generateData, dueDate: e.target.value})} />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-outline" onClick={() => setShowGenerateModal(false)}>Hủy</button>
-                <button type="submit" className="btn btn-primary">Khởi tạo Hóa đơn</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* MODAL 2: NHẬP CHỈ SỐ ĐIỆN NƯỚC (FORM GỘP) */}
       {showReadingModal && selectedInvoice && (
@@ -368,7 +329,7 @@ const InvoiceManager = () => {
         </div>
       )}
 
-      {/* [MỚI] MODAL 3: CHI TIẾT HÓA ĐƠN */}
+      {/* MODAL 3: CHI TIẾT HÓA ĐƠN */}
       {showDetailModal && selectedInvoice && (
         <div className="modal-overlay">
           <div className="modal-content">
