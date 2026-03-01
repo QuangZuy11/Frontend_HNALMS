@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import {
-  Plus, Search, Droplet, Send, FileText, X, RotateCcw
+  Plus, Search, Droplet, Send, FileText, X, Edit3 // [ĐÃ SỬA] Thêm Edit3, Bỏ RotateCcw
 } from 'lucide-react';
 
-// [MỚI] Import icon cho tính năng Sắp xếp từ MUI
 import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -44,13 +43,11 @@ const InvoiceManager = () => {
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [filterType, setFilterType] = useState<string>('All');
 
-  // [MỚI] State lưu trạng thái sắp xếp
   const [sortConfig, setSortConfig] = useState<{ key: string | null, direction: 'asc' | 'desc' }>({ 
     key: null, 
     direction: 'asc' 
   });
 
-  // Modals
   const [showReadingModal, setShowReadingModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false); 
   const [showBulkReadingModal, setShowBulkReadingModal] = useState(false);
@@ -58,9 +55,10 @@ const InvoiceManager = () => {
   const [bulkData, setBulkData] = useState<Record<string, { eOld: number, eNew: number, wOld: number, wNew: number }>>({});
   const [occupiedRooms, setOccupiedRooms] = useState<any[]>([]);
 
+  // [ĐÃ SỬA] Bỏ UNDO_READING
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
-    action: 'GENERATE' | 'RELEASE' | 'UNDO_READING' | null;
+    action: 'GENERATE' | 'RELEASE' | null;
     targetId?: string;
     message: string;
   }>({ isOpen: false, action: null, message: '' });
@@ -72,8 +70,6 @@ const InvoiceManager = () => {
     elecOld: 0, elecNew: 0,
     waterOld: 0, waterNew: 0
   });
-
-  const [latestReadings, setLatestReadings] = useState<{elecId: string | null, waterId: string | null}>({ elecId: null, waterId: null });
 
   useEffect(() => {
     toastr.options = { closeButton: true, positionClass: "toast-top-right", timeOut: 3000 };
@@ -114,21 +110,21 @@ const InvoiceManager = () => {
     const rId = typeof invoice.roomId === 'object' ? invoice.roomId._id : invoice.roomId;
     
     setDualReadingForm({ elecOld: 0, elecNew: 0, waterOld: 0, waterNew: 0 });
-    setLatestReadings({ elecId: null, waterId: null }); 
     setShowReadingModal(true);
 
     const elecService = services.find(s => ['điện', 'dien'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
     const waterService = services.find(s => ['nước', 'nuoc'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
 
     let eOld = 0, wOld = 0;
-    let eId = null, wId = null;
+    // Lấy số liệu đang lưu trên DB để đưa vào ô "Chỉ số mới" cho người dùng dễ nhìn và sửa
+    let eCurrent = 0, wCurrent = 0;
 
     if (elecService) {
       try {
         const resE = await axios.get(`${API_BASE_URL}/meter-readings/latest?roomId=${rId}&utilityId=${elecService._id}`);
         if (resE.data?.data) {
-          eOld = resE.data.data.newIndex;
-          eId = resE.data.data._id; 
+          eOld = resE.data.data.oldIndex;
+          eCurrent = resE.data.data.newIndex; 
         }
       } catch (error) {}
     }
@@ -137,14 +133,13 @@ const InvoiceManager = () => {
       try {
         const resW = await axios.get(`${API_BASE_URL}/meter-readings/latest?roomId=${rId}&utilityId=${waterService._id}`);
         if (resW.data?.data) {
-          wOld = resW.data.data.newIndex;
-          wId = resW.data.data._id; 
+          wOld = resW.data.data.oldIndex;
+          wCurrent = resW.data.data.newIndex; 
         }
       } catch (error) {}
     }
 
-    setDualReadingForm({ elecOld: eOld, elecNew: eOld, waterOld: wOld, waterNew: wOld });
-    setLatestReadings({ elecId: eId, waterId: wId });
+    setDualReadingForm({ elecOld: eOld, elecNew: eCurrent, waterOld: wOld, waterNew: wCurrent });
   };
 
   const handleSaveReading = async (e: React.FormEvent) => {
@@ -165,7 +160,7 @@ const InvoiceManager = () => {
       }
 
       if (apiCalls.length === 0) {
-        toastr.warning("Vui lòng nhập chỉ số mới lớn hơn chỉ số cũ!");
+        toastr.warning("Vui lòng nhập chỉ số mới lớn hơn hoặc bằng chỉ số cũ!");
         return;
       }
 
@@ -173,23 +168,11 @@ const InvoiceManager = () => {
         await axios.post(`${API_BASE_URL}/meter-readings`, payload);
       }
       
-      toastr.success("Lưu chỉ số điện/nước thành công!");
+      toastr.success("Cập nhật chỉ số điện/nước thành công!");
       setShowReadingModal(false);
       fetchInvoices(); 
     } catch (error: any) { 
       toastr.error(error.response?.data?.message || "Lỗi lưu chỉ số"); 
-    }
-  };
-
-  const handleUndoReading = async (readingId: string) => {
-    try {
-      await axios.delete(`${API_BASE_URL}/meter-readings/${readingId}`);
-      toastr.success("Đã hoàn tác lần chốt số bị sai. Vui lòng nhập lại số mới.");
-      if (selectedInvoice) {
-        handleOpenReading(selectedInvoice);
-      }
-    } catch (error) {
-      toastr.error("Không thể hoàn tác lần chốt số này.");
     }
   };
 
@@ -293,8 +276,6 @@ const InvoiceManager = () => {
       await handleGenerateDrafts();
     } else if (confirmModal.action === 'RELEASE' && confirmModal.targetId) {
       await handleRelease(confirmModal.targetId);
-    } else if (confirmModal.action === 'UNDO_READING' && confirmModal.targetId) {
-      await handleUndoReading(confirmModal.targetId);
     }
     setConfirmModal({ isOpen: false, action: null, message: '' });
   };
@@ -316,9 +297,6 @@ const InvoiceManager = () => {
   
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('vi-VN');
 
-  // ==========================================
-  // [MỚI] HÀM YÊU CẦU SẮP XẾP (Đảo chiều)
-  // ==========================================
   const requestSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -327,11 +305,7 @@ const InvoiceManager = () => {
     setSortConfig({ key, direction });
   };
 
-  // ==========================================
-  // [MỚI] KẾT HỢP VỪA LỌC, TÌM KIẾM & SẮP XẾP DỮ LIỆU
-  // ==========================================
   const sortedAndFilteredInvoices = useMemo(() => {
-    // 1. Lọc trước
     const filtered = invoices.filter(inv => {
       const matchSearch = 
         inv.invoiceCode.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -341,25 +315,21 @@ const InvoiceManager = () => {
       return matchSearch && matchStatus && matchType;
     });
 
-    // 2. Sắp xếp sau khi đã lọc
     if (sortConfig.key !== null) {
       filtered.sort((a: any, b: any) => {
         let valA = a[sortConfig.key!];
         let valB = b[sortConfig.key!];
 
-        // Nếu là Phòng thì móc tên phòng ra để so sánh chữ cái
         if (sortConfig.key === 'roomId') {
           valA = typeof a.roomId === 'object' ? a.roomId.name : a.roomId;
           valB = typeof b.roomId === 'object' ? b.roomId.name : b.roomId;
         }
 
-        // Nếu là Hạn chót thì ép về dạng Thời gian để so sánh
         if (sortConfig.key === 'dueDate') {
           valA = new Date(valA).getTime();
           valB = new Date(valB).getTime();
         }
 
-        // Logic so sánh (Tăng dần / Giảm dần)
         if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
         if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
@@ -372,9 +342,6 @@ const InvoiceManager = () => {
   const elecServiceInfo = services.find(s => ['điện', 'dien'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
   const waterServiceInfo = services.find(s => ['nước', 'nuoc'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
 
-  // ==========================================
-  // [MỚI] COMPONENT RENDER TIÊU ĐỀ CỘT CÓ ICON SẮP XẾP
-  // ==========================================
   const renderSortableHeader = (label: string, key: string) => {
     const isSorted = sortConfig.key === key;
     return (
@@ -469,18 +436,16 @@ const InvoiceManager = () => {
         <table className="invoice-table">
           <thead>
             <tr>
-              {/* [SỬA LẠI] Dùng hàm gọi Tiêu đề Cột kèm Icon */}
               {renderSortableHeader("Mã HĐ", "invoiceCode")}
               {renderSortableHeader("Phòng", "roomId")}
               {renderSortableHeader("Tiêu đề", "title")}
               {renderSortableHeader("Tổng tiền", "totalAmount")}
               {renderSortableHeader("Hạn chót", "dueDate")}
               {renderSortableHeader("Trạng thái", "status")}
-              <th>Thao tác</th> {/* Cột thao tác không cho Sort */}
+              <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
-            {/* [SỬA LẠI] Render từ mảng đã Sort & Lọc */}
             {sortedAndFilteredInvoices.map((inv) => (
               <tr key={inv._id}>
                 <td className="text-code">{inv.invoiceCode}</td>
@@ -497,8 +462,9 @@ const InvoiceManager = () => {
                   <div style={{ display: 'flex', gap: 8 }}>
                     {inv.status === 'Draft' && (
                       <>
-                        <button className="btn-icon" title="Nhập Điện/Nước" onClick={() => handleOpenReading(inv)}>
-                          <Droplet size={18} color="#0284c7" />
+                        {/* [ĐÃ SỬA] Thay đổi tooltip và icon thành Cây bút để mang ý nghĩa Sửa */}
+                        <button className="btn-icon" title="Sửa Điện/Nước" onClick={() => handleOpenReading(inv)}>
+                          <Edit3 size={18} color="#0284c7" />
                         </button>
                         
                         <button 
@@ -523,7 +489,6 @@ const InvoiceManager = () => {
               </tr>
             ))}
             
-            {/* Hiển thị khi không có dữ liệu nào khớp với tìm kiếm/lọc */}
             {sortedAndFilteredInvoices.length === 0 && (
                <tr>
                  <td colSpan={7} style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
@@ -535,12 +500,12 @@ const InvoiceManager = () => {
         </table>
       </div>
 
-      {/* MODAL 2: NHẬP CHỈ SỐ CÁ NHÂN KÈM NÚT SỬA SAI */}
+      {/* [ĐÃ SỬA] MODAL 2: Đổi tiêu đề thành Sửa chỉ số và Xóa nút Sửa Sai */}
       {showReadingModal && selectedInvoice && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ width: '600px' }}>
             <div className="modal-header">
-              <h3>Nhập chỉ số - {typeof selectedInvoice.roomId === 'object' ? selectedInvoice.roomId.name : 'Phòng'}</h3>
+              <h3>Sửa chỉ số - {typeof selectedInvoice.roomId === 'object' ? selectedInvoice.roomId.name : 'Phòng'}</h3>
               <button onClick={() => setShowReadingModal(false)} className="btn-icon"><X size={20}/></button>
             </div>
             <form onSubmit={handleSaveReading}>
@@ -556,21 +521,6 @@ const InvoiceManager = () => {
                           (Giá: {formatCurrency(elecServiceInfo.currentPrice || elecServiceInfo.price || 0)} / kWh)
                         </span>
                       </h4>
-                      
-                      {latestReadings.elecId && (
-                        <button 
-                          type="button" 
-                          style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500 }}
-                          onClick={() => setConfirmModal({
-                            isOpen: true,
-                            action: 'UNDO_READING',
-                            targetId: latestReadings.elecId || '',
-                            message: 'Lần chốt số này bị nhập sai? Bấm Đồng ý để xóa lần chốt cuối cùng đi và tự động lấy lại chỉ số của tháng trước.'
-                          })}
-                        >
-                          <RotateCcw size={14} /> Sửa sai
-                        </button>
-                      )}
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                       <div className="form-group" style={{ marginBottom: 0 }}>
@@ -609,21 +559,6 @@ const InvoiceManager = () => {
                           (Giá: {formatCurrency(waterServiceInfo.currentPrice || waterServiceInfo.price || 0)} / Khối)
                         </span>
                       </h4>
-
-                      {latestReadings.waterId && (
-                        <button 
-                          type="button" 
-                          style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500 }}
-                          onClick={() => setConfirmModal({
-                            isOpen: true,
-                            action: 'UNDO_READING',
-                            targetId: latestReadings.waterId || '',
-                            message: 'Lần chốt số này bị nhập sai? Bấm Đồng ý để xóa lần chốt cuối cùng đi và tự động lấy lại chỉ số của tháng trước.'
-                          })}
-                        >
-                          <RotateCcw size={14} /> Sửa sai
-                        </button>
-                      )}
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                       <div className="form-group" style={{ marginBottom: 0 }}>
