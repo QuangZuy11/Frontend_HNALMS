@@ -156,11 +156,11 @@ const InvoiceManager = () => {
 
       const apiCalls = [];
 
-      if (elecService && dualReadingForm.elecNew > dualReadingForm.elecOld) {
+      if (elecService && dualReadingForm.elecNew >= dualReadingForm.elecOld) {
         apiCalls.push({ roomId: rId, utilityId: elecService._id, oldIndex: dualReadingForm.elecOld, newIndex: dualReadingForm.elecNew });
       }
 
-      if (waterService && dualReadingForm.waterNew > dualReadingForm.waterOld) {
+      if (waterService && dualReadingForm.waterNew >= dualReadingForm.waterOld) {
         apiCalls.push({ roomId: rId, utilityId: waterService._id, oldIndex: dualReadingForm.waterOld, newIndex: dualReadingForm.waterNew });
       }
 
@@ -253,10 +253,10 @@ const InvoiceManager = () => {
 
     Object.keys(bulkData).forEach(roomId => {
       const data = bulkData[roomId];
-      if (elecService && data.eNew > data.eOld) {
+      if (elecService && data.eNew >= data.eOld) {
         apiCalls.push({ roomId, utilityId: elecService._id, oldIndex: data.eOld, newIndex: data.eNew });
       }
-      if (waterService && data.wNew > data.wOld) {
+      if (waterService && data.wNew >= data.wOld) {
         apiCalls.push({ roomId, utilityId: waterService._id, oldIndex: data.wOld, newIndex: data.wNew });
       }
     });
