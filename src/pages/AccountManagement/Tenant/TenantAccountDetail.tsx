@@ -94,8 +94,8 @@ export default function TenantAccountDetail() {
         <div className="detail-content detail-content-manager">
           <div className="detail-section-divider">Thông tin tài khoản</div>
           <div className="detail-section-block">
-            <div className="detail-row"><span className="detail-label">Username:</span><span className="detail-value detail-value-black">{account.username}</span></div>
-            <div className="detail-row"><span className="detail-label">Trạng thái:</span><span className={`status-badge status-${account.status}`}>{STATUS_LABELS[account.status] || account.status}</span></div>
+            <div className="detail-row detail-row-tight"><span className="detail-label">Username:</span><span className="detail-value detail-value-black">{account.username}</span></div>
+            <div className="detail-row detail-row-tight"><span className="detail-label">Trạng thái:</span><span className={`status-badge status-${account.status}`}>{STATUS_LABELS[account.status] || account.status}</span></div>
           </div>
           <div className="detail-section-divider">Thông tin liên hệ</div>
           <div className="detail-section-block">

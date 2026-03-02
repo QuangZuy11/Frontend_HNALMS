@@ -16,6 +16,10 @@ export default function ManagerAccountList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterRole, setFilterRole] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [total, setTotal] = useState(0);
   const [disablingId, setDisablingId] = useState<string | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailAccount, setDetailAccount] = useState<AccountDetail | null>(null);
@@ -36,11 +40,14 @@ export default function ManagerAccountList() {
     try {
       setLoading(true);
       setError(null);
-      const response = await accountService.list('managers');
+      const offset = (page - 1) * limit;
+      const response = await accountService.list('managers', { offset, limit });
       if (response.success && response.data) {
         setAccounts(response.data);
+        setTotal(response.total ?? response.data.length);
       } else {
         setAccounts([]);
+        setTotal(0);
       }
     } catch (err) {
       console.error('Error fetching managers:', err);
@@ -50,13 +57,27 @@ export default function ManagerAccountList() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, limit]);
 
   useEffect(() => {
     fetchAccounts();
   }, [fetchAccounts]);
 
-  const filteredAccounts = filterRole ? accounts.filter((acc) => acc.role === filterRole) : accounts;
+  const filteredByRole = filterRole ? accounts.filter((acc) => acc.role === filterRole) : accounts;
+  const filteredAccounts =
+    searchTerm.trim() === ''
+      ? filteredByRole
+      : filteredByRole.filter((acc) => {
+          const term = searchTerm.trim().toLowerCase();
+          const fullname = (acc.fullname ?? '').toLowerCase();
+          const username = (acc.username ?? '').toLowerCase();
+          const email = (acc.email ?? '').toLowerCase();
+          const phone = (acc.phoneNumber ?? '').replace(/\s/g, '');
+          const termNorm = term.replace(/\s/g, '');
+          return fullname.includes(term) || username.includes(term) || email.includes(term) || phone.includes(termNorm);
+        });
+
+  const totalPages = Math.max(1, Math.ceil((total || 0) / limit));
 
   const handleViewDetail = async (accountId: string) => {
     try {
@@ -167,6 +188,18 @@ export default function ManagerAccountList() {
             <p className="created-accounts-subtitle">Các tài khoản Quản lý, Kế toán</p>
           </div>
           <div className="created-accounts-actions">
+            {accounts.length > 0 && (
+              <div className="created-accounts-search">
+                <input
+                  type="text"
+                  placeholder="Tìm theo tên đăng nhập, email hoặc SĐT..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="search-input"
+                  aria-label="Tìm kiếm"
+                />
+              </div>
+            )}
             <div className="filter-role-group">
               <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)}>
                 <option value="">Tất cả</option>
@@ -187,6 +220,10 @@ export default function ManagerAccountList() {
             <p>Chưa có tài khoản Quản lý/Kế toán nào.</p>
             <button type="button" className="btn-primary" onClick={openCreateModal}>Tạo tài khoản đầu tiên</button>
           </div>
+        ) : filteredAccounts.length === 0 ? (
+          <div className="created-accounts-empty">
+            <p>Không tìm thấy tài khoản phù hợp với từ khóa tìm kiếm.</p>
+          </div>
         ) : (
           <div className="created-accounts-table-wrap">
             <table className="created-accounts-table">
@@ -205,7 +242,7 @@ export default function ManagerAccountList() {
               <tbody>
                 {filteredAccounts.map((acc, index) => (
                   <tr key={acc._id}>
-                    <td>{index + 1}</td>
+                    <td>{(page - 1) * limit + index + 1}</td>
                     <td>{acc.username}</td>
                     <td>{acc.email}</td>
                     <td>{acc.phoneNumber || '-'}</td>
@@ -230,6 +267,38 @@ export default function ManagerAccountList() {
                 ))}
               </tbody>
             </table>
+            <div className="accounts-pagination">
+              <div className="accounts-pagination-info">
+                
+              </div>
+              <div className="accounts-pagination-controls">
+                <button
+                  type="button"
+                  className="pagination-arrow-btn"
+                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={page === 1 || loading}
+                  aria-label="Trang trước"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  className="pagination-current-page"
+                  disabled
+                >
+                  {page}
+                </button>
+                <button
+                  type="button"
+                  className="pagination-arrow-btn"
+                  onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={page >= totalPages || loading}
+                  aria-label="Trang sau"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Eye } from 'lucide-react';
 import { accountService } from '../../../services/accountService';
 import { STATUS_LABELS, formatAccountDate, type AccountItem, type AccountDetail } from '../constants';
 import '../account-management.css';
@@ -11,16 +12,23 @@ export default function TenantAccountList() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailAccount, setDetailAccount] = useState<AccountDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [total, setTotal] = useState(0);
 
   const fetchAccounts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await accountService.list('tenants');
+      const offset = (page - 1) * limit;
+      const response = await accountService.list('tenants', { offset, limit });
       if (response.success && response.data) {
         setAccounts(response.data);
+        setTotal(response.total ?? response.data.length);
       } else {
         setAccounts([]);
+        setTotal(0);
       }
     } catch (err) {
       console.error('Error fetching tenants:', err);
@@ -30,7 +38,7 @@ export default function TenantAccountList() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, limit]);
 
   useEffect(() => {
     fetchAccounts();
@@ -90,6 +98,19 @@ export default function TenantAccountList() {
     }
   };
 
+  const filteredAccounts = searchTerm.trim() === ''
+    ? accounts
+    : accounts.filter((acc) => {
+        const term = searchTerm.trim().toLowerCase();
+        const fullname = (acc.fullname ?? '').toLowerCase();
+        const email = (acc.email ?? '').toLowerCase();
+        const phone = (acc.phoneNumber ?? '').replace(/\s/g, '');
+        const termNorm = term.replace(/\s/g, '');
+        return fullname.includes(term) || email.includes(term) || phone.includes(termNorm);
+      });
+
+  const totalPages = Math.max(1, Math.ceil((total || 0) / limit));
+
   return (
     <div className="created-accounts-page">
       <div className="created-accounts-card">
@@ -98,6 +119,18 @@ export default function TenantAccountList() {
             <h1>Danh sách tài khoản cư dân</h1>
             <p className="created-accounts-subtitle">Danh sách tài khoản cư dân (tenant) trong tòa nhà</p>
           </div>
+          {!loading && !error && accounts.length > 0 && (
+            <div className="created-accounts-search">
+              <input
+                type="text"
+                placeholder="Tìm theo họ tên, email hoặc SĐT..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+                aria-label="Tìm kiếm cư dân"
+              />
+            </div>
+          )}
         </div>
 
         {loading ? (
@@ -107,6 +140,10 @@ export default function TenantAccountList() {
         ) : accounts.length === 0 ? (
           <div className="created-accounts-empty">
             <p>Chưa có tài khoản cư dân nào.</p>
+          </div>
+        ) : filteredAccounts.length === 0 ? (
+          <div className="created-accounts-empty">
+            <p>Không tìm thấy cư dân phù hợp với từ khóa tìm kiếm.</p>
           </div>
         ) : (
           <div className="created-accounts-table-wrap">
@@ -123,9 +160,9 @@ export default function TenantAccountList() {
                 </tr>
               </thead>
               <tbody>
-                {accounts.map((acc, index) => (
+                {filteredAccounts.map((acc, index) => (
                   <tr key={acc._id}>
-                    <td>{index + 1}</td>
+                    <td>{(page - 1) * limit + index + 1}</td>
                     <td>{acc.fullname ?? '-'}</td>
                     <td>{acc.email}</td>
                     <td>{acc.phoneNumber || '-'}</td>
@@ -133,22 +170,53 @@ export default function TenantAccountList() {
                     <td>{formatAccountDate(acc.createdAt)}</td>
                     <td>
                       <div className="action-buttons">
-                        <button type="button" className="btn-view-detail" onClick={() => handleViewDetail(acc._id)}>Xem chi tiết</button>
-                        {acc.status === 'active' ? (
-                          <button type="button" className="btn-disable" onClick={() => handleDisable(acc._id)} disabled={disablingId === acc._id}>
-                            {disablingId === acc._id ? 'Đang xử lý...' : 'Đóng tài khoản'}
-                          </button>
-                        ) : (
-                          <button type="button" className="btn-enable" onClick={() => handleEnable(acc._id)} disabled={disablingId === acc._id}>
-                            {disablingId === acc._id ? 'Đang xử lý...' : 'Mở lại'}
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          className="btn-view-detail btn-icon"
+                          onClick={() => handleViewDetail(acc._id)}
+                          title="Xem chi tiết"
+                          aria-label="Xem chi tiết"
+                        >
+                          <Eye size={18} />
+                        </button>
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            <div className="accounts-pagination">
+              <div className="accounts-pagination-info">
+               
+              </div>
+              <div className="accounts-pagination-controls">
+                <button
+                  type="button"
+                  className="pagination-arrow-btn"
+                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={page === 1 || loading}
+                  aria-label="Trang trước"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  className="pagination-current-page"
+                  disabled
+                >
+                  {page}
+                </button>
+                <button
+                  type="button"
+                  className="pagination-arrow-btn"
+                  onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={page >= totalPages || loading}
+                  aria-label="Trang sau"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -166,38 +234,52 @@ export default function TenantAccountList() {
                   <div className="detail-content detail-content-manager">
                     <div className="detail-section-divider">Thông tin tài khoản</div>
                     <div className="detail-section-block">
-                      <div className="detail-row">
+                      <div className="detail-row detail-row-tight">
                         <span className="detail-label">Username:</span>
                         <span className="detail-value detail-value-black">{detailAccount.username}</span>
                       </div>
-                      <div className="detail-row">
+                      <div className="detail-row detail-row-tight">
                         <span className="detail-label">Trạng thái:</span>
                         <span className={`status-badge status-${detailAccount.status}`}>{STATUS_LABELS[detailAccount.status] || detailAccount.status}</span>
                       </div>
                     </div>
                     <div className="detail-section-divider">Thông tin liên hệ</div>
                     <div className="detail-section-block">
-                      <div className="detail-row"><span className="detail-label">Email:</span><span className="detail-value detail-value-black">{detailAccount.email}</span></div>
-                      <div className="detail-row"><span className="detail-label">Số điện thoại:</span><span className="detail-value detail-value-black">{detailAccount.phoneNumber || '-'}</span></div>
+                      <div className="detail-row detail-row-tight"><span className="detail-label">Email:</span><span className="detail-value detail-value-black">{detailAccount.email}</span></div>
+                      <div className="detail-row detail-row-tight"><span className="detail-label">Số điện thoại:</span><span className="detail-value detail-value-black">{detailAccount.phoneNumber || '-'}</span></div>
                     </div>
                     <div className="detail-section-divider">Thông tin cá nhân</div>
                     <div className="detail-section-block">
-                      <div className="detail-row"><span className="detail-label">Họ và tên:</span><span className="detail-value detail-value-black">{detailAccount.fullname || '-'}</span></div>
-                      <div className="detail-row"><span className="detail-label">Giới tính:</span><span className="detail-value detail-value-black">
+                      <div className="detail-row detail-row-tight"><span className="detail-label">Họ và tên:</span><span className="detail-value detail-value-black">{detailAccount.fullname || '-'}</span></div>
+                      <div className="detail-row detail-row-tight"><span className="detail-label">Giới tính:</span><span className="detail-value detail-value-black">
                         {detailAccount.gender === 'Male' ? 'Nam' : detailAccount.gender === 'Female' ? 'Nữ' : detailAccount.gender === 'Other' ? 'Khác' : '-'}
                       </span></div>
-                      <div className="detail-row"><span className="detail-label">Ngày sinh:</span><span className="detail-value detail-value-black">{detailAccount.dob ? formatAccountDate(detailAccount.dob) : '-'}</span></div>
-                      <div className="detail-row"><span className="detail-label">Địa chỉ:</span><span className="detail-value detail-value-black">{detailAccount.address || '-'}</span></div>
+                      <div className="detail-row detail-row-tight"><span className="detail-label">Ngày sinh:</span><span className="detail-value detail-value-black">{detailAccount.dob ? formatAccountDate(detailAccount.dob) : '-'}</span></div>
+                      <div className="detail-row detail-row-tight"><span className="detail-label">Địa chỉ:</span><span className="detail-value detail-value-black">{detailAccount.address || '-'}</span></div>
                     </div>
                     <div className="detail-section-divider">Thông tin pháp lý</div>
                     <div className="detail-section-block">
-                      <div className="detail-row"><span className="detail-label">CCCD:</span><span className="detail-value detail-value-black">{detailAccount.cccd || '-'}</span></div>
+                      <div className="detail-row detail-row-tight"><span className="detail-label">CCCD:</span><span className="detail-value detail-value-black">{detailAccount.cccd || '-'}</span></div>
                     </div>
                     <div className="detail-actions">
                       {detailAccount.status === 'active' ? (
-                        <button type="button" className="btn-disable" onClick={() => handleDisable(detailAccount._id)} disabled={disablingId === detailAccount._id}>Đóng tài khoản</button>
+                        <button
+                          type="button"
+                          className="btn-disable"
+                          onClick={() => handleDisable(detailAccount._id)}
+                          disabled={disablingId === detailAccount._id}
+                        >
+                          {disablingId === detailAccount._id ? 'Đang xử lý...' : 'Đóng tài khoản'}
+                        </button>
                       ) : (
-                        <button type="button" className="btn-enable" onClick={() => handleEnable(detailAccount._id)} disabled={disablingId === detailAccount._id}>Mở lại</button>
+                        <button
+                          type="button"
+                          className="btn-enable"
+                          onClick={() => handleEnable(detailAccount._id)}
+                          disabled={disablingId === detailAccount._id}
+                        >
+                          {disablingId === detailAccount._id ? 'Đang xử lý...' : 'Mở lại tài khoản'}
+                        </button>
                       )}
                     </div>
                   </div>
