@@ -178,9 +178,21 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     );
   };
 
-  const formatCurrency = (amount: any) => {
-    const value = Number(amount);
+const formatCurrency = (amount: any) => {
+    let value = 0;
+
+    // Kiểm tra nếu dữ liệu là object Decimal128 của MongoDB
+    if (amount && typeof amount === "object" && amount.$numberDecimal) {
+      value = parseFloat(amount.$numberDecimal);
+    } 
+    // Nếu là số hoặc chuỗi số bình thường
+    else {
+      value = Number(amount);
+    }
+
+    // Nếu vẫn không phải số thì trả về 0đ
     if (isNaN(value)) return "0 ₫";
+
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
