@@ -275,6 +275,19 @@
   cursor: pointer;
 }
 
+.btn-view-detail.btn-icon {
+  min-width: auto;
+  width: auto;
+  height: auto;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
 .btn-disable {
   padding: 0.4rem 0.85rem;
   background: #fee2e2;

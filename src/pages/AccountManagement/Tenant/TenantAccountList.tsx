@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Eye } from 'lucide-react';
 import { accountService } from '../../../services/accountService';
 import { STATUS_LABELS, formatAccountDate, type AccountItem, type AccountDetail } from '../constants';
 import '../account-management.css';
@@ -169,16 +170,15 @@ export default function TenantAccountList() {
                     <td>{formatAccountDate(acc.createdAt)}</td>
                     <td>
                       <div className="action-buttons">
-                        <button type="button" className="btn-view-detail" onClick={() => handleViewDetail(acc._id)}>Xem chi tiết</button>
-                        {acc.status === 'active' ? (
-                          <button type="button" className="btn-disable" onClick={() => handleDisable(acc._id)} disabled={disablingId === acc._id}>
-                            {disablingId === acc._id ? 'Đang xử lý...' : 'Đóng tài khoản'}
-                          </button>
-                        ) : (
-                          <button type="button" className="btn-enable" onClick={() => handleEnable(acc._id)} disabled={disablingId === acc._id}>
-                            {disablingId === acc._id ? 'Đang xử lý...' : 'Mở lại'}
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          className="btn-view-detail btn-icon"
+                          onClick={() => handleViewDetail(acc._id)}
+                          title="Xem chi tiết"
+                          aria-label="Xem chi tiết"
+                        >
+                          <Eye size={18} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -260,6 +260,27 @@ export default function TenantAccountList() {
                     <div className="detail-section-divider">Thông tin pháp lý</div>
                     <div className="detail-section-block">
                       <div className="detail-row detail-row-tight"><span className="detail-label">CCCD:</span><span className="detail-value detail-value-black">{detailAccount.cccd || '-'}</span></div>
+                    </div>
+                    <div className="detail-actions">
+                      {detailAccount.status === 'active' ? (
+                        <button
+                          type="button"
+                          className="btn-disable"
+                          onClick={() => handleDisable(detailAccount._id)}
+                          disabled={disablingId === detailAccount._id}
+                        >
+                          {disablingId === detailAccount._id ? 'Đang xử lý...' : 'Đóng tài khoản'}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn-enable"
+                          onClick={() => handleEnable(detailAccount._id)}
+                          disabled={disablingId === detailAccount._id}
+                        >
+                          {disablingId === detailAccount._id ? 'Đang xử lý...' : 'Mở lại tài khoản'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 ) : null}

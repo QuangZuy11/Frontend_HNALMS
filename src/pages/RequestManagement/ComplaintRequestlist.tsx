@@ -30,6 +30,11 @@ interface Complaint {
     email: string;
     phoneNumber?: string;
   } | null;
+  room?: {
+    _id: string;
+    name: string;
+    roomCode?: string;
+  } | null;
 }
 
 type StatusFilter = 'ALL' | 'Pending' | 'Processing' | 'Done';
@@ -50,6 +55,14 @@ export default function ComplaintRequestList() {
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('ALL');
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [tenantSearch, setTenantSearch] = useState('');
+  const [roomSearch, setRoomSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [showDoneModal, setShowDoneModal] = useState(false);
+  const [completingComplaint, setCompletingComplaint] = useState<Complaint | null>(null);
+  const [doneNote, setDoneNote] = useState('');
+  const [doneNoteError, setDoneNoteError] = useState('');
 
   useEffect(() => {
     fetchComplaints();
@@ -106,6 +119,15 @@ export default function ComplaintRequestList() {
     complaint: Complaint,
     nextStatus: 'Pending' | 'Processing' | 'Done',
   ) => {
+    // Nếu chuyển sang Đã xử lý -> mở modal nhập ghi chú
+    if (nextStatus === 'Done') {
+      setCompletingComplaint(complaint);
+      setDoneNote('');
+      setDoneNoteError('');
+      setShowDoneModal(true);
+      return;
+    }
+
     const confirmText = `Bạn có chắc muốn chuyển khiếu nại này sang trạng thái "${nextStatus}"?`;
     if (!window.confirm(confirmText)) return;
 
@@ -155,14 +177,114 @@ export default function ComplaintRequestList() {
     }
   };
 
-  const filteredComplaints =
-    statusFilter === 'ALL' && categoryFilter === 'ALL'
-      ? complaints
-      : complaints.filter((c) => {
-          const matchStatus = statusFilter === 'ALL' || c.status === statusFilter;
-          const matchCategory = categoryFilter === 'ALL' || c.category === categoryFilter;
-          return matchStatus && matchCategory;
-        });
+  const handleCloseDoneModal = () => {
+    if (updatingId) return;
+    setShowDoneModal(false);
+    setCompletingComplaint(null);
+    setDoneNote('');
+    setDoneNoteError('');
+  };
+
+  const handleConfirmDone = async () => {
+    if (!completingComplaint) return;
+
+    if (!doneNote.trim()) {
+      setDoneNoteError('Vui lòng nhập ghi chú xử lý');
+      return;
+    }
+
+    try {
+      setUpdatingId(completingComplaint._id);
+      const res = await complaintService.updateComplaintStatus(
+        completingComplaint._id,
+        'Done',
+        doneNote.trim(),
+      );
+      const updated = res.data;
+
+      if (updated?._id) {
+        setComplaints((prev) =>
+          prev.map((c) =>
+            c._id === updated._id
+              ? {
+                  ...c,
+                  status: updated.status,
+                  response: updated.response,
+                  responseBy: updated.responseBy,
+                  responseDate: updated.responseDate,
+                }
+              : c,
+          ),
+        );
+
+        if (selectedComplaint && selectedComplaint._id === updated._id) {
+          setSelectedComplaint((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  status: updated.status,
+                  response: updated.response,
+                  responseBy: updated.responseBy,
+                  responseDate: updated.responseDate,
+                }
+              : prev,
+          );
+        }
+      }
+
+      setShowDoneModal(false);
+      setCompletingComplaint(null);
+      setDoneNote('');
+      setDoneNoteError('');
+    } catch (err: unknown) {
+      console.error('Lỗi khi cập nhật trạng thái khiếu nại:', err);
+      const anyErr = err as { response?: { data?: { error?: { message?: string } } } };
+      alert(
+        anyErr?.response?.data?.error?.message || 'Không thể cập nhật trạng thái khiếu nại',
+      );
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  // helper chuẩn hoá để tìm kiếm không phân biệt hoa/thường & dấu
+  const normalize = (value: string) =>
+    value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+
+  const filteredComplaints = complaints.filter((c) => {
+    const matchStatus = statusFilter === 'ALL' || c.status === statusFilter;
+    const matchCategory = categoryFilter === 'ALL' || c.category === categoryFilter;
+
+    let matchTenant = true;
+    if (tenantSearch.trim()) {
+      const search = normalize(tenantSearch.trim());
+      const username = normalize(c.tenantId?.username || '');
+      const email = normalize(c.tenantId?.email || '');
+      matchTenant = username.includes(search) || email.includes(search);
+    }
+
+    let matchRoom = true;
+    if (roomSearch.trim()) {
+      const search = normalize(roomSearch.trim());
+      const roomName = normalize(c.room?.name || '');
+      const roomCode = normalize(c.room?.roomCode || '');
+      matchRoom = roomName.includes(search) || roomCode.includes(search);
+    }
+
+    return matchStatus && matchCategory && matchTenant && matchRoom;
+  });
+
+  const totalItems = filteredComplaints.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const currentPage = Math.min(page, totalPages);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedComplaints = filteredComplaints.slice(
+    startIndex,
+    startIndex + itemsPerPage,
+  );
 
   return (
     <div className="repair-requests-page">
@@ -172,7 +294,39 @@ export default function ComplaintRequestList() {
             <h1>Danh sách khiếu nại</h1>
             <p className="subtitle">Các khiếu nại do cư dân gửi lên tòa nhà</p>
           </div>
-          <div className="repair-filter-wrapper" style={{ gap: 16 }}>
+          <div className="repair-filter-wrapper" style={{ gap: 16, flexWrap: 'wrap' }}>
+            <div className="repair-filter-wrapper">
+              <label htmlFor="tenant-search" className="repair-filter-label">
+                Cư dân:
+              </label>
+              <input
+                id="tenant-search"
+                type="text"
+                className="repair-filter-select"
+                placeholder="Nhập tên cư dân"
+                value={tenantSearch}
+                onChange={(e) => {
+                  setTenantSearch(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
+            <div className="repair-filter-wrapper">
+              <label htmlFor="room-search" className="repair-filter-label">
+                Phòng:
+              </label>
+              <input
+                id="room-search"
+                type="text"
+                className="repair-filter-select"
+                placeholder="Nhập số phòng (ví dụ: 320)"
+                value={roomSearch}
+                onChange={(e) => {
+                  setRoomSearch(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
             <div className="repair-filter-wrapper">
               <label htmlFor="status-filter" className="repair-filter-label">
                 Trạng thái:
@@ -230,18 +384,17 @@ export default function ComplaintRequestList() {
                 <tr>
                   <th>STT</th>
                   <th>Cư dân</th>
+                  <th>Phòng</th>
                   <th>Loại</th>
-                  <th>Nội dung</th>
-                  <th>Mức độ</th>
                   <th>Trạng thái</th>
                   <th>Ngày tạo</th>
                   <th>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredComplaints.map((c, index) => (
+                {paginatedComplaints.map((c, index) => (
                   <tr key={c._id}>
-                    <td>{index + 1}</td>
+                    <td>{startIndex + index + 1}</td>
                     <td>
                       <div className="cell-main">
                         <div className="cell-title">
@@ -249,19 +402,14 @@ export default function ComplaintRequestList() {
                         </div>
                       </div>
                     </td>
-                    <td>{c.category}</td>
                     <td>
-                      <div className="cell-main col-description">
-                        <div className="cell-title">{c.content}</div>
+                      <div className="cell-main">
+                        <div className="cell-title">
+                          {c.room?.name || c.room?.roomCode || '-'}
+                        </div>
                       </div>
                     </td>
-                    <td>
-                      {c.priority === 'High'
-                        ? 'Cao'
-                        : c.priority === 'Medium'
-                        ? 'Trung bình'
-                        : 'Thấp'}
-                    </td>
+                    <td>{c.category}</td>
                     <td>
                       <span className={`status-badge status-${c.status.toLowerCase()}`}>
                         {c.status === 'Pending'
@@ -288,6 +436,39 @@ export default function ComplaintRequestList() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {!loading && !error && totalItems > 0 && (
+          <div className="repair-pagination repair-pagination--right">
+            <div className="repair-pagination-controls">
+              <button
+                type="button"
+                className="pagination-arrow-btn"
+                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1 || loading}
+                aria-label="Trang trước"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                className="pagination-current-page"
+                disabled
+              >
+                {currentPage}
+              </button>
+              <button
+                type="button"
+                className="pagination-arrow-btn"
+                onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage >= totalPages || loading}
+                aria-label="Trang sau"
+              >
+                ›
+              </button>
+            </div>
           </div>
         )}
 
@@ -406,6 +587,61 @@ export default function ComplaintRequestList() {
                       <span className="detail-status-updating">Đang cập nhật...</span>
                     )}
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal nhập ghi chú khi chuyển sang Đã xử lý */}
+        {showDoneModal && completingComplaint && (
+          <div className="repair-modal-overlay" onClick={handleCloseDoneModal}>
+            <div
+              className="repair-modal repair-complete-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="repair-modal-header">
+                <h2>Ghi chú xử lý khiếu nại</h2>
+                <button
+                  type="button"
+                  className="modal-close-btn"
+                  onClick={handleCloseDoneModal}
+                  aria-label="Đóng"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="repair-modal-body">
+                <div className="complete-form-group">
+                  <label htmlFor="done-note">Ghi chú xử lý *</label>
+                  <textarea
+                    id="done-note"
+                    value={doneNote}
+                    onChange={(e) => {
+                      setDoneNote(e.target.value);
+                      if (doneNoteError) setDoneNoteError('');
+                    }}
+                    placeholder="Nhập nội dung xử lý khiếu nại..."
+                  />
+                  {doneNoteError && <span className="error-message">{doneNoteError}</span>}
+                </div>
+                <div className="complete-form-actions">
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    onClick={handleCloseDoneModal}
+                    disabled={updatingId === completingComplaint._id}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-submit"
+                    onClick={handleConfirmDone}
+                    disabled={updatingId === completingComplaint._id}
+                  >
+                    {updatingId === completingComplaint._id ? 'Đang xử lý...' : 'Hoàn thành'}
+                  </button>
                 </div>
               </div>
             </div>

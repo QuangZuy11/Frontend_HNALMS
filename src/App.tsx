@@ -58,6 +58,7 @@ import ComplaintRequestList from "./pages/RequestManagement/ComplaintRequestlist
 
 // Pages - Accountant Dashboard
 import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
+import ManagingIncomeExpenses from "./pages/Accountant/managing_income_expenses/managingIncomeExpenses";
 
 // Pages - Profile (All authenticated roles)
 import ViewProfile from "./pages/Auth/Profile/ViewProfile";
@@ -221,6 +222,11 @@ function LayoutWrapper() {
           <Route index element={<AccountantDashboard />} />
           <Route path="profile" element={<ViewProfile />} />
           {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
+          {/* Phiếu thu / chi */}
+          <Route
+            path="transactions/payments"
+            element={<ManagingIncomeExpenses />}
+          />
         </Route>
 
         {/* ==================== SHARED PROFILE ROUTES (Legacy support) ==================== */}
