@@ -429,7 +429,9 @@ export default function RoomDetail() {
                 >
                   {room.status === "Available" || room.status === "Trống"
                     ? "Đặt Cọc Ngay"
-                    : "Phòng Đã Có Chủ"}
+                    : room.status === "Deposited"
+                      ? "Phòng Đã Được Đặt Cọc"
+                      : "Phòng Đã Có Chủ"}
                 </button>
 
                 <button className="contact-button">Gọi Tư Vấn</button>

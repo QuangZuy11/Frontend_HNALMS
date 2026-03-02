@@ -19,6 +19,7 @@ api.interceptors.request.use(
       "/roomtypes",
       "/floors",
       "/buildings",
+      "/deposits",
     ];
 
     const isPublicEndpoint = publicEndpoints.some((endpoint) =>

@@ -10,6 +10,9 @@ import {
     Shield,
 } from "lucide-react";
 import { roomService } from "../../../services/roomService";
+import { depositService } from "../../../services/depositService";
+import type { DepositInitiateData } from "../../../services/depositService";
+import DepositPayment from "./DepositPayment";
 import "./BookingPage.css";
 
 interface FormErrors {
@@ -25,9 +28,11 @@ export default function BookingPage() {
     const [room, setRoom] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
-    const [bookingStep, setBookingStep] = useState<"form" | "payment" | "success">("form");
+    const [bookingStep, setBookingStep] = useState<"form" | "success">("form");
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const [depositData, setDepositData] = useState<DepositInitiateData | null>(null);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
 
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
@@ -64,6 +69,7 @@ export default function BookingPage() {
                         floorLabel: `Tầng ${roomData.floorId?.name || "N/A"} `,
                         price,
                         typeName: roomData.roomTypeId?.typeName || "Phòng",
+                        status: roomData.status,
                     });
                 }
             } catch (err) {
@@ -91,14 +97,45 @@ export default function BookingPage() {
         e.preventDefault();
         if (!validate()) return;
         setIsSubmitting(true);
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        setBookingStep("payment");
-        setIsSubmitting(false);
+        setSubmitError(null);
+        try {
+            const res = await depositService.initiateDeposit({
+                roomId: id!,
+                name: fullName.trim(),
+                phone: phone.trim(),
+                email: email.trim(),
+            });
+            if (res.success) {
+                setDepositData(res.data);
+                setShowPaymentModal(true);
+            } else {
+                setSubmitError(res.message || "Đã xảy ra lỗi. Vui lòng thử lại.");
+            }
+        } catch (err: any) {
+            const msg =
+                err?.response?.data?.message ||
+                "Không thể kết nối máy chủ. Vui lòng thử lại.";
+            setSubmitError(msg);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handlePaymentSuccess = () => {
-        if (!paymentConfirmed) return;
+        setShowPaymentModal(false);
         setBookingStep("success");
+    };
+
+    const handleCancelDeposit = async () => {
+        if (depositData?.transactionCode) {
+            try {
+                await depositService.cancelDeposit(depositData.transactionCode);
+            } catch {
+                // Ignore cancel errors - deposit may already be expired/deleted
+            }
+        }
+        setShowPaymentModal(false);
+        setDepositData(null);
     };
 
     if (loading) {
@@ -116,6 +153,24 @@ export default function BookingPage() {
             <main className="booking-page">
                 <div className="booking-container" style={{ textAlign: "center", paddingTop: "4rem" }}>
                     <h2>Phòng Không Tồn Tại</h2>
+                    <button className="booking-back-link" onClick={() => navigate("/rooms")} style={{ marginTop: "1rem" }}>
+                        Quay Lại Danh Sách Phòng
+                    </button>
+                </div>
+            </main>
+        );
+    }
+
+    if (room.status !== "Available" && room.status !== "Trống") {
+        return (
+            <main className="booking-page">
+                <div className="booking-container" style={{ textAlign: "center", paddingTop: "4rem" }}>
+                    <h2>{room.status === "Deposited" ? "Phòng Đã Được Đặt Cọc" : "Phòng Không Khả Dụng"}</h2>
+                    <p style={{ color: "#666", marginTop: "0.5rem" }}>
+                        {room.status === "Deposited"
+                            ? "Phòng này đã có người đặt cọc. Vui lòng chọn phòng khác."
+                            : "Phòng hiện không thể đặt cọc. Vui lòng chọn phòng khác."}
+                    </p>
                     <button className="booking-back-link" onClick={() => navigate("/rooms")} style={{ marginTop: "1rem" }}>
                         Quay Lại Danh Sách Phòng
                     </button>
@@ -156,7 +211,7 @@ export default function BookingPage() {
                                         <label className="form-label">Họ Tên Đầy Đủ *</label>
                                         <input
                                             type="text"
-                                            className={`form - input ${errors.fullName ? "error" : ""} `}
+                                            className={`form-input ${errors.fullName ? "error" : ""}`}
                                             placeholder="Nguyễn Văn A"
                                             value={fullName}
                                             onChange={(e) => setFullName(e.target.value)}
@@ -168,7 +223,7 @@ export default function BookingPage() {
                                         <label className="form-label">Email *</label>
                                         <input
                                             type="email"
-                                            className={`form - input ${errors.email ? "error" : ""} `}
+                                            className={`form-input ${errors.email ? "error" : ""}`}
                                             placeholder="email@example.com"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
@@ -180,7 +235,7 @@ export default function BookingPage() {
                                         <label className="form-label">Số Điện Thoại *</label>
                                         <input
                                             type="text"
-                                            className={`form - input ${errors.phone ? "error" : ""} `}
+                                            className={`form-input ${errors.phone ? "error" : ""}`}
                                             placeholder="0912345678"
                                             value={phone}
                                             onChange={(e) => setPhone(e.target.value)}
@@ -193,6 +248,10 @@ export default function BookingPage() {
                                         <p>✓ Phòng sẽ được giữ lại trong vòng 7 ngày</p>
                                         <p>✓ Vui lòng ký hợp đồng trong thời gian này</p>
                                     </div>
+
+                                    {submitError && (
+                                        <div className="form-submit-error">{submitError}</div>
+                                    )}
 
                                     <button type="submit" className="bk-primary-btn" disabled={isSubmitting}>
                                         {isSubmitting ? (
@@ -211,65 +270,7 @@ export default function BookingPage() {
                             </div>
                         )}
 
-                        {/* STEP 2: PAYMENT */}
-                        {bookingStep === "payment" && (
-                            <div className="bk-card">
-                                <h3 className="bk-card-title">
-                                    <CreditCard size={18} />
-                                    Thanh Toán Cọc
-                                </h3>
-                                <p className="bk-card-desc">Quét mã QR bằng ứng dụng ngân hàng của bạn</p>
-
-                                <div className="payment-body">
-                                    <div className="qr-container">
-                                        <div className="qr-placeholder">Mã QR Thanh Toán</div>
-                                    </div>
-
-                                    <div className="payment-info">
-                                        <div className="payment-info-row">
-                                            <span className="payment-info-label">Số tiền:</span>
-                                            <span className="payment-info-value highlight">
-                                                {depositAmount.toLocaleString("vi-VN")}đ
-                                            </span>
-                                        </div>
-                                        <div className="payment-info-row">
-                                            <span className="payment-info-label">Nội dung chuyển khoản:</span>
-                                            <span className="payment-info-value">Cọc {room.roomCode}</span>
-                                        </div>
-                                        <div className="payment-info-row">
-                                            <span className="payment-info-label">Chủ tài khoản:</span>
-                                            <span className="payment-info-value">Hoàng Nam</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="confirm-checkbox">
-                                        <label>
-                                            <input
-                                                type="checkbox"
-                                                checked={paymentConfirmed}
-                                                onChange={(e) => setPaymentConfirmed(e.target.checked)}
-                                            />
-                                            Tôi đã chuyển khoản thành công
-                                        </label>
-                                    </div>
-
-                                    <button
-                                        className="bk-primary-btn green"
-                                        onClick={handlePaymentSuccess}
-                                        disabled={!paymentConfirmed}
-                                    >
-                                        <CheckCircle size={18} />
-                                        Xác Nhận Thanh Toán
-                                    </button>
-
-                                    <button className="bk-outline-btn" onClick={() => setBookingStep("form")}>
-                                        Quay lại
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* STEP 3: SUCCESS */}
+                        {/* STEP 2: SUCCESS */}
                         {bookingStep === "success" && (
                             <div className="bk-card">
                                 <div className="success-content">
@@ -376,6 +377,22 @@ export default function BookingPage() {
                     </div>
                 </div>
             </div>
+
+            {/* ========== PAYMENT MODAL ========== */}
+            {showPaymentModal && depositData && (
+                <div className="payment-modal-overlay" onClick={handleCancelDeposit}>
+                    <div className="payment-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <button className="payment-modal-close" onClick={handleCancelDeposit}>
+                            ✕
+                        </button>
+                        <DepositPayment
+                            depositData={depositData}
+                            onSuccess={handlePaymentSuccess}
+                            onCancel={handleCancelDeposit}
+                        />
+                    </div>
+                </div>
+            )}
         </main>
     );
 }
