@@ -249,19 +249,19 @@ const DepositRoom = () => {
           filterContact ||
           filterRoom ||
           filterStatus !== "all") && (
-          <Button
-            size="small"
-            onClick={() => {
-              setFilterName("");
-              setFilterContact("");
-              setFilterRoom("");
-              setFilterStatus("all");
-            }}
-            sx={{ minWidth: "auto", p: 0.5, color: "#94a3b8" }}
-          >
-            <ClearIcon sx={{ fontSize: 18 }} />
-          </Button>
-        )}
+            <Button
+              size="small"
+              onClick={() => {
+                setFilterName("");
+                setFilterContact("");
+                setFilterRoom("");
+                setFilterStatus("all");
+              }}
+              sx={{ minWidth: "auto", p: 0.5, color: "#94a3b8" }}
+            >
+              <ClearIcon sx={{ fontSize: 18 }} />
+            </Button>
+          )}
       </Box>
 
       <TableContainer
@@ -311,7 +311,11 @@ const DepositRoom = () => {
                     {formatCurrency(deposit.amount)}
                   </TableCell>
                   <TableCell>
-                    {format(new Date(deposit.createdDate), "dd/MM/yyyy HH:mm")}
+                    {deposit.createdDate
+                      ? format(new Date(deposit.createdDate), "dd/MM/yyyy HH:mm")
+                      : deposit.createdAt
+                        ? format(new Date(deposit.createdAt), "dd/MM/yyyy HH:mm")
+                        : "N/A"}
                   </TableCell>
                   <TableCell>
                     <Chip

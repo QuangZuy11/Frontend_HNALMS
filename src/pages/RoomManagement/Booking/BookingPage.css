@@ -581,3 +581,96 @@
         font-size: 1.3rem;
     }
 }
+
+/* Submit error */
+.form-submit-error {
+    background: #fff1f0;
+    color: #dc2626;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    padding: 0.65rem 0.875rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+/* ============================================
+   PAYMENT MODAL
+   ============================================ */
+.payment-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: modalFadeIn 0.25s ease;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.payment-modal-content {
+    position: relative;
+    width: 100%;
+    max-width: 620px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 14px;
+    animation: modalSlideUp 0.3s ease;
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.payment-modal-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.06);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+    color: #666;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+}
+
+.payment-modal-close:hover {
+    background: rgba(0, 0, 0, 0.12);
+    color: #222;
+}
+
+@media (max-width: 480px) {
+    .payment-modal-content {
+        max-width: 100%;
+        max-height: 95vh;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .payment-modal-overlay {
+        align-items: flex-end;
+        padding: 0;
+    }
+}
