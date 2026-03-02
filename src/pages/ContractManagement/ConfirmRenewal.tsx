@@ -1,2 +1,0 @@
-// Confirm contract renewal
-export { }

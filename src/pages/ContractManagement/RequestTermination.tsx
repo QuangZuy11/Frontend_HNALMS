@@ -1,2 +1,0 @@
-// Request contract termination
-export { }
