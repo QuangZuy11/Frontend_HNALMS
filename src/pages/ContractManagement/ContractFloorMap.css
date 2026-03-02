@@ -6,73 +6,57 @@
    Shows the room type color but muted, with hatched overlay
    ============================== */
 .contract-floor-map .room-node.status-occupied {
-    /* Keep type color via inline style (set via data-color attr) — 
+  /* Keep type color via inline style (set via data-color attr) — 
        but since occupied rooms don't get inline background, we override here */
-    opacity: 0.55;
-    cursor: pointer !important;
-    background: linear-gradient(145deg, #9ca3af 0%, #6b7280 100%) !important;
-    color: #ffffff !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+  opacity: 0.55;
+  cursor: pointer !important;
+  background: linear-gradient(145deg, #9ca3af 0%, #6b7280 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
 }
 
 /* Diagonal hatching overlay for occupied rooms */
 .contract-floor-map .room-node.status-occupied::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: repeating-linear-gradient(-45deg,
-            transparent,
-            transparent 3px,
-            rgba(255, 255, 255, 0.3) 3px,
-            rgba(255, 255, 255, 0.3) 6px) !important;
-    pointer-events: none;
-    z-index: 1;
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 3px,
+    rgba(255, 255, 255, 0.3) 3px,
+    rgba(255, 255, 255, 0.3) 6px
+  ) !important;
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* Make occupied rooms clickable + hover effect */
 .contract-floor-map .room-node.status-occupied:hover {
-    transform: translateY(-2px) scale(1.02) !important;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
-    opacity: 0.75;
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
+  opacity: 0.75;
 }
 
 .contract-floor-map .room-node.status-occupied .room-node-name {
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
 }
 
 /* ==============================
-   DEPOSITED ROOMS: Same color + "!" badge at top-right
+   DEPOSITED ROOMS: Same color as available (use room type color)
    ============================== */
 .contract-floor-map .room-node.status-deposited {
-    color: #ffffff;
-    cursor: pointer;
-    position: relative;
-}
-
-.contract-floor-map .room-node.status-deposited::after {
-    content: "!";
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 18px;
-    height: 18px;
-    background: #ff9800;
-    color: #fff;
-    font-size: 12px;
-    font-weight: 900;
-    line-height: 18px;
-    text-align: center;
-    border-radius: 50%;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-    z-index: 2;
+  color: #ffffff;
+  cursor: pointer;
+  position: relative;
 }
 
 /* ==============================
    AVAILABLE ROOMS: Unchanged, just ensure clickable
    ============================== */
 .contract-floor-map .room-node.status-available {
-    cursor: pointer;
+  cursor: pointer;
 }

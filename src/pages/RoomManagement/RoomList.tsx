@@ -91,23 +91,23 @@ export default function RoomList() {
   // Get floor label from floorsData instead of rooms (works even when no rooms match)
   const currentFloorLabel = showFloorMap
     ? (() => {
-      const selectedFloor = floorsData.find(
-        (f) => f._id === filters.selectedFloors[0],
-      );
-      if (selectedFloor) {
-        const name = selectedFloor.name;
-        // Check if name already starts with "Tầng"
-        if (name.toLowerCase().startsWith("tầng")) {
-          return name;
+        const selectedFloor = floorsData.find(
+          (f) => f._id === filters.selectedFloors[0],
+        );
+        if (selectedFloor) {
+          const name = selectedFloor.name;
+          // Check if name already starts with "Tầng"
+          if (name.toLowerCase().startsWith("tầng")) {
+            return name;
+          }
+          return `Tầng ${name}`;
         }
-        return `Tầng ${name}`;
-      }
-      // Fallback to room data if floorsData not available
-      const roomFloorLabel = rooms.find(
-        (r) => r.floorId?._id === filters.selectedFloors[0],
-      )?.floorLabel;
-      return roomFloorLabel || "";
-    })()
+        // Fallback to room data if floorsData not available
+        const roomFloorLabel = rooms.find(
+          (r) => r.floorId?._id === filters.selectedFloors[0],
+        )?.floorLabel;
+        return roomFloorLabel || "";
+      })()
     : "";
 
   useEffect(() => {
@@ -135,7 +135,11 @@ export default function RoomList() {
         // Transform backend data to match frontend expectations
         const transformedRooms = filteredRooms.map((room: any) => {
           let priceNum = 0;
-          if (room.roomTypeId && typeof room.roomTypeId.currentPrice === "object" && room.roomTypeId.currentPrice.$numberDecimal) {
+          if (
+            room.roomTypeId &&
+            typeof room.roomTypeId.currentPrice === "object" &&
+            room.roomTypeId.currentPrice.$numberDecimal
+          ) {
             priceNum = parseFloat(room.roomTypeId.currentPrice.$numberDecimal);
           } else if (typeof room.roomTypeId?.currentPrice === "number") {
             priceNum = room.roomTypeId.currentPrice;
@@ -153,9 +157,10 @@ export default function RoomList() {
               ? room.floorId?.name
               : `Tầng ${room.floorId?.name || "N/A"}`,
             price: priceNum,
-            priceLabel: priceNum > 0
-              ? `${(priceNum / 1000000).toFixed(1)}M`
-              : "Chưa có giá",
+            priceLabel:
+              priceNum > 0
+                ? `${(priceNum / 1000000).toFixed(1)}M`
+                : "Chưa có giá",
             area: room.roomTypeId?.area || 30,
             capacity: room.roomTypeId?.personMax || 2,
             description: room.description || room.roomTypeId?.description || "",
@@ -234,7 +239,9 @@ export default function RoomList() {
             </button>
           )}
 
-          <aside className={`filters-sidebar ${sidebarCollapsed ? "collapsed" : ""}`}>
+          <aside
+            className={`filters-sidebar ${sidebarCollapsed ? "collapsed" : ""}`}
+          >
             {/* Close button when manually opened in split-view */}
             {showTypeDetail && sidebarManualOpen && (
               <button
@@ -295,8 +302,8 @@ export default function RoomList() {
               <>
                 {/* Case: Floor selected + Room Type selected + No rooms match -> Show "No rooms found" instead of empty map */}
                 {showFloorMap &&
-                  filters.selectedRoomTypes.length > 0 &&
-                  rooms.length === 0 ? (
+                filters.selectedRoomTypes.length > 0 &&
+                rooms.length === 0 ? (
                   <div className="empty-state">
                     <p>Không có phòng loại này tại {currentFloorLabel}</p>
                   </div>
@@ -317,6 +324,7 @@ export default function RoomList() {
                         }
                         highlightedRooms={rooms}
                         floorName={currentFloorLabel || `Tầng`}
+                        legendType="guest"
                       />
                     ) : currentFloorLabel.includes("3") ? (
                       <FloorMapLevel3
@@ -325,6 +333,7 @@ export default function RoomList() {
                         }
                         highlightedRooms={rooms}
                         floorName={currentFloorLabel || `Tầng`}
+                        legendType="guest"
                       />
                     ) : currentFloorLabel.includes("4") ? (
                       <FloorMapLevel4
@@ -333,6 +342,7 @@ export default function RoomList() {
                         }
                         highlightedRooms={rooms}
                         floorName={currentFloorLabel || `Tầng`}
+                        legendType="guest"
                       />
                     ) : currentFloorLabel.includes("5") ? (
                       <FloorMapLevel5
@@ -341,6 +351,7 @@ export default function RoomList() {
                         }
                         highlightedRooms={rooms}
                         floorName={currentFloorLabel || `Tầng`}
+                        legendType="guest"
                       />
                     ) : (
                       <FloorMap
@@ -349,6 +360,7 @@ export default function RoomList() {
                         }
                         highlightedRooms={rooms}
                         floorName={currentFloorLabel || `Tầng`}
+                        legendType="guest"
                       />
                     )}
                     <RoomTypeDetail room={rooms[0]} />
@@ -361,6 +373,7 @@ export default function RoomList() {
                       }
                       highlightedRooms={rooms}
                       floorName={currentFloorLabel || `Tầng`}
+                      legendType="guest"
                     />
                   ) : currentFloorLabel.includes("3") ? (
                     <FloorMapLevel3
@@ -369,6 +382,7 @@ export default function RoomList() {
                       }
                       highlightedRooms={rooms}
                       floorName={currentFloorLabel || `Tầng`}
+                      legendType="guest"
                     />
                   ) : currentFloorLabel.includes("4") ? (
                     <FloorMapLevel4
@@ -377,6 +391,7 @@ export default function RoomList() {
                       }
                       highlightedRooms={rooms}
                       floorName={currentFloorLabel || `Tầng`}
+                      legendType="guest"
                     />
                   ) : currentFloorLabel.includes("5") ? (
                     <FloorMapLevel5
@@ -385,6 +400,7 @@ export default function RoomList() {
                       }
                       highlightedRooms={rooms}
                       floorName={currentFloorLabel || `Tầng`}
+                      legendType="guest"
                     />
                   ) : (
                     <FloorMap
@@ -393,6 +409,7 @@ export default function RoomList() {
                       }
                       highlightedRooms={rooms}
                       floorName={currentFloorLabel || `Tầng`}
+                      legendType="guest"
                     />
                   )
                 ) : (

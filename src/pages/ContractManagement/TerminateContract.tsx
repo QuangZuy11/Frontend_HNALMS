@@ -1,2 +1,0 @@
-// Terminate contract
-export { }

@@ -30,7 +30,7 @@
 
 /* === Room node cho tầng 2 === */
 .floor-map-container.level-2 .room-node {
-  overflow: hidden;
+  overflow: visible;
   box-sizing: border-box;
   min-width: 0;
   height: auto;
@@ -164,5 +164,7 @@
   background-color: #e5e7eb !important;
   color: #9ca3af !important;
   box-shadow: none;
-  transition: opacity 0.3s ease, filter 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    filter 0.3s ease;
 }

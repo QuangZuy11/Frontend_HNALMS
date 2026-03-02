@@ -11,7 +11,9 @@ interface Room {
     _id: string;
     name?: string;
     typeName?: string;
+    currentPrice?: number;
   };
+  price?: number;
   contractEndDate?: string;
   [key: string]: any;
 }
@@ -22,6 +24,7 @@ interface FloorMapProps {
   floorName?: string;
   compact?: boolean;
   onRoomSelect?: (room: Room) => void;
+  legendType?: "default" | "deposit" | "guest" | "none";
 }
 
 // Soft & Eye-Friendly Color Palette - Easy to distinguish
@@ -59,6 +62,7 @@ export default function FloorMap({
   floorName,
   compact = false,
   onRoomSelect,
+  legendType = "default",
 }: FloorMapProps) {
   const navigate = useNavigate();
 
@@ -70,7 +74,7 @@ export default function FloorMap({
     // Try to find a name property. roomTypeId might have name or typeName
     const name =
       room?.roomTypeId?.typeName || room?.roomTypeId?.name || "Loại Khác";
-    const price = room?.price || 0;
+    const price = room?.price || room?.roomTypeId?.currentPrice || 0;
     return { id, name, price };
   });
 
@@ -121,85 +125,96 @@ export default function FloorMap({
 
         <div className="map-legends-container">
           {/* Instruction Legend */}
-          <div
-            className="map-legend status-legend"
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: "1.5rem",
-              flexWrap: "wrap",
-            }}
-          >
-            <span style={{ fontSize: "0.8rem", color: "#374151" }}>
-              Phòng sáng màu = chưa có hợp đồng, click để tạo HĐ mới.
-            </span>
-            <span
+          {legendType !== "none" && (
+            <div
+              className="map-legend status-legend"
               style={{
-                fontSize: "0.8rem",
-                color: "#374151",
-                display: "inline-flex",
+                flexDirection: "row",
                 alignItems: "center",
-                gap: "0.35rem",
+                gap: "1.5rem",
+                flexWrap: "wrap",
               }}
             >
+              <span style={{ fontSize: "0.8rem", color: "#374151" }}>
+                {legendType === "deposit"
+                  ? "Phòng sáng màu = chưa có cọc, click để tạo cọc mới."
+                  : legendType === "guest"
+                    ? "Phòng sáng màu = Phòng trống, có thể đặt phòng."
+                    : "Phòng sáng màu = chưa có hợp đồng, click để tạo HĐ mới."}
+              </span>
               <span
                 style={{
-                  display: "inline-block",
-                  width: "16px",
-                  height: "16px",
-                  borderRadius: "3px",
-                  background:
-                    "repeating-linear-gradient(135deg, #ffffff, #ffffff 3px, #c5cdd6 3px, #c5cdd6 6px)",
-                  border: "1px solid #d1d5db",
-                }}
-              />
-              Đã thuê → Click để xem HĐ
-            </span>
-            <span
-              style={{
-                fontSize: "0.8rem",
-                color: "#374151",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.35rem",
-              }}
-            >
-              <span
-                style={{
-                  position: "relative",
-                  display: "inline-block",
-                  width: "16px",
-                  height: "16px",
-                  borderRadius: "3px",
-                  background:
-                    "linear-gradient(145deg, #f59e0b 0%, #d97706 100%)",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                  fontSize: "0.8rem",
+                  color: "#374151",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.35rem",
                 }}
               >
                 <span
                   style={{
-                    position: "absolute",
-                    top: "-4px",
-                    right: "-4px",
-                    width: "10px",
-                    height: "10px",
-                    borderRadius: "50%",
-                    background: "#ef4444",
-                    color: "white",
-                    fontSize: "7px",
-                    fontWeight: 700,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    lineHeight: 1,
+                    display: "inline-block",
+                    width: "16px",
+                    height: "16px",
+                    borderRadius: "3px",
+                    background:
+                      "repeating-linear-gradient(135deg, #ffffff, #ffffff 3px, #c5cdd6 3px, #c5cdd6 6px)",
+                    border: "1px solid #d1d5db",
+                  }}
+                />
+                Đã thuê{legendType === "default" && " → Click để xem HĐ"}
+                {legendType === "guest" && " (Không khả dụng)"}
+              </span>
+              <span
+                style={{
+                  fontSize: "0.8rem",
+                  color: "#374151",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.35rem",
+                }}
+              >
+                <span
+                  style={{
+                    position: "relative",
+                    display: "inline-block",
+                    width: "16px",
+                    height: "16px",
+                    borderRadius: "3px",
+                    background:
+                      "linear-gradient(145deg, #f59e0b 0%, #d97706 100%)",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
                   }}
                 >
-                  !
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "-4px",
+                      right: "-4px",
+                      width: "12px",
+                      height: "12px",
+                      borderRadius: "50%",
+                      background:
+                        "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
+                      color: "#1e293b",
+                      fontSize: "8px",
+                      fontWeight: 800,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      lineHeight: 1,
+                      border: "1.5px solid white",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                    }}
+                  >
+                    !
+                  </span>
                 </span>
+                Đã cọc{legendType === "default" && " → Click để tạo HĐ"}
+                {legendType === "guest" && " (Không khả dụng)"}
               </span>
-              Đã cọc → Click để tạo HĐ
-            </span>
-          </div>
+            </div>
+          )}
 
           {/* Room Type Legend (Dynamic) */}
           {uniqueRoomTypes.length > 0 && (
@@ -264,6 +279,34 @@ export default function FloorMap({
                         : undefined
                     }
                   >
+                    {/* Deposited badge - exclamation mark */}
+                    {isDeposited && (
+                      <span
+                        style={{
+                          position: "absolute",
+                          top: "-6px",
+                          right: "-6px",
+                          width: "20px",
+                          height: "20px",
+                          borderRadius: "50%",
+                          background:
+                            "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
+                          color: "#1e293b",
+                          fontSize: "13px",
+                          fontWeight: 800,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          lineHeight: 1,
+                          boxShadow:
+                            "0 2px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.3)",
+                          zIndex: 10,
+                          border: "2px solid white",
+                        }}
+                      >
+                        !
+                      </span>
+                    )}
                     <span className="room-node-name">{room.name}</span>
                     {getExpiryLabel(room.contractEndDate) && (
                       <span className="room-expiry-label">

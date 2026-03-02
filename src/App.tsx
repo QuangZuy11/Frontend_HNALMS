@@ -79,6 +79,9 @@ import Header from "./components/layout/Header/Header";
 import CreateContract from "./pages/ContractManagement/CreateContract";
 import ContractList from "./pages/ContractManagement/ContractList";
 import ContractDetail from "./pages/ContractManagement/ContractDetail";
+import DepositRoom from "./pages/ContractManagement/DepositRoom";
+import DepositFloorMap from "./pages/ContractManagement/DepositFloorMap";
+import CreateDeposit from "./pages/ContractManagement/CreateDeposit";
 
 // ================= Layout Wrapper =================
 function LayoutWrapper() {
@@ -111,12 +114,44 @@ function LayoutWrapper() {
         />
 
         {/* Room List & Detail */}
-        <Route path="/rooms" element={<><Header /><RoomList /></>} />
-        <Route path="/rooms/:id" element={<><Header /><RoomDetail /></>} />
-        <Route path="/rooms/:id/booking" element={<><Header /><BookingPage /></>} />
+        <Route
+          path="/rooms"
+          element={
+            <>
+              <Header />
+              <RoomList />
+            </>
+          }
+        />
+        <Route
+          path="/rooms/:id"
+          element={
+            <>
+              <Header />
+              <RoomDetail />
+            </>
+          }
+        />
+        <Route
+          path="/rooms/:id/booking"
+          element={
+            <>
+              <Header />
+              <BookingPage />
+            </>
+          }
+        />
 
         {/* Building Rules Public */}
-        <Route path="/rules" element={<><Header /><BuildingRulesPublic /></>} />
+        <Route
+          path="/rules"
+          element={
+            <>
+              <Header />
+              <BuildingRulesPublic />
+            </>
+          }
+        />
 
         {/* ==================== AUTH ROUTES ==================== */}
         {/* Login - Redirect authenticated users to their dashboard */}
@@ -136,7 +171,13 @@ function LayoutWrapper() {
           path="/change-password"
           element={
             <PrivateRoute
-              allowedRoles={["admin", "manager", "owner", "tenant", "accountant"]}
+              allowedRoles={[
+                "admin",
+                "manager",
+                "owner",
+                "tenant",
+                "accountant",
+              ]}
             >
               <ChangePassword />
             </PrivateRoute>
@@ -183,7 +224,9 @@ function LayoutWrapper() {
           <Route path="contracts" element={<ContractList />} />
           <Route path="contracts/create" element={<CreateContract />} />
           <Route path="contracts/:id" element={<ContractDetail />} />
-          
+          <Route path="deposits" element={<DepositRoom />} />
+          <Route path="deposits/floor-map" element={<DepositFloorMap />} />
+          <Route path="deposits/create/:id" element={<CreateDeposit />} />
         </Route>
 
         {/* ==================== MANAGER ROUTES ==================== */}
@@ -205,6 +248,9 @@ function LayoutWrapper() {
           <Route path="contracts" element={<ContractList />} />
           <Route path="contracts/create" element={<CreateContract />} />
           <Route path="contracts/:id" element={<ContractDetail />} />
+          <Route path="deposits" element={<DepositRoom />} />
+          <Route path="deposits/floor-map" element={<DepositFloorMap />} />
+          <Route path="deposits/create/:id" element={<CreateDeposit />} />
           <Route path="invoices" element={<ManagerInvoice />} />
           {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
         </Route>
@@ -228,7 +274,13 @@ function LayoutWrapper() {
           path="/profile"
           element={
             <PrivateRoute
-              allowedRoles={["admin", "manager", "owner", "tenant", "accountant"]}
+              allowedRoles={[
+                "admin",
+                "manager",
+                "owner",
+                "tenant",
+                "accountant",
+              ]}
             >
               <ViewProfile />
             </PrivateRoute>
@@ -239,7 +291,13 @@ function LayoutWrapper() {
           path="/profile/update"
           element={
             <PrivateRoute
-              allowedRoles={["admin", "manager", "owner", "tenant", "accountant"]}
+              allowedRoles={[
+                "admin",
+                "manager",
+                "owner",
+                "tenant",
+                "accountant",
+              ]}
             >
               <UpdateProfile />
             </PrivateRoute>
