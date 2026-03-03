@@ -30,10 +30,16 @@ export const requestService = {
     return response.data;
   },
 
+  // Lấy mã hóa đơn sửa chữa kế tiếp (Manager)
+  getNextRepairInvoiceCode: async () => {
+    const response = await api.get('/requests/repair/next-invoice-code');
+    return response.data;
+  },
+
   // Cập nhật trạng thái yêu cầu sửa chữa
   updateRepairStatus: async (
     requestId: string,
-    status: 'Pending' | 'Processing' | 'Done',
+    status: 'Pending' | 'Processing' | 'Done' | 'Unpair',
     cost?: number,
     notes?: string,
     invoice?: {

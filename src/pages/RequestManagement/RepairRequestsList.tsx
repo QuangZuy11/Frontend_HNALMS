@@ -14,7 +14,6 @@ interface RepairRequest {
   notes?: string;
   createdDate: string;
   paymentType?: 'REVENUE' | 'EXPENSE' | null;
-  paymentStatus?: 'NONE' | 'UNPAID' | 'PAID' | null;
   tenantId?: {
     _id: string;
     username: string;
@@ -46,17 +45,16 @@ export default function RepairRequestsList() {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showFreeModal, setShowFreeModal] = useState(false);
   const [completingRequest, setCompletingRequest] = useState<RepairRequest | null>(null);
+  const [autoInvoiceCode, setAutoInvoiceCode] = useState<string>('');
+  const [autoInvoiceCodeLoading, setAutoInvoiceCodeLoading] = useState(false);
+  const [autoInvoiceCodeError, setAutoInvoiceCodeError] = useState<string>('');
   const [completeForm, setCompleteForm] = useState({
-    invoiceCode: '',
     invoiceTitle: '',
     invoiceTotalAmount: '',
-    invoiceDueDate: '',
   });
   const [formErrors, setFormErrors] = useState({
-    invoiceCode: '',
     invoiceTitle: '',
     invoiceTotalAmount: '',
-    invoiceDueDate: '',
   });
   const [freeForm, setFreeForm] = useState({
     financialTitle: '',
@@ -70,7 +68,9 @@ export default function RepairRequestsList() {
   // Chi phí hiển thị được backend tính sẵn dựa trên invoice/financial ticket,
   // không cho sửa tay nữa nên bỏ modal chỉnh sửa cost.
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'Pending' | 'Processing' | 'Done'>(
+  const [statusFilter, setStatusFilter] = useState<
+    'ALL' | 'Pending' | 'Processing' | 'Unpair' | 'Done'
+  >(
     'ALL',
   );
   const [roomSearch, setRoomSearch] = useState<string>('');
@@ -145,11 +145,7 @@ export default function RepairRequestsList() {
   const getStatusLabel = (request: RepairRequest) => {
     if (request.status === 'Pending') return 'Chờ xử lý';
     if (request.status === 'Processing') return 'Đang xử lý';
-
-    // Đã xử lý về mặt kỹ thuật
-    if (request.paymentType === 'REVENUE' && request.paymentStatus === 'UNPAID') {
-      return 'Chờ thanh toán';
-    }
+    if (request.status === 'Unpair') return 'Chờ thanh toán';
     return 'Đã xử lý';
   };
 
@@ -167,7 +163,7 @@ export default function RepairRequestsList() {
 
   const handleUpdateStatus = async (
     request: RepairRequest,
-    nextStatus: 'Pending' | 'Processing' | 'Done',
+    nextStatus: 'Pending' | 'Processing' | 'Done' | 'Unpair',
   ) => {
     // Nếu chuyển sang "Đã xử lý", hiện modal chọn loại xử lý (có phí / miễn phí)
     if (nextStatus === 'Done') {
@@ -207,19 +203,35 @@ export default function RepairRequestsList() {
   const handleChoosePaidRepair = () => {
     if (!completingRequest) return;
     setShowCompleteTypeModal(false);
-      setCompleteForm({
-        invoiceCode: '',
-        invoiceTitle: '',
-        invoiceTotalAmount: '',
-        invoiceDueDate: '',
-      });
-      setFormErrors({
-        invoiceCode: '',
-        invoiceTitle: '',
-        invoiceTotalAmount: '',
-        invoiceDueDate: '',
-      });
+    setAutoInvoiceCode('');
+    setAutoInvoiceCodeError('');
+    setCompleteForm({
+      invoiceTitle: '',
+      invoiceTotalAmount: '',
+    });
+    setFormErrors({
+      invoiceTitle: '',
+      invoiceTotalAmount: '',
+    });
     setShowCompleteModal(true);
+
+    // Auto-generate invoice code for paid repair only
+    (async () => {
+      try {
+        setAutoInvoiceCodeLoading(true);
+        const res = await requestService.getNextRepairInvoiceCode();
+        const code = res?.data?.invoiceCode;
+        if (!code) throw new Error('Không thể tạo mã hóa đơn');
+        setAutoInvoiceCode(code);
+      } catch (err: any) {
+        console.error('Lỗi khi tạo mã hóa đơn:', err);
+        setAutoInvoiceCodeError(
+          err?.response?.data?.message || err?.message || 'Không thể tạo mã hóa đơn',
+        );
+      } finally {
+        setAutoInvoiceCodeLoading(false);
+      }
+    })();
   };
 
   const handleChooseFreeRepair = () => {
@@ -242,17 +254,10 @@ export default function RepairRequestsList() {
 
     // Validate form
     const errors = {
-      invoiceCode: '',
       invoiceTitle: '',
       invoiceTotalAmount: '',
-      invoiceDueDate: '',
     };
     let isValid = true;
-
-    if (!completeForm.invoiceCode.trim()) {
-      errors.invoiceCode = 'Vui lòng nhập mã hóa đơn';
-      isValid = false;
-    }
 
     if (!completeForm.invoiceTitle.trim()) {
       errors.invoiceTitle = 'Vui lòng nhập tiêu đề hóa đơn';
@@ -270,11 +275,6 @@ export default function RepairRequestsList() {
       }
     }
 
-    if (!completeForm.invoiceDueDate) {
-      errors.invoiceDueDate = 'Vui lòng chọn ngày đến hạn';
-      isValid = false;
-    }
-
     setFormErrors(errors);
 
     if (!isValid) {
@@ -284,18 +284,42 @@ export default function RepairRequestsList() {
     const totalAmount = parseFloat(completeForm.invoiceTotalAmount);
     const cost = totalAmount; // Chi phí trên request sẽ bằng tổng số tiền hóa đơn
 
+    // Due date is auto-set: +7 days starting from the moment user clicks "Hoàn thành"
+    const toDateInputValue = (date: Date) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
+    const dueDate = (() => {
+      const now = new Date();
+      const target = new Date(now);
+      target.setDate(target.getDate() + 7);
+      return toDateInputValue(target);
+    })();
+
     try {
       setUpdatingId(completingRequest._id);
+
+      let invoiceCodeToUse = autoInvoiceCode;
+      if (!invoiceCodeToUse) {
+        const res = await requestService.getNextRepairInvoiceCode();
+        const code = res?.data?.invoiceCode;
+        if (!code) throw new Error('Không thể tạo mã hóa đơn');
+        invoiceCodeToUse = code;
+        setAutoInvoiceCode(code);
+      }
+
       const response = await requestService.updateRepairStatus(
         completingRequest._id,
         'Done',
         cost,
         undefined,
         {
-          invoiceCode: completeForm.invoiceCode.trim(),
+          invoiceCode: invoiceCodeToUse,
           title: completeForm.invoiceTitle.trim(),
           totalAmount,
-          dueDate: completeForm.invoiceDueDate,
+          dueDate,
         },
         undefined,
         'REVENUE'
@@ -311,7 +335,6 @@ export default function RepairRequestsList() {
                   status: updated.status,
                   cost: updated.cost,
                   paymentType: updated.paymentType ?? 'REVENUE',
-                  paymentStatus: updated.paymentStatus ?? 'UNPAID',
                 }
               : r,
           ),
@@ -325,7 +348,6 @@ export default function RepairRequestsList() {
                   status: updated.status,
                   cost: updated.cost,
                   paymentType: updated.paymentType ?? 'REVENUE',
-                  paymentStatus: updated.paymentStatus ?? 'UNPAID',
                 }
               : prev,
           );
@@ -334,17 +356,15 @@ export default function RepairRequestsList() {
 
       setShowCompleteModal(false);
       setCompletingRequest(null);
+      setAutoInvoiceCode('');
+      setAutoInvoiceCodeError('');
       setCompleteForm({
-        invoiceCode: '',
         invoiceTitle: '',
         invoiceTotalAmount: '',
-        invoiceDueDate: '',
       });
       setFormErrors({
-        invoiceCode: '',
         invoiceTitle: '',
         invoiceTotalAmount: '',
-        invoiceDueDate: '',
       });
     } catch (err: any) {
       console.error('Lỗi khi hoàn thành yêu cầu:', err);
@@ -358,17 +378,15 @@ export default function RepairRequestsList() {
     setShowCompleteModal(false);
     setCompletingRequest(null);
     setShowCompleteTypeModal(false);
+    setAutoInvoiceCode('');
+    setAutoInvoiceCodeError('');
     setCompleteForm({
-      invoiceCode: '',
       invoiceTitle: '',
       invoiceTotalAmount: '',
-      invoiceDueDate: '',
     });
     setFormErrors({
-      invoiceCode: '',
       invoiceTitle: '',
       invoiceTotalAmount: '',
-      invoiceDueDate: '',
     });
   };
 
@@ -442,7 +460,6 @@ export default function RepairRequestsList() {
                   status: updated.status,
                   cost: updated.cost,
                   paymentType: updated.paymentType ?? 'EXPENSE',
-                  paymentStatus: updated.paymentStatus ?? 'PAID',
                 }
               : r,
           ),
@@ -456,7 +473,6 @@ export default function RepairRequestsList() {
                   status: updated.status,
                   cost: updated.cost,
                   paymentType: updated.paymentType ?? 'EXPENSE',
-                  paymentStatus: updated.paymentStatus ?? 'PAID',
                 }
               : prev,
           );
@@ -491,9 +507,7 @@ export default function RepairRequestsList() {
   };
 
   const filteredRequests =
-    statusFilter === 'ALL'
-      ? requests
-      : requests.filter((r) => r.status === statusFilter);
+    statusFilter === 'ALL' ? requests : requests.filter((r) => r.status === statusFilter);
 
   return (
     <div className="repair-requests-page">
@@ -541,13 +555,21 @@ export default function RepairRequestsList() {
                   className="repair-filter-select"
                   value={statusFilter}
                   onChange={(e) =>
-                    setStatusFilter(e.target.value as 'ALL' | 'Pending' | 'Processing' | 'Done')
+                    setStatusFilter(
+                      e.target.value as
+                        | 'ALL'
+                        | 'Pending'
+                        | 'Processing'
+                        | 'Done'
+                        | 'Unpair',
+                    )
                   }
                 >
                   <option value="ALL">Tất cả</option>
                   <option value="Pending">Chờ xử lý</option>
                   <option value="Processing">Đang xử lý</option>
                   <option value="Done">Đã xử lý</option>
+                  <option value="Unpair">Chờ thanh toán</option>
                 </select>
               </div>
             </div>
@@ -818,10 +840,18 @@ export default function RepairRequestsList() {
                       onChange={(e) =>
                         handleUpdateStatus(
                           selectedRequest,
-                          e.target.value as 'Pending' | 'Processing' | 'Done',
+                          e.target.value as
+                            | 'Pending'
+                            | 'Processing'
+                            | 'Done'
+                            | 'Unpair',
                         )
                       }
-                      disabled={updatingId === selectedRequest._id || selectedRequest.status === 'Done'}
+                      disabled={
+                        updatingId === selectedRequest._id ||
+                        selectedRequest.status === 'Done' ||
+                        selectedRequest.status === 'Unpair'
+                      }
                     >
                       <option value="Pending" disabled={selectedRequest.status === 'Pending'}>
                         Chờ xử lý
@@ -834,6 +864,9 @@ export default function RepairRequestsList() {
                       </option>
                       <option value="Done" disabled={selectedRequest.status === 'Done'}>
                         Đã xử lý
+                      </option>
+                      <option value="Unpair" disabled>
+                        Chờ thanh toán
                       </option>
                     </select>
                     <button
@@ -931,21 +964,52 @@ export default function RepairRequestsList() {
               </div>
               <div className="repair-modal-body">
                 <div className="complete-form-group">
-                  <label htmlFor="invoice-code">Mã hóa đơn *</label>
+                  <label>Mã hóa đơn</label>
                   <input
                     type="text"
-                    id="invoice-code"
-                    value={completeForm.invoiceCode}
-                    onChange={(e) => {
-                      setCompleteForm({ ...completeForm, invoiceCode: e.target.value });
-                      if (formErrors.invoiceCode) {
-                        setFormErrors({ ...formErrors, invoiceCode: '' });
-                      }
-                    }}
-                    placeholder="Nhập mã hóa đơn (ví dụ: INV-XYZ-001)"
+                    value={
+                      autoInvoiceCodeLoading
+                        ? 'Đang tạo mã hoá đơn...'
+                        : autoInvoiceCode || 'Chưa tạo được mã hoá đơn'
+                    }
+                    disabled
                   />
-                  {formErrors.invoiceCode && (
-                    <span className="error-message">{formErrors.invoiceCode}</span>
+                  {autoInvoiceCodeError && (
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 6 }}>
+                      <span className="error-message" style={{ marginTop: 0 }}>
+                        {autoInvoiceCodeError}
+                      </span>
+                      <button
+                        type="button"
+                        className="btn-cancel"
+                        onClick={() => {
+                          if (autoInvoiceCodeLoading) return;
+                          setAutoInvoiceCode('');
+                          setAutoInvoiceCodeError('');
+                          (async () => {
+                            try {
+                              setAutoInvoiceCodeLoading(true);
+                              const res = await requestService.getNextRepairInvoiceCode();
+                              const code = res?.data?.invoiceCode;
+                              if (!code) throw new Error('Không thể tạo mã hóa đơn');
+                              setAutoInvoiceCode(code);
+                            } catch (err: any) {
+                              console.error('Lỗi khi tạo mã hóa đơn:', err);
+                              setAutoInvoiceCodeError(
+                                err?.response?.data?.message ||
+                                  err?.message ||
+                                  'Không thể tạo mã hóa đơn',
+                              );
+                            } finally {
+                              setAutoInvoiceCodeLoading(false);
+                            }
+                          })();
+                        }}
+                        disabled={autoInvoiceCodeLoading}
+                      >
+                        Thử lại
+                      </button>
+                    </div>
                   )}
                 </div>
                 <div className="complete-form-group">
@@ -988,22 +1052,20 @@ export default function RepairRequestsList() {
                   )}
                 </div>
                 <div className="complete-form-group">
-                  <label htmlFor="invoice-due-date">Ngày đến hạn *</label>
+                  <label>Ngày đến hạn</label>
                   <input
-                    type="date"
-                    id="invoice-due-date"
-                    value={completeForm.invoiceDueDate}
-                    onChange={(e) => {
-                      setCompleteForm({ ...completeForm, invoiceDueDate: e.target.value });
-                      if (formErrors.invoiceDueDate) {
-                        setFormErrors({ ...formErrors, invoiceDueDate: '' });
-                      }
-                    }}
-                    className={formErrors.invoiceDueDate ? 'input-error' : ''}
+                    type="text"
+                    value={(() => {
+                      const now = new Date();
+                      const target = new Date(now);
+                      target.setDate(target.getDate() + 7);
+                      const y = target.getFullYear();
+                      const m = String(target.getMonth() + 1).padStart(2, '0');
+                      const d = String(target.getDate()).padStart(2, '0');
+                      return `${d}/${m}/${y} `;
+                    })()}
+                    disabled
                   />
-                  {formErrors.invoiceDueDate && (
-                    <span className="error-message">{formErrors.invoiceDueDate}</span>
-                  )}
                 </div>
                 <div className="complete-form-actions">
                   <button
@@ -1018,7 +1080,14 @@ export default function RepairRequestsList() {
                     type="button"
                     className="btn-submit"
                     onClick={handleCompleteSubmit}
-                    disabled={updatingId === completingRequest._id || !completeForm.invoiceTotalAmount}
+                    disabled={
+                      updatingId === completingRequest._id ||
+                      !completeForm.invoiceTitle.trim() ||
+                      !completeForm.invoiceTotalAmount ||
+                      autoInvoiceCodeLoading ||
+                      !!autoInvoiceCodeError ||
+                      !autoInvoiceCode
+                    }
                   >
                     {updatingId === completingRequest._id ? 'Đang xử lý...' : 'Hoàn thành'}
                   </button>
