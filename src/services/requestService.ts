@@ -75,5 +75,39 @@ export const requestService = {
   },
 };
 
-// Request management API services
-export { }
+// Transfer request API services (Manager)
+export const transferRequestService = {
+  // Lấy danh sách yêu cầu chuyển phòng (Manager)
+  getAllTransferRequests: async (filters: {
+    status?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  } = {}) => {
+    const params: Record<string, string | number> = {};
+    if (filters.status) params.status = filters.status;
+    if (filters.search && filters.search.trim()) params.search = filters.search.trim();
+    if (filters.page !== undefined) params.page = filters.page;
+    if (filters.limit !== undefined) params.limit = filters.limit;
+    const response = await api.get('/requests/transfer', { params });
+    return response.data;
+  },
+
+  // Lấy chi tiết yêu cầu chuyển phòng
+  getTransferRequestById: async (requestId: string) => {
+    const response = await api.get(`/requests/transfer/${requestId}`);
+    return response.data;
+  },
+
+  // Duyệt yêu cầu chuyển phòng
+  approveTransferRequest: async (requestId: string, managerNote?: string) => {
+    const response = await api.patch(`/requests/transfer/${requestId}/approve`, { managerNote });
+    return response.data;
+  },
+
+  // Từ chối yêu cầu chuyển phòng
+  rejectTransferRequest: async (requestId: string, rejectReason: string) => {
+    const response = await api.patch(`/requests/transfer/${requestId}/reject`, { rejectReason });
+    return response.data;
+  },
+};
