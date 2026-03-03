@@ -4,7 +4,7 @@ export interface Room {
   title: string;
   floor: number;
   floorLabel: string;
-  status: "Trống" | "Đã thuê" | "Bảo trì" | "Available" | "Occupied" | "Maintenance" | "Deposited";
+  status: "Trống" | "Đã thuê" | "Bảo trì";
   description?: string;
   price: number;
   priceLabel: string;

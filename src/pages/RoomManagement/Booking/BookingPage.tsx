@@ -69,7 +69,6 @@ export default function BookingPage() {
                         floorLabel: `Tầng ${roomData.floorId?.name || "N/A"} `,
                         price,
                         typeName: roomData.roomTypeId?.typeName || "Phòng",
-                        status: roomData.status,
                     });
                 }
             } catch (err) {
@@ -153,24 +152,6 @@ export default function BookingPage() {
             <main className="booking-page">
                 <div className="booking-container" style={{ textAlign: "center", paddingTop: "4rem" }}>
                     <h2>Phòng Không Tồn Tại</h2>
-                    <button className="booking-back-link" onClick={() => navigate("/rooms")} style={{ marginTop: "1rem" }}>
-                        Quay Lại Danh Sách Phòng
-                    </button>
-                </div>
-            </main>
-        );
-    }
-
-    if (room.status !== "Available" && room.status !== "Trống") {
-        return (
-            <main className="booking-page">
-                <div className="booking-container" style={{ textAlign: "center", paddingTop: "4rem" }}>
-                    <h2>{room.status === "Deposited" ? "Phòng Đã Được Đặt Cọc" : "Phòng Không Khả Dụng"}</h2>
-                    <p style={{ color: "#666", marginTop: "0.5rem" }}>
-                        {room.status === "Deposited"
-                            ? "Phòng này đã có người đặt cọc. Vui lòng chọn phòng khác."
-                            : "Phòng hiện không thể đặt cọc. Vui lòng chọn phòng khác."}
-                    </p>
                     <button className="booking-back-link" onClick={() => navigate("/rooms")} style={{ marginTop: "1rem" }}>
                         Quay Lại Danh Sách Phòng
                     </button>

@@ -7,7 +7,6 @@ export default function RoomCard({ room }) {
     Available: "available",
     Occupied: "occupied",
     Maintenance: "maintenance",
-    Deposited: "deposited",
     Trống: "available",
     "Đã thuê": "occupied",
     "Bảo trì": "maintenance",

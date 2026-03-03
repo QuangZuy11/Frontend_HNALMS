@@ -213,11 +213,18 @@ export default function RoomDetail() {
                     </div>
                   </div>
                   <span
-                    className={`overlay-status ${room.status === "Available" || room.status === "Trống" ? "available" : "occupied"}`}
+                    className={`overlay-status ${room.status === "Available" || room.status === "Trống"
+                        ? "available"
+                        : room.status === "Deposited"
+                          ? "deposited"
+                          : "occupied"
+                      }`}
                   >
                     {room.status === "Available" || room.status === "Trống"
                       ? "Còn trống"
-                      : "Đã thuê"}
+                      : room.status === "Deposited"
+                        ? "Đã đặt cọc"
+                        : "Đã thuê"}
                   </span>
                 </div>
 
@@ -281,11 +288,18 @@ export default function RoomDetail() {
                   </div>
                 </div>
                 <span
-                  className={`overlay-status ${room.status === "Available" || room.status === "Trống" ? "available" : "occupied"}`}
+                  className={`overlay-status ${room.status === "Available" || room.status === "Trống"
+                      ? "available"
+                      : room.status === "Deposited"
+                        ? "deposited"
+                        : "occupied"
+                    }`}
                 >
                   {room.status === "Available" || room.status === "Trống"
                     ? "Còn trống"
-                    : "Đã thuê"}
+                    : room.status === "Deposited"
+                      ? "Đã đặt cọc"
+                      : "Đã thuê"}
                 </span>
               </div>
               <span className="gallery-text">Hình Ảnh Phòng</span>

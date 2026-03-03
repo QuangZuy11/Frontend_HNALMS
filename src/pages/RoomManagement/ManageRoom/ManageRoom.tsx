@@ -53,7 +53,7 @@ interface Room {
   name: string;
   floorId: string | Floor;
   roomTypeId: string | RoomType;
-  status: "Available" | "Occupied" | "Maintenance";
+  status: "Available" | "Occupied" | "Maintenance" | "Deposited";
   description?: string;
   isActive: boolean;
 }
@@ -178,13 +178,13 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     );
   };
 
-const formatCurrency = (amount: any) => {
+  const formatCurrency = (amount: any) => {
     let value = 0;
 
     // Kiểm tra nếu dữ liệu là object Decimal128 của MongoDB
     if (amount && typeof amount === "object" && amount.$numberDecimal) {
       value = parseFloat(amount.$numberDecimal);
-    } 
+    }
     // Nếu là số hoặc chuỗi số bình thường
     else {
       value = Number(amount);
@@ -217,6 +217,12 @@ const formatCurrency = (amount: any) => {
         return (
           <span className="status-badge maintenance">
             <Wrench size={12} /> Bảo trì
+          </span>
+        );
+      case "Deposited":
+        return (
+          <span className="status-badge deposited">
+            <AlertCircle size={12} /> Đã Cọc
           </span>
         );
       default:

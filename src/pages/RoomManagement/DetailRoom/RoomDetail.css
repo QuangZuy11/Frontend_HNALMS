@@ -205,6 +205,11 @@
   color: #fff;
 }
 
+.overlay-status.deposited {
+  background: rgba(217, 119, 6, 0.9);
+  color: #fff;
+}
+
 /* Thumbnails */
 .thumbnails-container {
   display: flex;

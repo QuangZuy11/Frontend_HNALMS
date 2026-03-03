@@ -76,11 +76,6 @@
   color: #b45309;
 }
 
-.room-status.deposited {
-  background: rgba(99, 102, 241, 0.2);
-  color: #4338ca;
-}
-
 /* Card Header */
 .room-header {
   padding: 0.75rem 0.75rem 0.25rem;

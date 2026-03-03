@@ -162,6 +162,7 @@
 .status-badge.available { color: #10b981; background-color: #d1fae5; }
 .status-badge.occupied { color: #ef4444; background-color: #fee2e2; }
 .status-badge.maintenance { color: #f59e0b; background-color: #fef3c7; }
+.status-badge.deposited { color: #d97706; background-color: #fef3c7; border: 1px solid #f59e0b; }
 
 /* Action Buttons */
 .action-group {
