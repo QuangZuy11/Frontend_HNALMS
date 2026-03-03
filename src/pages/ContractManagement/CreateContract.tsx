@@ -213,12 +213,16 @@ const CreateContract = () => {
   // Helper: determine service category by name
   const getServiceCategory = (serviceName: string): ServiceCategory => {
     const n = serviceName.toLowerCase();
+    // "Xe máy điện" chứa "điện" nhưng là dịch vụ xe, không phải điện năng
+    if (n.includes("xe máy") || n.includes("xe đạp")) return "quantity_based";
     if (
       n.includes("thang máy") ||
       n.includes("elevator") ||
       n.includes("vệ sinh") ||
       n.includes("điện") ||
-      n.includes("nước")
+      n.includes("nước") ||
+      n.includes("internet") ||
+      n.includes("wifi")
     )
       return "fixed_monthly";
     return "quantity_based";
@@ -232,6 +236,41 @@ const CreateContract = () => {
     return "VNĐ/tháng";
   };
 
+  // Helper: get floor number of selected room
+  const getRoomFloorNumber = (): number => {
+    const floorName =
+      selectedRoom?.floorId?.name || selectedRoom?.floorLabel || "";
+    const match = floorName.match(/(\d+)/);
+    return match ? parseInt(match[1]) : 0;
+  };
+
+  // Helper: check if a service should be excluded based on room floor
+  const isServiceExcludedForRoom = (serviceName: string): boolean => {
+    const n = serviceName.toLowerCase();
+    // Tầng 1 không cần dịch vụ thang máy
+    if (
+      (n.includes("thang máy") || n.includes("elevator")) &&
+      getRoomFloorNumber() === 1
+    ) {
+      return true;
+    }
+    return false;
+  };
+
+  // Helper: check if a quantity_based service needs quantity input
+  const needsQuantityInput = (serviceName: string): boolean => {
+    const n = serviceName.toLowerCase();
+    // Máy giặt chỉ cần tick chọn, không cần nhập số lượng
+    if (n.includes("máy giặt")) return false;
+    return true;
+  };
+
+  // Helper: check if a fixed_monthly service is charged per person
+  const isPerPersonService = (serviceName: string): boolean => {
+    const n = serviceName.toLowerCase();
+    return n.includes("internet") || n.includes("wifi");
+  };
+
   // Enforce mandatory services based on room selection
   useEffect(() => {
     if (!selectedRoom || availableServices.length === 0) return;
@@ -243,7 +282,11 @@ const CreateContract = () => {
         const category = getServiceCategory(service.name);
 
         // fixed_monthly services are always included (mandatory)
-        if (category === "fixed_monthly") {
+        // But skip excluded services (e.g., elevator for floor 1)
+        if (
+          category === "fixed_monthly" &&
+          !isServiceExcludedForRoom(service.name)
+        ) {
           const existIdx = newSelected.findIndex(
             (s) => s.serviceId === service._id,
           );
@@ -260,6 +303,11 @@ const CreateContract = () => {
         }
         // quantity_based are optional, don't auto-add
       });
+
+      // Remove excluded services (e.g., elevator when switching to floor 1)
+      newSelected = newSelected.filter(
+        (s) => !isServiceExcludedForRoom(s.name),
+      );
 
       return newSelected;
     });
@@ -703,6 +751,212 @@ const CreateContract = () => {
                 </Grid>
               </Box>
 
+              {/* Danh sách người ở cùng - trước thỏa thuận */}
+              <Typography
+                paragraph
+                sx={{
+                  mt: 2,
+                  fontFamily: '"Times New Roman", serif',
+                  fontSize: "1.1rem",
+                }}
+              >
+                <strong>Danh sách người ở cùng trong phòng</strong> (tối đa{" "}
+                {selectedRoom?.roomTypeId?.personMax || 1} người/phòng):
+              </Typography>
+              <Box sx={{ pl: 3 }}>
+                {coResidentFields.length > 0 ? (
+                  <Box
+                    component="table"
+                    sx={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      fontFamily: '"Times New Roman", serif',
+                      fontSize: "1.05rem",
+                      mb: 1.5,
+                    }}
+                  >
+                    <Box component="thead">
+                      <Box component="tr">
+                        {["STT", "Họ và tên", "Số CCCD/CMND", ""].map((h) => (
+                          <Box
+                            component="th"
+                            key={h || "action"}
+                            sx={{
+                              border: h ? "1px solid #333" : "none",
+                              py: 0.8,
+                              px: 1.5,
+                              textAlign: "center",
+                              fontWeight: "bold",
+                              bgcolor: h ? "#fafafa" : "transparent",
+                              fontFamily: '"Times New Roman", serif',
+                              width: h === "" ? "40px" : "auto",
+                            }}
+                          >
+                            {h}
+                          </Box>
+                        ))}
+                      </Box>
+                    </Box>
+                    <Box component="tbody">
+                      {coResidentFields.map((item, index) => (
+                        <Box component="tr" key={item.id}>
+                          <Box
+                            component="td"
+                            sx={{
+                              border: "1px solid #333",
+                              py: 0.3,
+                              px: 1.5,
+                              textAlign: "center",
+                              fontFamily: '"Times New Roman", serif',
+                              width: "50px",
+                            }}
+                          >
+                            {index + 1}
+                          </Box>
+                          <Box
+                            component="td"
+                            sx={{
+                              border: "1px solid #333",
+                              py: 0.3,
+                              px: 1,
+                              fontFamily: '"Times New Roman", serif',
+                            }}
+                          >
+                            <TextField
+                              variant="standard"
+                              fullWidth
+                              placeholder="Họ và tên..."
+                              {...register(
+                                `coResidents.${index}.fullName` as const,
+                                { required: "Bắt buộc" },
+                              )}
+                              error={!!errors.coResidents?.[index]?.fullName}
+                              helperText={
+                                errors.coResidents?.[index]?.fullName
+                                  ?.message as string
+                              }
+                              InputProps={{
+                                disableUnderline: true,
+                                style: {
+                                  fontSize: "1.05rem",
+                                  fontFamily: '"Times New Roman", serif',
+                                },
+                              }}
+                            />
+                          </Box>
+                          <Box
+                            component="td"
+                            sx={{
+                              border: "1px solid #333",
+                              py: 0.3,
+                              px: 1,
+                              fontFamily: '"Times New Roman", serif',
+                            }}
+                          >
+                            <TextField
+                              variant="standard"
+                              fullWidth
+                              placeholder="Số CCCD..."
+                              {...register(
+                                `coResidents.${index}.cccd` as const,
+                                {
+                                  required: "Bắt buộc",
+                                  pattern: {
+                                    value: /^[0-9]{12}$/,
+                                    message: "CCCD phải gồm 12 chữ số",
+                                  },
+                                },
+                              )}
+                              error={!!errors.coResidents?.[index]?.cccd}
+                              helperText={
+                                errors.coResidents?.[index]?.cccd
+                                  ?.message as string
+                              }
+                              InputProps={{
+                                disableUnderline: true,
+                                style: {
+                                  fontSize: "1.05rem",
+                                  fontFamily: '"Times New Roman", serif',
+                                },
+                              }}
+                            />
+                          </Box>
+                          <Box
+                            component="td"
+                            sx={{
+                              py: 0.3,
+                              px: 0.5,
+                              textAlign: "center",
+                            }}
+                          >
+                            <IconButton
+                              size="small"
+                              onClick={() => removeCoResident(index)}
+                              sx={{
+                                color: "#999",
+                                "&:hover": { color: "#d32f2f" },
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                ) : (
+                  <Typography
+                    sx={{
+                      fontStyle: "italic",
+                      fontFamily: '"Times New Roman", serif',
+                      fontSize: "1.05rem",
+                      mb: 1,
+                    }}
+                  >
+                    Chưa có người ở cùng.
+                  </Typography>
+                )}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={() => appendCoResident({ fullName: "", cccd: "" })}
+                    disabled={
+                      coResidentFields.length + 1 >=
+                      (selectedRoom?.roomTypeId?.personMax || 1)
+                    }
+                    sx={{
+                      fontFamily: '"Times New Roman", serif',
+                      fontSize: "0.95rem",
+                      textTransform: "none",
+                      color: "#333",
+                      textDecoration: "underline",
+                      "&:hover": {
+                        textDecoration: "underline",
+                        bgcolor: "transparent",
+                        color: "#000",
+                      },
+                    }}
+                  >
+                    + Thêm người ở cùng ({coResidentFields.length + 1}/
+                    {selectedRoom?.roomTypeId?.personMax || 1})
+                  </Button>
+                  {coResidentFields.length + 1 >=
+                    (selectedRoom?.roomTypeId?.personMax || 1) && (
+                    <Typography
+                      sx={{
+                        fontStyle: "italic",
+                        fontFamily: '"Times New Roman", serif',
+                        fontSize: "0.9rem",
+                        color: "#999",
+                      }}
+                    >
+                      (Đã đạt giới hạn số người cho loại phòng này)
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+
               {/* Agreement */}
               <Typography paragraph>
                 Hai bên cùng thỏa thuận ký kết hợp đồng thuê nhà với các điều
@@ -929,7 +1183,9 @@ const CreateContract = () => {
                     {/* a) Dịch vụ cố định hàng tháng */}
                     {(() => {
                       const fixedServices = availableServices.filter(
-                        (s) => getServiceCategory(s.name) === "fixed_monthly",
+                        (s) =>
+                          getServiceCategory(s.name) === "fixed_monthly" &&
+                          !isServiceExcludedForRoom(s.name),
                       );
                       if (fixedServices.length === 0) return null;
                       return (
@@ -945,27 +1201,43 @@ const CreateContract = () => {
                           >
                             a) Dịch vụ cố định hàng tháng:
                           </Typography>
-                          {fixedServices.map((service, idx) => (
-                            <Typography
-                              key={service._id}
-                              sx={{
-                                fontFamily: '"Times New Roman", serif',
-                                fontSize: "1.1rem",
-                                pl: 2,
-                                mb: 0.3,
-                                lineHeight: 1.8,
-                              }}
-                            >
-                              {idx + 1}. {service.name}:{" "}
-                              <strong>
-                                {service.currentPrice.toLocaleString()}
-                              </strong>{" "}
-                              {getServiceUnit(service.name)}{" "}
-                              <span style={{ fontStyle: "italic" }}>
-                                (Bắt buộc)
-                              </span>
-                            </Typography>
-                          ))}
+                          {fixedServices.map((service, idx) => {
+                            const personCount = coResidentFields.length + 1;
+                            const perPerson = isPerPersonService(service.name);
+                            return (
+                              <Typography
+                                key={service._id}
+                                sx={{
+                                  fontFamily: '"Times New Roman", serif',
+                                  fontSize: "1.1rem",
+                                  pl: 2,
+                                  mb: 0.3,
+                                  lineHeight: 1.8,
+                                }}
+                              >
+                                {idx + 1}. {service.name}:{" "}
+                                <strong>
+                                  {service.currentPrice.toLocaleString()}
+                                </strong>{" "}
+                                {getServiceUnit(service.name)}
+                                {perPerson && (
+                                  <>
+                                    {" "}
+                                    × {personCount} người ={" "}
+                                    <strong>
+                                      {(
+                                        service.currentPrice * personCount
+                                      ).toLocaleString()}
+                                    </strong>{" "}
+                                    VNĐ/tháng
+                                  </>
+                                )}{" "}
+                                <span style={{ fontStyle: "italic" }}>
+                                  (Bắt buộc)
+                                </span>
+                              </Typography>
+                            );
+                          })}
                         </Box>
                       );
                     })()}
@@ -1037,60 +1309,63 @@ const CreateContract = () => {
                                   }
                                   sx={{ mr: 1 }}
                                 />
-                                {selected && (
-                                  <Box
-                                    sx={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 0.5,
-                                    }}
-                                  >
-                                    <Typography
+                                {selected &&
+                                  needsQuantityInput(service.name) && (
+                                    <Box
                                       sx={{
-                                        fontFamily: '"Times New Roman", serif',
-                                        fontSize: "1rem",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 0.5,
                                       }}
                                     >
-                                      Số lượng:
-                                    </Typography>
-                                    <TextField
-                                      variant="standard"
-                                      type="number"
-                                      value={qty}
-                                      onChange={(e) =>
-                                        handleVehicleQuantityChange(
-                                          service._id,
-                                          parseInt(e.target.value) || 1,
-                                        )
-                                      }
-                                      inputProps={{
-                                        min: 1,
-                                        max: 10,
-                                        style: {
-                                          textAlign: "center",
-                                          width: "40px",
-                                          fontWeight: "bold",
+                                      <Typography
+                                        sx={{
                                           fontFamily:
                                             '"Times New Roman", serif',
-                                        },
-                                      }}
-                                    />
-                                    <Typography
-                                      sx={{
-                                        fontFamily: '"Times New Roman", serif',
-                                        fontSize: "1rem",
-                                      }}
-                                    >
-                                      ={" "}
-                                      <strong>
-                                        {(
-                                          service.currentPrice * qty
-                                        ).toLocaleString()}
-                                      </strong>{" "}
-                                      VNĐ/tháng
-                                    </Typography>
-                                  </Box>
-                                )}
+                                          fontSize: "1rem",
+                                        }}
+                                      >
+                                        Số lượng:
+                                      </Typography>
+                                      <TextField
+                                        variant="standard"
+                                        type="number"
+                                        value={qty}
+                                        onChange={(e) =>
+                                          handleVehicleQuantityChange(
+                                            service._id,
+                                            parseInt(e.target.value) || 1,
+                                          )
+                                        }
+                                        inputProps={{
+                                          min: 1,
+                                          max: 10,
+                                          style: {
+                                            textAlign: "center",
+                                            width: "40px",
+                                            fontWeight: "bold",
+                                            fontFamily:
+                                              '"Times New Roman", serif',
+                                          },
+                                        }}
+                                      />
+                                      <Typography
+                                        sx={{
+                                          fontFamily:
+                                            '"Times New Roman", serif',
+                                          fontSize: "1rem",
+                                        }}
+                                      >
+                                        ={" "}
+                                        <strong>
+                                          {(
+                                            service.currentPrice * qty
+                                          ).toLocaleString()}
+                                        </strong>{" "}
+                                        VNĐ/tháng
+                                      </Typography>
+                                    </Box>
+                                  )}
                               </Box>
                             );
                           })}
@@ -1109,211 +1384,6 @@ const CreateContract = () => {
                     Chưa có dịch vụ hàng tháng nào được cấu hình.
                   </Typography>
                 )}
-              </Box>
-
-              <Typography
-                paragraph
-                sx={{
-                  mt: 2,
-                  fontFamily: '"Times New Roman", serif',
-                  fontSize: "1.1rem",
-                }}
-              >
-                <strong>Điều 4:</strong> Danh sách người ở cùng trong phòng (tối
-                đa {selectedRoom?.roomTypeId?.personMax || 1} người/phòng):
-              </Typography>
-              <Box sx={{ pl: 3 }}>
-                {coResidentFields.length > 0 ? (
-                  <Box
-                    component="table"
-                    sx={{
-                      width: "100%",
-                      borderCollapse: "collapse",
-                      fontFamily: '"Times New Roman", serif',
-                      fontSize: "1.05rem",
-                      mb: 1.5,
-                    }}
-                  >
-                    <Box component="thead">
-                      <Box component="tr">
-                        {["STT", "Họ và tên", "Số CCCD/CMND", ""].map((h) => (
-                          <Box
-                            component="th"
-                            key={h || "action"}
-                            sx={{
-                              border: h ? "1px solid #333" : "none",
-                              py: 0.8,
-                              px: 1.5,
-                              textAlign: "center",
-                              fontWeight: "bold",
-                              bgcolor: h ? "#fafafa" : "transparent",
-                              fontFamily: '"Times New Roman", serif',
-                              width: h === "" ? "40px" : "auto",
-                            }}
-                          >
-                            {h}
-                          </Box>
-                        ))}
-                      </Box>
-                    </Box>
-                    <Box component="tbody">
-                      {coResidentFields.map((item, index) => (
-                        <Box component="tr" key={item.id}>
-                          <Box
-                            component="td"
-                            sx={{
-                              border: "1px solid #333",
-                              py: 0.3,
-                              px: 1.5,
-                              textAlign: "center",
-                              fontFamily: '"Times New Roman", serif',
-                              width: "50px",
-                            }}
-                          >
-                            {index + 1}
-                          </Box>
-                          <Box
-                            component="td"
-                            sx={{
-                              border: "1px solid #333",
-                              py: 0.3,
-                              px: 1,
-                              fontFamily: '"Times New Roman", serif',
-                            }}
-                          >
-                            <TextField
-                              variant="standard"
-                              fullWidth
-                              placeholder="Họ và tên..."
-                              {...register(
-                                `coResidents.${index}.fullName` as const,
-                                { required: "Bắt buộc" },
-                              )}
-                              error={!!errors.coResidents?.[index]?.fullName}
-                              helperText={
-                                errors.coResidents?.[index]?.fullName
-                                  ?.message as string
-                              }
-                              InputProps={{
-                                disableUnderline: true,
-                                style: {
-                                  fontSize: "1.05rem",
-                                  fontFamily: '"Times New Roman", serif',
-                                },
-                              }}
-                            />
-                          </Box>
-                          <Box
-                            component="td"
-                            sx={{
-                              border: "1px solid #333",
-                              py: 0.3,
-                              px: 1,
-                              fontFamily: '"Times New Roman", serif',
-                            }}
-                          >
-                            <TextField
-                              variant="standard"
-                              fullWidth
-                              placeholder="Số CCCD..."
-                              {...register(
-                                `coResidents.${index}.cccd` as const,
-                                {
-                                  required: "Bắt buộc",
-                                  pattern: {
-                                    value: /^[0-9]{12}$/,
-                                    message: "CCCD phải gồm 12 chữ số",
-                                  },
-                                },
-                              )}
-                              error={!!errors.coResidents?.[index]?.cccd}
-                              helperText={
-                                errors.coResidents?.[index]?.cccd
-                                  ?.message as string
-                              }
-                              InputProps={{
-                                disableUnderline: true,
-                                style: {
-                                  fontSize: "1.05rem",
-                                  fontFamily: '"Times New Roman", serif',
-                                },
-                              }}
-                            />
-                          </Box>
-                          <Box
-                            component="td"
-                            sx={{
-                              py: 0.3,
-                              px: 0.5,
-                              textAlign: "center",
-                            }}
-                          >
-                            <IconButton
-                              size="small"
-                              onClick={() => removeCoResident(index)}
-                              sx={{
-                                color: "#999",
-                                "&:hover": { color: "#d32f2f" },
-                              }}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Box>
-                        </Box>
-                      ))}
-                    </Box>
-                  </Box>
-                ) : (
-                  <Typography
-                    sx={{
-                      fontStyle: "italic",
-                      fontFamily: '"Times New Roman", serif',
-                      fontSize: "1.05rem",
-                      mb: 1,
-                    }}
-                  >
-                    Chưa có người ở cùng.
-                  </Typography>
-                )}
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Button
-                    size="small"
-                    variant="text"
-                    onClick={() => appendCoResident({ fullName: "", cccd: "" })}
-                    disabled={
-                      coResidentFields.length + 1 >=
-                      (selectedRoom?.roomTypeId?.personMax || 1)
-                    }
-                    sx={{
-                      fontFamily: '"Times New Roman", serif',
-                      fontSize: "0.95rem",
-                      textTransform: "none",
-                      color: "#333",
-                      textDecoration: "underline",
-                      "&:hover": {
-                        textDecoration: "underline",
-                        bgcolor: "transparent",
-                        color: "#000",
-                      },
-                    }}
-                  >
-                    + Thêm người ở cùng ({coResidentFields.length + 1}/
-                    {selectedRoom?.roomTypeId?.personMax || 1})
-                  </Button>
-                  {coResidentFields.length + 1 >=
-                    (selectedRoom?.roomTypeId?.personMax || 1) && (
-                    <Typography
-                      sx={{
-                        fontStyle: "italic",
-                        fontFamily: '"Times New Roman", serif',
-                        fontSize: "0.9rem",
-                        color: "#999",
-                      }}
-                    >
-                      (Đã đạt giới hạn số người cho loại phòng này)
-                    </Typography>
-                  )}
-                </Box>
               </Box>
             </Box>
 

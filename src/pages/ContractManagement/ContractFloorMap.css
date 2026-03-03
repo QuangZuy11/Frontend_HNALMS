@@ -2,6 +2,84 @@
 /* Wrap floor maps in .contract-floor-map to apply these styles */
 
 /* ==============================
+   CONTRACT LIST HEADER - Stats Summary
+   ============================== */
+.contract-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.contract-list-header .stats-summary {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+}
+
+.contract-list-header .stat-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+}
+
+.contract-list-header .stat-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.contract-list-header .stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.contract-list-header .stat-label {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.contract-list-header .stat-divider {
+  width: 1px;
+  height: 32px;
+  background-color: #e2e8f0;
+}
+
+.contract-list-header .stat-icon {
+  padding: 8px;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contract-list-header .icon-primary {
+  color: #3579c6;
+  background-color: #e6f0ff;
+}
+.contract-list-header .icon-accent {
+  color: #10b981;
+  background-color: #d1fae5;
+}
+.contract-list-header .icon-warning {
+  color: #f59e0b;
+  background-color: #fef3c7;
+}
+
+/* ==============================
    OCCUPIED ROOMS: Faded color + diagonal hatching
    Shows the room type color but muted, with hatched overlay
    ============================== */

@@ -76,9 +76,10 @@ export default function ManagerDashboard() {
         return endDate >= now && endDate <= thirtyDaysLater;
       }).length;
 
-      // Total tenants: sum of personInRoom from active contracts
+      // Total tenants: count tenant + co-residents from active contracts
       const totalTenants = activeContracts.reduce(
-        (sum: number, c: any) => sum + (c.personInRoom || 1),
+        (sum: number, c: any) =>
+          sum + 1 + (c.coResidents ? c.coResidents.length : 0),
         0,
       );
 
@@ -114,7 +115,11 @@ export default function ManagerDashboard() {
     { title: "Tổng Phòng", value: stats?.totalRooms || 0, icon: Building2 },
     { title: "Đã Thuê", value: stats?.occupiedRooms || 0, icon: CheckCircle2 },
     { title: "Phòng Trống", value: stats?.vacantRooms || 0, icon: DoorOpen },
-    { title: "Tỷ Lệ Lấp Đầy", value: `${stats?.occupancyRate || 0}%`, icon: Percent },
+    {
+      title: "Tỷ Lệ Lấp Đầy",
+      value: `${stats?.occupancyRate || 0}%`,
+      icon: Percent,
+    },
   ];
 
   const quickActions = [
@@ -223,30 +228,34 @@ export default function ManagerDashboard() {
           <div className="chart-content">
             <div className="donut-wrapper">
               <svg className="donut-chart" viewBox="0 0 100 100">
-                {roomStatusData.reduce(
-                  (acc, item) => {
-                    const percentage =
-                      totalForChart > 0 ? (item.value / totalForChart) * 100 : 0;
-                    const offset = acc.offset;
-                    acc.offset += percentage;
-                    acc.elements.push(
-                      <circle
-                        key={item.label}
-                        cx="50"
-                        cy="50"
-                        r="40"
-                        fill="none"
-                        stroke={item.color}
-                        strokeWidth="10"
-                        strokeDasharray={`${percentage * 2.51} 251`}
-                        strokeDashoffset={-offset * 2.51}
-                        transform="rotate(-90 50 50)"
-                      />,
-                    );
-                    return acc;
-                  },
-                  { offset: 0, elements: [] as React.ReactElement[] },
-                ).elements}
+                {
+                  roomStatusData.reduce(
+                    (acc, item) => {
+                      const percentage =
+                        totalForChart > 0
+                          ? (item.value / totalForChart) * 100
+                          : 0;
+                      const offset = acc.offset;
+                      acc.offset += percentage;
+                      acc.elements.push(
+                        <circle
+                          key={item.label}
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          fill="none"
+                          stroke={item.color}
+                          strokeWidth="10"
+                          strokeDasharray={`${percentage * 2.51} 251`}
+                          strokeDashoffset={-offset * 2.51}
+                          transform="rotate(-90 50 50)"
+                        />,
+                      );
+                      return acc;
+                    },
+                    { offset: 0, elements: [] as React.ReactElement[] },
+                  ).elements
+                }
               </svg>
               <div className="donut-center">
                 <span className="donut-total">{stats?.totalRooms || 0}</span>
@@ -256,7 +265,10 @@ export default function ManagerDashboard() {
             <div className="chart-legend">
               {roomStatusData.map((item) => (
                 <div key={item.label} className="legend-row">
-                  <span className="legend-dot" style={{ backgroundColor: item.color }}></span>
+                  <span
+                    className="legend-dot"
+                    style={{ backgroundColor: item.color }}
+                  ></span>
                   <span className="legend-text">{item.label}</span>
                   <span className="legend-num">{item.value}</span>
                 </div>
@@ -275,14 +287,18 @@ export default function ManagerDashboard() {
               <div className="finance-stat">
                 <FileText className="stat-icon" />
                 <div className="stat-info">
-                  <span className="stat-num">{stats?.activeContracts || 0}</span>
+                  <span className="stat-num">
+                    {stats?.activeContracts || 0}
+                  </span>
                   <span className="stat-label">Hợp đồng hoạt động</span>
                 </div>
               </div>
               <div className="finance-stat">
                 <AlertTriangle className="stat-icon" />
                 <div className="stat-info">
-                  <span className="stat-num">{stats?.expiringContracts || 0}</span>
+                  <span className="stat-num">
+                    {stats?.expiringContracts || 0}
+                  </span>
                   <span className="stat-label">Sắp hết hạn</span>
                 </div>
               </div>
@@ -296,7 +312,9 @@ export default function ManagerDashboard() {
               <div className="finance-stat">
                 <Wrench className="stat-icon" />
                 <div className="stat-info">
-                  <span className="stat-num">{stats?.maintenanceRooms || 0}</span>
+                  <span className="stat-num">
+                    {stats?.maintenanceRooms || 0}
+                  </span>
                   <span className="stat-label">Phòng bảo trì</span>
                 </div>
               </div>
