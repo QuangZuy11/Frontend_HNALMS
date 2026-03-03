@@ -18,7 +18,7 @@ import {
   ChevronRight,
   CheckCircle,
   AlertCircle,
-  Wrench,
+  Banknote,
   X,
   Building,
   Home,
@@ -213,10 +213,10 @@ const formatCurrency = (amount: any) => {
             <AlertCircle size={12} /> Đang thuê
           </span>
         );
-      case "Maintenance":
+      case "Deposited":
         return (
-          <span className="status-badge maintenance">
-            <Wrench size={12} /> Bảo trì
+          <span className="status-badge deposited">
+            <Banknote size={12} /> Đã cọc
           </span>
         );
       default:
@@ -787,7 +787,7 @@ const formatCurrency = (amount: any) => {
                 >
                   <option value="Available">Trống</option>
                   <option value="Occupied">Đang thuê</option>
-                  <option value="Maintenance">Bảo trì</option>
+                  <option value="Deposited">Đã cọc</option>
                 </select>
               </div>
 
