@@ -230,8 +230,13 @@ export default function RoomList() {
           {/* Toggle button visible when sidebar is collapsed */}
           {sidebarCollapsed && (
             <button
+              type="button"
               className="filters-toggle-btn"
-              onClick={() => setSidebarManualOpen(true)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setSidebarManualOpen(true);
+              }}
               title="Hiện bộ lọc"
             >
               <span className="toggle-icon">☰</span>
@@ -245,7 +250,12 @@ export default function RoomList() {
             {/* Close button when manually opened in split-view */}
             {showTypeDetail && sidebarManualOpen && (
               <button
-                onClick={() => setSidebarManualOpen(false)}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSidebarManualOpen(false);
+                }}
                 style={{
                   alignSelf: "flex-end",
                   background: "#ef4444",
@@ -257,6 +267,8 @@ export default function RoomList() {
                   fontWeight: 600,
                   cursor: "pointer",
                   marginBottom: "0.25rem",
+                  position: "relative",
+                  zIndex: 60,
                 }}
               >
                 ✕ Ẩn bộ lọc
