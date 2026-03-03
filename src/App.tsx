@@ -227,6 +227,8 @@ function LayoutWrapper() {
           <Route path="contracts" element={<ContractList />} />
           <Route path="contracts/create" element={<CreateContract />} />
           <Route path="contracts/:id" element={<ContractDetail />} />
+          {/* Danh sách cư dân (Tenants) cho Owner */}
+          <Route path="contracts/tenants" element={<TenantAccountList />} />
           <Route path="deposits" element={<DepositRoom />} />
           <Route path="deposits/floor-map" element={<DepositFloorMap />} />
           <Route path="deposits/create/:id" element={<CreateDeposit />} />

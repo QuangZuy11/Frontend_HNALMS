@@ -79,11 +79,22 @@ export default function RepairRequestsList() {
   const [roomSearch, setRoomSearch] = useState<string>('');
   const [tenantSearch, setTenantSearch] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(11);
   const [totalItems, setTotalItems] = useState<number>(0);
   const [totalPages, setTotalPages] = useState<number>(0);
   const { isManager } = useAuth();
   const tableRef = useRef<HTMLDivElement | null>(null);
+
+  // Khoá scroll trang này
+  useEffect(() => {
+    const main = document.querySelector('.dashboard-layout-main') as HTMLElement;
+    if (main) main.style.overflowY = 'hidden';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      if (main) main.style.overflowY = '';
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   const fetchRequests = useCallback(async () => {
     try {
@@ -353,11 +364,11 @@ export default function RepairRequestsList() {
           prev.map((r) =>
             r._id === updated._id
               ? {
-                  ...r,
-                  status: updated.status,
-                  cost: updated.cost,
-                  paymentType: updated.paymentType ?? 'REVENUE',
-                }
+                ...r,
+                status: updated.status,
+                cost: updated.cost,
+                paymentType: updated.paymentType ?? 'REVENUE',
+              }
               : r,
           ),
         );
@@ -366,11 +377,11 @@ export default function RepairRequestsList() {
           setSelectedRequest((prev) =>
             prev
               ? {
-                  ...prev,
-                  status: updated.status,
-                  cost: updated.cost,
-                  paymentType: updated.paymentType ?? 'REVENUE',
-                }
+                ...prev,
+                status: updated.status,
+                cost: updated.cost,
+                paymentType: updated.paymentType ?? 'REVENUE',
+              }
               : prev,
           );
         }
@@ -482,11 +493,11 @@ export default function RepairRequestsList() {
           prev.map((r) =>
             r._id === updated._id
               ? {
-                  ...r,
-                  status: updated.status,
-                  cost: updated.cost,
-                  paymentType: updated.paymentType ?? 'EXPENSE',
-                }
+                ...r,
+                status: updated.status,
+                cost: updated.cost,
+                paymentType: updated.paymentType ?? 'EXPENSE',
+              }
               : r,
           ),
         );
@@ -495,11 +506,11 @@ export default function RepairRequestsList() {
           setSelectedRequest((prev) =>
             prev
               ? {
-                  ...prev,
-                  status: updated.status,
-                  cost: updated.cost,
-                  paymentType: updated.paymentType ?? 'EXPENSE',
-                }
+                ...prev,
+                status: updated.status,
+                cost: updated.cost,
+                paymentType: updated.paymentType ?? 'EXPENSE',
+              }
               : prev,
           );
         }
@@ -545,60 +556,60 @@ export default function RepairRequestsList() {
               Các yêu cầu sửa chữa/bảo trì do cư dân gửi lên tòa nhà
             </p>
           </div>
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <div className="repair-filter-wrapper">
-                <label htmlFor="tenant-search" className="repair-filter-label">
-                  Cư dân:
-                </label>
-                <input
-                  type="text"
-                  id="tenant-search"
-                  className="repair-filter-select"
-                  placeholder="Nhập tên cư dân"
-                  value={tenantSearch}
-                  onChange={(e) => setTenantSearch(e.target.value)}
-                />
-              </div>
-              <div className="repair-filter-wrapper">
-                <label htmlFor="room-search" className="repair-filter-label">
-                  Phòng:
-                </label>
-                <input
-                  type="text"
-                  id="room-search"
-                  className="repair-filter-select"
-                  placeholder="Nhập số phòng (ví dụ: 320)"
-                  value={roomSearch}
-                  onChange={(e) => setRoomSearch(e.target.value)}
-                />
-              </div>
-              <div className="repair-filter-wrapper">
-                <label htmlFor="status-filter" className="repair-filter-label">
-                  Trạng thái:
-                </label>
-                <select
-                  id="status-filter"
-                  className="repair-filter-select"
-                  value={statusFilter}
-                  onChange={(e) =>
-                    setStatusFilter(
-                      e.target.value as
-                        | 'ALL'
-                        | 'Pending'
-                        | 'Processing'
-                        | 'Done'
-                        | 'Unpair',
-                    )
-                  }
-                >
-                  <option value="ALL">Tất cả</option>
-                  <option value="Pending">Chờ xử lý</option>
-                  <option value="Processing">Đang xử lý</option>
-                  <option value="Done">Đã xử lý</option>
-                  <option value="Unpair">Chờ thanh toán</option>
-                </select>
-              </div>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="repair-filter-wrapper">
+              <label htmlFor="tenant-search" className="repair-filter-label">
+                Cư dân:
+              </label>
+              <input
+                type="text"
+                id="tenant-search"
+                className="repair-filter-select"
+                placeholder="Nhập tên cư dân"
+                value={tenantSearch}
+                onChange={(e) => setTenantSearch(e.target.value)}
+              />
             </div>
+            <div className="repair-filter-wrapper">
+              <label htmlFor="room-search" className="repair-filter-label">
+                Phòng:
+              </label>
+              <input
+                type="text"
+                id="room-search"
+                className="repair-filter-select"
+                placeholder="Nhập số phòng (ví dụ: 320)"
+                value={roomSearch}
+                onChange={(e) => setRoomSearch(e.target.value)}
+              />
+            </div>
+            <div className="repair-filter-wrapper">
+              <label htmlFor="status-filter" className="repair-filter-label">
+                Trạng thái:
+              </label>
+              <select
+                id="status-filter"
+                className="repair-filter-select"
+                value={statusFilter}
+                onChange={(e) =>
+                  setStatusFilter(
+                    e.target.value as
+                    | 'ALL'
+                    | 'Pending'
+                    | 'Processing'
+                    | 'Done'
+                    | 'Unpair',
+                  )
+                }
+              >
+                <option value="ALL">Tất cả</option>
+                <option value="Pending">Chờ xử lý</option>
+                <option value="Processing">Đang xử lý</option>
+                <option value="Done">Đã xử lý</option>
+                <option value="Unpair">Chờ thanh toán</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         {error && (
@@ -664,8 +675,8 @@ export default function RepairRequestsList() {
                           {r.paymentType === 'REVENUE'
                             ? 'Cư dân'
                             : r.paymentType === 'EXPENSE'
-                            ? 'Kế toán'
-                            : '-'}
+                              ? 'Kế toán'
+                              : '-'}
                         </div>
                       </div>
                     </td>
@@ -708,9 +719,10 @@ export default function RepairRequestsList() {
                       className="repair-pagination-select"
                     >
                       <option value={5}>5</option>
+                      <option value={8}>8</option>
                       <option value={10}>10</option>
+                      <option value={11}>11</option>
                       <option value={20}>20</option>
-                      <option value={50}>50</option>
                     </select>
                   </div>
                 </>
@@ -867,10 +879,10 @@ export default function RepairRequestsList() {
                         handleUpdateStatus(
                           selectedRequest,
                           e.target.value as
-                            | 'Pending'
-                            | 'Processing'
-                            | 'Done'
-                            | 'Unpair',
+                          | 'Pending'
+                          | 'Processing'
+                          | 'Done'
+                          | 'Unpair',
                         )
                       }
                       disabled={
@@ -1029,8 +1041,8 @@ export default function RepairRequestsList() {
                               console.error('Lỗi khi tạo mã hóa đơn:', err);
                               setAutoInvoiceCodeError(
                                 err?.response?.data?.message ||
-                                  err?.message ||
-                                  'Không thể tạo mã hóa đơn',
+                                err?.message ||
+                                'Không thể tạo mã hóa đơn',
                               );
                             } finally {
                               setAutoInvoiceCodeLoading(false);
@@ -1189,8 +1201,8 @@ export default function RepairRequestsList() {
                               console.error('Lỗi khi tạo mã phiếu chi:', err);
                               setAutoPaymentVoucherError(
                                 err?.response?.data?.message ||
-                                  err?.message ||
-                                  'Không thể tạo mã phiếu chi',
+                                err?.message ||
+                                'Không thể tạo mã phiếu chi',
                               );
                             } finally {
                               setAutoPaymentVoucherLoading(false);

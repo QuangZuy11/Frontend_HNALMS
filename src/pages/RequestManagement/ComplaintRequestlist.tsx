@@ -7,12 +7,12 @@ interface Complaint {
   _id: string;
   content: string;
   category:
-    | 'Tiếng ồn'
-    | 'Vệ sinh'
-    | 'An ninh'
-    | 'Cơ sở vật chất'
-    | 'Thái độ phục vụ'
-    | 'Khác';
+  | 'Tiếng ồn'
+  | 'Vệ sinh'
+  | 'An ninh'
+  | 'Cơ sở vật chất'
+  | 'Thái độ phục vụ'
+  | 'Khác';
   priority: 'Low' | 'Medium' | 'High';
   status: 'Pending' | 'Processing' | 'Done';
   response?: string | null;
@@ -29,6 +29,7 @@ interface Complaint {
     username: string;
     email: string;
     phoneNumber?: string;
+    fullname?: string | null;
   } | null;
   room?: {
     _id: string;
@@ -152,12 +153,12 @@ export default function ComplaintRequestList() {
           prev.map((c) =>
             c._id === updated._id
               ? {
-                  ...c,
-                  status: updated.status,
-                  response: updated.response,
-                  responseBy: updated.responseBy,
-                  responseDate: updated.responseDate,
-                }
+                ...c,
+                status: updated.status,
+                response: updated.response,
+                responseBy: updated.responseBy,
+                responseDate: updated.responseDate,
+              }
               : c,
           ),
         );
@@ -166,12 +167,12 @@ export default function ComplaintRequestList() {
           setSelectedComplaint((prev) =>
             prev
               ? {
-                  ...prev,
-                  status: updated.status,
-                  response: updated.response,
-                  responseBy: updated.responseBy,
-                  responseDate: updated.responseDate,
-                }
+                ...prev,
+                status: updated.status,
+                response: updated.response,
+                responseBy: updated.responseBy,
+                responseDate: updated.responseDate,
+              }
               : prev,
           );
         }
@@ -217,12 +218,12 @@ export default function ComplaintRequestList() {
           prev.map((c) =>
             c._id === updated._id
               ? {
-                  ...c,
-                  status: updated.status,
-                  response: updated.response,
-                  responseBy: updated.responseBy,
-                  responseDate: updated.responseDate,
-                }
+                ...c,
+                status: updated.status,
+                response: updated.response,
+                responseBy: updated.responseBy,
+                responseDate: updated.responseDate,
+              }
               : c,
           ),
         );
@@ -231,12 +232,12 @@ export default function ComplaintRequestList() {
           setSelectedComplaint((prev) =>
             prev
               ? {
-                  ...prev,
-                  status: updated.status,
-                  response: updated.response,
-                  responseBy: updated.responseBy,
-                  responseDate: updated.responseDate,
-                }
+                ...prev,
+                status: updated.status,
+                response: updated.response,
+                responseBy: updated.responseBy,
+                responseDate: updated.responseDate,
+              }
               : prev,
           );
         }
@@ -408,7 +409,7 @@ export default function ComplaintRequestList() {
                     <td>
                       <div className="cell-main">
                         <div className="cell-title">
-                          {c.tenantId?.fullname || 'Cư dân'}
+                          {c.tenantId?.fullname || c.tenantId?.username || '-'}
                         </div>
                       </div>
                     </td>
@@ -425,8 +426,8 @@ export default function ComplaintRequestList() {
                         {c.status === 'Pending'
                           ? 'Chờ xử lý'
                           : c.status === 'Processing'
-                          ? 'Đang xử lý'
-                          : 'Đã xử lý'}
+                            ? 'Đang xử lý'
+                            : 'Đã xử lý'}
                       </span>
                     </td>
                     <td>{formatDate(c.createdDate)}</td>
@@ -520,8 +521,8 @@ export default function ComplaintRequestList() {
                     {selectedComplaint.priority === 'High'
                       ? 'Cao'
                       : selectedComplaint.priority === 'Medium'
-                      ? 'Trung bình'
-                      : 'Thấp'}
+                        ? 'Trung bình'
+                        : 'Thấp'}
                   </span>
                 </div>
                 <div className="detail-row">
@@ -533,8 +534,8 @@ export default function ComplaintRequestList() {
                       {selectedComplaint.status === 'Pending'
                         ? 'Chờ xử lý'
                         : selectedComplaint.status === 'Processing'
-                        ? 'Đang xử lý'
-                        : 'Đã xử lý'}
+                          ? 'Đang xử lý'
+                          : 'Đã xử lý'}
                     </span>
                   </span>
                 </div>

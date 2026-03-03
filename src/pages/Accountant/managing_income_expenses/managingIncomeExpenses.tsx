@@ -34,10 +34,21 @@ export default function ManagingIncomeExpenses() {
     "all"
   );
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const pageSize = 10;
+  const pageSize = 11;
   const [selectedTicket, setSelectedTicket] = useState<FinancialTicket | null>(
     null
   );
+
+  // Khoá scroll trang này
+  useEffect(() => {
+    const main = document.querySelector('.dashboard-layout-main') as HTMLElement;
+    if (main) main.style.overflowY = 'hidden';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      if (main) main.style.overflowY = '';
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   const fetchTickets = useCallback(async (): Promise<void> => {
     try {
@@ -235,9 +246,8 @@ export default function ManagingIncomeExpenses() {
                     <td>{formatCurrency(t.amount)}</td>
                     <td>
                       <span
-                        className={`status-badge ${
-                          toUiStatus(t.status) === "paid" ? "paid" : "unpaid"
-                        }`}
+                        className={`status-badge ${toUiStatus(t.status) === "paid" ? "paid" : "unpaid"
+                          }`}
                       >
                         {statusLabel(t.status)}
                       </span>
