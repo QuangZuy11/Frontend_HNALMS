@@ -54,6 +54,7 @@ import ManagerRules from "./pages/Dashboard/ManagerRules";
 import ManagerProfile from "./pages/Dashboard/ManagerProfile";
 import ManageService from "./pages/ServiceManagement/ManageService";
 import RepairRequestsList from "./pages/RequestManagement/RepairRequestsList";
+import MaintenanceRequestsList from "./pages/RequestManagement/MaintenanceRequestsList";
 import ManagerInvoice from "./pages/InvoiceManagement/InvoiceManage";
 import ComplaintRequestList from "./pages/RequestManagement/ComplaintRequestlist";
 
@@ -246,6 +247,7 @@ function LayoutWrapper() {
           <Route path="residents/:id" element={<TenantAccountDetail />} />
           <Route path="services" element={<ManageService />} />
           <Route path="requests/repairs" element={<RepairRequestsList />} />
+          <Route path="requests/maintenance" element={<MaintenanceRequestsList />} />
           <Route path="requests/complaints" element={<ComplaintRequestList />} />
           <Route path="profile" element={<ManagerProfile />} />
           <Route path="contracts" element={<ContractList />} />

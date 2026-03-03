@@ -48,6 +48,9 @@ export default function RepairRequestsList() {
   const [autoInvoiceCode, setAutoInvoiceCode] = useState<string>('');
   const [autoInvoiceCodeLoading, setAutoInvoiceCodeLoading] = useState(false);
   const [autoInvoiceCodeError, setAutoInvoiceCodeError] = useState<string>('');
+  const [autoPaymentVoucher, setAutoPaymentVoucher] = useState<string>('');
+  const [autoPaymentVoucherLoading, setAutoPaymentVoucherLoading] = useState(false);
+  const [autoPaymentVoucherError, setAutoPaymentVoucherError] = useState<string>('');
   const [completeForm, setCompleteForm] = useState({
     invoiceTitle: '',
     invoiceTotalAmount: '',
@@ -247,6 +250,25 @@ export default function RepairRequestsList() {
       financialAmount: '',
     });
     setShowFreeModal(true);
+
+    // Auto-generate payment voucher for free repair
+    (async () => {
+      try {
+        setAutoPaymentVoucherLoading(true);
+        setAutoPaymentVoucherError('');
+        const res = await requestService.getNextRepairPaymentVoucher();
+        const code = res?.data?.paymentVoucher;
+        if (!code) throw new Error('Không thể tạo mã phiếu chi');
+        setAutoPaymentVoucher(code);
+      } catch (err: any) {
+        console.error('Lỗi khi tạo mã phiếu chi:', err);
+        setAutoPaymentVoucherError(
+          err?.response?.data?.message || err?.message || 'Không thể tạo mã phiếu chi',
+        );
+      } finally {
+        setAutoPaymentVoucherLoading(false);
+      }
+    })();
   };
 
   const handleCompleteSubmit = async () => {
@@ -402,6 +424,9 @@ export default function RepairRequestsList() {
       financialTitle: '',
       financialAmount: '',
     });
+    setAutoPaymentVoucher('');
+    setAutoPaymentVoucherError('');
+    setAutoPaymentVoucherLoading(false);
   };
 
   const handleFreeSubmit = async () => {
@@ -446,6 +471,7 @@ export default function RepairRequestsList() {
           financialTitle: freeForm.financialTitle.trim(),
           financialAmount: amountNumber,
           financialType: freeForm.financialType,
+          paymentVoucher: autoPaymentVoucher,
         },
         'EXPENSE'
       );
@@ -853,16 +879,22 @@ export default function RepairRequestsList() {
                         selectedRequest.status === 'Unpair'
                       }
                     >
-                      <option value="Pending" disabled={selectedRequest.status === 'Pending'}>
+                      <option value="Pending" disabled={selectedRequest.status !== 'Pending'}>
                         Chờ xử lý
                       </option>
                       <option
                         value="Processing"
-                        disabled={selectedRequest.status === 'Processing'}
+                        disabled={
+                          selectedRequest.status === 'Done' ||
+                          selectedRequest.status === 'Unpair'
+                        }
                       >
                         Đang xử lý
                       </option>
-                      <option value="Done" disabled={selectedRequest.status === 'Done'}>
+                      <option
+                        value="Done"
+                        disabled={selectedRequest.status === 'Unpair'}
+                      >
                         Đã xử lý
                       </option>
                       <option value="Unpair" disabled>
@@ -1117,6 +1149,62 @@ export default function RepairRequestsList() {
               </div>
               <div className="repair-modal-body">
                 <div className="complete-form-group">
+                  <label>Mã phiếu chi</label>
+                  <input
+                    type="text"
+                    value={
+                      autoPaymentVoucherLoading
+                        ? 'Đang tạo mã phiếu chi...'
+                        : autoPaymentVoucher || 'Chưa tạo được mã phiếu chi'
+                    }
+                    disabled
+                  />
+                  {autoPaymentVoucherError && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: 12,
+                        alignItems: 'center',
+                        marginTop: 6,
+                      }}
+                    >
+                      <span className="error-message" style={{ marginTop: 0 }}>
+                        {autoPaymentVoucherError}
+                      </span>
+                      <button
+                        type="button"
+                        className="btn-cancel"
+                        onClick={() => {
+                          if (autoPaymentVoucherLoading) return;
+                          setAutoPaymentVoucher('');
+                          setAutoPaymentVoucherError('');
+                          (async () => {
+                            try {
+                              setAutoPaymentVoucherLoading(true);
+                              const res = await requestService.getNextRepairPaymentVoucher();
+                              const code = res?.data?.paymentVoucher;
+                              if (!code) throw new Error('Không thể tạo mã phiếu chi');
+                              setAutoPaymentVoucher(code);
+                            } catch (err: any) {
+                              console.error('Lỗi khi tạo mã phiếu chi:', err);
+                              setAutoPaymentVoucherError(
+                                err?.response?.data?.message ||
+                                  err?.message ||
+                                  'Không thể tạo mã phiếu chi',
+                              );
+                            } finally {
+                              setAutoPaymentVoucherLoading(false);
+                            }
+                          })();
+                        }}
+                        disabled={autoPaymentVoucherLoading}
+                      >
+                        Thử lại
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="complete-form-group">
                   <label htmlFor="financial-title">Tiêu đề phiếu chi *</label>
                   <input
                     type="text"
@@ -1168,7 +1256,13 @@ export default function RepairRequestsList() {
                     type="button"
                     className="btn-submit"
                     onClick={handleFreeSubmit}
-                    disabled={updatingId === completingRequest._id || !freeForm.financialAmount}
+                    disabled={
+                      updatingId === completingRequest._id ||
+                      !freeForm.financialAmount ||
+                      autoPaymentVoucherLoading ||
+                      !!autoPaymentVoucherError ||
+                      !autoPaymentVoucher
+                    }
                   >
                     {updatingId === completingRequest._id ? 'Đang xử lý...' : 'Hoàn thành'}
                   </button>

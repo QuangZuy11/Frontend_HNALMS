@@ -119,6 +119,16 @@ export default function ComplaintRequestList() {
     complaint: Complaint,
     nextStatus: 'Pending' | 'Processing' | 'Done',
   ) => {
+    // Chỉ cho phép chuyển tiến: Pending -> Processing -> Done
+    const statusRank: Record<Complaint['status'], number> = {
+      Pending: 0,
+      Processing: 1,
+      Done: 2,
+    };
+    const currentRank = statusRank[complaint.status];
+    const nextRank = statusRank[nextStatus];
+    if (nextRank <= currentRank) return;
+
     // Nếu chuyển sang Đã xử lý -> mở modal nhập ghi chú
     if (nextStatus === 'Done') {
       setCompletingComplaint(complaint);
@@ -398,7 +408,7 @@ export default function ComplaintRequestList() {
                     <td>
                       <div className="cell-main">
                         <div className="cell-title">
-                          {c.tenantId?.username || 'Cư dân'}
+                          {c.tenantId?.fullname || 'Cư dân'}
                         </div>
                       </div>
                     </td>
@@ -491,7 +501,7 @@ export default function ComplaintRequestList() {
                 <div className="detail-row">
                   <span className="detail-label">Cư dân:</span>
                   <span className="detail-value">
-                    {selectedComplaint.tenantId?.username || '-'}
+                    {selectedComplaint.tenantId?.fullname || '-'}
                   </span>
                 </div>
                 <div className="detail-row">
@@ -558,17 +568,21 @@ export default function ComplaintRequestList() {
                           e.target.value as 'Pending' | 'Processing' | 'Done',
                         )
                       }
-                      disabled={updatingId === selectedComplaint._id}
+                      disabled={
+                        updatingId === selectedComplaint._id || selectedComplaint.status === 'Done'
+                      }
                     >
                       <option
                         value="Pending"
-                        disabled={selectedComplaint.status === 'Pending'}
+                        // không cho chọn lại Pending nếu đã qua bước khác
+                        disabled={selectedComplaint.status !== 'Pending'}
                       >
                         Chờ xử lý
                       </option>
                       <option
                         value="Processing"
-                        disabled={selectedComplaint.status === 'Processing'}
+                        // chỉ enable khi trạng thái hiện tại là Pending
+                        disabled={selectedComplaint.status !== 'Pending'}
                       >
                         Đang xử lý
                       </option>

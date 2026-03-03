@@ -36,6 +36,18 @@ export const requestService = {
     return response.data;
   },
 
+  // Lấy mã phiếu chi sửa chữa miễn phí kế tiếp (Manager)
+  getNextRepairPaymentVoucher: async () => {
+    const response = await api.get('/requests/repair/next-payment-voucher');
+    return response.data;
+  },
+
+  // Lấy mã phiếu chi bảo trì kế tiếp (Manager)
+  getNextMaintenancePaymentVoucher: async () => {
+    const response = await api.get('/requests/maintenance/next-payment-voucher');
+    return response.data;
+  },
+
   // Cập nhật trạng thái yêu cầu sửa chữa
   updateRepairStatus: async (
     requestId: string,
@@ -52,6 +64,7 @@ export const requestService = {
       financialTitle: string;
       financialAmount: number;
       financialType?: 'Payment' | 'Receipt' | string;
+      paymentVoucher?: string;
     },
     paymentType?: 'REVENUE' | 'EXPENSE'
   ) => {
@@ -70,6 +83,9 @@ export const requestService = {
         body.financialAmount = financial.financialAmount;
         if (financial.financialType) {
           body.financialType = financial.financialType;
+        }
+        if (financial.paymentVoucher) {
+          body.paymentVoucher = financial.paymentVoucher;
         }
       }
       if (paymentType !== undefined) {

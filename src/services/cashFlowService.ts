@@ -16,6 +16,17 @@ export const cashFlowService = {
     });
     return response.data;
   },
+
+  /**
+   * Cập nhật trạng thái phiếu chi (Payment)
+   * Backend: PATCH /financial-tickets/:id/status
+   */
+  async updatePaymentTicketStatus(id: string, status: "Paid" | "Unpaid") {
+    const response = await api.patch(`/financial-tickets/${id}/status`, {
+      status,
+    });
+    return response.data;
+  },
 };
 
 export { };
