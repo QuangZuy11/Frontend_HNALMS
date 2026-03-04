@@ -40,6 +40,44 @@ export const cashFlowService = {
   },
 
   /**
+   * Lấy danh sách phiếu thu (Receipt)
+   * Backend: GET /financial-tickets/receipts
+   */
+  async getReceiptTickets(params?: {
+    from?: string;
+    to?: string;
+    keyword?: string;
+    status?: "Paid" | "Unpaid";
+  }) {
+    const response = await api.get("/financial-tickets/receipts", {
+      params,
+    });
+    return response.data;
+  },
+
+  /**
+   * Lấy mã phiếu thu kế tiếp theo format RC-DDMMYYYY-XXXX
+   * Backend: GET /financial-tickets/receipts/next-voucher
+   */
+  async getNextReceiptVoucher() {
+    const response = await api.get("/financial-tickets/receipts/next-voucher");
+    return response.data;
+  },
+
+  /**
+   * Tạo phiếu thu thủ công
+   * Backend: POST /financial-tickets/receipts
+   */
+  async createManualReceiptTicket(payload: {
+    title: string;
+    amount: number;
+    status: "Paid" | "Unpaid";
+  }) {
+    const response = await api.post("/financial-tickets/receipts", payload);
+    return response.data;
+  },
+
+  /**
    * Cập nhật trạng thái phiếu chi (Payment)
    * Backend: PATCH /financial-tickets/:id/status
    */

@@ -61,6 +61,7 @@ import ComplaintRequestList from "./pages/RequestManagement/ComplaintRequestlist
 // Pages - Accountant Dashboard
 import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
 import ManagingIncomeExpenses from "./pages/Accountant/managing_income_expenses/managingIncomeExpenses";
+import ReceiptsList from "./pages/Accountant/managing_income_expenses/receiptsList";
 import InvoiceList from "./pages/InvoiceManagement/InvoiceList";
 
 // Pages - Profile (All authenticated roles)
@@ -277,6 +278,10 @@ function LayoutWrapper() {
           {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
           <Route path="invoices/list" element={<InvoiceList />} />
           {/* Phiếu thu / chi */}
+          <Route
+            path="transactions/receipts"
+            element={<ReceiptsList />}
+          />
           <Route
             path="transactions/payments"
             element={<ManagingIncomeExpenses />}
