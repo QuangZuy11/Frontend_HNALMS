@@ -6,13 +6,15 @@ export const requestService = {
     roomSearch?: string,
     tenantSearch?: string,
     page?: number,
-    limit?: number
+    limit?: number,
+    type?: 'Sửa chữa' | 'Bảo trì'
   ) => {
     const params: {
       roomSearch?: string;
       tenantSearch?: string;
       page?: number;
       limit?: number;
+      type?: 'Sửa chữa' | 'Bảo trì';
     } = {};
     if (roomSearch && roomSearch.trim()) {
       params.roomSearch = roomSearch.trim();
@@ -25,6 +27,9 @@ export const requestService = {
     }
     if (limit !== undefined && limit !== null) {
       params.limit = limit;
+    }
+    if (type) {
+      params.type = type;
     }
     const response = await api.get('/requests/repair', { params });
     return response.data;

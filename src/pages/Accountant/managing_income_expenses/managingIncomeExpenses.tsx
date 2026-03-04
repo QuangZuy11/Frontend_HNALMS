@@ -38,6 +38,27 @@ export default function ManagingIncomeExpenses() {
   const [selectedTicket, setSelectedTicket] = useState<FinancialTicket | null>(
     null
   );
+  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [creating, setCreating] = useState<boolean>(false);
+  const [autoVoucherCode, setAutoVoucherCode] = useState<string>("");
+  const [autoVoucherLoading, setAutoVoucherLoading] = useState<boolean>(false);
+  const [autoVoucherError, setAutoVoucherError] = useState<string>("");
+  const [createForm, setCreateForm] = useState<{
+    title: string;
+    amount: string;
+    status: "Unpaid" | "Paid";
+  }>({
+    title: "",
+    amount: "",
+    status: "Unpaid",
+  });
+  const [createErrors, setCreateErrors] = useState<{
+    title: string;
+    amount: string;
+  }>({
+    title: "",
+    amount: "",
+  });
 
   // Khoá scroll trang này
   useEffect(() => {
@@ -94,6 +115,87 @@ export default function ManagingIncomeExpenses() {
   useEffect(() => {
     fetchTickets();
   }, [fetchTickets]);
+
+  const resetCreateForm = () => {
+    setCreateForm({
+      title: "",
+      amount: "",
+      status: "Unpaid",
+    });
+    setCreateErrors({ title: "", amount: "" });
+    setAutoVoucherCode("");
+    setAutoVoucherError("");
+    setAutoVoucherLoading(false);
+  };
+
+  const openCreateModal = async () => {
+    setShowCreateModal(true);
+    resetCreateForm();
+
+    try {
+      setAutoVoucherLoading(true);
+      const res = await cashFlowService.getNextPaymentVoucher();
+      const code = res?.data?.paymentVoucher;
+      if (!code) {
+        throw new Error("Không thể tạo mã phiếu chi");
+      }
+      setAutoVoucherCode(code);
+    } catch (err) {
+      console.error("Lỗi khi tạo mã phiếu chi:", err);
+      setAutoVoucherError("Không thể tạo mã phiếu chi");
+    } finally {
+      setAutoVoucherLoading(false);
+    }
+  };
+
+  const closeCreateModal = () => {
+    setShowCreateModal(false);
+    resetCreateForm();
+  };
+
+  const handleCreateTicket = async () => {
+    const errors = { title: "", amount: "" };
+    let isValid = true;
+
+    if (!createForm.title.trim()) {
+      errors.title = "Vui lòng nhập tiêu đề";
+      isValid = false;
+    }
+
+    if (!createForm.amount.trim()) {
+      errors.amount = "Vui lòng nhập số tiền";
+      isValid = false;
+    } else {
+      const amountNumber = Number(createForm.amount);
+      if (!Number.isFinite(amountNumber) || amountNumber < 0) {
+        errors.amount = "Số tiền không hợp lệ";
+        isValid = false;
+      }
+    }
+
+    setCreateErrors(errors);
+    if (!isValid) return;
+
+    try {
+      setCreating(true);
+      const response = await cashFlowService.createManualPaymentTicket({
+        title: createForm.title.trim(),
+        amount: Number(createForm.amount),
+        status: createForm.status,
+      });
+
+      if (response?.success && response?.data?._id) {
+        setTickets((prev) => [response.data, ...prev]);
+        setCurrentPage(1);
+        closeCreateModal();
+      }
+    } catch (err) {
+      console.error("Lỗi khi tạo phiếu chi:", err);
+      setError("Không thể tạo phiếu chi");
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const formatCurrency = (value: number | undefined) => {
     if (typeof value !== "number") return "0";
@@ -191,23 +293,32 @@ export default function ManagingIncomeExpenses() {
               Các phiếu chi phát sinh từ sửa chữa miễn phí và các nghiệp vụ khác
             </p>
           </div>
-          <div className="payments-filter-wrapper">
-            <label htmlFor="status-filter" className="payments-filter-label">
-              Trạng thái:
-            </label>
-            <select
-              id="status-filter"
-              className="payments-filter-select payments-status-filter"
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value as "all" | "paid" | "unpaid");
-                setCurrentPage(1);
-              }}
+          <div className="payments-header-actions">
+            <button
+              type="button"
+              className="payments-create-btn"
+              onClick={openCreateModal}
             >
-              <option value="all">Tất cả</option>
-              <option value="unpaid">Chưa thanh toán</option>
-              <option value="paid">Đã thanh toán</option>
-            </select>
+              Tạo phiếu chi
+            </button>
+            <div className="payments-filter-wrapper">
+              <label htmlFor="status-filter" className="payments-filter-label">
+                Trạng thái:
+              </label>
+              <select
+                id="status-filter"
+                className="payments-filter-select payments-status-filter"
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value as "all" | "paid" | "unpaid");
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="all">Tất cả</option>
+                <option value="unpaid">Chưa thanh toán</option>
+                <option value="paid">Đã thanh toán</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -301,6 +412,134 @@ export default function ManagingIncomeExpenses() {
             >
               {">"}
             </button>
+          </div>
+        )}
+
+        {showCreateModal && (
+          <div className="payments-modal-overlay" onClick={closeCreateModal}>
+            <div className="payments-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="payments-modal-header">
+                <h3>Tạo phiếu chi</h3>
+                <button
+                  type="button"
+                  className="payments-modal-close"
+                  onClick={closeCreateModal}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="payments-modal-body">
+                <div className="payments-form-group">
+                  <label>Mã phiếu</label>
+                  <input
+                    type="text"
+                    value={
+                      autoVoucherLoading
+                        ? "Đang tạo mã phiếu..."
+                        : autoVoucherCode || "Chưa tạo được mã phiếu"
+                    }
+                    disabled
+                    className="payments-form-input"
+                  />
+                  {autoVoucherError && (
+                    <span className="payments-form-error">{autoVoucherError}</span>
+                  )}
+                </div>
+
+                <div className="payments-form-group">
+                  <label>Tiêu đề *</label>
+                  <input
+                    type="text"
+                    value={createForm.title}
+                    onChange={(e) => {
+                      setCreateForm((prev) => ({ ...prev, title: e.target.value }));
+                      if (createErrors.title) {
+                        setCreateErrors((prev) => ({ ...prev, title: "" }));
+                      }
+                    }}
+                    className="payments-form-input"
+                    placeholder="Nhập tiêu đề phiếu chi"
+                  />
+                  {createErrors.title && (
+                    <span className="payments-form-error">{createErrors.title}</span>
+                  )}
+                </div>
+
+                <div className="payments-form-group">
+                  <label>Số tiền *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1000"
+                    value={createForm.amount}
+                    onChange={(e) => {
+                      setCreateForm((prev) => ({ ...prev, amount: e.target.value }));
+                      if (createErrors.amount) {
+                        setCreateErrors((prev) => ({ ...prev, amount: "" }));
+                      }
+                    }}
+                    className="payments-form-input"
+                    placeholder="Nhập số tiền"
+                  />
+                  {createErrors.amount && (
+                    <span className="payments-form-error">{createErrors.amount}</span>
+                  )}
+                </div>
+
+                <div className="payments-form-group">
+                  <label>Trạng thái *</label>
+                  <select
+                    className="payments-form-input"
+                    value={createForm.status}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        status: e.target.value as "Unpaid" | "Paid",
+                      }))
+                    }
+                  >
+                    <option value="Unpaid">Chưa thanh toán</option>
+                    <option value="Paid">Đã thanh toán</option>
+                  </select>
+                </div>
+
+                <div className="payments-form-group">
+                  <label>Ngày tạo</label>
+                  <input
+                    type="text"
+                    value={formatDate(new Date().toISOString())}
+                    disabled
+                    className="payments-form-input"
+                  />
+                </div>
+              </div>
+
+              <div className="payments-modal-footer">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={closeCreateModal}
+                  disabled={creating}
+                  style={{ marginRight: 8 }}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={handleCreateTicket}
+                  disabled={
+                    creating ||
+                    autoVoucherLoading ||
+                    !!autoVoucherError ||
+                    !autoVoucherCode
+                  }
+                >
+                  {creating ? "Đang tạo..." : "Tạo phiếu"}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

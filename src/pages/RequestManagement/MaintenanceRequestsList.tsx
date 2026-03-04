@@ -71,14 +71,11 @@ export default function MaintenanceRequestsList() {
         roomSearch,
         tenantSearch,
         currentPage,
-        itemsPerPage
+        itemsPerPage,
+        'Bảo trì'
       );
       if (response.success && Array.isArray(response.data)) {
-        // Filter chỉ lấy type="Bảo trì"
-        const maintenance = (response.data as RepairRequest[]).filter(
-          (r) => r.type === 'Bảo trì',
-        );
-        setRequests(maintenance);
+        setRequests(response.data as RepairRequest[]);
       } else {
         setRequests([]);
       }
@@ -176,8 +173,8 @@ export default function MaintenanceRequestsList() {
           setAutoPaymentVoucherError(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (err as any)?.response?.data?.message ||
-              (err as Error).message ||
-              'Không thể tạo mã phiếu chi',
+            (err as Error).message ||
+            'Không thể tạo mã phiếu chi',
           );
         } finally {
           setAutoPaymentVoucherLoading(false);
@@ -284,11 +281,11 @@ export default function MaintenanceRequestsList() {
           prev.map((r) =>
             r._id === updated._id
               ? {
-                  ...r,
-                  status: updated.status,
-                  cost: updated.cost,
-                  paymentType: updated.paymentType ?? 'EXPENSE',
-                }
+                ...r,
+                status: updated.status,
+                cost: updated.cost,
+                paymentType: updated.paymentType ?? 'EXPENSE',
+              }
               : r,
           ),
         );
@@ -297,11 +294,11 @@ export default function MaintenanceRequestsList() {
           setSelectedRequest((prev) =>
             prev
               ? {
-                  ...prev,
-                  status: updated.status,
-                  cost: updated.cost,
-                  paymentType: updated.paymentType ?? 'EXPENSE',
-                }
+                ...prev,
+                status: updated.status,
+                cost: updated.cost,
+                paymentType: updated.paymentType ?? 'EXPENSE',
+              }
               : prev,
           );
         }
@@ -394,11 +391,11 @@ export default function MaintenanceRequestsList() {
                 onChange={(e) =>
                   setStatusFilter(
                     e.target.value as
-                      | 'ALL'
-                      | 'Pending'
-                      | 'Processing'
-                      | 'Done'
-                      | 'Unpair',
+                    | 'ALL'
+                    | 'Pending'
+                    | 'Processing'
+                    | 'Done'
+                    | 'Unpair',
                   )
                 }
               >
@@ -530,7 +527,7 @@ export default function MaintenanceRequestsList() {
         {/* Modal xem chi tiết */}
         {selectedRequest && (
           <div className="repair-modal-overlay" onClick={handleCloseDetail}>
-            <div className="repair-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="repair-modal repair-detail-modal" onClick={(e) => e.stopPropagation()}>
               <div className="repair-modal-header">
                 <h2>Chi tiết yêu cầu bảo trì</h2>
                 <button
@@ -543,90 +540,138 @@ export default function MaintenanceRequestsList() {
                 </button>
               </div>
               <div className="repair-modal-body">
-                <div className="detail-row">
-                  <span className="detail-label">Cư dân:</span>
-                  <span className="detail-value">
-                    {selectedRequest.tenantId?.fullname ||
-                      selectedRequest.tenantId?.username ||
-                      '-'}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Phòng:</span>
-                  <span className="detail-value">
-                    {selectedRequest.room?.name || selectedRequest.room?.roomCode || '-'}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Email:</span>
-                  <span className="detail-value">{selectedRequest.tenantId?.email || '-'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Số điện thoại:</span>
-                  <span className="detail-value">
-                    {selectedRequest.tenantId?.phoneNumber || '-'}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Thiết bị:</span>
-                  <span className="detail-value">
-                    {selectedRequest.devicesId?.name || '-'}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Loại:</span>
-                  <span className="detail-value">{selectedRequest.type}</span>
-                </div>
-                <div className="detail-row detail-row-description">
-                  <span className="detail-label">Mô tả:</span>
-                  <span className="detail-value">{selectedRequest.description || '-'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Chi phí:</span>
-                  <span className="detail-value">
-                    {selectedRequest.cost?.toLocaleString('vi-VN') || 0} VNĐ
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Người thanh toán:</span>
-                  <span className="detail-value">Kế toán</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Ngày tạo:</span>
-                  <span className="detail-value">{formatDate(selectedRequest.createdDate)}</span>
-                </div>
-                {selectedRequest.notes && (
-                  <div className="detail-row">
-                    <span className="detail-label">Ghi chú:</span>
-                    <span className="detail-value">{selectedRequest.notes}</span>
-                  </div>
-                )}
-                {selectedRequest.images && selectedRequest.images.length > 0 && (
-                  <div className="detail-row detail-row-description">
-                    <span className="detail-label">Hình ảnh:</span>
-                    <span className="detail-value">
-                      <div className="repair-images-grid">
-                        {selectedRequest.images.map((url, idx) => (
-                          <button
-                            type="button"
-                            key={idx}
-                            className="repair-image-item"
-                            onClick={() => handleOpenImagePreview(url)}
-                          >
-                            <img src={url} alt={`Ảnh yêu cầu ${idx + 1}`} />
-                          </button>
-                        ))}
+                {/* Layout 2 cột chính + ảnh */}
+                <div className="detail-grid-layout">
+                  {/* Cột thông tin bên trái */}
+                  <div className="detail-grid-fields">
+                    {/* Hàng 1: Phòng + Cư dân */}
+                    <div className="detail-field-group">
+                      <div className="detail-field">
+                        <span className="detail-field-label">Phòng</span>
+                        <span className="detail-field-value">
+                          {selectedRequest.room?.name || selectedRequest.room?.roomCode || '-'}
+                        </span>
                       </div>
-                    </span>
+                      <div className="detail-field">
+                        <span className="detail-field-label">Cư dân</span>
+                        <span className="detail-field-value">
+                          {selectedRequest.tenantId?.fullname || selectedRequest.tenantId?.username || '-'}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Hàng 2: Số điện thoại + Thiết bị */}
+                    <div className="detail-field-group">
+                      <div className="detail-field">
+                        <span className="detail-field-label">Số điện thoại</span>
+                        <span className="detail-field-value">
+                          {selectedRequest.tenantId?.phoneNumber || '-'}
+                        </span>
+                      </div>
+                      <div className="detail-field">
+                        <span className="detail-field-label">Thiết bị</span>
+                        <span className="detail-field-value">
+                          {selectedRequest.devicesId?.name || '-'}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Hàng 3: Loại + Trạng thái */}
+                    <div className="detail-field-group">
+                      <div className="detail-field">
+                        <span className="detail-field-label">Loại</span>
+                        <span className="detail-field-value">{selectedRequest.type}</span>
+                      </div>
+                      <div className="detail-field">
+                        <span className="detail-field-label">Trạng thái</span>
+                        <span className="detail-field-value">
+                          <span className={`status-badge status-${selectedRequest.status.toLowerCase()}`}>
+                            {getStatusLabel(selectedRequest)}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                    {/* Hàng 4: Chi phí + Ngày tạo */}
+                    <div className="detail-field-group">
+                      <div className="detail-field">
+                        <span className="detail-field-label">Chi phí (VNĐ)</span>
+                        <span className="detail-field-value">
+                          {selectedRequest.cost?.toLocaleString('vi-VN') || 0}
+                        </span>
+                      </div>
+                      <div className="detail-field">
+                        <span className="detail-field-label">Ngày tạo</span>
+                        <span className="detail-field-value">
+                          {formatDate(selectedRequest.createdDate)}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Hàng 5: Người thanh toán (bảo trì luôn là Kế toán) */}
+                    <div className="detail-field-group">
+                      <div className="detail-field">
+                        <span className="detail-field-label">Người thanh toán</span>
+                        <span className="detail-field-value">Kế toán</span>
+                      </div>
+                      {selectedRequest.notes && (
+                        <div className="detail-field">
+                          <span className="detail-field-label">Ghi chú</span>
+                          <span className="detail-field-value">{selectedRequest.notes}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
+                  {/* Hình ảnh bên phải */}
+                  {selectedRequest.images && selectedRequest.images.length > 0 && (
+                    <div className="detail-grid-image">
+                      <button
+                        type="button"
+                        className="detail-main-image-btn"
+                        onClick={() => handleOpenImagePreview(selectedRequest.images[0])}
+                        title="Xem ảnh lớn"
+                      >
+                        <img
+                          src={selectedRequest.images[0]}
+                          alt="Ảnh yêu cầu"
+                          className="detail-main-image"
+                        />
+                      </button>
+                      {selectedRequest.images.length > 1 && (
+                        <div className="detail-extra-images">
+                          {selectedRequest.images.slice(1).map((url, idx) => (
+                            <button
+                              type="button"
+                              key={idx + 1}
+                              className="detail-extra-image-btn"
+                              onClick={() => handleOpenImagePreview(url)}
+                            >
+                              <img src={url} alt={`Ảnh ${idx + 2}`} />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Email - toàn chiều rộng để hiển thị đầy đủ */}
+                <div className="detail-email-row">
+                  <span className="detail-field-label">Email</span>
+                  <span className="detail-email-value">
+                    {selectedRequest.tenantId?.email || '-'}
+                  </span>
+                </div>
+
+                {/* Mô tả */}
+                <div className="detail-description-block">
+                  <span className="detail-field-label">Mô tả</span>
+                  <p className="detail-description-text">{selectedRequest.description || '-'}</p>
+                </div>
+
+                {/* Tình trạng xử lý + nút Xong */}
                 <div className="detail-status-actions">
-                  <div className="detail-status-actions-header">
-                    <span className="detail-label">Trạng thái:</span>
-                  </div>
                   <div className="detail-status-actions-select-row">
+                    <span className="detail-status-clock">🕐</span>
+                    <span className="detail-status-label">Tình trạng xử lý</span>
                     <select
-                      className="detail-status-select"
+                      className="detail-status-select detail-status-select--inline"
                       value={selectedRequest.status}
                       onChange={(e) =>
                         handleUpdateStatus(
@@ -652,6 +697,16 @@ export default function MaintenanceRequestsList() {
                         Đã xử lý
                       </option>
                     </select>
+                    {updatingId === selectedRequest._id && (
+                      <span className="detail-status-updating">Đang cập nhật...</span>
+                    )}
+                    <button
+                      type="button"
+                      className="detail-done-btn-orange"
+                      onClick={handleCloseDetail}
+                    >
+                      Xong
+                    </button>
                   </div>
                 </div>
               </div>
@@ -737,8 +792,8 @@ export default function MaintenanceRequestsList() {
                               setAutoPaymentVoucherError(
                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 (err as any)?.response?.data?.message ||
-                                  (err as Error).message ||
-                                  'Không thể tạo mã phiếu chi',
+                                (err as Error).message ||
+                                'Không thể tạo mã phiếu chi',
                               );
                             } finally {
                               setAutoPaymentVoucherLoading(false);

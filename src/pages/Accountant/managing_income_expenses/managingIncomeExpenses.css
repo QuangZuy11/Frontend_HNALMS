@@ -37,6 +37,27 @@
   font-size: 13px;
 }
 
+.payments-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.payments-create-btn {
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.payments-create-btn:hover {
+  background: #1d4ed8;
+}
+
 .payments-filter-wrapper {
   display: flex;
   align-items: center;
