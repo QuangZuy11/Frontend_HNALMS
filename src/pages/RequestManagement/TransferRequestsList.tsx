@@ -39,6 +39,7 @@ interface TransferRequest {
   managerNote?: string;
   rejectReason?: string;
   createdAt: string;
+  transferDate?: string | null;
 }
 
 type StatusFilter = 'ALL' | 'Pending' | 'Approved' | 'Rejected';
@@ -312,6 +313,7 @@ export default function TransferRequestsList() {
                   <th>Phòng muốn chuyển</th>
                   <th>Giá phòng mới</th>
                   <th>Ngày tạo</th>
+                  <th>Ngày chuyển</th>
                   <th>Trạng thái</th>
                   <th>Thao tác</th>
                 </tr>
@@ -328,6 +330,7 @@ export default function TransferRequestsList() {
                     <td>{getRoomDisplay(req.targetRoomId)}</td>
                     <td>{formatCurrency(req.targetRoomId?.roomTypeId?.currentPrice)}</td>
                     <td>{formatDate(req.createdAt)}</td>
+                    <td>{req.transferDate ? formatDate(req.transferDate) : '-'}</td>
                     <td>
                       <span className={`status-badge ${STATUS_BADGE_CLASS[req.status] ?? ''}`}>
                         {STATUS_LABELS[req.status] ?? req.status}
@@ -431,6 +434,10 @@ export default function TransferRequestsList() {
               <div className="detail-row">
                 <span className="detail-label">Ngày gửi:</span>
                 <span className="detail-value">{formatDate(selectedRequest.createdAt)}</span>
+              </div>
+              <div className="detail-row">
+                <span className="detail-label">Ngày chuyển:</span>
+                <span className="detail-value">{selectedRequest.transferDate ? formatDate(selectedRequest.transferDate) : '-'}</span>
               </div>
               <div className="detail-row">
                 <span className="detail-label">Trạng thái:</span>
