@@ -132,7 +132,46 @@ GET /deposits/status/HNLMS1709123456789
 
 ---
 
-### 3. Webhook Sepay (Internal)
+### 3. Hủy giao dịch đặt cọc
+
+Frontend gọi khi user đóng modal thanh toán (hủy bỏ).
+
+```
+POST /deposits/cancel/:transactionCode
+```
+
+#### Path Parameters
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| transactionCode | string | Mã giao dịch (VD: Coc P310 02032026) |
+
+#### Response Success (200)
+```json
+{
+  "success": true,
+  "message": "Đã hủy giao dịch đặt cọc",
+  "data": {
+    "transactionCode": "Coc P310 02032026",
+    "status": "Cancelled"
+  }
+}
+```
+
+#### Behavior
+- Xóa deposit khỏi database
+- Tạo Payment record với status `Failed`
+- Chỉ có thể hủy deposit đang ở status `Pending`
+
+#### Response Errors
+| Status | Message |
+|--------|---------|
+| 400 | Không thể hủy giao dịch đã {status} |
+| 404 | Không tìm thấy giao dịch |
+| 500 | Internal Server Error |
+
+---
+
+### 4. Webhook Sepay (Internal)
 
 > ⚠️ **Endpoint này chỉ dành cho Sepay gọi tự động, Frontend KHÔNG gọi.**
 
@@ -177,25 +216,33 @@ POST /deposits/webhook/sepay
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│  STEP 4: Hiển thị màn hình thanh toán                           │
+│  STEP 4: Hiển thị màn hình thanh toán (Modal QR)                │
 │  - QR Code (từ qrUrl)                                           │
 │  - Thông tin ngân hàng                                          │
 │  - Nội dung chuyển khoản (transactionCode)                      │
 │  - Số tiền cần chuyển                                           │
+│  - Nút "Đóng" hoặc "Hủy"                                        │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
-┌─────────────────────────────────────────────────────────────────┐
-│  STEP 5: Polling mỗi 3-5 giây                                   │
-│  GET /api/deposits/status/:transactionCode                      │
-│  → Kiểm tra status === "Held"                                   │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│  STEP 6: Khi status = "Held"                                    │
-│  → Hiển thị "Đặt cọc thành công!"                               │
-│  → Redirect hoặc hiển thị thông tin xác nhận                    │
-└─────────────────────────────────────────────────────────────────┘
+              ┌───────────────┴───────────────┐
+              ↓                               ↓
+┌─────────────────────────┐     ┌─────────────────────────────────┐
+│  User click "Đóng/Hủy"  │     │  STEP 5: Polling mỗi 3-5 giây   │
+│          ↓              │     │  GET /api/deposits/status/:code │
+│  POST /cancel/:code     │     │  → Kiểm tra status === "Held"   │
+│          ↓              │     └─────────────────────────────────┘
+│  → Deposit bị XÓA       │                   ↓
+│  → Payment = Failed     │     ┌─────────────────────────────────┐
+│  → Thông báo "Đã hủy"   │     │  STEP 6: Khi status = "Held"    │
+└─────────────────────────┘     │  → Hiển thị "Đặt cọc thành công"│
+                                │  → Redirect hoặc confirmation   │
+                                └─────────────────────────────────┘
 ```
+
+> **Lưu ý:**
+> - Khi **user đóng modal** → Gọi `POST /cancel/:transactionCode` → Deposit XÓA, Payment = Failed
+> - Khi **hết 5 phút** (timeout) → Deposit XÓA, Payment = Failed (tự động qua polling hoặc cron)
+> - Deposit **KHÔNG được lưu** khi thanh toán thất bại
 
 ---
 
@@ -204,12 +251,13 @@ POST /deposits/webhook/sepay
 ### React/Next.js
 
 ```jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const DepositPage = ({ roomId }) => {
-  const [step, setStep] = useState('form'); // form | payment | success
+  const [step, setStep] = useState('form'); // form | payment | success | cancelled
   const [depositData, setDepositData] = useState(null);
   const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
+  const intervalRef = useRef(null);
 
   // Step 1: Submit form
   const handleSubmit = async (e) => {
@@ -228,28 +276,51 @@ const DepositPage = ({ roomId }) => {
     }
   };
 
+  // Cancel deposit when user closes modal
+  const handleCancel = async () => {
+    if (!depositData?.transactionCode) return;
+    
+    // Stop polling
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    try {
+      await fetch(`/api/deposits/cancel/${encodeURIComponent(depositData.transactionCode)}`, {
+        method: 'POST'
+      });
+    } catch (err) {
+      console.error('Cancel error:', err);
+    }
+    
+    setStep('cancelled');
+  };
+
   // Step 2: Polling status
   useEffect(() => {
     if (step !== 'payment' || !depositData) return;
 
-    const interval = setInterval(async () => {
-      const res = await fetch(`/api/deposits/status/${depositData.transactionCode}`);
+    intervalRef.current = setInterval(async () => {
+      const res = await fetch(`/api/deposits/status/${encodeURIComponent(depositData.transactionCode)}`);
       const data = await res.json();
       
-      if (data.data.status === 'Held') {
-        clearInterval(interval);
+      if (data.data?.status === 'Held') {
+        clearInterval(intervalRef.current);
         setStep('success');
+      } else if (data.data?.status === 'Expired') {
+        clearInterval(intervalRef.current);
+        alert('Hết thời gian thanh toán');
+        setStep('form');
       }
     }, 3000);
 
-    // Timeout after 15 minutes
+    // Auto-cancel after 5 minutes
     const timeout = setTimeout(() => {
-      clearInterval(interval);
-      alert('Hết thời gian thanh toán');
-    }, 15 * 60 * 1000);
+      handleCancel();
+    }, 5 * 60 * 1000);
 
     return () => {
-      clearInterval(interval);
+      clearInterval(intervalRef.current);
       clearTimeout(timeout);
     };
   }, [step, depositData]);
@@ -282,22 +353,37 @@ const DepositPage = ({ roomId }) => {
     );
   }
 
-  // Render payment QR
+  // Render payment QR (Modal)
   if (step === 'payment') {
     return (
-      <div>
-        <h2>Quét mã QR để thanh toán</h2>
-        <img src={depositData.qrUrl} alt="QR Code" />
-        
-        <div>
-          <p><strong>Ngân hàng:</strong> BIDV</p>
-          <p><strong>Số tài khoản:</strong> {depositData.bankInfo.bankAccount}</p>
-          <p><strong>Chủ tài khoản:</strong> {depositData.bankInfo.bankAccountName}</p>
-          <p><strong>Số tiền:</strong> {depositData.depositAmount.toLocaleString('vi-VN')} đ</p>
-          <p><strong>Nội dung CK:</strong> {depositData.transactionCode}</p>
+      <div className="modal-overlay">
+        <div className="modal">
+          <button className="close-btn" onClick={handleCancel}>✕</button>
+          
+          <h2>Quét mã QR để thanh toán</h2>
+          <img src={depositData.qrUrl} alt="QR Code" />
+          
+          <div>
+            <p><strong>Ngân hàng:</strong> BIDV</p>
+            <p><strong>Số tài khoản:</strong> {depositData.bankInfo.bankAccount}</p>
+            <p><strong>Chủ tài khoản:</strong> {depositData.bankInfo.bankAccountName}</p>
+            <p><strong>Số tiền:</strong> {depositData.depositAmount.toLocaleString('vi-VN')} đ</p>
+            <p><strong>Nội dung CK:</strong> {depositData.transactionCode}</p>
+          </div>
+          
+          <p>Đang chờ xác nhận thanh toán...</p>
+          <button onClick={handleCancel}>Hủy thanh toán</button>
         </div>
-        
-        <p>Đang chờ xác nhận thanh toán...</p>
+      </div>
+    );
+  }
+
+  // Render cancelled
+  if (step === 'cancelled') {
+    return (
+      <div>
+        <h2>Đã hủy giao dịch</h2>
+        <button onClick={() => setStep('form')}>Đặt cọc lại</button>
       </div>
     );
   }
