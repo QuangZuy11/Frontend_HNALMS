@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Eye } from 'lucide-react';
 import { accountService } from '../../../services/accountService';
-import { STATUS_LABELS, formatAccountDate, type AccountItem, type AccountDetail } from '../constants';
+import {
+  STATUS_LABELS,
+  formatAccountDate,
+  type AccountItem,
+  type AccountDetail,
+} from '../constants';
 import '../account-management.css';
+import useAuth from '../../../hooks/useAuth';
 
 export default function TenantAccountList() {
   const [accounts, setAccounts] = useState<AccountItem[]>([]);
@@ -14,8 +20,21 @@ export default function TenantAccountList() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit] = useState(11);
   const [total, setTotal] = useState(0);
+  const { user } = useAuth();
+  const isOwner = user?.role === 'owner';
+
+  // Khoá scroll trang này
+  useEffect(() => {
+    const main = document.querySelector('.dashboard-layout-main') as HTMLElement;
+    if (main) main.style.overflowY = 'hidden';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      if (main) main.style.overflowY = '';
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   const fetchAccounts = useCallback(async () => {
     try {
@@ -43,6 +62,18 @@ export default function TenantAccountList() {
   useEffect(() => {
     fetchAccounts();
   }, [fetchAccounts]);
+
+  // Khi mở modal chi tiết cư dân, khóa scroll của toàn trang
+  useEffect(() => {
+    if (!showDetailModal) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showDetailModal]);
 
   const handleViewDetail = async (accountId: string) => {
     try {
@@ -101,13 +132,13 @@ export default function TenantAccountList() {
   const filteredAccounts = searchTerm.trim() === ''
     ? accounts
     : accounts.filter((acc) => {
-        const term = searchTerm.trim().toLowerCase();
-        const fullname = (acc.fullname ?? '').toLowerCase();
-        const email = (acc.email ?? '').toLowerCase();
-        const phone = (acc.phoneNumber ?? '').replace(/\s/g, '');
-        const termNorm = term.replace(/\s/g, '');
-        return fullname.includes(term) || email.includes(term) || phone.includes(termNorm);
-      });
+      const term = searchTerm.trim().toLowerCase();
+      const fullname = (acc.fullname ?? '').toLowerCase();
+      const email = (acc.email ?? '').toLowerCase();
+      const phone = (acc.phoneNumber ?? '').replace(/\s/g, '');
+      const termNorm = term.replace(/\s/g, '');
+      return fullname.includes(term) || email.includes(term) || phone.includes(termNorm);
+    });
 
   const totalPages = Math.max(1, Math.ceil((total || 0) / limit));
 
@@ -187,7 +218,7 @@ export default function TenantAccountList() {
             </table>
             <div className="accounts-pagination">
               <div className="accounts-pagination-info">
-               
+
               </div>
               <div className="accounts-pagination-controls">
                 <button
@@ -259,29 +290,40 @@ export default function TenantAccountList() {
                     </div>
                     <div className="detail-section-divider">Thông tin pháp lý</div>
                     <div className="detail-section-block">
-                      <div className="detail-row detail-row-tight"><span className="detail-label">CCCD:</span><span className="detail-value detail-value-black">{detailAccount.cccd || '-'}</span></div>
+                      <div className="detail-row detail-row-tight">
+                        <span className="detail-label">CCCD:</span>
+                        <span className="detail-value detail-value-black">
+                          {detailAccount.cccd || '-'}
+                        </span>
+                      </div>
                     </div>
-                    <div className="detail-actions">
-                      {detailAccount.status === 'active' ? (
-                        <button
-                          type="button"
-                          className="btn-disable"
-                          onClick={() => handleDisable(detailAccount._id)}
-                          disabled={disablingId === detailAccount._id}
-                        >
-                          {disablingId === detailAccount._id ? 'Đang xử lý...' : 'Đóng tài khoản'}
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="btn-enable"
-                          onClick={() => handleEnable(detailAccount._id)}
-                          disabled={disablingId === detailAccount._id}
-                        >
-                          {disablingId === detailAccount._id ? 'Đang xử lý...' : 'Mở lại tài khoản'}
-                        </button>
-                      )}
-                    </div>
+                    {!isOwner && (
+                      <div className="detail-actions">
+                        {detailAccount.status === 'active' ? (
+                          <button
+                            type="button"
+                            className="btn-disable"
+                            onClick={() => handleDisable(detailAccount._id)}
+                            disabled={disablingId === detailAccount._id}
+                          >
+                            {disablingId === detailAccount._id
+                              ? 'Đang xử lý...'
+                              : 'Đóng tài khoản'}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn-enable"
+                            onClick={() => handleEnable(detailAccount._id)}
+                            disabled={disablingId === detailAccount._id}
+                          >
+                            {disablingId === detailAccount._id
+                              ? 'Đang xử lý...'
+                              : 'Mở lại tài khoản'}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ) : null}
               </div>

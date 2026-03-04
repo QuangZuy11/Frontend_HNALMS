@@ -14,7 +14,6 @@ interface RepairRequest {
   notes?: string;
   createdDate: string;
   paymentType?: 'REVENUE' | 'EXPENSE' | null;
-  paymentStatus?: 'NONE' | 'UNPAID' | 'PAID' | null;
   tenantId?: {
     _id: string;
     username: string;
@@ -46,17 +45,19 @@ export default function RepairRequestsList() {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showFreeModal, setShowFreeModal] = useState(false);
   const [completingRequest, setCompletingRequest] = useState<RepairRequest | null>(null);
+  const [autoInvoiceCode, setAutoInvoiceCode] = useState<string>('');
+  const [autoInvoiceCodeLoading, setAutoInvoiceCodeLoading] = useState(false);
+  const [autoInvoiceCodeError, setAutoInvoiceCodeError] = useState<string>('');
+  const [autoPaymentVoucher, setAutoPaymentVoucher] = useState<string>('');
+  const [autoPaymentVoucherLoading, setAutoPaymentVoucherLoading] = useState(false);
+  const [autoPaymentVoucherError, setAutoPaymentVoucherError] = useState<string>('');
   const [completeForm, setCompleteForm] = useState({
-    invoiceCode: '',
     invoiceTitle: '',
     invoiceTotalAmount: '',
-    invoiceDueDate: '',
   });
   const [formErrors, setFormErrors] = useState({
-    invoiceCode: '',
     invoiceTitle: '',
     invoiceTotalAmount: '',
-    invoiceDueDate: '',
   });
   const [freeForm, setFreeForm] = useState({
     financialTitle: '',
@@ -70,17 +71,30 @@ export default function RepairRequestsList() {
   // Chi phí hiển thị được backend tính sẵn dựa trên invoice/financial ticket,
   // không cho sửa tay nữa nên bỏ modal chỉnh sửa cost.
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'Pending' | 'Processing' | 'Done'>(
+  const [statusFilter, setStatusFilter] = useState<
+    'ALL' | 'Pending' | 'Processing' | 'Unpair' | 'Done'
+  >(
     'ALL',
   );
   const [roomSearch, setRoomSearch] = useState<string>('');
   const [tenantSearch, setTenantSearch] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(11);
   const [totalItems, setTotalItems] = useState<number>(0);
   const [totalPages, setTotalPages] = useState<number>(0);
   const { isManager } = useAuth();
   const tableRef = useRef<HTMLDivElement | null>(null);
+
+  // Khoá scroll trang này
+  useEffect(() => {
+    const main = document.querySelector('.dashboard-layout-main') as HTMLElement;
+    if (main) main.style.overflowY = 'hidden';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      if (main) main.style.overflowY = '';
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   const fetchRequests = useCallback(async () => {
     try {
@@ -90,7 +104,8 @@ export default function RepairRequestsList() {
         roomSearch,
         tenantSearch,
         currentPage,
-        itemsPerPage
+        itemsPerPage,
+        'Sửa chữa'
       );
       if (response.success && Array.isArray(response.data)) {
         setRequests(response.data);
@@ -145,11 +160,7 @@ export default function RepairRequestsList() {
   const getStatusLabel = (request: RepairRequest) => {
     if (request.status === 'Pending') return 'Chờ xử lý';
     if (request.status === 'Processing') return 'Đang xử lý';
-
-    // Đã xử lý về mặt kỹ thuật
-    if (request.paymentType === 'REVENUE' && request.paymentStatus === 'UNPAID') {
-      return 'Chờ thanh toán';
-    }
+    if (request.status === 'Unpair') return 'Chờ thanh toán';
     return 'Đã xử lý';
   };
 
@@ -167,7 +178,7 @@ export default function RepairRequestsList() {
 
   const handleUpdateStatus = async (
     request: RepairRequest,
-    nextStatus: 'Pending' | 'Processing' | 'Done',
+    nextStatus: 'Pending' | 'Processing' | 'Done' | 'Unpair',
   ) => {
     // Nếu chuyển sang "Đã xử lý", hiện modal chọn loại xử lý (có phí / miễn phí)
     if (nextStatus === 'Done') {
@@ -207,19 +218,35 @@ export default function RepairRequestsList() {
   const handleChoosePaidRepair = () => {
     if (!completingRequest) return;
     setShowCompleteTypeModal(false);
-      setCompleteForm({
-        invoiceCode: '',
-        invoiceTitle: '',
-        invoiceTotalAmount: '',
-        invoiceDueDate: '',
-      });
-      setFormErrors({
-        invoiceCode: '',
-        invoiceTitle: '',
-        invoiceTotalAmount: '',
-        invoiceDueDate: '',
-      });
+    setAutoInvoiceCode('');
+    setAutoInvoiceCodeError('');
+    setCompleteForm({
+      invoiceTitle: '',
+      invoiceTotalAmount: '',
+    });
+    setFormErrors({
+      invoiceTitle: '',
+      invoiceTotalAmount: '',
+    });
     setShowCompleteModal(true);
+
+    // Auto-generate invoice code for paid repair only
+    (async () => {
+      try {
+        setAutoInvoiceCodeLoading(true);
+        const res = await requestService.getNextRepairInvoiceCode();
+        const code = res?.data?.invoiceCode;
+        if (!code) throw new Error('Không thể tạo mã hóa đơn');
+        setAutoInvoiceCode(code);
+      } catch (err: any) {
+        console.error('Lỗi khi tạo mã hóa đơn:', err);
+        setAutoInvoiceCodeError(
+          err?.response?.data?.message || err?.message || 'Không thể tạo mã hóa đơn',
+        );
+      } finally {
+        setAutoInvoiceCodeLoading(false);
+      }
+    })();
   };
 
   const handleChooseFreeRepair = () => {
@@ -235,6 +262,25 @@ export default function RepairRequestsList() {
       financialAmount: '',
     });
     setShowFreeModal(true);
+
+    // Auto-generate payment voucher for free repair
+    (async () => {
+      try {
+        setAutoPaymentVoucherLoading(true);
+        setAutoPaymentVoucherError('');
+        const res = await requestService.getNextRepairPaymentVoucher();
+        const code = res?.data?.paymentVoucher;
+        if (!code) throw new Error('Không thể tạo mã phiếu chi');
+        setAutoPaymentVoucher(code);
+      } catch (err: any) {
+        console.error('Lỗi khi tạo mã phiếu chi:', err);
+        setAutoPaymentVoucherError(
+          err?.response?.data?.message || err?.message || 'Không thể tạo mã phiếu chi',
+        );
+      } finally {
+        setAutoPaymentVoucherLoading(false);
+      }
+    })();
   };
 
   const handleCompleteSubmit = async () => {
@@ -242,17 +288,10 @@ export default function RepairRequestsList() {
 
     // Validate form
     const errors = {
-      invoiceCode: '',
       invoiceTitle: '',
       invoiceTotalAmount: '',
-      invoiceDueDate: '',
     };
     let isValid = true;
-
-    if (!completeForm.invoiceCode.trim()) {
-      errors.invoiceCode = 'Vui lòng nhập mã hóa đơn';
-      isValid = false;
-    }
 
     if (!completeForm.invoiceTitle.trim()) {
       errors.invoiceTitle = 'Vui lòng nhập tiêu đề hóa đơn';
@@ -270,11 +309,6 @@ export default function RepairRequestsList() {
       }
     }
 
-    if (!completeForm.invoiceDueDate) {
-      errors.invoiceDueDate = 'Vui lòng chọn ngày đến hạn';
-      isValid = false;
-    }
-
     setFormErrors(errors);
 
     if (!isValid) {
@@ -284,18 +318,42 @@ export default function RepairRequestsList() {
     const totalAmount = parseFloat(completeForm.invoiceTotalAmount);
     const cost = totalAmount; // Chi phí trên request sẽ bằng tổng số tiền hóa đơn
 
+    // Due date is auto-set: +7 days starting from the moment user clicks "Hoàn thành"
+    const toDateInputValue = (date: Date) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
+    const dueDate = (() => {
+      const now = new Date();
+      const target = new Date(now);
+      target.setDate(target.getDate() + 7);
+      return toDateInputValue(target);
+    })();
+
     try {
       setUpdatingId(completingRequest._id);
+
+      let invoiceCodeToUse = autoInvoiceCode;
+      if (!invoiceCodeToUse) {
+        const res = await requestService.getNextRepairInvoiceCode();
+        const code = res?.data?.invoiceCode;
+        if (!code) throw new Error('Không thể tạo mã hóa đơn');
+        invoiceCodeToUse = code;
+        setAutoInvoiceCode(code);
+      }
+
       const response = await requestService.updateRepairStatus(
         completingRequest._id,
         'Done',
         cost,
         undefined,
         {
-          invoiceCode: completeForm.invoiceCode.trim(),
+          invoiceCode: invoiceCodeToUse,
           title: completeForm.invoiceTitle.trim(),
           totalAmount,
-          dueDate: completeForm.invoiceDueDate,
+          dueDate,
         },
         undefined,
         'REVENUE'
@@ -307,12 +365,11 @@ export default function RepairRequestsList() {
           prev.map((r) =>
             r._id === updated._id
               ? {
-                  ...r,
-                  status: updated.status,
-                  cost: updated.cost,
-                  paymentType: updated.paymentType ?? 'REVENUE',
-                  paymentStatus: updated.paymentStatus ?? 'UNPAID',
-                }
+                ...r,
+                status: updated.status,
+                cost: updated.cost,
+                paymentType: updated.paymentType ?? 'REVENUE',
+              }
               : r,
           ),
         );
@@ -321,12 +378,11 @@ export default function RepairRequestsList() {
           setSelectedRequest((prev) =>
             prev
               ? {
-                  ...prev,
-                  status: updated.status,
-                  cost: updated.cost,
-                  paymentType: updated.paymentType ?? 'REVENUE',
-                  paymentStatus: updated.paymentStatus ?? 'UNPAID',
-                }
+                ...prev,
+                status: updated.status,
+                cost: updated.cost,
+                paymentType: updated.paymentType ?? 'REVENUE',
+              }
               : prev,
           );
         }
@@ -334,17 +390,15 @@ export default function RepairRequestsList() {
 
       setShowCompleteModal(false);
       setCompletingRequest(null);
+      setAutoInvoiceCode('');
+      setAutoInvoiceCodeError('');
       setCompleteForm({
-        invoiceCode: '',
         invoiceTitle: '',
         invoiceTotalAmount: '',
-        invoiceDueDate: '',
       });
       setFormErrors({
-        invoiceCode: '',
         invoiceTitle: '',
         invoiceTotalAmount: '',
-        invoiceDueDate: '',
       });
     } catch (err: any) {
       console.error('Lỗi khi hoàn thành yêu cầu:', err);
@@ -358,17 +412,15 @@ export default function RepairRequestsList() {
     setShowCompleteModal(false);
     setCompletingRequest(null);
     setShowCompleteTypeModal(false);
+    setAutoInvoiceCode('');
+    setAutoInvoiceCodeError('');
     setCompleteForm({
-      invoiceCode: '',
       invoiceTitle: '',
       invoiceTotalAmount: '',
-      invoiceDueDate: '',
     });
     setFormErrors({
-      invoiceCode: '',
       invoiceTitle: '',
       invoiceTotalAmount: '',
-      invoiceDueDate: '',
     });
   };
 
@@ -384,6 +436,9 @@ export default function RepairRequestsList() {
       financialTitle: '',
       financialAmount: '',
     });
+    setAutoPaymentVoucher('');
+    setAutoPaymentVoucherError('');
+    setAutoPaymentVoucherLoading(false);
   };
 
   const handleFreeSubmit = async () => {
@@ -428,6 +483,7 @@ export default function RepairRequestsList() {
           financialTitle: freeForm.financialTitle.trim(),
           financialAmount: amountNumber,
           financialType: freeForm.financialType,
+          paymentVoucher: autoPaymentVoucher,
         },
         'EXPENSE'
       );
@@ -438,12 +494,11 @@ export default function RepairRequestsList() {
           prev.map((r) =>
             r._id === updated._id
               ? {
-                  ...r,
-                  status: updated.status,
-                  cost: updated.cost,
-                  paymentType: updated.paymentType ?? 'EXPENSE',
-                  paymentStatus: updated.paymentStatus ?? 'PAID',
-                }
+                ...r,
+                status: updated.status,
+                cost: updated.cost,
+                paymentType: updated.paymentType ?? 'EXPENSE',
+              }
               : r,
           ),
         );
@@ -452,12 +507,11 @@ export default function RepairRequestsList() {
           setSelectedRequest((prev) =>
             prev
               ? {
-                  ...prev,
-                  status: updated.status,
-                  cost: updated.cost,
-                  paymentType: updated.paymentType ?? 'EXPENSE',
-                  paymentStatus: updated.paymentStatus ?? 'PAID',
-                }
+                ...prev,
+                status: updated.status,
+                cost: updated.cost,
+                paymentType: updated.paymentType ?? 'EXPENSE',
+              }
               : prev,
           );
         }
@@ -491,9 +545,7 @@ export default function RepairRequestsList() {
   };
 
   const filteredRequests =
-    statusFilter === 'ALL'
-      ? requests
-      : requests.filter((r) => r.status === statusFilter);
+    statusFilter === 'ALL' ? requests : requests.filter((r) => r.status === statusFilter);
 
   return (
     <div className="repair-requests-page">
@@ -505,52 +557,60 @@ export default function RepairRequestsList() {
               Các yêu cầu sửa chữa/bảo trì do cư dân gửi lên tòa nhà
             </p>
           </div>
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <div className="repair-filter-wrapper">
-                <label htmlFor="tenant-search" className="repair-filter-label">
-                  Cư dân:
-                </label>
-                <input
-                  type="text"
-                  id="tenant-search"
-                  className="repair-filter-select"
-                  placeholder="Nhập tên cư dân"
-                  value={tenantSearch}
-                  onChange={(e) => setTenantSearch(e.target.value)}
-                />
-              </div>
-              <div className="repair-filter-wrapper">
-                <label htmlFor="room-search" className="repair-filter-label">
-                  Phòng:
-                </label>
-                <input
-                  type="text"
-                  id="room-search"
-                  className="repair-filter-select"
-                  placeholder="Nhập số phòng (ví dụ: 320)"
-                  value={roomSearch}
-                  onChange={(e) => setRoomSearch(e.target.value)}
-                />
-              </div>
-              <div className="repair-filter-wrapper">
-                <label htmlFor="status-filter" className="repair-filter-label">
-                  Trạng thái:
-                </label>
-                <select
-                  id="status-filter"
-                  className="repair-filter-select"
-                  value={statusFilter}
-                  onChange={(e) =>
-                    setStatusFilter(e.target.value as 'ALL' | 'Pending' | 'Processing' | 'Done')
-                  }
-                >
-                  <option value="ALL">Tất cả</option>
-                  <option value="Pending">Chờ xử lý</option>
-                  <option value="Processing">Đang xử lý</option>
-                  <option value="Done">Đã xử lý</option>
-                </select>
-              </div>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="repair-filter-wrapper">
+              <label htmlFor="tenant-search" className="repair-filter-label">
+                Cư dân:
+              </label>
+              <input
+                type="text"
+                id="tenant-search"
+                className="repair-filter-select"
+                placeholder="Nhập tên cư dân"
+                value={tenantSearch}
+                onChange={(e) => setTenantSearch(e.target.value)}
+              />
             </div>
+            <div className="repair-filter-wrapper">
+              <label htmlFor="room-search" className="repair-filter-label">
+                Phòng:
+              </label>
+              <input
+                type="text"
+                id="room-search"
+                className="repair-filter-select"
+                placeholder="Nhập số phòng (ví dụ: 320)"
+                value={roomSearch}
+                onChange={(e) => setRoomSearch(e.target.value)}
+              />
+            </div>
+            <div className="repair-filter-wrapper">
+              <label htmlFor="status-filter" className="repair-filter-label">
+                Trạng thái:
+              </label>
+              <select
+                id="status-filter"
+                className="repair-filter-select"
+                value={statusFilter}
+                onChange={(e) =>
+                  setStatusFilter(
+                    e.target.value as
+                    | 'ALL'
+                    | 'Pending'
+                    | 'Processing'
+                    | 'Done'
+                    | 'Unpair',
+                  )
+                }
+              >
+                <option value="ALL">Tất cả</option>
+                <option value="Pending">Chờ xử lý</option>
+                <option value="Processing">Đang xử lý</option>
+                <option value="Done">Đã xử lý</option>
+                <option value="Unpair">Chờ thanh toán</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         {error && (
@@ -616,8 +676,8 @@ export default function RepairRequestsList() {
                           {r.paymentType === 'REVENUE'
                             ? 'Cư dân'
                             : r.paymentType === 'EXPENSE'
-                            ? 'Kế toán'
-                            : '-'}
+                              ? 'Kế toán'
+                              : '-'}
                         </div>
                       </div>
                     </td>
@@ -660,9 +720,10 @@ export default function RepairRequestsList() {
                       className="repair-pagination-select"
                     >
                       <option value={5}>5</option>
+                      <option value={8}>8</option>
                       <option value={10}>10</option>
+                      <option value={11}>11</option>
                       <option value={20}>20</option>
-                      <option value={50}>50</option>
                     </select>
                   </div>
                 </>
@@ -701,7 +762,7 @@ export default function RepairRequestsList() {
         {/* Modal xem chi tiết */}
         {selectedRequest && (
           <div className="repair-modal-overlay" onClick={handleCloseDetail}>
-            <div className="repair-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="repair-modal repair-detail-modal" onClick={(e) => e.stopPropagation()}>
               <div className="repair-modal-header">
                 <h2>Chi tiết yêu cầu sửa chữa</h2>
                 <button
@@ -714,138 +775,192 @@ export default function RepairRequestsList() {
                 </button>
               </div>
               <div className="repair-modal-body">
-                <div className="detail-row">
-                  <span className="detail-label">Cư dân:</span>
-                  <span className="detail-value">
-                    {selectedRequest.tenantId?.fullname ||
-                      selectedRequest.tenantId?.username ||
-                      '-'}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Phòng:</span>
-                  <span className="detail-value">
-                    {selectedRequest.room?.name || selectedRequest.room?.roomCode || '-'}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Email:</span>
-                  <span className="detail-value">{selectedRequest.tenantId?.email}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Số điện thoại:</span>
-                  <span className="detail-value">
-                    {selectedRequest.tenantId?.phoneNumber || '-'}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Thiết bị:</span>
-                  <span className="detail-value">
-                    {selectedRequest.devicesId?.name || '-'}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Loại:</span>
-                  <span className="detail-value">{selectedRequest.type}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Trạng thái:</span>
-                  <span className="detail-value">
-                    <span
-                      className={`status-badge status-${selectedRequest.status.toLowerCase()}`}
-                    >
-                      {getStatusLabel(selectedRequest)}
-                    </span>
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Chi phí:</span>
-                  <span className="detail-value">
-                    {selectedRequest.cost?.toLocaleString('vi-VN') || 0} VNĐ
-                  </span>
-                </div>
-                {selectedRequest.paymentType && (
-                  <div className="detail-row">
-                    <span className="detail-label">Loại thanh toán:</span>
-                    <span className="detail-value">
-                      {selectedRequest.paymentType === 'REVENUE' ? 'Sửa chữa có phí' : 'Sửa chữa miễn phí'}
-                    </span>
-                  </div>
-                )}
-                {selectedRequest.paymentType && (
-                  <div className="detail-row">
-                    <span className="detail-label">Người thanh toán:</span>
-                    <span className="detail-value">
-                      {selectedRequest.paymentType === 'REVENUE' ? 'Cư dân' : 'Kế toán'}
-                    </span>
-                  </div>
-                )}
-                <div className="detail-row">
-                  <span className="detail-label">Ngày tạo:</span>
-                  <span className="detail-value">{formatDate(selectedRequest.createdDate)}</span>
-                </div>
-                <div className="detail-row detail-row-description">
-                  <span className="detail-label">Mô tả:</span>
-                  <span className="detail-value">{selectedRequest.description}</span>
-                </div>
-                {selectedRequest.images && selectedRequest.images.length > 0 && (
-                  <div className="detail-row detail-row-description">
-                    <span className="detail-label">Hình ảnh:</span>
-                    <span className="detail-value">
-                      <div className="repair-images-grid">
-                        {selectedRequest.images.map((url, idx) => (
-                          <button
-                            type="button"
-                            key={idx}
-                            className="repair-image-item"
-                            onClick={() => handleOpenImagePreview(url)}
-                          >
-                            <img src={url} alt={`Ảnh yêu cầu ${idx + 1}`} />
-                          </button>
-                        ))}
+                {/* Layout 2 cột chính + ảnh */}
+                <div className="detail-grid-layout">
+                  {/* Cột thông tin bên trái */}
+                  <div className="detail-grid-fields">
+                    {/* Hàng 1: Phòng + Cư dân */}
+                    <div className="detail-field-group">
+                      <div className="detail-field">
+                        <span className="detail-field-label">Phòng</span>
+                        <span className="detail-field-value">
+                          {selectedRequest.room?.name || selectedRequest.room?.roomCode || '-'}
+                        </span>
                       </div>
-                    </span>
+                      <div className="detail-field">
+                        <span className="detail-field-label">Cư dân</span>
+                        <span className="detail-field-value">
+                          {selectedRequest.tenantId?.fullname || selectedRequest.tenantId?.username || '-'}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Hàng 2: Số điện thoại + Thiết bị */}
+                    <div className="detail-field-group">
+                      <div className="detail-field">
+                        <span className="detail-field-label">Số điện thoại</span>
+                        <span className="detail-field-value">
+                          {selectedRequest.tenantId?.phoneNumber || '-'}
+                        </span>
+                      </div>
+                      <div className="detail-field">
+                        <span className="detail-field-label">Thiết bị</span>
+                        <span className="detail-field-value">
+                          {selectedRequest.devicesId?.name || '-'}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Hàng 3: Loại + Trạng thái */}
+                    <div className="detail-field-group">
+                      <div className="detail-field">
+                        <span className="detail-field-label">Loại</span>
+                        <span className="detail-field-value">{selectedRequest.type}</span>
+                      </div>
+                      <div className="detail-field">
+                        <span className="detail-field-label">Trạng thái</span>
+                        <span className="detail-field-value">
+                          <span className={`status-badge status-${selectedRequest.status.toLowerCase()}`}>
+                            {getStatusLabel(selectedRequest)}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                    {/* Hàng 4: Chi phí + Ngày tạo */}
+                    <div className="detail-field-group">
+                      <div className="detail-field">
+                        <span className="detail-field-label">Chi phí (VNĐ)</span>
+                        <span className="detail-field-value">
+                          {selectedRequest.cost?.toLocaleString('vi-VN') || 0}
+                        </span>
+                      </div>
+                      <div className="detail-field">
+                        <span className="detail-field-label">Ngày tạo</span>
+                        <span className="detail-field-value">
+                          {formatDate(selectedRequest.createdDate)}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Hàng 5: Loại thanh toán + Người thanh toán (nếu có) */}
+                    {selectedRequest.paymentType && (
+                      <div className="detail-field-group">
+                        <div className="detail-field">
+                          <span className="detail-field-label">Loại thanh toán</span>
+                          <span className="detail-field-value">
+                            {selectedRequest.paymentType === 'REVENUE' ? 'Sửa chữa có phí' : 'Sửa chữa miễn phí'}
+                          </span>
+                        </div>
+                        <div className="detail-field">
+                          <span className="detail-field-label">Người thanh toán</span>
+                          <span className="detail-field-value">
+                            {selectedRequest.paymentType === 'REVENUE' ? 'Cư dân' : 'Kế toán'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                  {/* Hình ảnh bên phải */}
+                  {selectedRequest.images && selectedRequest.images.length > 0 && (
+                    <div className="detail-grid-image">
+                      <button
+                        type="button"
+                        className="detail-main-image-btn"
+                        onClick={() => handleOpenImagePreview(selectedRequest.images[0])}
+                        title="Xem ảnh lớn"
+                      >
+                        <img
+                          src={selectedRequest.images[0]}
+                          alt="Ảnh yêu cầu"
+                          className="detail-main-image"
+                        />
+                      </button>
+                      {selectedRequest.images.length > 1 && (
+                        <div className="detail-extra-images">
+                          {selectedRequest.images.slice(1).map((url, idx) => (
+                            <button
+                              type="button"
+                              key={idx + 1}
+                              className="detail-extra-image-btn"
+                              onClick={() => handleOpenImagePreview(url)}
+                            >
+                              <img src={url} alt={`Ảnh ${idx + 2}`} />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Email - toàn chiều rộng để hiển thị đầy đủ */}
+                <div className="detail-email-row">
+                  <span className="detail-field-label">Email</span>
+                  <span className="detail-email-value">
+                    {selectedRequest.tenantId?.email || '-'}
+                  </span>
+                </div>
+
+                {/* Mô tả */}
+                <div className="detail-description-block">
+                  <span className="detail-field-label">Mô tả</span>
+                  <p className="detail-description-text">{selectedRequest.description}</p>
+
+                </div>
+
+                {/* Tình trạng xử lý + nút Xong */}
                 <div className="detail-status-actions">
-                  <div className="detail-status-actions-header">
-                    <span className="detail-label">Tình trạng xử lý</span>
-                  </div>
                   <div className="detail-status-actions-select-row">
+                    <span className="detail-status-clock">🕐</span>
+                    <span className="detail-status-label">Tình trạng xử lý</span>
                     <select
-                      className="detail-status-select"
+                      className="detail-status-select detail-status-select--inline"
                       value={selectedRequest.status}
                       onChange={(e) =>
                         handleUpdateStatus(
                           selectedRequest,
-                          e.target.value as 'Pending' | 'Processing' | 'Done',
+                          e.target.value as
+                          | 'Pending'
+                          | 'Processing'
+                          | 'Done'
+                          | 'Unpair',
                         )
                       }
-                      disabled={updatingId === selectedRequest._id || selectedRequest.status === 'Done'}
+                      disabled={
+                        updatingId === selectedRequest._id ||
+                        selectedRequest.status === 'Done' ||
+                        selectedRequest.status === 'Unpair'
+                      }
                     >
-                      <option value="Pending" disabled={selectedRequest.status === 'Pending'}>
+                      <option value="Pending" disabled={selectedRequest.status !== 'Pending'}>
                         Chờ xử lý
                       </option>
                       <option
                         value="Processing"
-                        disabled={selectedRequest.status === 'Processing'}
+                        disabled={
+                          selectedRequest.status === 'Done' ||
+                          selectedRequest.status === 'Unpair'
+                        }
                       >
                         Đang xử lý
                       </option>
-                      <option value="Done" disabled={selectedRequest.status === 'Done'}>
+                      <option
+                        value="Done"
+                        disabled={selectedRequest.status === 'Unpair'}
+                      >
                         Đã xử lý
                       </option>
+                      <option value="Unpair" disabled>
+                        Chờ thanh toán
+                      </option>
                     </select>
+                    {updatingId === selectedRequest._id && (
+                      <span className="detail-status-updating">Đang cập nhật...</span>
+                    )}
                     <button
                       type="button"
-                      className="detail-status-done-btn"
+                      className="detail-done-btn-orange"
                       onClick={handleCloseDetail}
                     >
                       Xong
                     </button>
-                    {updatingId === selectedRequest._id && (
-                      <span className="detail-status-updating">Đang cập nhật...</span>
-                    )}
                   </div>
                 </div>
               </div>
@@ -931,21 +1046,52 @@ export default function RepairRequestsList() {
               </div>
               <div className="repair-modal-body">
                 <div className="complete-form-group">
-                  <label htmlFor="invoice-code">Mã hóa đơn *</label>
+                  <label>Mã hóa đơn</label>
                   <input
                     type="text"
-                    id="invoice-code"
-                    value={completeForm.invoiceCode}
-                    onChange={(e) => {
-                      setCompleteForm({ ...completeForm, invoiceCode: e.target.value });
-                      if (formErrors.invoiceCode) {
-                        setFormErrors({ ...formErrors, invoiceCode: '' });
-                      }
-                    }}
-                    placeholder="Nhập mã hóa đơn (ví dụ: INV-XYZ-001)"
+                    value={
+                      autoInvoiceCodeLoading
+                        ? 'Đang tạo mã hoá đơn...'
+                        : autoInvoiceCode || 'Chưa tạo được mã hoá đơn'
+                    }
+                    disabled
                   />
-                  {formErrors.invoiceCode && (
-                    <span className="error-message">{formErrors.invoiceCode}</span>
+                  {autoInvoiceCodeError && (
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 6 }}>
+                      <span className="error-message" style={{ marginTop: 0 }}>
+                        {autoInvoiceCodeError}
+                      </span>
+                      <button
+                        type="button"
+                        className="btn-cancel"
+                        onClick={() => {
+                          if (autoInvoiceCodeLoading) return;
+                          setAutoInvoiceCode('');
+                          setAutoInvoiceCodeError('');
+                          (async () => {
+                            try {
+                              setAutoInvoiceCodeLoading(true);
+                              const res = await requestService.getNextRepairInvoiceCode();
+                              const code = res?.data?.invoiceCode;
+                              if (!code) throw new Error('Không thể tạo mã hóa đơn');
+                              setAutoInvoiceCode(code);
+                            } catch (err: any) {
+                              console.error('Lỗi khi tạo mã hóa đơn:', err);
+                              setAutoInvoiceCodeError(
+                                err?.response?.data?.message ||
+                                err?.message ||
+                                'Không thể tạo mã hóa đơn',
+                              );
+                            } finally {
+                              setAutoInvoiceCodeLoading(false);
+                            }
+                          })();
+                        }}
+                        disabled={autoInvoiceCodeLoading}
+                      >
+                        Thử lại
+                      </button>
+                    </div>
                   )}
                 </div>
                 <div className="complete-form-group">
@@ -988,22 +1134,20 @@ export default function RepairRequestsList() {
                   )}
                 </div>
                 <div className="complete-form-group">
-                  <label htmlFor="invoice-due-date">Ngày đến hạn *</label>
+                  <label>Ngày đến hạn</label>
                   <input
-                    type="date"
-                    id="invoice-due-date"
-                    value={completeForm.invoiceDueDate}
-                    onChange={(e) => {
-                      setCompleteForm({ ...completeForm, invoiceDueDate: e.target.value });
-                      if (formErrors.invoiceDueDate) {
-                        setFormErrors({ ...formErrors, invoiceDueDate: '' });
-                      }
-                    }}
-                    className={formErrors.invoiceDueDate ? 'input-error' : ''}
+                    type="text"
+                    value={(() => {
+                      const now = new Date();
+                      const target = new Date(now);
+                      target.setDate(target.getDate() + 7);
+                      const y = target.getFullYear();
+                      const m = String(target.getMonth() + 1).padStart(2, '0');
+                      const d = String(target.getDate()).padStart(2, '0');
+                      return `${d}/${m}/${y} `;
+                    })()}
+                    disabled
                   />
-                  {formErrors.invoiceDueDate && (
-                    <span className="error-message">{formErrors.invoiceDueDate}</span>
-                  )}
                 </div>
                 <div className="complete-form-actions">
                   <button
@@ -1018,7 +1162,14 @@ export default function RepairRequestsList() {
                     type="button"
                     className="btn-submit"
                     onClick={handleCompleteSubmit}
-                    disabled={updatingId === completingRequest._id || !completeForm.invoiceTotalAmount}
+                    disabled={
+                      updatingId === completingRequest._id ||
+                      !completeForm.invoiceTitle.trim() ||
+                      !completeForm.invoiceTotalAmount ||
+                      autoInvoiceCodeLoading ||
+                      !!autoInvoiceCodeError ||
+                      !autoInvoiceCode
+                    }
                   >
                     {updatingId === completingRequest._id ? 'Đang xử lý...' : 'Hoàn thành'}
                   </button>
@@ -1047,6 +1198,62 @@ export default function RepairRequestsList() {
                 </button>
               </div>
               <div className="repair-modal-body">
+                <div className="complete-form-group">
+                  <label>Mã phiếu chi</label>
+                  <input
+                    type="text"
+                    value={
+                      autoPaymentVoucherLoading
+                        ? 'Đang tạo mã phiếu chi...'
+                        : autoPaymentVoucher || 'Chưa tạo được mã phiếu chi'
+                    }
+                    disabled
+                  />
+                  {autoPaymentVoucherError && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: 12,
+                        alignItems: 'center',
+                        marginTop: 6,
+                      }}
+                    >
+                      <span className="error-message" style={{ marginTop: 0 }}>
+                        {autoPaymentVoucherError}
+                      </span>
+                      <button
+                        type="button"
+                        className="btn-cancel"
+                        onClick={() => {
+                          if (autoPaymentVoucherLoading) return;
+                          setAutoPaymentVoucher('');
+                          setAutoPaymentVoucherError('');
+                          (async () => {
+                            try {
+                              setAutoPaymentVoucherLoading(true);
+                              const res = await requestService.getNextRepairPaymentVoucher();
+                              const code = res?.data?.paymentVoucher;
+                              if (!code) throw new Error('Không thể tạo mã phiếu chi');
+                              setAutoPaymentVoucher(code);
+                            } catch (err: any) {
+                              console.error('Lỗi khi tạo mã phiếu chi:', err);
+                              setAutoPaymentVoucherError(
+                                err?.response?.data?.message ||
+                                err?.message ||
+                                'Không thể tạo mã phiếu chi',
+                              );
+                            } finally {
+                              setAutoPaymentVoucherLoading(false);
+                            }
+                          })();
+                        }}
+                        disabled={autoPaymentVoucherLoading}
+                      >
+                        Thử lại
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <div className="complete-form-group">
                   <label htmlFor="financial-title">Tiêu đề phiếu chi *</label>
                   <input
@@ -1099,7 +1306,13 @@ export default function RepairRequestsList() {
                     type="button"
                     className="btn-submit"
                     onClick={handleFreeSubmit}
-                    disabled={updatingId === completingRequest._id || !freeForm.financialAmount}
+                    disabled={
+                      updatingId === completingRequest._id ||
+                      !freeForm.financialAmount ||
+                      autoPaymentVoucherLoading ||
+                      !!autoPaymentVoucherError ||
+                      !autoPaymentVoucher
+                    }
                   >
                     {updatingId === completingRequest._id ? 'Đang xử lý...' : 'Hoàn thành'}
                   </button>

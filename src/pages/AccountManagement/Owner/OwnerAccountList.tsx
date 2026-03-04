@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Eye } from 'lucide-react';
 import { accountService } from '../../../services/accountService';
 import { STATUS_LABELS, formatAccountDate, type AccountItem, type AccountDetail } from '../constants';
 import '../account-management.css';
@@ -242,16 +243,14 @@ export default function OwnerAccountList() {
                     <td>{formatAccountDate(acc.createdAt)}</td>
                     <td>
                       <div className="action-buttons">
-                        <button type="button" className="btn-view-detail" onClick={() => handleViewDetail(acc._id)}>Xem chi tiết</button>
-                        {acc.status === 'active' ? (
-                          <button type="button" className="btn-disable" onClick={() => handleDisable(acc._id)} disabled={disablingId === acc._id}>
-                            {disablingId === acc._id ? 'Đang xử lý...' : 'Đóng tài khoản'}
-                          </button>
-                        ) : (
-                          <button type="button" className="btn-enable" onClick={() => handleEnable(acc._id)} disabled={disablingId === acc._id}>
-                            {disablingId === acc._id ? 'Đang xử lý...' : 'Mở lại'}
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          className="btn-view-detail btn-icon"
+                          onClick={() => handleViewDetail(acc._id)}
+                          title="Xem chi tiết"
+                        >
+                          <Eye size={18} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -304,22 +303,89 @@ export default function OwnerAccountList() {
                 {detailLoading ? (
                   <div className="detail-loading"><div className="spinner" /><p>Đang tải...</p></div>
                 ) : detailAccount ? (
-                  <div className="detail-content">
-                    <div className="detail-section">
-                      <h3>Thông tin đăng nhập</h3>
-                      <div className="detail-row detail-row-tight"><span className="detail-label">Tên đăng nhập:</span><span className="detail-value">{detailAccount.username}</span></div>
-                      <div className="detail-row detail-row-tight"><span className="detail-label">Email:</span><span className="detail-value">{detailAccount.email}</span></div>
-                      <div className="detail-row detail-row-tight"><span className="detail-label">Số điện thoại:</span><span className="detail-value">{detailAccount.phoneNumber || '-'}</span></div>
-                      <div className="detail-row detail-row-tight"><span className="detail-label">Trạng thái:</span>
-                        <span className={`status-badge status-${detailAccount.status}`}>{STATUS_LABELS[detailAccount.status] || detailAccount.status}</span>
+                  <div className="detail-content detail-content-manager">
+                    <div className="detail-section-divider">Thông tin tài khoản</div>
+                    <div className="detail-section-block">
+                      <div className="detail-row detail-row-tight">
+                        <span className="detail-label">Tên đăng nhập:</span>
+                        <span className="detail-value detail-value-black">
+                          {detailAccount.username}
+                        </span>
                       </div>
-                      <div className="detail-row detail-row-tight"><span className="detail-label">Ngày tạo:</span><span className="detail-value">{formatAccountDate(detailAccount.createdAt)}</span></div>
+                      <div className="detail-row detail-row-tight">
+                        <span className="detail-label">Email:</span>
+                        <span className="detail-value detail-value-black">
+                          {detailAccount.email}
+                        </span>
+                      </div>
+                      <div className="detail-row detail-row-tight">
+                        <span className="detail-label">Số điện thoại:</span>
+                        <span className="detail-value detail-value-black">
+                          {detailAccount.phoneNumber || '-'}
+                        </span>
+                      </div>
+                      <div className="detail-row detail-row-tight">
+                        <span className="detail-label">Trạng thái:</span>
+                        <span
+                          className={`status-badge status-${detailAccount.status}`}
+                        >
+                          {STATUS_LABELS[detailAccount.status] || detailAccount.status}
+                        </span>
+                      </div>
+                      <div className="detail-row detail-row-tight">
+                        <span className="detail-label">Ngày tạo:</span>
+                        <span className="detail-value detail-value-black">
+                          {formatAccountDate(detailAccount.createdAt)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="detail-section">
-                      <h3>Thông tin cá nhân</h3>
-                      <div className="detail-row detail-row-tight"><span className="detail-label">Họ và tên:</span><span className="detail-value">{detailAccount.fullname || '-'}</span></div>
-                      <div className="detail-row detail-row-tight"><span className="detail-label">CCCD:</span><span className="detail-value">{detailAccount.cccd || '-'}</span></div>
-                      <div className="detail-row detail-row-tight"><span className="detail-label">Địa chỉ:</span><span className="detail-value">{detailAccount.address || '-'}</span></div>
+
+                    <div className="detail-section-divider">Thông tin cá nhân</div>
+                    <div className="detail-section-block">
+                      <div className="detail-row detail-row-tight">
+                        <span className="detail-label">Họ và tên:</span>
+                        <span className="detail-value detail-value-black">
+                          {detailAccount.fullname || '-'}
+                        </span>
+                      </div>
+                      <div className="detail-row detail-row-tight">
+                        <span className="detail-label">CCCD:</span>
+                        <span className="detail-value detail-value-black">
+                          {detailAccount.cccd || '-'}
+                        </span>
+                      </div>
+                      <div className="detail-row detail-row-tight">
+                        <span className="detail-label">Địa chỉ:</span>
+                        <span className="detail-value detail-value-black">
+                          {detailAccount.address || '-'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="detail-actions">
+                      {detailAccount.status === 'active' ? (
+                        <button
+                          type="button"
+                          className="btn-disable"
+                          onClick={() => handleDisable(detailAccount._id)}
+                          disabled={disablingId === detailAccount._id}
+                        >
+                          {disablingId === detailAccount._id
+                            ? 'Đang xử lý...'
+                            : 'Đóng tài khoản'}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn-enable"
+                          onClick={() => handleEnable(detailAccount._id)}
+                          disabled={disablingId === detailAccount._id}
+                        >
+                          {disablingId === detailAccount._id
+                            ? 'Đang xử lý...'
+                            : 'Mở lại tài khoản'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 ) : null}

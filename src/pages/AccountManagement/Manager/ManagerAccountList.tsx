@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Eye } from 'lucide-react';
 import { accountService } from '../../../services/accountService';
 import { ROLE_LABELS, STATUS_LABELS, formatAccountDate, type AccountItem, type AccountDetail } from '../constants';
 import '../account-management.css';
@@ -36,6 +37,17 @@ export default function ManagerAccountList() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
 
+  // Khoá scroll trang này
+  useEffect(() => {
+    const main = document.querySelector('.dashboard-layout-main') as HTMLElement;
+    if (main) main.style.overflowY = 'hidden';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      if (main) main.style.overflowY = '';
+      document.body.style.overflow = '';
+    };
+  }, []);
+
   const fetchAccounts = useCallback(async () => {
     try {
       setLoading(true);
@@ -68,14 +80,14 @@ export default function ManagerAccountList() {
     searchTerm.trim() === ''
       ? filteredByRole
       : filteredByRole.filter((acc) => {
-          const term = searchTerm.trim().toLowerCase();
-          const fullname = (acc.fullname ?? '').toLowerCase();
-          const username = (acc.username ?? '').toLowerCase();
-          const email = (acc.email ?? '').toLowerCase();
-          const phone = (acc.phoneNumber ?? '').replace(/\s/g, '');
-          const termNorm = term.replace(/\s/g, '');
-          return fullname.includes(term) || username.includes(term) || email.includes(term) || phone.includes(termNorm);
-        });
+        const term = searchTerm.trim().toLowerCase();
+        const fullname = (acc.fullname ?? '').toLowerCase();
+        const username = (acc.username ?? '').toLowerCase();
+        const email = (acc.email ?? '').toLowerCase();
+        const phone = (acc.phoneNumber ?? '').replace(/\s/g, '');
+        const termNorm = term.replace(/\s/g, '');
+        return fullname.includes(term) || username.includes(term) || email.includes(term) || phone.includes(termNorm);
+      });
 
   const totalPages = Math.max(1, Math.ceil((total || 0) / limit));
 
@@ -203,8 +215,8 @@ export default function ManagerAccountList() {
             <div className="filter-role-group">
               <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)}>
                 <option value="">Tất cả</option>
-              <option value="manager">Quản lý</option>
-              <option value="accountant">Kế toán</option>
+                <option value="manager">Quản lý</option>
+                <option value="accountant">Kế toán</option>
               </select>
             </div>
             <button type="button" className="btn-create" onClick={openCreateModal}>+ Tạo tài khoản</button>
@@ -246,21 +258,28 @@ export default function ManagerAccountList() {
                     <td>{acc.username}</td>
                     <td>{acc.email}</td>
                     <td>{acc.phoneNumber || '-'}</td>
-                    <td><span className="role-badge">{ROLE_LABELS[acc.role] || acc.role}</span></td>
-                    <td><span className={`status-badge status-${acc.status}`}>{STATUS_LABELS[acc.status] || acc.status}</span></td>
+                    <td>
+                      <span className="role-badge">
+                        {ROLE_LABELS[acc.role] || acc.role}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`status-badge status-${acc.status}`}>
+                        {STATUS_LABELS[acc.status] || acc.status}
+                      </span>
+                    </td>
                     <td>{formatAccountDate(acc.createdAt)}</td>
                     <td>
                       <div className="action-buttons">
-                        <button type="button" className="btn-view-detail" onClick={() => handleViewDetail(acc._id)}>Xem chi tiết</button>
-                        {acc.status === 'active' ? (
-                          <button type="button" className="btn-disable" onClick={() => handleDisable(acc._id)} disabled={disablingId === acc._id}>
-                            {disablingId === acc._id ? 'Đang xử lý...' : 'Đóng tài khoản'}
-                          </button>
-                        ) : (
-                          <button type="button" className="btn-enable" onClick={() => handleEnable(acc._id)} disabled={disablingId === acc._id}>
-                            {disablingId === acc._id ? 'Đang xử lý...' : 'Mở lại'}
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          className="btn-view-detail btn-icon"
+                          onClick={() => handleViewDetail(acc._id)}
+                          title="Xem chi tiết"
+                          aria-label="Xem chi tiết"
+                        >
+                          <Eye size={18} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -269,7 +288,7 @@ export default function ManagerAccountList() {
             </table>
             <div className="accounts-pagination">
               <div className="accounts-pagination-info">
-                
+
               </div>
               <div className="accounts-pagination-controls">
                 <button

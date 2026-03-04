@@ -54,6 +54,7 @@ import ManagerRules from "./pages/Dashboard/ManagerRules";
 import ManagerProfile from "./pages/Dashboard/ManagerProfile";
 import ManageService from "./pages/ServiceManagement/ManageService";
 import RepairRequestsList from "./pages/RequestManagement/RepairRequestsList";
+import MaintenanceRequestsList from "./pages/RequestManagement/MaintenanceRequestsList";
 import ManagerInvoice from "./pages/InvoiceManagement/InvoiceManage";
 import ComplaintRequestList from "./pages/RequestManagement/ComplaintRequestlist";
 import TransferRequestsList from "./pages/RequestManagement/TransferRequestsList";
@@ -61,6 +62,8 @@ import TransferRequestsList from "./pages/RequestManagement/TransferRequestsList
 // Pages - Accountant Dashboard
 import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
 import ManagingIncomeExpenses from "./pages/Accountant/managing_income_expenses/managingIncomeExpenses";
+import ReceiptsList from "./pages/Accountant/managing_income_expenses/receiptsList";
+import InvoiceList from "./pages/InvoiceManagement/InvoiceList";
 
 // Pages - Profile (All authenticated roles)
 import ViewProfile from "./pages/Auth/Profile/ViewProfile";
@@ -229,6 +232,8 @@ function LayoutWrapper() {
           <Route path="contracts/list" element={<ContractList readOnly />} />
           <Route path="contracts/:id" element={<ContractDetail />} />
           <Route path="contracts/list/:id" element={<ContractDetail />} />
+          {/* Danh sách cư dân (Tenants) cho Owner */}
+          <Route path="contracts/tenants" element={<TenantAccountList />} />
           <Route path="deposits" element={<DepositRoom />} />
           <Route path="deposits/floor-map" element={<DepositFloorMap />} />
           <Route path="deposits/create/:id" element={<CreateDeposit />} />
@@ -249,6 +254,7 @@ function LayoutWrapper() {
           <Route path="residents/:id" element={<TenantAccountDetail />} />
           <Route path="services" element={<ManageService />} />
           <Route path="requests/repairs" element={<RepairRequestsList />} />
+          <Route path="requests/maintenance" element={<MaintenanceRequestsList />} />
           <Route path="requests/complaints" element={<ComplaintRequestList />} />
           <Route path="requests/transfers" element={<TransferRequestsList />} />
           <Route path="profile" element={<ManagerProfile />} />
@@ -275,7 +281,12 @@ function LayoutWrapper() {
           <Route index element={<AccountantDashboard />} />
           <Route path="profile" element={<ViewProfile />} />
           {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
+          <Route path="invoices/list" element={<InvoiceList />} />
           {/* Phiếu thu / chi */}
+          <Route
+            path="transactions/receipts"
+            element={<ReceiptsList />}
+          />
           <Route
             path="transactions/payments"
             element={<ManagingIncomeExpenses />}

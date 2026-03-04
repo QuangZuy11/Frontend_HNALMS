@@ -3,43 +3,34 @@ import { cashFlowService } from "../../../services/cashFlowService";
 import "./managingIncomeExpenses.css";
 import { Eye } from "lucide-react";
 
-interface Room {
+interface ReceiptTicket {
   _id: string;
-  name: string;
-  roomCode?: string;
-}
-
-interface FinancialTicket {
-  _id: string;
-  type: "Receipt" | "Payment" | string;
+  type: "Receipt" | string;
   amount: number;
   title: string;
-  referenceId?: string | { _id: string; tenantId?: string } | null;
   status: string;
   transactionDate: string;
   createdAt?: string;
-  accountantPaidAt?: string;
   paymentVoucher?: string | null;
-  room?: Room | null;
+  accountantPaidAt?: string;
 }
 
 type UiPaymentStatus = "paid" | "unpaid";
 
-export default function ManagingIncomeExpenses() {
-  const [tickets, setTickets] = useState<FinancialTicket[]>([]);
+export default function ReceiptsList() {
+  const [tickets, setTickets] = useState<ReceiptTicket[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  // roomSearch removed (màn này không cần tìm kiếm theo phòng)
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize = 11;
+  const [selectedTicket, setSelectedTicket] = useState<ReceiptTicket | null>(
+    null
+  );
   const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "unpaid">(
     "all"
   );
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const pageSize = 11;
-  const [selectedTicket, setSelectedTicket] = useState<FinancialTicket | null>(
-    null
-  );
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [creating, setCreating] = useState<boolean>(false);
   const [autoVoucherCode, setAutoVoucherCode] = useState<string>("");
@@ -63,38 +54,31 @@ export default function ManagingIncomeExpenses() {
   });
   const [formError, setFormError] = useState<string>("");
 
-  // Khoá scroll trang này
-  useEffect(() => {
-    const main = document.querySelector('.dashboard-layout-main') as HTMLElement;
-    if (main) main.style.overflowY = 'hidden';
-    document.body.style.overflow = 'hidden';
-    return () => {
-      if (main) main.style.overflowY = '';
-      document.body.style.overflow = '';
-    };
-  }, []);
-
   const fetchTickets = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
 
-      const params: {
-        from?: string;
-        to?: string;
-      } = {};
-
-      if (fromDate) params.from = fromDate;
-      if (toDate) params.to = toDate;
-
       type ApiResponse = {
         success: boolean;
-        data: FinancialTicket[];
+        data: ReceiptTicket[];
         message?: string;
       };
 
-      const response: ApiResponse =
-        await cashFlowService.getPaymentTickets(params);
+      const params: {
+        from?: string;
+        to?: string;
+        status?: "Paid" | "Unpaid";
+      } = {};
+      if (fromDate) params.from = fromDate;
+      if (toDate) params.to = toDate;
+      if (statusFilter !== "all") {
+        params.status = statusFilter === "paid" ? "Paid" : "Unpaid";
+      }
+
+      const response: ApiResponse = await cashFlowService.getReceiptTickets(
+        params
+      );
 
       if (response.success && Array.isArray(response.data)) {
         setTickets(response.data);
@@ -102,8 +86,8 @@ export default function ManagingIncomeExpenses() {
         setTickets([]);
       }
     } catch (err) {
-      console.error("Lỗi khi tải danh sách phiếu chi:", err);
-      let msg = "Không thể tải danh sách phiếu chi";
+      console.error("Lỗi khi tải danh sách phiếu thu:", err);
+      let msg = "Không thể tải danh sách phiếu thu";
       if (
         typeof err === "object" &&
         err !== null &&
@@ -119,11 +103,100 @@ export default function ManagingIncomeExpenses() {
     } finally {
       setLoading(false);
     }
-  }, [fromDate, toDate]);
+  }, [fromDate, toDate, statusFilter]);
 
   useEffect(() => {
     fetchTickets();
   }, [fetchTickets]);
+
+  const formatCurrency = (value: number | undefined) => {
+    if (typeof value !== "number") return "0";
+    return value.toLocaleString("vi-VN");
+  };
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(tickets.length / pageSize) || 1
+  );
+
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const paginatedTickets = tickets.slice(
+    startIndex,
+    startIndex + pageSize
+  );
+
+  const toUiStatus = (status?: string): UiPaymentStatus => {
+    const s = (status || "").toLowerCase();
+    if (s === "paid" || s.includes("đã thanh toán") || s.includes("da thanh toan"))
+      return "paid";
+    return "unpaid";
+  };
+
+  const statusLabel = (status?: string) => {
+    const ui = toUiStatus(status);
+    return ui === "paid" ? "Đã thanh toán" : "Chưa thanh toán";
+  };
+
+  const toApiStatus = (ui: UiPaymentStatus): "Paid" | "Unpaid" =>
+    ui === "paid" ? "Paid" : "Unpaid";
+
+  const handleChangeStatus = async (
+    ticketId: string,
+    uiStatus: UiPaymentStatus
+  ) => {
+    // optimistic update
+    setTickets((prev) =>
+      prev.map((t) =>
+        t._id === ticketId ? { ...t, status: toApiStatus(uiStatus) } : t
+      )
+    );
+
+    try {
+      const res = await cashFlowService.updatePaymentTicketStatus(
+        ticketId,
+        toApiStatus(uiStatus)
+      );
+
+      if (res?.success && res?.data?._id) {
+        setTickets((prev) =>
+          prev.map((t) =>
+            t._id === ticketId
+              ? {
+                  ...t,
+                  status: res.data.status,
+                  accountantPaidAt: res.data.accountantPaidAt,
+                }
+              : t
+          )
+        );
+
+        setSelectedTicket((prev) =>
+          prev && prev._id === ticketId
+            ? {
+                ...prev,
+                status: res.data.status,
+                accountantPaidAt: res.data.accountantPaidAt,
+              }
+            : prev
+        );
+      }
+    } catch (err) {
+      console.error("Lỗi khi cập nhật trạng thái phiếu thu:", err);
+      // reload lại dữ liệu nếu lỗi
+      fetchTickets();
+    }
+  };
 
   const resetCreateForm = () => {
     setCreateForm({
@@ -144,15 +217,15 @@ export default function ManagingIncomeExpenses() {
 
     try {
       setAutoVoucherLoading(true);
-      const res = await cashFlowService.getNextPaymentVoucher();
+      const res = await cashFlowService.getNextReceiptVoucher();
       const code = res?.data?.paymentVoucher;
       if (!code) {
-        throw new Error("Không thể tạo mã phiếu chi");
+        throw new Error("Không thể tạo mã phiếu thu");
       }
       setAutoVoucherCode(code);
     } catch (err) {
-      console.error("Lỗi khi tạo mã phiếu chi:", err);
-      setAutoVoucherError("Không thể tạo mã phiếu chi");
+      console.error("Lỗi khi tạo mã phiếu thu:", err);
+      setAutoVoucherError("Không thể tạo mã phiếu thu");
     } finally {
       setAutoVoucherLoading(false);
     }
@@ -194,7 +267,7 @@ export default function ManagingIncomeExpenses() {
 
     try {
       setCreating(true);
-      const response = await cashFlowService.createManualPaymentTicket({
+      const response = await cashFlowService.createManualReceiptTicket({
         title: createForm.title.trim(),
         amount: Number(createForm.amount),
         status: createForm.status,
@@ -206,108 +279,19 @@ export default function ManagingIncomeExpenses() {
         closeCreateModal();
       }
     } catch (err) {
-      console.error("Lỗi khi tạo phiếu chi:", err);
-      setError("Không thể tạo phiếu chi");
+      console.error("Lỗi khi tạo phiếu thu:", err);
+      setError("Không thể tạo phiếu thu");
     } finally {
       setCreating(false);
     }
   };
-
-  const formatCurrency = (value: number | undefined) => {
-    if (typeof value !== "number") return "0";
-    return value.toLocaleString("vi-VN");
-  };
-
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return "-";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
-
-  const toUiStatus = (status?: string): UiPaymentStatus => {
-    const s = (status || "").toLowerCase();
-    if (s === "paid" || s.includes("đã thanh toán") || s.includes("da thanh toan"))
-      return "paid";
-    return "unpaid";
-  };
-
-  const statusLabel = (status?: string) => {
-    const ui = toUiStatus(status);
-    return ui === "paid" ? "Đã thanh toán" : "Chưa thanh toán";
-  };
-
-  const toApiStatus = (ui: UiPaymentStatus): "Paid" | "Unpaid" =>
-    ui === "paid" ? "Paid" : "Unpaid";
-
-  const handleChangeStatus = async (
-    ticketId: string,
-    uiStatus: UiPaymentStatus
-  ) => {
-    // optimistic update
-    setTickets((prev) =>
-      prev.map((t) => (t._id === ticketId ? { ...t, status: toApiStatus(uiStatus) } : t))
-    );
-
-    try {
-      const res = await cashFlowService.updatePaymentTicketStatus(
-        ticketId,
-        toApiStatus(uiStatus)
-      );
-
-      if (res?.success && res?.data?._id) {
-        setTickets((prev) =>
-          prev.map((t) =>
-            t._id === ticketId
-              ? { ...t, status: res.data.status, accountantPaidAt: res.data.accountantPaidAt }
-              : t
-          )
-        );
-
-        setSelectedTicket((prev) =>
-          prev && prev._id === ticketId
-            ? { ...prev, status: res.data.status, accountantPaidAt: res.data.accountantPaidAt }
-            : prev
-        );
-      }
-    } catch (err) {
-      console.error("Lỗi khi cập nhật trạng thái phiếu chi:", err);
-      setError("Không thể cập nhật trạng thái phiếu chi");
-      // revert by refetch
-      fetchTickets();
-    }
-  };
-
-  const filteredTickets = tickets.filter((t) => {
-    if (statusFilter === "all") return true;
-    const ui = toUiStatus(t.status);
-    return statusFilter === "paid" ? ui === "paid" : ui === "unpaid";
-  });
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredTickets.length / pageSize) || 1
-  );
-
-  const safePage = Math.min(currentPage, totalPages);
-  const startIndex = (safePage - 1) * pageSize;
-  const paginatedTickets = filteredTickets.slice(
-    startIndex,
-    startIndex + pageSize
-  );
 
   return (
     <div className="payments-page">
       <div className="payments-card">
         <div className="payments-header">
           <div>
-            <h1>Danh sách phiếu chi</h1>
-            <p className="subtitle">
-              Các phiếu chi phát sinh từ sửa chữa miễn phí và các nghiệp vụ khác
-            </p>
+            <h1>Danh sách phiếu thu</h1>
           </div>
           <div className="payments-header-actions">
             <button
@@ -315,7 +299,7 @@ export default function ManagingIncomeExpenses() {
               className="payments-create-btn"
               onClick={openCreateModal}
             >
-              Tạo phiếu chi
+              Tạo phiếu thu
             </button>
             <div className="payments-filter-wrapper">
               <label htmlFor="from-date" className="payments-filter-label">
@@ -374,13 +358,13 @@ export default function ManagingIncomeExpenses() {
           </div>
         )}
 
-        {!loading && !error && filteredTickets.length === 0 && (
+        {!loading && !error && tickets.length === 0 && (
           <div className="payments-empty">
-            <p>Chưa có phiếu chi nào.</p>
+            <p>Chưa có phiếu thu nào.</p>
           </div>
         )}
 
-        {!loading && !error && filteredTickets.length > 0 && (
+        {!loading && !error && tickets.length > 0 && (
           <div className="payments-table-wrap">
             <table className="payments-table">
               <thead>
@@ -401,17 +385,16 @@ export default function ManagingIncomeExpenses() {
                     <td>{t.paymentVoucher || "-"}</td>
                     <td>{t.title}</td>
                     <td>{formatCurrency(t.amount)}</td>
-                    <td>
-                      <span
-                        className={`status-badge ${toUiStatus(t.status) === "paid" ? "paid" : "unpaid"
-                          }`}
-                      >
-                        {statusLabel(t.status)}
-                      </span>
-                    </td>
-                    <td>
-                      {formatDate(t.createdAt || t.transactionDate)}
-                    </td>
+                  <td>
+                    <span
+                      className={`status-badge ${
+                        toUiStatus(t.status) === "paid" ? "paid" : "unpaid"
+                      }`}
+                    >
+                      {statusLabel(t.status)}
+                    </span>
+                  </td>
+                    <td>{formatDate(t.createdAt || t.transactionDate)}</td>
                     <td>
                       <div className="payments-actions">
                         <button
@@ -431,7 +414,7 @@ export default function ManagingIncomeExpenses() {
           </div>
         )}
 
-        {!loading && !error && filteredTickets.length > 0 && (
+        {!loading && !error && tickets.length > 0 && (
           <div className="payments-pagination">
             <button
               type="button"
@@ -461,11 +444,95 @@ export default function ManagingIncomeExpenses() {
           </div>
         )}
 
+        {selectedTicket && (
+          <div
+            className="payments-modal-overlay"
+            onClick={() => setSelectedTicket(null)}
+          >
+            <div
+              className="payments-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="payments-modal-header">
+                <h3>Chi tiết phiếu thu</h3>
+                <button
+                  type="button"
+                  className="payments-modal-close"
+                  onClick={() => setSelectedTicket(null)}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="payments-modal-body">
+                <div className="payments-detail-row">
+                  <span className="payments-detail-label">Mã phiếu</span>
+                  <span className="payments-detail-value">
+                    {selectedTicket.paymentVoucher || "-"}
+                  </span>
+                </div>
+                <div className="payments-detail-row">
+                  <span className="payments-detail-label">Tiêu đề</span>
+                  <span className="payments-detail-value">
+                    {selectedTicket.title}
+                  </span>
+                </div>
+                <div className="payments-detail-row">
+                  <span className="payments-detail-label">Số tiền</span>
+                  <span className="payments-detail-value">
+                    {formatCurrency(selectedTicket.amount)} VNĐ
+                  </span>
+                </div>
+                {toUiStatus(selectedTicket.status) === "paid" && (
+                  <div className="payments-detail-row">
+                    <span className="payments-detail-label">
+                      Ngày kế toán thanh toán
+                    </span>
+                    <span className="payments-detail-value">
+                      {formatDate(selectedTicket.accountantPaidAt)}
+                    </span>
+                  </div>
+                )}
+                <div className="payments-detail-row">
+                  <span className="payments-detail-label">Ngày tạo</span>
+                  <span className="payments-detail-value">
+                    {formatDate(
+                      selectedTicket.createdAt || selectedTicket.transactionDate
+                    )}
+                  </span>
+                </div>
+                <div className="payments-detail-row payments-detail-row--column">
+                  <span className="payments-detail-label">Trạng thái</span>
+                  <div className="payments-detail-value payments-detail-status">
+                    <select
+                      className="payments-status-select payments-status-select--compact"
+                      value={toUiStatus(selectedTicket.status)}
+                      onChange={(e) =>
+                        handleChangeStatus(
+                          selectedTicket._id,
+                          e.target.value as UiPaymentStatus
+                        )
+                      }
+                      disabled={toUiStatus(selectedTicket.status) === "paid"}
+                    >
+                      <option value="unpaid">Chưa thanh toán</option>
+                      <option value="paid">Đã thanh toán</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {showCreateModal && (
           <div className="payments-modal-overlay" onClick={closeCreateModal}>
-            <div className="payments-modal" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="payments-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="payments-modal-header">
-                <h3>Tạo phiếu chi</h3>
+                <h3>Tạo phiếu thu</h3>
                 <button
                   type="button"
                   className="payments-modal-close"
@@ -497,7 +564,9 @@ export default function ManagingIncomeExpenses() {
                     className="payments-form-input"
                   />
                   {autoVoucherError && (
-                    <span className="payments-form-error">{autoVoucherError}</span>
+                    <span className="payments-form-error">
+                      {autoVoucherError}
+                    </span>
                   )}
                 </div>
 
@@ -507,16 +576,21 @@ export default function ManagingIncomeExpenses() {
                     type="text"
                     value={createForm.title}
                     onChange={(e) => {
-                      setCreateForm((prev) => ({ ...prev, title: e.target.value }));
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }));
                       if (createErrors.title) {
                         setCreateErrors((prev) => ({ ...prev, title: "" }));
                       }
                     }}
                     className="payments-form-input"
-                    placeholder="Nhập tiêu đề phiếu chi"
+                    placeholder="Nhập tiêu đề phiếu thu"
                   />
                   {createErrors.title && (
-                    <span className="payments-form-error">{createErrors.title}</span>
+                    <span className="payments-form-error">
+                      {createErrors.title}
+                    </span>
                   )}
                 </div>
 
@@ -528,7 +602,10 @@ export default function ManagingIncomeExpenses() {
                     step="1000"
                     value={createForm.amount}
                     onChange={(e) => {
-                      setCreateForm((prev) => ({ ...prev, amount: e.target.value }));
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        amount: e.target.value,
+                      }));
                       if (createErrors.amount) {
                         setCreateErrors((prev) => ({ ...prev, amount: "" }));
                       }
@@ -537,7 +614,9 @@ export default function ManagingIncomeExpenses() {
                     placeholder="Nhập số tiền"
                   />
                   {createErrors.amount && (
-                    <span className="payments-form-error">{createErrors.amount}</span>
+                    <span className="payments-form-error">
+                      {createErrors.amount}
+                    </span>
                   )}
                 </div>
 
@@ -594,7 +673,9 @@ export default function ManagingIncomeExpenses() {
                     creating ||
                     autoVoucherLoading ||
                     !!autoVoucherError ||
-                    !autoVoucherCode
+                    !autoVoucherCode ||
+                    !createForm.title.trim() ||
+                    !createForm.amount.trim()
                   }
                 >
                   {creating ? "Đang tạo..." : "Tạo phiếu"}
@@ -603,100 +684,8 @@ export default function ManagingIncomeExpenses() {
             </div>
           </div>
         )}
-
-        {selectedTicket && (
-          <div
-            className="payments-modal-overlay"
-            onClick={() => setSelectedTicket(null)}
-          >
-            <div
-              className="payments-modal"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="payments-modal-header">
-                <h3>Chi tiết phiếu chi</h3>
-                <button
-                  type="button"
-                  className="payments-modal-close"
-                  onClick={() => setSelectedTicket(null)}
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="payments-modal-body">
-                <div className="payments-detail-row">
-                  <span className="payments-detail-label">Mã phiếu</span>
-                  <span className="payments-detail-value">
-                    {selectedTicket.paymentVoucher || "-"}
-                  </span>
-                </div>
-                <div className="payments-detail-row">
-                  <span className="payments-detail-label">Tiêu đề</span>
-                  <span className="payments-detail-value">
-                    {selectedTicket.title}
-                  </span>
-                </div>
-                <div className="payments-detail-row">
-                  <span className="payments-detail-label">Số tiền</span>
-                  <span className="payments-detail-value">
-                    {formatCurrency(selectedTicket.amount)} VNĐ
-                  </span>
-                </div>
-                <div className="payments-detail-row">
-                  <span className="payments-detail-label">Ngày tạo</span>
-                  <span className="payments-detail-value">
-                    {formatDate(
-                      selectedTicket.createdAt || selectedTicket.transactionDate
-                    )}
-                  </span>
-                </div>
-                {toUiStatus(selectedTicket.status) === "paid" && (
-                  <div className="payments-detail-row">
-                    <span className="payments-detail-label">
-                      Ngày kế toán thanh toán
-                    </span>
-                    <span className="payments-detail-value">
-                      {formatDate(selectedTicket.accountantPaidAt)}
-                    </span>
-                  </div>
-                )}
-                <div className="payments-detail-row payments-detail-row--column">
-                  <span className="payments-detail-label">Trạng thái</span>
-                  <div className="payments-detail-value payments-detail-status">
-                    <select
-                      className="payments-status-select payments-status-select--compact"
-                      value={toUiStatus(selectedTicket.status)}
-                      onChange={(e) =>
-                        handleChangeStatus(
-                          selectedTicket._id,
-                          e.target.value as UiPaymentStatus
-                        )
-                      }
-                      disabled={toUiStatus(selectedTicket.status) === "paid"}
-                    >
-                      <option value="unpaid">Chưa thanh toán</option>
-                      <option value="paid">Đã thanh toán</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="payments-modal-footer">
-                {toUiStatus(selectedTicket.status) === "paid" && (
-                  <button
-                    type="button"
-                    className="payments-done-button"
-                    onClick={() => setSelectedTicket(null)}
-                  >
-                    Xong
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
 }
+

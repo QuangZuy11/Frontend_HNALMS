@@ -7,12 +7,12 @@ interface Complaint {
   _id: string;
   content: string;
   category:
-    | 'Tiếng ồn'
-    | 'Vệ sinh'
-    | 'An ninh'
-    | 'Cơ sở vật chất'
-    | 'Thái độ phục vụ'
-    | 'Khác';
+  | 'Tiếng ồn'
+  | 'Vệ sinh'
+  | 'An ninh'
+  | 'Cơ sở vật chất'
+  | 'Thái độ phục vụ'
+  | 'Khác';
   priority: 'Low' | 'Medium' | 'High';
   status: 'Pending' | 'Processing' | 'Done';
   response?: string | null;
@@ -29,6 +29,7 @@ interface Complaint {
     username: string;
     email: string;
     phoneNumber?: string;
+    fullname?: string | null;
   } | null;
   room?: {
     _id: string;
@@ -119,6 +120,16 @@ export default function ComplaintRequestList() {
     complaint: Complaint,
     nextStatus: 'Pending' | 'Processing' | 'Done',
   ) => {
+    // Chỉ cho phép chuyển tiến: Pending -> Processing -> Done
+    const statusRank: Record<Complaint['status'], number> = {
+      Pending: 0,
+      Processing: 1,
+      Done: 2,
+    };
+    const currentRank = statusRank[complaint.status];
+    const nextRank = statusRank[nextStatus];
+    if (nextRank <= currentRank) return;
+
     // Nếu chuyển sang Đã xử lý -> mở modal nhập ghi chú
     if (nextStatus === 'Done') {
       setCompletingComplaint(complaint);
@@ -142,12 +153,12 @@ export default function ComplaintRequestList() {
           prev.map((c) =>
             c._id === updated._id
               ? {
-                  ...c,
-                  status: updated.status,
-                  response: updated.response,
-                  responseBy: updated.responseBy,
-                  responseDate: updated.responseDate,
-                }
+                ...c,
+                status: updated.status,
+                response: updated.response,
+                responseBy: updated.responseBy,
+                responseDate: updated.responseDate,
+              }
               : c,
           ),
         );
@@ -156,12 +167,12 @@ export default function ComplaintRequestList() {
           setSelectedComplaint((prev) =>
             prev
               ? {
-                  ...prev,
-                  status: updated.status,
-                  response: updated.response,
-                  responseBy: updated.responseBy,
-                  responseDate: updated.responseDate,
-                }
+                ...prev,
+                status: updated.status,
+                response: updated.response,
+                responseBy: updated.responseBy,
+                responseDate: updated.responseDate,
+              }
               : prev,
           );
         }
@@ -207,12 +218,12 @@ export default function ComplaintRequestList() {
           prev.map((c) =>
             c._id === updated._id
               ? {
-                  ...c,
-                  status: updated.status,
-                  response: updated.response,
-                  responseBy: updated.responseBy,
-                  responseDate: updated.responseDate,
-                }
+                ...c,
+                status: updated.status,
+                response: updated.response,
+                responseBy: updated.responseBy,
+                responseDate: updated.responseDate,
+              }
               : c,
           ),
         );
@@ -221,12 +232,12 @@ export default function ComplaintRequestList() {
           setSelectedComplaint((prev) =>
             prev
               ? {
-                  ...prev,
-                  status: updated.status,
-                  response: updated.response,
-                  responseBy: updated.responseBy,
-                  responseDate: updated.responseDate,
-                }
+                ...prev,
+                status: updated.status,
+                response: updated.response,
+                responseBy: updated.responseBy,
+                responseDate: updated.responseDate,
+              }
               : prev,
           );
         }
@@ -398,7 +409,7 @@ export default function ComplaintRequestList() {
                     <td>
                       <div className="cell-main">
                         <div className="cell-title">
-                          {c.tenantId?.username || 'Cư dân'}
+                          {c.tenantId?.fullname || c.tenantId?.username || '-'}
                         </div>
                       </div>
                     </td>
@@ -415,8 +426,8 @@ export default function ComplaintRequestList() {
                         {c.status === 'Pending'
                           ? 'Chờ xử lý'
                           : c.status === 'Processing'
-                          ? 'Đang xử lý'
-                          : 'Đã xử lý'}
+                            ? 'Đang xử lý'
+                            : 'Đã xử lý'}
                       </span>
                     </td>
                     <td>{formatDate(c.createdDate)}</td>
@@ -475,7 +486,7 @@ export default function ComplaintRequestList() {
         {/* Modal xem chi tiết khiếu nại */}
         {selectedComplaint && (
           <div className="repair-modal-overlay" onClick={handleCloseDetail}>
-            <div className="repair-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="repair-modal repair-detail-modal" onClick={(e) => e.stopPropagation()}>
               <div className="repair-modal-header">
                 <h2>Chi tiết khiếu nại</h2>
                 <button
@@ -488,69 +499,104 @@ export default function ComplaintRequestList() {
                 </button>
               </div>
               <div className="repair-modal-body">
-                <div className="detail-row">
-                  <span className="detail-label">Cư dân:</span>
-                  <span className="detail-value">
-                    {selectedComplaint.tenantId?.username || '-'}
-                  </span>
+                {/* Layout 2 cột thông tin */}
+                <div className="detail-grid-layout">
+                  <div className="detail-grid-fields">
+                    {/* Hàng 1: Phòng + Cư dân */}
+                    <div className="detail-field-group">
+                      <div className="detail-field">
+                        <span className="detail-field-label">Phòng</span>
+                        <span className="detail-field-value">
+                          {selectedComplaint.room?.name || selectedComplaint.room?.roomCode || '-'}
+                        </span>
+                      </div>
+                      <div className="detail-field">
+                        <span className="detail-field-label">Cư dân</span>
+                        <span className="detail-field-value">
+                          {selectedComplaint.tenantId?.fullname || selectedComplaint.tenantId?.username || '-'}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Hàng 2: Số điện thoại + Loại khiếu nại */}
+                    <div className="detail-field-group">
+                      <div className="detail-field">
+                        <span className="detail-field-label">Số điện thoại</span>
+                        <span className="detail-field-value">
+                          {selectedComplaint.tenantId?.phoneNumber || '-'}
+                        </span>
+                      </div>
+                      <div className="detail-field">
+                        <span className="detail-field-label">Loại khiếu nại</span>
+                        <span className="detail-field-value">{selectedComplaint.category}</span>
+                      </div>
+                    </div>
+                    {/* Hàng 3: Mức độ + Trạng thái */}
+                    <div className="detail-field-group">
+                      <div className="detail-field">
+                        <span className="detail-field-label">Mức độ</span>
+                        <span className="detail-field-value">
+                          {selectedComplaint.priority === 'High'
+                            ? 'Cao'
+                            : selectedComplaint.priority === 'Medium'
+                              ? 'Trung bình'
+                              : 'Thấp'}
+                        </span>
+                      </div>
+                      <div className="detail-field">
+                        <span className="detail-field-label">Trạng thái</span>
+                        <span className="detail-field-value">
+                          <span className={`status-badge status-${selectedComplaint.status.toLowerCase()}`}>
+                            {selectedComplaint.status === 'Pending'
+                              ? 'Chờ xử lý'
+                              : selectedComplaint.status === 'Processing'
+                                ? 'Đang xử lý'
+                                : 'Đã xử lý'}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                    {/* Hàng 4: Ngày tạo */}
+                    <div className="detail-field-group">
+                      <div className="detail-field">
+                        <span className="detail-field-label">Ngày tạo</span>
+                        <span className="detail-field-value">
+                          {formatDate(selectedComplaint.createdDate)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Không có ảnh cho khiếu nại */}
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">Email:</span>
-                  <span className="detail-value">
+
+                {/* Email - toàn chiều rộng */}
+                <div className="detail-email-row">
+                  <span className="detail-field-label">Email</span>
+                  <span className="detail-email-value">
                     {selectedComplaint.tenantId?.email || '-'}
                   </span>
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">Loại khiếu nại:</span>
-                  <span className="detail-value">{selectedComplaint.category}</span>
+
+                {/* Nội dung khiếu nại */}
+                <div className="detail-description-block">
+                  <span className="detail-field-label">Nội dung</span>
+                  <p className="detail-description-text">{selectedComplaint.content}</p>
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">Mức độ:</span>
-                  <span className="detail-value">
-                    {selectedComplaint.priority === 'High'
-                      ? 'Cao'
-                      : selectedComplaint.priority === 'Medium'
-                      ? 'Trung bình'
-                      : 'Thấp'}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Trạng thái:</span>
-                  <span className="detail-value">
-                    <span
-                      className={`status-badge status-${selectedComplaint.status.toLowerCase()}`}
-                    >
-                      {selectedComplaint.status === 'Pending'
-                        ? 'Chờ xử lý'
-                        : selectedComplaint.status === 'Processing'
-                        ? 'Đang xử lý'
-                        : 'Đã xử lý'}
-                    </span>
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Ngày tạo:</span>
-                  <span className="detail-value">
-                    {formatDate(selectedComplaint.createdDate)}
-                  </span>
-                </div>
-                <div className="detail-row detail-row-description">
-                  <span className="detail-label">Nội dung:</span>
-                  <span className="detail-value">{selectedComplaint.content}</span>
-                </div>
+
+                {/* Phản hồi (nếu có) */}
                 {selectedComplaint.response && (
-                  <div className="detail-row detail-row-description">
-                    <span className="detail-label">Phản hồi:</span>
-                    <span className="detail-value">{selectedComplaint.response}</span>
+                  <div className="detail-description-block">
+                    <span className="detail-field-label">Phản hồi</span>
+                    <p className="detail-description-text">{selectedComplaint.response}</p>
                   </div>
                 )}
+
+                {/* Tình trạng xử lý + nút Xong */}
                 <div className="detail-status-actions">
-                  <div className="detail-status-actions-header">
-                    <span className="detail-label">Tình trạng xử lý</span>
-                  </div>
                   <div className="detail-status-actions-select-row">
+                    <span className="detail-status-clock">🕐</span>
+                    <span className="detail-status-label">Tình trạng xử lý</span>
                     <select
-                      className="detail-status-select"
+                      className="detail-status-select detail-status-select--inline"
                       value={selectedComplaint.status}
                       onChange={(e) =>
                         handleUpdateStatus(
@@ -558,17 +604,19 @@ export default function ComplaintRequestList() {
                           e.target.value as 'Pending' | 'Processing' | 'Done',
                         )
                       }
-                      disabled={updatingId === selectedComplaint._id}
+                      disabled={
+                        updatingId === selectedComplaint._id || selectedComplaint.status === 'Done'
+                      }
                     >
                       <option
                         value="Pending"
-                        disabled={selectedComplaint.status === 'Pending'}
+                        disabled={selectedComplaint.status !== 'Pending'}
                       >
                         Chờ xử lý
                       </option>
                       <option
                         value="Processing"
-                        disabled={selectedComplaint.status === 'Processing'}
+                        disabled={selectedComplaint.status !== 'Pending'}
                       >
                         Đang xử lý
                       </option>
@@ -576,16 +624,16 @@ export default function ComplaintRequestList() {
                         Đã xử lý
                       </option>
                     </select>
+                    {updatingId === selectedComplaint._id && (
+                      <span className="detail-status-updating">Đang cập nhật...</span>
+                    )}
                     <button
                       type="button"
-                      className="detail-status-done-btn"
+                      className="detail-done-btn-orange"
                       onClick={handleCloseDetail}
                     >
                       Xong
                     </button>
-                    {updatingId === selectedComplaint._id && (
-                      <span className="detail-status-updating">Đang cập nhật...</span>
-                    )}
                   </div>
                 </div>
               </div>

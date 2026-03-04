@@ -6,13 +6,15 @@ export const requestService = {
     roomSearch?: string,
     tenantSearch?: string,
     page?: number,
-    limit?: number
+    limit?: number,
+    type?: 'Sửa chữa' | 'Bảo trì'
   ) => {
     const params: {
       roomSearch?: string;
       tenantSearch?: string;
       page?: number;
       limit?: number;
+      type?: 'Sửa chữa' | 'Bảo trì';
     } = {};
     if (roomSearch && roomSearch.trim()) {
       params.roomSearch = roomSearch.trim();
@@ -26,14 +28,35 @@ export const requestService = {
     if (limit !== undefined && limit !== null) {
       params.limit = limit;
     }
+    if (type) {
+      params.type = type;
+    }
     const response = await api.get('/requests/repair', { params });
+    return response.data;
+  },
+
+  // Lấy mã hóa đơn sửa chữa kế tiếp (Manager)
+  getNextRepairInvoiceCode: async () => {
+    const response = await api.get('/requests/repair/next-invoice-code');
+    return response.data;
+  },
+
+  // Lấy mã phiếu chi sửa chữa miễn phí kế tiếp (Manager)
+  getNextRepairPaymentVoucher: async () => {
+    const response = await api.get('/requests/repair/next-payment-voucher');
+    return response.data;
+  },
+
+  // Lấy mã phiếu chi bảo trì kế tiếp (Manager)
+  getNextMaintenancePaymentVoucher: async () => {
+    const response = await api.get('/requests/maintenance/next-payment-voucher');
     return response.data;
   },
 
   // Cập nhật trạng thái yêu cầu sửa chữa
   updateRepairStatus: async (
     requestId: string,
-    status: 'Pending' | 'Processing' | 'Done',
+    status: 'Pending' | 'Processing' | 'Done' | 'Unpair',
     cost?: number,
     notes?: string,
     invoice?: {
@@ -46,6 +69,7 @@ export const requestService = {
       financialTitle: string;
       financialAmount: number;
       financialType?: 'Payment' | 'Receipt' | string;
+      paymentVoucher?: string;
     },
     paymentType?: 'REVENUE' | 'EXPENSE'
   ) => {
@@ -64,6 +88,9 @@ export const requestService = {
         body.financialAmount = financial.financialAmount;
         if (financial.financialType) {
           body.financialType = financial.financialType;
+        }
+        if (financial.paymentVoucher) {
+          body.paymentVoucher = financial.paymentVoucher;
         }
       }
       if (paymentType !== undefined) {
