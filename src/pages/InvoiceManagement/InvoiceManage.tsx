@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import {
-  Plus, Search, Droplet, Send, FileText, X, Edit3 // [ĐÃ SỬA] Thêm Edit3, Bỏ RotateCcw
+  Plus, Search, Droplet, Send, FileText, X, Edit3 
 } from 'lucide-react';
 
 import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
@@ -48,6 +48,9 @@ const InvoiceManager = () => {
     direction: 'asc' 
   });
 
+  // [MỚI] State lưu trữ các ID hóa đơn được tích chọn
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
+
   const [showReadingModal, setShowReadingModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false); 
   const [showBulkReadingModal, setShowBulkReadingModal] = useState(false);
@@ -55,10 +58,9 @@ const InvoiceManager = () => {
   const [bulkData, setBulkData] = useState<Record<string, { eOld: number, eNew: number, wOld: number, wNew: number }>>({});
   const [occupiedRooms, setOccupiedRooms] = useState<any[]>([]);
 
-  // [ĐÃ SỬA] Bỏ UNDO_READING
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
-    action: 'GENERATE' | 'RELEASE' | null;
+    action: 'GENERATE' | 'RELEASE_SINGLE' | 'RELEASE_BULK' | null;
     targetId?: string;
     message: string;
   }>({ isOpen: false, action: null, message: '' });
@@ -91,6 +93,7 @@ const InvoiceManager = () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/invoices`);
       setInvoices(res.data.data || []);
+      setSelectedInvoiceIds([]); // Reset lại list chọn sau khi fetch
     } catch (error) { toastr.error("Lỗi tải hóa đơn"); } 
     finally { setLoading(false); }
   };
@@ -116,7 +119,6 @@ const InvoiceManager = () => {
     const waterService = services.find(s => ['nước', 'nuoc'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
 
     let eOld = 0, wOld = 0;
-    // Lấy số liệu đang lưu trên DB để đưa vào ô "Chỉ số mới" cho người dùng dễ nhìn và sửa
     let eCurrent = 0, wCurrent = 0;
 
     if (elecService) {
@@ -263,7 +265,8 @@ const InvoiceManager = () => {
     }
   };
 
-  const handleRelease = async (id: string) => {
+  // --- [MỚI] LOGIC PHÁT HÀNH HÓA ĐƠN ---
+  const handleReleaseSingle = async (id: string) => {
     try {
       await axios.put(`${API_BASE_URL}/invoices/${id}/release`);
       toastr.success("Phát hành hóa đơn thành công!");
@@ -271,13 +274,83 @@ const InvoiceManager = () => {
     } catch (error: any) { toastr.error(error.response?.data?.message || "Lỗi phát hành"); }
   };
 
+  const handleReleaseBulk = async () => {
+    try {
+      // Nếu không chọn ID nào, lấy TẤT CẢ hóa đơn đang là Draft
+      let idsToRelease = selectedInvoiceIds;
+      if (idsToRelease.length === 0) {
+        idsToRelease = sortedAndFilteredInvoices.filter(inv => inv.status === 'Draft').map(inv => inv._id);
+      }
+
+      if (idsToRelease.length === 0) {
+        toastr.warning("Không có hóa đơn Nháp nào để phát hành.");
+        return;
+      }
+
+      setLoading(true);
+      // Gọi API vòng lặp (hoặc bạn có thể viết 1 API ReleaseMany ở Backend sau này)
+      for (const id of idsToRelease) {
+        await axios.put(`${API_BASE_URL}/invoices/${id}/release`);
+      }
+      
+      toastr.success(`Đã phát hành thành công ${idsToRelease.length} hóa đơn!`);
+      fetchInvoices();
+    } catch (error: any) {
+      toastr.error("Có lỗi xảy ra trong quá trình phát hành.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenReleaseConfirm = () => {
+    const draftCount = sortedAndFilteredInvoices.filter(inv => inv.status === 'Draft').length;
+    
+    if (selectedInvoiceIds.length > 0) {
+      setConfirmModal({
+        isOpen: true,
+        action: 'RELEASE_BULK',
+        message: `Bạn đang chọn phát hành ${selectedInvoiceIds.length} hóa đơn. Khách thuê sẽ nhận được thông báo. Tiếp tục?`
+      });
+    } else {
+      if (draftCount === 0) {
+        toastr.warning("Không có hóa đơn Nháp nào để phát hành!");
+        return;
+      }
+      setConfirmModal({
+        isOpen: true,
+        action: 'RELEASE_BULK',
+        message: `Bạn KHÔNG TÍCH CHỌN hóa đơn nào. Hệ thống sẽ phát hành TẤT CẢ ${draftCount} hóa đơn Nháp. Bạn có chắc chắn không?`
+      });
+    }
+  };
+
   const executeConfirmAction = async () => {
     if (confirmModal.action === 'GENERATE') {
       await handleGenerateDrafts();
-    } else if (confirmModal.action === 'RELEASE' && confirmModal.targetId) {
-      await handleRelease(confirmModal.targetId);
+    } else if (confirmModal.action === 'RELEASE_SINGLE' && confirmModal.targetId) {
+      await handleReleaseSingle(confirmModal.targetId);
+    } else if (confirmModal.action === 'RELEASE_BULK') {
+      await handleReleaseBulk();
     }
     setConfirmModal({ isOpen: false, action: null, message: '' });
+  };
+
+  // --- LOGIC TICK CHỌN ---
+  const toggleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      // Chỉ chọn những hóa đơn đang Draft
+      const draftIds = sortedAndFilteredInvoices.filter(inv => inv.status === 'Draft').map(inv => inv._id);
+      setSelectedInvoiceIds(draftIds);
+    } else {
+      setSelectedInvoiceIds([]);
+    }
+  };
+
+  const toggleSelectOne = (id: string, status: string) => {
+    if (status !== 'Draft') return; // Chỉ cho phép chọn Draft
+    setSelectedInvoiceIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
   };
 
   const handleViewDetail = async (id: string) => {
@@ -364,6 +437,9 @@ const InvoiceManager = () => {
     );
   };
 
+  const allDraftsInView = sortedAndFilteredInvoices.filter(i => i.status === 'Draft');
+  const isAllSelected = allDraftsInView.length > 0 && selectedInvoiceIds.length === allDraftsInView.length;
+
   return (
     <div className="invoice-container">
       <div className="page-header">
@@ -415,7 +491,7 @@ const InvoiceManager = () => {
             style={{ whiteSpace: 'nowrap', borderColor: '#0ea5e9', color: '#0ea5e9' }} 
             onClick={handleOpenBulkReading}
           >
-            <Droplet size={18} /> Ghi Điện Nước Hàng Loạt
+            <Droplet size={18} /> Ghi Điện Nước
           </button>
 
           <button 
@@ -427,7 +503,17 @@ const InvoiceManager = () => {
               message: 'Hệ thống sẽ tự động tạo hóa đơn nháp cho tháng hiện tại. Bạn có chắc chắn muốn tiếp tục?'
             })}
           >
-            <Plus size={18} /> Tạo Hóa Đơn Tháng Này
+            <Plus size={18} /> Tạo Hóa Đơn
+          </button>
+
+          {/* [MỚI] Nút Phát Hành */}
+          <button 
+            className="btn btn-success" 
+            style={{ whiteSpace: 'nowrap', background: '#16a34a', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500 }} 
+            onClick={handleOpenReleaseConfirm}
+            disabled={loading}
+          >
+            <Send size={18} /> Phát Hành {selectedInvoiceIds.length > 0 ? `(${selectedInvoiceIds.length})` : ''}
           </button>
         </div>
       </div>
@@ -436,6 +522,16 @@ const InvoiceManager = () => {
         <table className="invoice-table">
           <thead>
             <tr>
+              {/* [MỚI] Cột Checkbox Header */}
+              <th style={{ width: '40px', textAlign: 'center' }}>
+                <input 
+                  type="checkbox" 
+                  checked={isAllSelected}
+                  onChange={toggleSelectAll}
+                  style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                  disabled={allDraftsInView.length === 0}
+                />
+              </th>
               {renderSortableHeader("Mã HĐ", "invoiceCode")}
               {renderSortableHeader("Phòng", "roomId")}
               {renderSortableHeader("Tiêu đề", "title")}
@@ -446,52 +542,64 @@ const InvoiceManager = () => {
             </tr>
           </thead>
           <tbody>
-            {sortedAndFilteredInvoices.map((inv) => (
-              <tr key={inv._id}>
-                <td className="text-code">{inv.invoiceCode}</td>
-                <td style={{ fontWeight: 600 }}>{typeof inv.roomId === 'object' ? inv.roomId.name : inv.roomId}</td>
-                <td>{inv.title}</td>
-                <td className="text-price">{formatCurrency(inv.totalAmount)}</td>
-                <td>{formatDate(inv.dueDate)}</td>
-                <td>
-                  <span className={`status-badge status-${inv.status.toLowerCase()}`}>
-                    {inv.status === 'Draft' ? 'Bản Nháp' : inv.status === 'Unpaid' ? 'Chưa thu' : 'Đã thu'}
-                  </span>
-                </td>
-                <td>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {inv.status === 'Draft' && (
-                      <>
-                        {/* [ĐÃ SỬA] Thay đổi tooltip và icon thành Cây bút để mang ý nghĩa Sửa */}
-                        <button className="btn-icon" title="Sửa Điện/Nước" onClick={() => handleOpenReading(inv)}>
-                          <Edit3 size={18} color="#0284c7" />
-                        </button>
-                        
-                        <button 
-                          className="btn-icon" 
-                          title="Phát hành (Release)" 
-                          onClick={() => setConfirmModal({
-                            isOpen: true, 
-                            action: 'RELEASE', 
-                            targetId: inv._id, 
-                            message: 'Phát hành hóa đơn này? Khách thuê sẽ nhận được thông báo thanh toán qua ứng dụng.'
-                          })}
-                        >
-                          <Send size={18} color="#16a34a" />
-                        </button>
-                      </>
-                    )}
-                    <button className="btn-icon" title="Xem chi tiết" onClick={() => handleViewDetail(inv._id)}>
-                      <FileText size={18} color="#475569" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {sortedAndFilteredInvoices.map((inv) => {
+              const isDraft = inv.status === 'Draft';
+              return (
+                <tr key={inv._id} style={{ background: selectedInvoiceIds.includes(inv._id) ? '#f0fdf4' : 'transparent' }}>
+                  {/* [MỚI] Cột Checkbox Body */}
+                  <td style={{ textAlign: 'center' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedInvoiceIds.includes(inv._id)}
+                      onChange={() => toggleSelectOne(inv._id, inv.status)}
+                      disabled={!isDraft}
+                      style={{ cursor: isDraft ? 'pointer' : 'not-allowed', width: '16px', height: '16px' }}
+                    />
+                  </td>
+                  <td className="text-code">{inv.invoiceCode}</td>
+                  <td style={{ fontWeight: 600 }}>{typeof inv.roomId === 'object' ? inv.roomId.name : inv.roomId}</td>
+                  <td>{inv.title}</td>
+                  <td className="text-price">{formatCurrency(inv.totalAmount)}</td>
+                  <td>{formatDate(inv.dueDate)}</td>
+                  <td>
+                    <span className={`status-badge status-${inv.status.toLowerCase()}`}>
+                      {inv.status === 'Draft' ? 'Bản Nháp' : inv.status === 'Unpaid' ? 'Chưa thu' : 'Đã thu'}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {inv.status === 'Draft' && (
+                        <>
+                          <button className="btn-icon" title="Sửa Điện/Nước" onClick={() => handleOpenReading(inv)}>
+                            <Edit3 size={18} color="#0284c7" />
+                          </button>
+                          
+                          <button 
+                            className="btn-icon" 
+                            title="Phát hành (Release)" 
+                            onClick={() => setConfirmModal({
+                              isOpen: true, 
+                              action: 'RELEASE_SINGLE', 
+                              targetId: inv._id, 
+                              message: 'Phát hành hóa đơn này? Khách thuê sẽ nhận được thông báo thanh toán qua ứng dụng.'
+                            })}
+                          >
+                            <Send size={18} color="#16a34a" />
+                          </button>
+                        </>
+                      )}
+                      <button className="btn-icon" title="Xem chi tiết" onClick={() => handleViewDetail(inv._id)}>
+                        <FileText size={18} color="#475569" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
             
             {sortedAndFilteredInvoices.length === 0 && (
                <tr>
-                 <td colSpan={7} style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
+                 <td colSpan={8} style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
                    Không tìm thấy hóa đơn nào khớp với kết quả lọc.
                  </td>
                </tr>
@@ -500,7 +608,6 @@ const InvoiceManager = () => {
         </table>
       </div>
 
-      {/* [ĐÃ SỬA] MODAL 2: Đổi tiêu đề thành Sửa chỉ số và Xóa nút Sửa Sai */}
       {showReadingModal && selectedInvoice && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ width: '600px' }}>
@@ -597,7 +704,6 @@ const InvoiceManager = () => {
         </div>
       )}
 
-      {/* MODAL 3: CHI TIẾT HÓA ĐƠN */}
       {showDetailModal && selectedInvoice && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ width: '650px' }}>
@@ -682,7 +788,7 @@ const InvoiceManager = () => {
         </div>
       )}
 
-      {/* MODAL 4: HỘP THOẠI XÁC NHẬN CHUYÊN NGHIỆP */}
+      {/* MODAL HỘP THOẠI XÁC NHẬN CHUYÊN NGHIỆP */}
       {confirmModal.isOpen && (
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }}>
@@ -700,8 +806,9 @@ const InvoiceManager = () => {
               <button 
                 className="btn btn-primary" 
                 onClick={executeConfirmAction}
+                disabled={loading}
               >
-                Đồng ý
+                {loading ? 'Đang xử lý...' : 'Đồng ý'}
               </button>
             </div>
           </div>
