@@ -81,6 +81,7 @@ import Header from "./components/layout/Header/Header";
 import CreateContract from "./pages/ContractManagement/CreateContract";
 import ContractList from "./pages/ContractManagement/ContractList";
 import ContractDetail from "./pages/ContractManagement/ContractDetail";
+import EditContract from "./pages/ContractManagement/EditContract";
 import DepositRoom from "./pages/ContractManagement/DepositRoom";
 import DepositFloorMap from "./pages/ContractManagement/DepositFloorMap";
 import CreateDeposit from "./pages/ContractManagement/CreateDeposit";
@@ -223,9 +224,10 @@ function LayoutWrapper() {
           <Route path="profile/update" element={<UpdateProfile />} />
           <Route path="rules" element={<ManagerRules />} />
           <Route path="devices" element={<ManageDevice />} />
-          <Route path="contracts" element={<ContractList />} />
-          <Route path="contracts/create" element={<CreateContract />} />
+          <Route path="contracts" element={<ContractList readOnly />} />
+          <Route path="contracts/list" element={<ContractList readOnly />} />
           <Route path="contracts/:id" element={<ContractDetail />} />
+          <Route path="contracts/list/:id" element={<ContractDetail />} />
           <Route path="deposits" element={<DepositRoom />} />
           <Route path="deposits/floor-map" element={<DepositFloorMap />} />
           <Route path="deposits/create/:id" element={<CreateDeposit />} />
@@ -246,11 +248,15 @@ function LayoutWrapper() {
           <Route path="residents/:id" element={<TenantAccountDetail />} />
           <Route path="services" element={<ManageService />} />
           <Route path="requests/repairs" element={<RepairRequestsList />} />
-          <Route path="requests/complaints" element={<ComplaintRequestList />} />
+          <Route
+            path="requests/complaints"
+            element={<ComplaintRequestList />}
+          />
           <Route path="profile" element={<ManagerProfile />} />
           <Route path="contracts" element={<ContractList />} />
           <Route path="contracts/create" element={<CreateContract />} />
           <Route path="contracts/:id" element={<ContractDetail />} />
+          <Route path="contracts/:id/edit" element={<EditContract />} />
           <Route path="deposits" element={<DepositRoom />} />
           <Route path="deposits/floor-map" element={<DepositFloorMap />} />
           <Route path="deposits/create/:id" element={<CreateDeposit />} />

@@ -14,7 +14,7 @@ import "./ContractFloorMap.css";
 
 const API_URL = "http://localhost:9999/api";
 
-const ContractList = () => {
+const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
   const navigate = useNavigate();
   const [rooms, setRooms] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
@@ -77,8 +77,11 @@ const ContractList = () => {
     if (contractId) {
       // Room has active contract → view it
       navigate(`${contractId}`);
-    } else if (room.status === "Available" || room.status === "Deposited") {
-      // Room is available → create new contract
+    } else if (
+      !readOnly &&
+      (room.status === "Available" || room.status === "Deposited")
+    ) {
+      // Room is available → create new contract (only if not readOnly)
       navigate("create", { state: { roomId: room._id } });
     }
   };
@@ -109,31 +112,33 @@ const ContractList = () => {
               Xem và quản lý hợp đồng theo sơ đồ tầng
             </Typography>
           </div>
-          <div className="stats-summary">
-            <div className="stat-item">
-              <FileText size={16} className="stat-icon icon-primary" />
-              <div className="stat-text">
-                <span className="stat-value">{activeContracts}</span>
-                <span className="stat-label">Hợp đồng</span>
+          {!readOnly && (
+            <div className="stats-summary">
+              <div className="stat-item">
+                <FileText size={16} className="stat-icon icon-primary" />
+                <div className="stat-text">
+                  <span className="stat-value">{activeContracts}</span>
+                  <span className="stat-label">Hợp đồng</span>
+                </div>
+              </div>
+              <div className="stat-divider"></div>
+              <div className="stat-item">
+                <Home size={16} className="stat-icon icon-accent" />
+                <div className="stat-text">
+                  <span className="stat-value">{availableRooms}</span>
+                  <span className="stat-label">Phòng trống</span>
+                </div>
+              </div>
+              <div className="stat-divider"></div>
+              <div className="stat-item">
+                <Clock size={16} className="stat-icon icon-warning" />
+                <div className="stat-text">
+                  <span className="stat-value">{depositedRooms}</span>
+                  <span className="stat-label">Đã cọc</span>
+                </div>
               </div>
             </div>
-            <div className="stat-divider"></div>
-            <div className="stat-item">
-              <Home size={16} className="stat-icon icon-accent" />
-              <div className="stat-text">
-                <span className="stat-value">{availableRooms}</span>
-                <span className="stat-label">Phòng trống</span>
-              </div>
-            </div>
-            <div className="stat-divider"></div>
-            <div className="stat-item">
-              <Clock size={16} className="stat-icon icon-warning" />
-              <div className="stat-text">
-                <span className="stat-value">{depositedRooms}</span>
-                <span className="stat-label">Đã cọc</span>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Floor Tabs */}
