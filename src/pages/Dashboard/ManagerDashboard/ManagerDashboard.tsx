@@ -15,6 +15,7 @@ import {
   Wrench,
   Clock,
   MessageSquare,
+  Wallet,
 } from "lucide-react";
 
 interface DashboardStats {
@@ -26,10 +27,24 @@ interface DashboardStats {
   activeContracts: number;
   expiringContracts: number;
   occupancyRate: number;
+  depositsWithoutContract: number;
+}
+
+interface RequestCounts {
+  repairPending: number;
+  maintenancePending: number;
+  complaintPending: number;
+  transferPending: number;
 }
 
 export default function ManagerDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [requestCounts, setRequestCounts] = useState<RequestCounts>({
+    repairPending: 0,
+    maintenancePending: 0,
+    complaintPending: 0,
+    transferPending: 0,
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,14 +55,47 @@ export default function ManagerDashboard() {
     try {
       setLoading(true);
 
-      // Fetch rooms and contracts in parallel
-      const [roomsRes, contractsRes] = await Promise.all([
+      // Fetch rooms, contracts, deposits and requests in parallel
+      const [
+        roomsRes,
+        contractsRes,
+        depositsRes,
+        repairRes,
+        complaintsRes,
+        transferRes,
+      ] = await Promise.all([
         api.get("/rooms"),
         api.get("/contracts"),
+        api.get("/deposits"),
+        api.get("/requests/repair").catch(() => ({ data: { data: [] } })),
+        api.get("/requests/complaints").catch(() => ({ data: { data: [] } })),
+        api.get("/requests/transfer").catch(() => ({ data: { data: [] } })),
       ]);
 
       const rooms = roomsRes.data.data || [];
       const contracts = contractsRes.data.data || [];
+      const deposits = depositsRes.data.data || [];
+      const repairRequests = repairRes.data.data || [];
+      // complaints API returns { data: { data: [...], total, ... } } via successResponse
+      const complaintsRaw = complaintsRes.data.data;
+      const complaints = Array.isArray(complaintsRaw)
+        ? complaintsRaw
+        : complaintsRaw?.data || [];
+      const transfers = transferRes.data.data || [];
+
+      // Request counts (Pending only)
+      setRequestCounts({
+        repairPending: repairRequests.filter(
+          (r: any) => r.type === "Sửa chữa" && r.status === "Pending",
+        ).length,
+        maintenancePending: repairRequests.filter(
+          (r: any) => r.type === "Bảo trì" && r.status === "Pending",
+        ).length,
+        complaintPending: complaints.filter((r: any) => r.status === "Pending")
+          .length,
+        transferPending: transfers.filter((r: any) => r.status === "Pending")
+          .length,
+      });
 
       // Room stats based on status field
       const totalRooms = rooms.length;
@@ -83,6 +131,18 @@ export default function ManagerDashboard() {
         0,
       );
 
+      // Deposits without contract: status "Held" and not linked to any contract
+      const contractDepositIds = new Set(
+        contracts
+          .filter((c: any) => c.depositId)
+          .map((c: any) =>
+            typeof c.depositId === "object" ? c.depositId._id : c.depositId,
+          ),
+      );
+      const depositsWithoutContract = deposits.filter(
+        (d: any) => d.status === "Held" && !contractDepositIds.has(d._id),
+      ).length;
+
       setStats({
         totalRooms,
         occupiedRooms,
@@ -91,6 +151,7 @@ export default function ManagerDashboard() {
         totalTenants,
         activeContracts: activeContracts.length,
         expiringContracts,
+        depositsWithoutContract,
         occupancyRate:
           totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0,
       });
@@ -105,6 +166,7 @@ export default function ManagerDashboard() {
         activeContracts: 0,
         expiringContracts: 0,
         occupancyRate: 0,
+        depositsWithoutContract: 0,
       });
     } finally {
       setLoading(false);
@@ -119,6 +181,11 @@ export default function ManagerDashboard() {
       title: "Tỷ Lệ Lấp Đầy",
       value: `${stats?.occupancyRate || 0}%`,
       icon: Percent,
+    },
+    {
+      title: "Tổng Cọc",
+      value: stats?.depositsWithoutContract || 0,
+      icon: Wallet,
     },
   ];
 
@@ -263,16 +330,83 @@ export default function ManagerDashboard() {
               </div>
             </div>
             <div className="chart-legend">
-              {roomStatusData.map((item) => (
-                <div key={item.label} className="legend-row">
-                  <span
-                    className="legend-dot"
-                    style={{ backgroundColor: item.color }}
-                  ></span>
-                  <span className="legend-text">{item.label}</span>
-                  <span className="legend-num">{item.value}</span>
-                </div>
-              ))}
+              {roomStatusData.map((item) => {
+                const pct =
+                  totalForChart > 0
+                    ? Math.round((item.value / totalForChart) * 100)
+                    : 0;
+                return (
+                  <div key={item.label} className="legend-row">
+                    <span
+                      className="legend-dot"
+                      style={{ backgroundColor: item.color }}
+                    ></span>
+                    <span className="legend-text">{item.label}</span>
+                    <span className="legend-num">
+                      {item.value} ({pct}%)
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Yêu Cầu */}
+        <div className="bento-card">
+          <div className="bento-header">
+            <h3>Yêu Cầu</h3>
+          </div>
+          <div className="finance-content">
+            <div className="request-links">
+              <Link
+                to="/manager/requests/repairs"
+                className="request-link-item"
+              >
+                <Wrench className="request-icon" />
+                <span>Yêu cầu sửa chữa</span>
+                <span className="request-badge">
+                  {requestCounts.repairPending}
+                </span>
+              </Link>
+              <Link
+                to="/manager/requests/maintenance"
+                className="request-link-item"
+              >
+                <AlertTriangle className="request-icon" />
+                <span>Yêu cầu bảo trì</span>
+                <span className="request-badge">
+                  {requestCounts.maintenancePending}
+                </span>
+              </Link>
+              <Link
+                to="/manager/requests/complaints"
+                className="request-link-item"
+              >
+                <MessageSquare className="request-icon" />
+                <span>Danh sách khiếu nại</span>
+                <span className="request-badge">
+                  {requestCounts.complaintPending}
+                </span>
+              </Link>
+              <Link
+                to="/manager/requests/transfer"
+                className="request-link-item"
+              >
+                <MapPin className="request-icon" />
+                <span>Yêu cầu chuyển phòng</span>
+                <span className="request-badge">
+                  {requestCounts.transferPending}
+                </span>
+              </Link>
+              <Link
+                to="/manager/requests/checkout"
+                className="request-link-item"
+              >
+                <DoorOpen className="request-icon" />
+                <span>Yêu cầu trả phòng</span>
+                <span className="request-badge">0</span>
+              </Link>
             </div>
           </div>
         </div>

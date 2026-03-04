@@ -51,7 +51,7 @@
 /* ========== Summary Cards ========== */
 .summary-cards {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 0.75rem;
   margin-bottom: 1rem;
 }
@@ -151,7 +151,7 @@
 /* ========== Bento Grid ========== */
 .bento-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 0.75rem;
   margin-bottom: 1rem;
 }
@@ -500,5 +500,96 @@
   .alert-info {
     background: #1e293b;
     border-color: #334155;
+  }
+}
+
+/* ========== Request Links ========== */
+.request-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.request-link-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  text-decoration: none;
+  color: #334155;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.request-link-item:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.request-link-item .request-icon {
+  width: 18px;
+  height: 18px;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.request-link-item:hover .request-icon {
+  color: #3b82f6;
+}
+
+.request-link-item span:not(.request-badge) {
+  flex: 1;
+}
+
+.request-badge {
+  background: #eff6ff;
+  color: #3b82f6;
+  font-size: 0.8rem;
+  font-weight: 700;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  flex-shrink: 0;
+  border: 1px solid #bfdbfe;
+}
+
+.request-link-item:hover .request-badge {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+@media (prefers-color-scheme: dark) {
+  .request-badge {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+
+  .request-link-item:hover .request-badge {
+    background: rgba(59, 130, 246, 0.25);
+    color: #93c5fd;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .request-link-item {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+  }
+
+  .request-link-item:hover {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
   }
 }
