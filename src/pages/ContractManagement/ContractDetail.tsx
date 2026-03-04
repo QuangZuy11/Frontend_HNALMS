@@ -12,7 +12,7 @@ import {
   Modal,
   Backdrop,
 } from "@mui/material";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
@@ -22,6 +22,7 @@ const API_URL = "http://localhost:9999/api";
 const ContractDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [contract, setContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
@@ -159,11 +160,23 @@ const ContractDetail = () => {
         >
           Quay lại
         </Button>
-        <Chip
-          label={statusLabel(contract.status)}
-          color={statusColor(contract.status) as any}
-          sx={{ fontWeight: "bold", fontSize: "0.95rem", px: 1 }}
-        />
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          {contract.status === "active" &&
+            !location.pathname.startsWith("/owner") && (
+              <Button
+                variant="outlined"
+                onClick={() => navigate(`${location.pathname}/edit`)}
+                sx={{ fontFamily: serifFont, textTransform: "none" }}
+              >
+                Chỉnh sửa
+              </Button>
+            )}
+          <Chip
+            label={statusLabel(contract.status)}
+            color={statusColor(contract.status) as any}
+            sx={{ fontWeight: "bold", fontSize: "0.95rem", px: 1 }}
+          />
+        </Box>
       </Box>
 
       {/* Paper Document */}

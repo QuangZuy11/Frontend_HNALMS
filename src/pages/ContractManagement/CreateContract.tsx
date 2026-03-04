@@ -274,7 +274,19 @@ const CreateContract = () => {
   // Helper: check if a fixed_monthly service is charged per person
   const isPerPersonService = (serviceName: string): boolean => {
     const n = serviceName.toLowerCase();
-    return n.includes("internet") || n.includes("wifi");
+    return (
+      n.includes("internet") || n.includes("wifi") || n.includes("vệ sinh")
+    );
+  };
+
+  // Helper: sort order for fixed monthly services
+  const getFixedServiceSortOrder = (serviceName: string): number => {
+    const n = serviceName.toLowerCase();
+    if (n.includes("điện")) return 1;
+    if (n.includes("nước")) return 2;
+    if (n.includes("internet") || n.includes("wifi")) return 3;
+    if (n.includes("vệ sinh")) return 4;
+    return 99;
   };
 
   // Enforce mandatory services based on room selection
@@ -1377,11 +1389,17 @@ const CreateContract = () => {
                     <>
                       {/* a) Dịch vụ cố định hàng tháng */}
                       {(() => {
-                        const fixedServices = availableServices.filter(
-                          (s) =>
-                            getServiceCategory(s.name) === "fixed_monthly" &&
-                            !isServiceExcludedForRoom(s.name),
-                        );
+                        const fixedServices = availableServices
+                          .filter(
+                            (s) =>
+                              getServiceCategory(s.name) === "fixed_monthly" &&
+                              !isServiceExcludedForRoom(s.name),
+                          )
+                          .sort(
+                            (a, b) =>
+                              getFixedServiceSortOrder(a.name) -
+                              getFixedServiceSortOrder(b.name),
+                          );
                         if (fixedServices.length === 0) return null;
                         return (
                           <Box sx={{ mb: 2.5 }}>
