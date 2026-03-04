@@ -2,6 +2,10 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import axios from "axios";
 import { Tabs, Tab, Box } from "@mui/material";
 
+// [MỚI] Import toastr và CSS của toastr
+import toastr from "toastr";
+import "toastr/build/toastr.min.css";
+
 // Floor Maps
 import FloorMap from "../RoomList/components/FloorMap";
 import FloorMapLevel2 from "../RoomList/components/FloorMapLevel2";
@@ -74,7 +78,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [activeMapFloor, setActiveMapFloor] = useState(0);
 
-  // [MỚI] Ref cho input file ẩn
+  // Ref cho input file ẩn
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // State đóng/mở tầng
@@ -117,12 +121,20 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       setExpandedFloors(floorsData.map((f: Floor) => f._id));
     } catch (error) {
       console.error("Lỗi tải dữ liệu:", error);
+      toastr.error("Không thể tải dữ liệu từ máy chủ.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    // [MỚI] Cấu hình toastr khi component mount
+    toastr.options = {
+      closeButton: true,
+      progressBar: true,
+      positionClass: "toast-top-right",
+      timeOut: 3000,
+    };
     fetchData();
   }, []);
 
@@ -178,7 +190,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     );
   };
 
-const formatCurrency = (amount: any) => {
+  const formatCurrency = (amount: any) => {
     let value = 0;
 
     // Kiểm tra nếu dữ liệu là object Decimal128 của MongoDB
@@ -224,7 +236,7 @@ const formatCurrency = (amount: any) => {
     }
   };
 
-  // --- [MỚI] HANDLERS EXCEL ---
+  // --- HANDLERS EXCEL ---
 
   // 1. Tải mẫu Excel
   const handleDownloadTemplate = async () => {
@@ -239,8 +251,9 @@ const formatCurrency = (amount: any) => {
       document.body.appendChild(link);
       link.click();
       link.parentNode?.removeChild(link);
+      toastr.success("Tải file mẫu thành công!");
     } catch (error) {
-      alert("Lỗi tải file mẫu.");
+      toastr.error("Lỗi tải file mẫu.");
     }
   };
 
@@ -265,7 +278,7 @@ const formatCurrency = (amount: any) => {
       const res = await axios.post(`${API_BASE_URL}/excel/import`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      alert(res.data.message);
+      toastr.success(res.data.message || "Nhập file thành công!");
       fetchData(); // Load lại dữ liệu sau khi nhập
     } catch (error: any) {
       console.error(error);
@@ -273,9 +286,9 @@ const formatCurrency = (amount: any) => {
       const detailErrors = error.response?.data?.errors;
 
       if (detailErrors && detailErrors.length > 0) {
-        alert(`${msg}\n\nChi tiết lỗi:\n- ${detailErrors.join("\n- ")}`);
+        toastr.error(`${msg}<br/>- ${detailErrors.join("<br/>- ")}`, "Lỗi Import", { timeOut: 10000, escapeHtml: false });
       } else {
-        alert(msg);
+        toastr.error(msg);
       }
     } finally {
       setLoading(false);
@@ -285,7 +298,7 @@ const formatCurrency = (amount: any) => {
   // --- CRUD HANDLERS ---
   const handleOpenAdd = () => {
     if (floors.length === 0 || roomTypes.length === 0) {
-      alert("Vui lòng tạo Tầng và Loại phòng trước!");
+      toastr.warning("Vui lòng tạo Tầng và Loại phòng trước khi thêm phòng mới!");
       return;
     }
     setIsEditing(false);
@@ -335,9 +348,10 @@ const formatCurrency = (amount: any) => {
       await axios.put(`${API_BASE_URL}/rooms/${room._id}`, {
         isActive: !room.isActive,
       });
+      toastr.success(`Đã ${action} phòng ${room.name} thành công!`);
       fetchData();
     } catch (error: any) {
-      alert("Lỗi cập nhật trạng thái: " + error.message);
+      toastr.error("Lỗi cập nhật trạng thái: " + error.message);
     }
   };
 
@@ -346,23 +360,26 @@ const formatCurrency = (amount: any) => {
     try {
       if (isEditing && currentRoom) {
         await axios.put(`${API_BASE_URL}/rooms/${currentRoom._id}`, formData);
+        toastr.success("Cập nhật thông tin phòng thành công!");
       } else {
         await axios.post(`${API_BASE_URL}/rooms`, formData);
+        toastr.success("Thêm phòng mới thành công!");
       }
       setShowModal(false);
       fetchData();
     } catch (error: any) {
-      alert("Lỗi lưu dữ liệu: " + error.message);
+      toastr.error("Lỗi lưu dữ liệu: " + (error.response?.data?.message || error.message));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Xóa phòng này?")) {
+    if (window.confirm("Bạn có chắc chắn muốn xóa phòng này?")) {
       try {
         await axios.delete(`${API_BASE_URL}/rooms/${id}`);
+        toastr.success("Xóa phòng thành công!");
         fetchData();
-      } catch (e) {
-        alert("Lỗi xóa phòng");
+      } catch (e: any) {
+        toastr.error("Lỗi xóa phòng: " + (e.response?.data?.message || e.message));
       }
     }
   };
@@ -436,16 +453,13 @@ const formatCurrency = (amount: any) => {
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            {/* [MỚI] Button Tải Mẫu */}
             <button className="btn-secondary" onClick={handleDownloadTemplate}>
               <Download size={18} /> Tải mẫu Excel
             </button>
 
-            {/* [MỚI] Button Nhập File */}
             <button className="btn-success" onClick={triggerFileInput}>
               <FileSpreadsheet size={18} /> Nhập Excel
             </button>
-            {/* Input ẩn */}
             <input
               type="file"
               ref={fileInputRef}
@@ -454,7 +468,6 @@ const formatCurrency = (amount: any) => {
               onChange={handleFileUpload}
             />
 
-            {/* Button Thêm thủ công */}
             <button className="btn-primary" onClick={handleOpenAdd}>
               <Plus size={18} /> Thêm phòng mới
             </button>
@@ -591,7 +604,6 @@ const formatCurrency = (amount: any) => {
 
                                 <td>
                                   <div className="action-group">
-                                    {/* Nút Power - Ẩn khi readOnly */}
                                     {!readOnly && (
                                       <button
                                         className={`btn-icon-sm power ${room.isActive ? "active" : "inactive"}`}
@@ -606,7 +618,6 @@ const formatCurrency = (amount: any) => {
                                       </button>
                                     )}
 
-                                    {/* Nút Xem chi tiết - Luôn hiện */}
                                     <button
                                       className="btn-icon-sm view"
                                       onClick={() => handleViewDetail(room)}
@@ -615,7 +626,6 @@ const formatCurrency = (amount: any) => {
                                       <Eye size={16} />
                                     </button>
 
-                                    {/* Nút Sửa - Ẩn khi readOnly */}
                                     {!readOnly && (
                                       <button
                                         className="btn-icon-sm edit"
@@ -626,7 +636,6 @@ const formatCurrency = (amount: any) => {
                                       </button>
                                     )}
 
-                                    {/* Nút Xóa - Ẩn khi readOnly */}
                                     {!readOnly && (
                                       <button
                                         className="btn-icon-sm delete"
