@@ -80,7 +80,7 @@ export default function RoomDetail() {
           ...roomData,
           roomCode: roomData.roomCode || roomData.name,
           floor: roomData.floorId?.name || "N/A",
-          floorLabel: `Tầng ${roomData.floorId?.name || "N/A"}`,
+          floorLabel: roomData.floorId?.name || "N/A",
           price: price,
           area: roomData.roomTypeId?.area || 30,
           capacity: roomData.roomTypeId?.personMax || 2,
@@ -111,11 +111,17 @@ export default function RoomDetail() {
       const response = await serviceService.getServices();
       if (response.data) {
         // Filter only the services we want to display
-        const allowedNames = ["Điện", "Nước", "Internet", "Vệ Sinh", "Thang máy"];
+        const allowedNames = [
+          "Điện",
+          "Nước",
+          "Internet",
+          "Vệ Sinh",
+          "Thang máy",
+        ];
         const filtered = response.data.filter((svc: any) =>
           allowedNames.some((name) =>
-            svc.name.toLowerCase().includes(name.toLowerCase())
-          )
+            svc.name.toLowerCase().includes(name.toLowerCase()),
+          ),
         );
         setServices(filtered);
       }
@@ -128,7 +134,8 @@ export default function RoomDetail() {
     const lowerName = serviceName.toLowerCase();
     if (lowerName.includes("điện")) return Zap;
     if (lowerName.includes("nước")) return Droplet;
-    if (lowerName.includes("internet") || lowerName.includes("wifi")) return Wifi;
+    if (lowerName.includes("internet") || lowerName.includes("wifi"))
+      return Wifi;
     if (lowerName.includes("vệ sinh")) return Sparkles;
     if (lowerName.includes("thang máy")) return ArrowUpDown;
     return Zap;
@@ -260,8 +267,9 @@ export default function RoomDetail() {
                   {room.images.map((image, index) => (
                     <div
                       key={index}
-                      className={`thumbnail-wrapper ${index === currentImageIndex ? "active" : ""
-                        }`}
+                      className={`thumbnail-wrapper ${
+                        index === currentImageIndex ? "active" : ""
+                      }`}
                       onClick={() => setCurrentImageIndex(index)}
                     >
                       <img
@@ -388,7 +396,8 @@ export default function RoomDetail() {
                           <div className="service-info">
                             <div className="service-name">{svc.name}</div>
                             <div className="service-description">
-                              {svc.description || `${svc.currentPrice?.toLocaleString("vi-VN")}đ/${svc.type === "Extension" ? "đơn vị" : "tháng"}`}
+                              {svc.description ||
+                                `${svc.currentPrice?.toLocaleString("vi-VN")}đ/${svc.type === "Extension" ? "đơn vị" : "tháng"}`}
                             </div>
                           </div>
                         </div>
@@ -401,8 +410,6 @@ export default function RoomDetail() {
                 )}
               </div>
             </div>
-
-
           </div>
 
           {/* Sidebar */}

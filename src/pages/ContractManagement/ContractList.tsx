@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Container, Typography, Paper, Box, Tabs, Tab } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { FileText, CheckCircle, Home, Clock } from "lucide-react";
 
 // Floor Maps
 import FloorMap from "../RoomManagement/RoomList/components/FloorMap";
@@ -29,7 +30,11 @@ const ContractList = () => {
         const rawRooms = roomsRes.data.data || [];
         const mappedRooms = rawRooms.map((room: any) => {
           let priceNum = 0;
-          if (room.roomTypeId && typeof room.roomTypeId.currentPrice === "object" && room.roomTypeId.currentPrice.$numberDecimal) {
+          if (
+            room.roomTypeId &&
+            typeof room.roomTypeId.currentPrice === "object" &&
+            room.roomTypeId.currentPrice.$numberDecimal
+          ) {
             priceNum = parseFloat(room.roomTypeId.currentPrice.$numberDecimal);
           } else if (typeof room.roomTypeId?.currentPrice === "number") {
             priceNum = room.roomTypeId.currentPrice;
@@ -40,9 +45,10 @@ const ContractList = () => {
           return {
             ...room,
             price: priceNum,
-            priceLabel: priceNum > 0
-              ? `${(priceNum / 1000000).toFixed(1)}M`
-              : "Chưa có giá",
+            priceLabel:
+              priceNum > 0
+                ? `${(priceNum / 1000000).toFixed(1)}M`
+                : "Chưa có giá",
             floorLabel: room.floorId?.name || "N/A",
           };
         });
@@ -77,17 +83,58 @@ const ContractList = () => {
     }
   };
 
+  const activeContracts = contracts.filter(
+    (c: any) => c.status === "active",
+  ).length;
+  const availableRooms = rooms.filter(
+    (r: any) => r.status === "Available",
+  ).length;
+  const depositedRooms = rooms.filter(
+    (r: any) => r.status === "Deposited",
+  ).length;
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Paper elevation={3} sx={{ p: 3, bgcolor: "#f8f9fa" }}>
-        <Typography
-          variant="h5"
-          gutterBottom
-          color="primary"
-          sx={{ fontWeight: "bold", mb: 2 }}
-        >
-          Quản lý Hợp đồng
-        </Typography>
+        <div className="contract-list-header">
+          <div>
+            <Typography
+              variant="h5"
+              color="primary"
+              sx={{ fontWeight: "bold" }}
+            >
+              Quản lý Hợp đồng
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#64748b", mt: 0.3 }}>
+              Xem và quản lý hợp đồng theo sơ đồ tầng
+            </Typography>
+          </div>
+          <div className="stats-summary">
+            <div className="stat-item">
+              <FileText size={16} className="stat-icon icon-primary" />
+              <div className="stat-text">
+                <span className="stat-value">{activeContracts}</span>
+                <span className="stat-label">Hợp đồng</span>
+              </div>
+            </div>
+            <div className="stat-divider"></div>
+            <div className="stat-item">
+              <Home size={16} className="stat-icon icon-accent" />
+              <div className="stat-text">
+                <span className="stat-value">{availableRooms}</span>
+                <span className="stat-label">Phòng trống</span>
+              </div>
+            </div>
+            <div className="stat-divider"></div>
+            <div className="stat-item">
+              <Clock size={16} className="stat-icon icon-warning" />
+              <div className="stat-text">
+                <span className="stat-value">{depositedRooms}</span>
+                <span className="stat-label">Đã cọc</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Floor Tabs */}
         <Tabs

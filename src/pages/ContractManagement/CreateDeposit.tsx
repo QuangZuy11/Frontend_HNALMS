@@ -356,12 +356,25 @@ export default function CreateDeposit() {
                   </div>
 
                   <div className="success-buttons">
-                    <button
-                      className="dp-primary-btn"
-                      onClick={() => navigate(`${basePath}/deposits`)}
-                    >
-                      Xem Danh Sách Cọc
-                    </button>
+                    {location.state?.returnTo === "create-contract" ? (
+                      <button
+                        className="dp-primary-btn"
+                        onClick={() =>
+                          navigate(`${basePath}/contracts/create`, {
+                            state: { roomId: id },
+                          })
+                        }
+                      >
+                        ← Tiếp tục tạo hợp đồng
+                      </button>
+                    ) : (
+                      <button
+                        className="dp-primary-btn"
+                        onClick={() => navigate(`${basePath}/deposits`)}
+                      >
+                        Xem Danh Sách Cọc
+                      </button>
+                    )}
                     <button
                       className="dp-outline-btn"
                       onClick={() => navigate(`${basePath}/deposits/floor-map`)}

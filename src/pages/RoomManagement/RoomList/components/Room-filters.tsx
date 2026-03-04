@@ -146,7 +146,7 @@ function Radio({
       id={id}
       name={name}
       checked={checked}
-      onChange={() => { }} // Required for controlled component
+      onChange={() => {}} // Required for controlled component
       onClick={() => onCheckedChange?.(!checked)} // Allow toggle on click
       className={`rf-radio ${className}`}
       {...props}
@@ -280,10 +280,11 @@ export default function RoomFilters({
     if (status === "all") {
       onStatusChange([]);
     } else {
+      // Single-select: clicking the same one deselects, clicking another switches
       if (selectedStatus.includes(status)) {
-        onStatusChange(selectedStatus.filter((s: string) => s !== status));
+        onStatusChange([]);
       } else {
-        onStatusChange([...selectedStatus, status]);
+        onStatusChange([status]);
       }
     }
   };
@@ -388,23 +389,14 @@ export default function RoomFilters({
         </CardHeader>
         <CardContent className="rf-checkbox-group">
           <div className="rf-checkbox-item">
-            <Checkbox
+            <Radio
               id="status-available"
+              name="statusGroup"
               checked={selectedStatus.includes("Available")}
               onCheckedChange={() => handleStatusToggle("Available")}
             />
             <Label htmlFor="status-available" className="rf-checkbox-label">
               Phòng trống
-            </Label>
-          </div>
-          <div className="rf-checkbox-item">
-            <Checkbox
-              id="status-occupied"
-              checked={selectedStatus.includes("Occupied")}
-              onCheckedChange={() => handleStatusToggle("Occupied")}
-            />
-            <Label htmlFor="status-occupied" className="rf-checkbox-label">
-              Đang thuê
             </Label>
           </div>
         </CardContent>

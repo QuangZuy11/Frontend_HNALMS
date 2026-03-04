@@ -169,8 +169,6 @@ export default function RoomTypeDetail({ room }: RoomTypeDetailProps) {
               devices.map((asset) => (
                 <span key={asset._id} className="amenity-tag">
                   {asset.deviceId?.name || "N/A"}
-                  {asset.deviceId?.brand ? ` (${asset.deviceId.brand})` : ""}
-                  {asset.quantity > 1 ? ` x${asset.quantity}` : ""}
                 </span>
               ))
             ) : (

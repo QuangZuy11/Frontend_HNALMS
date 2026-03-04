@@ -1,17 +1,16 @@
 import { useState, useEffect } from "react";
 import {
-    Box,
-    Container,
-    Typography,
-    Paper,
-    Grid,
-    Chip,
-    Divider,
-    Button,
-    CircularProgress,
-    IconButton,
-    Modal,
-    Backdrop,
+  Box,
+  Container,
+  Typography,
+  Paper,
+  Grid,
+  Chip,
+  Button,
+  CircularProgress,
+  IconButton,
+  Modal,
+  Backdrop,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -21,316 +20,838 @@ import CloseIcon from "@mui/icons-material/Close";
 const API_URL = "http://localhost:9999/api";
 
 const ContractDetail = () => {
-    const { id } = useParams();
-    const navigate = useNavigate();
-    const [contract, setContract] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [contract, setContract] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchContract = async () => {
-            try {
-                const res = await axios.get(`${API_URL}/contracts/${id}`);
-                if (res.data.success) {
-                    setContract(res.data.data);
-                }
-            } catch (err) {
-                console.error("Error fetching contract:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchContract();
-    }, [id]);
-
-    if (loading) {
-        return (
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-                <CircularProgress />
-            </Box>
-        );
-    }
-
-    if (!contract) {
-        return (
-            <Container maxWidth="md" sx={{ mt: 4 }}>
-                <Typography variant="h5" color="error">Không tìm thấy hợp đồng.</Typography>
-                <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} sx={{ mt: 2 }}>Quay lại</Button>
-            </Container>
-        );
-    }
-
-    const roomPrice = parseFloat(contract.roomId?.roomTypeId?.currentPrice?.toString() || "0");
-    const genderMap: Record<string, string> = { Male: "Nam", Female: "Nữ", Other: "Khác" };
-
-    const statusColor = (status: string) => {
-        switch (status) {
-            case "active": return "success";
-            case "expired": return "warning";
-            case "terminated": return "error";
-            default: return "default";
+  useEffect(() => {
+    const fetchContract = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/contracts/${id}`);
+        if (res.data.success) {
+          setContract(res.data.data);
         }
+      } catch (err) {
+        console.error("Error fetching contract:", err);
+      } finally {
+        setLoading(false);
+      }
     };
-    const statusLabel = (status: string) => {
-        switch (status) {
-            case "active": return "Đang hiệu lực";
-            case "expired": return "Hết hạn";
-            case "terminated": return "Đã chấm dứt";
-            case "pending": return "Chờ duyệt";
-            default: return status;
-        }
-    };
+    fetchContract();
+  }, [id]);
 
+  if (loading) {
     return (
-        <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-            {/* Header */}
-            <Paper sx={{ p: 2, mb: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)}>Quay lại</Button>
-                <Typography variant="h5" fontWeight="bold">Chi tiết Hợp đồng</Typography>
-                <Chip
-                    label={statusLabel(contract.status)}
-                    color={statusColor(contract.status) as any}
-                    sx={{ fontWeight: "bold", fontSize: "0.9rem" }}
-                />
-            </Paper>
-
-            {/* Contract Document */}
-            <Paper sx={{ p: 4, fontFamily: '"Times New Roman", serif', fontSize: '1.1rem', lineHeight: 1.8 }}>
-                {/* Title */}
-                <Box sx={{ textAlign: "center", mb: 3 }}>
-                    <Typography variant="h6" sx={{ fontFamily: '"Times New Roman", serif', fontWeight: "bold", textTransform: "uppercase" }}>
-                        CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
-                    </Typography>
-                    <Typography sx={{ fontFamily: '"Times New Roman", serif', fontWeight: "bold", fontSize: "1.1rem" }}>
-                        Độc lập - Tự do - Hạnh phúc
-                    </Typography>
-                    <Divider sx={{ width: 200, mx: "auto", my: 1, borderWidth: 1 }} />
-                    <Typography variant="h5" sx={{ fontFamily: '"Times New Roman", serif', fontWeight: "bold", mt: 2 }}>
-                        HỢP ĐỒNG THUÊ PHÒNG
-                    </Typography>
-                    <Typography sx={{ fontFamily: '"Times New Roman", serif', fontStyle: "italic", color: "#666" }}>
-                        Mã HĐ: {contract.contractCode}
-                    </Typography>
-                </Box>
-
-                {/* Party A */}
-                <Typography paragraph sx={{ fontWeight: "bold" }}>BÊN A (Bên cho thuê): HOÀNG NAM BUILDING</Typography>
-
-                {/* Party B */}
-                <Typography paragraph sx={{ fontWeight: "bold", mt: 2 }}>BÊN B (Bên thuê):</Typography>
-                <Box sx={{ pl: 3 }}>
-                    <Grid container spacing={1}>
-                        <Grid size={6}>
-                            <Typography>Họ và tên: <strong>{contract.tenantInfo?.fullname || contract.tenantId?.username || "—"}</strong></Typography>
-                        </Grid>
-                        <Grid size={6}>
-                            <Typography>Giới tính: <strong>{genderMap[contract.tenantInfo?.gender] || "—"}</strong></Typography>
-                        </Grid>
-                        <Grid size={6}>
-                            <Typography>Ngày sinh: <strong>{contract.tenantInfo?.dob ? new Date(contract.tenantInfo.dob).toLocaleDateString("vi-VN") : "—"}</strong></Typography>
-                        </Grid>
-                        <Grid size={6}>
-                            <Typography>CCCD: <strong>{contract.tenantInfo?.cccd || "—"}</strong></Typography>
-                        </Grid>
-                        <Grid size={6}>
-                            <Typography>SĐT: <strong>{contract.tenantId?.phoneNumber || "—"}</strong></Typography>
-                        </Grid>
-                        <Grid size={6}>
-                            <Typography>Email: <strong>{contract.tenantId?.email || "—"}</strong></Typography>
-                        </Grid>
-                        <Grid size={12}>
-                            <Typography>Hộ khẩu thường trú: <strong>{contract.tenantInfo?.address || "—"}</strong></Typography>
-                        </Grid>
-                    </Grid>
-                </Box>
-
-                {/* Agreement */}
-                <Typography paragraph sx={{ mt: 3 }}>
-                    Hai bên cùng thỏa thuận ký kết hợp đồng thuê nhà với các điều khoản sau:
-                </Typography>
-
-                {/* Điều 1 - Room & Financial */}
-                <Typography component="div" sx={{ mb: 2 }}>
-                    <strong>Điều 1:</strong> Bên A đồng ý cho Bên B thuê phòng số <strong>{contract.roomId?.name || "—"}</strong>
-                    {contract.roomId?.roomTypeId?.typeName && (
-                        <> (Loại: <strong>{contract.roomId.roomTypeId.typeName}</strong>)</>
-                    )}.
-                    <br />
-                    - Thời hạn thuê: <strong>{contract.duration}</strong> tháng, bắt đầu từ ngày <strong>{new Date(contract.startDate).toLocaleDateString("vi-VN")}</strong> đến ngày <strong>{new Date(contract.endDate).toLocaleDateString("vi-VN")}</strong>.
-                    <br />
-                    - Giá thuê phòng là: <strong style={{ color: "#d32f2f" }}>{roomPrice.toLocaleString()}</strong> VNĐ/tháng. (Giá này cố định theo loại phòng).
-                    <br />
-                    - Tiền đặt cọc: <strong>{roomPrice.toLocaleString()}</strong> VNĐ (Tương đương 01 tháng tiền phòng).
-                </Typography>
-
-                {/* Điều 2 - Assets */}
-                <Typography component="div" sx={{ mb: 1 }}>
-                    <strong>Điều 2:</strong> Các trang thiết bị/tài sản bàn giao kèm theo phòng:
-                </Typography>
-                <Box sx={{ pl: 3, mb: 2 }}>
-                    {contract.assets && contract.assets.length > 0 ? (
-                        <Grid container spacing={1}>
-                            {contract.assets.map((asset: any, idx: number) => (
-                                <Grid size={{ xs: 12, md: 6 }} key={asset._id || idx}>
-                                    <Typography>
-                                        {idx + 1}. {asset.deviceId?.name || "Thiết bị"}
-                                        {asset.deviceId?.brand ? ` (${asset.deviceId.brand})` : ""}
-                                        {" "} - SL: <strong>{asset.quantity || 1}</strong> cái
-                                        ({asset.condition === "Good" ? "Tốt" : asset.condition})
-                                    </Typography>
-                                </Grid>
-                            ))}
-                        </Grid>
-                    ) : (
-                        <Typography sx={{ fontStyle: "italic" }}>Không có tài sản bàn giao.</Typography>
-                    )}
-                </Box>
-
-                {/* Điều 3 - Services */}
-                <Typography component="div" sx={{ mb: 1 }}>
-                    <strong>Điều 3:</strong> Các dịch vụ hàng tháng đi kèm:
-                </Typography>
-                <Box sx={{ pl: 3, mb: 2 }}>
-                    {contract.services && contract.services.length > 0 ? (
-                        <Grid container spacing={1}>
-                            {contract.services.map((service: any, idx: number) => (
-                                <Grid size={{ xs: 12, md: 6 }} key={service._id || idx}>
-                                    <Typography>
-                                        ✓ {service.name} - <strong>{(service.currentPrice || 0).toLocaleString()}</strong> VNĐ/tháng
-                                    </Typography>
-                                </Grid>
-                            ))}
-                        </Grid>
-                    ) : (
-                        <Typography sx={{ fontStyle: "italic" }}>Không có dịch vụ đi kèm.</Typography>
-                    )}
-                </Box>
-
-                {/* Điều 4 - Co-residents */}
-                <Typography component="div" sx={{ mb: 1 }}>
-                    <strong>Điều 4:</strong> Danh sách người ở cùng ({contract.personInRoom || 1}/{contract.roomId?.roomTypeId?.personMax || "?"} người):
-                </Typography>
-                <Box sx={{ pl: 3, mb: 2 }}>
-                    {contract.coResidents && contract.coResidents.length > 0 ? (
-                        contract.coResidents.map((person: any, idx: number) => (
-                            <Typography key={idx}>
-                                {idx + 1}. {person.fullName || "—"} — CCCD: {person.cccd || "—"}
-                                {person.phone ? ` — SĐT: ${person.phone}` : ""}
-                            </Typography>
-                        ))
-                    ) : (
-                        <Typography sx={{ fontStyle: "italic" }}>Không có người ở cùng.</Typography>
-                    )}
-                </Box>
-
-                {/* Contract Images */}
-                {contract.images && contract.images.length > 0 && (
-                    <>
-                        <Divider sx={{ my: 3 }} />
-                        <Typography variant="h6" sx={{ fontFamily: '"Times New Roman", serif', fontWeight: "bold", mb: 2, color: '#1976d2' }}>
-                            📷 Ảnh Hợp Đồng Bản Cứng
-                        </Typography>
-                        <Grid container spacing={2}>
-                            {contract.images.map((url: string, idx: number) => (
-                                <Grid size={{ xs: 6, sm: 4, md: 3 }} key={idx}>
-                                    <Box
-                                        onClick={() => setLightboxImage(url)}
-                                        sx={{
-                                            cursor: 'pointer',
-                                            border: '1px solid #ddd',
-                                            borderRadius: 2,
-                                            overflow: 'hidden',
-                                            transition: 'transform 0.2s, box-shadow 0.2s',
-                                            '&:hover': {
-                                                transform: 'scale(1.03)',
-                                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                                            }
-                                        }}
-                                    >
-                                        <img
-                                            src={url}
-                                            alt={`Hợp đồng ${idx + 1}`}
-                                            style={{
-                                                width: '100%',
-                                                height: 160,
-                                                objectFit: 'cover',
-                                                display: 'block'
-                                            }}
-                                        />
-                                        <Typography
-                                            variant="caption"
-                                            sx={{
-                                                display: 'block',
-                                                textAlign: 'center',
-                                                py: 0.5,
-                                                bgcolor: '#f5f5f5',
-                                                fontFamily: '"Times New Roman", serif'
-                                            }}
-                                        >
-                                            Ảnh {idx + 1}
-                                        </Typography>
-                                    </Box>
-                                </Grid>
-                            ))}
-                        </Grid>
-                    </>
-                )}
-            </Paper>
-
-            {/* Lightbox Modal */}
-            <Modal
-                open={!!lightboxImage}
-                onClose={() => setLightboxImage(null)}
-                closeAfterTransition
-                slots={{ backdrop: Backdrop }}
-                slotProps={{ backdrop: { sx: { bgcolor: 'rgba(0,0,0,0.85)' } } }}
-            >
-                <Box
-                    sx={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        width: '100vw',
-                        height: '100vh',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        p: 2,
-                    }}
-                    onClick={() => setLightboxImage(null)}
-                >
-                    <IconButton
-                        onClick={() => setLightboxImage(null)}
-                        sx={{
-                            position: 'absolute',
-                            top: 16,
-                            right: 16,
-                            color: '#fff',
-                            bgcolor: 'rgba(255,255,255,0.15)',
-                            '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-                            zIndex: 10,
-                        }}
-                    >
-                        <CloseIcon fontSize="large" />
-                    </IconButton>
-                    {lightboxImage && (
-                        <img
-                            src={lightboxImage}
-                            alt="Ảnh hợp đồng phóng to"
-                            style={{
-                                maxWidth: '90vw',
-                                maxHeight: '90vh',
-                                objectFit: 'contain',
-                                borderRadius: 8,
-                                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                    )}
-                </Box>
-            </Modal>
-        </Container>
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
+        <CircularProgress />
+      </Box>
     );
+  }
+
+  if (!contract) {
+    return (
+      <Container maxWidth="md" sx={{ mt: 4 }}>
+        <Typography variant="h5" color="error">
+          Không tìm thấy hợp đồng.
+        </Typography>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(-1)}
+          sx={{ mt: 2 }}
+        >
+          Quay lại
+        </Button>
+      </Container>
+    );
+  }
+
+  const roomPrice = parseFloat(
+    contract.roomId?.roomTypeId?.currentPrice?.toString() || "0",
+  );
+  const genderMap: Record<string, string> = {
+    Male: "Nam",
+    Female: "Nữ",
+    Other: "Khác",
+  };
+
+  const statusColor = (status: string) => {
+    switch (status) {
+      case "active":
+        return "success";
+      case "expired":
+        return "warning";
+      case "terminated":
+        return "error";
+      default:
+        return "default";
+    }
+  };
+  const statusLabel = (status: string) => {
+    switch (status) {
+      case "active":
+        return "Đang hiệu lực";
+      case "expired":
+        return "Hết hạn";
+      case "terminated":
+        return "Đã chấm dứt";
+      case "pending":
+        return "Chờ duyệt";
+      default:
+        return status;
+    }
+  };
+
+  const formatDateVN = (dateStr: string) => {
+    if (!dateStr) return "—";
+    return new Date(dateStr).toLocaleDateString("vi-VN");
+  };
+
+  // Categorize services
+  const getServiceCategory = (name: string) => {
+    const n = name.toLowerCase();
+    if (n.includes("xe máy") || n.includes("xe đạp")) return "quantity_based";
+    if (
+      n.includes("thang máy") ||
+      n.includes("elevator") ||
+      n.includes("vệ sinh") ||
+      n.includes("điện") ||
+      n.includes("nước") ||
+      n.includes("internet") ||
+      n.includes("wifi")
+    )
+      return "fixed_monthly";
+    return "quantity_based";
+  };
+
+  const getServiceUnit = (name: string) => {
+    const n = name.toLowerCase();
+    if (n.includes("điện")) return "VNĐ/kWh";
+    if (n.includes("nước")) return "VNĐ/m³";
+    return "VNĐ/tháng";
+  };
+
+  const fixedServices = (contract.bookServices || []).filter(
+    (s: any) => getServiceCategory(s.name) === "fixed_monthly",
+  );
+  const optionalServices = (contract.bookServices || []).filter(
+    (s: any) => getServiceCategory(s.name) === "quantity_based",
+  );
+
+  const serifFont = '"Times New Roman", Times, serif';
+
+  return (
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      {/* Top Bar */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(-1)}
+          sx={{ fontFamily: serifFont, textTransform: "none" }}
+        >
+          Quay lại
+        </Button>
+        <Chip
+          label={statusLabel(contract.status)}
+          color={statusColor(contract.status) as any}
+          sx={{ fontWeight: "bold", fontSize: "0.95rem", px: 1 }}
+        />
+      </Box>
+
+      {/* Paper Document */}
+      <Paper
+        elevation={3}
+        sx={{
+          p: 5,
+          minHeight: "800px",
+          mx: "auto",
+          maxWidth: "900px",
+          fontFamily: serifFont,
+        }}
+      >
+        {/* Header */}
+        <Box sx={{ textAlign: "center", mb: 4 }}>
+          <Typography
+            variant="h5"
+            sx={{
+              textTransform: "uppercase",
+              fontWeight: "bold",
+              fontFamily: serifFont,
+            }}
+          >
+            CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+          </Typography>
+          <Typography
+            variant="subtitle1"
+            sx={{
+              fontWeight: "bold",
+              textDecoration: "underline",
+              fontFamily: serifFont,
+            }}
+          >
+            Độc lập - Tự do - Hạnh phúc
+          </Typography>
+          <Typography
+            variant="h4"
+            sx={{
+              mt: 3,
+              fontWeight: "bold",
+              textTransform: "uppercase",
+              fontFamily: serifFont,
+            }}
+          >
+            HỢP ĐỒNG THUÊ NHÀ
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{ fontStyle: "italic", mt: 1, fontFamily: serifFont }}
+          >
+            (Mã HĐ: {contract.contractCode})
+          </Typography>
+        </Box>
+
+        {/* Body */}
+        <Box sx={{ lineHeight: 2, fontSize: "1.1rem", fontFamily: serifFont }}>
+          <Typography paragraph sx={{ fontFamily: serifFont }}>
+            Hôm nay, ngày{" "}
+            {new Date(contract.createdAt || contract.startDate).getDate()} tháng{" "}
+            {new Date(contract.createdAt || contract.startDate).getMonth() + 1}{" "}
+            năm{" "}
+            {new Date(contract.createdAt || contract.startDate).getFullYear()},
+            tại địa chỉ quản lý tòa nhà.
+          </Typography>
+          <Typography
+            paragraph
+            sx={{ fontWeight: "bold", fontFamily: serifFont }}
+          >
+            Chúng tôi gồm có:
+          </Typography>
+
+          {/* BÊN A */}
+          <Box sx={{ mb: 2 }}>
+            <Typography
+              sx={{
+                fontWeight: "bold",
+                textDecoration: "underline",
+                fontFamily: serifFont,
+              }}
+            >
+              BÊN A (Bên cho thuê):
+            </Typography>
+            <Typography sx={{ fontFamily: serifFont }}>
+              Ông/Bà: <strong>QUẢN LÝ TÒA NHÀ HOÀNG NAM</strong>
+            </Typography>
+            <Typography sx={{ fontFamily: serifFont }}>
+              Đại diện cho chủ sở hữu căn hộ.
+            </Typography>
+          </Box>
+
+          {/* BÊN B */}
+          <Box sx={{ mb: 2 }}>
+            <Typography
+              sx={{
+                fontWeight: "bold",
+                textDecoration: "underline",
+                fontFamily: serifFont,
+                mb: 1,
+              }}
+            >
+              BÊN B (Bên thuê):
+            </Typography>
+            <Grid container spacing={1}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography sx={{ fontFamily: serifFont }}>
+                  Họ và tên:{" "}
+                  <strong>
+                    {contract.tenantInfo?.fullname ||
+                      contract.tenantId?.username ||
+                      "—"}
+                  </strong>
+                </Typography>
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography sx={{ fontFamily: serifFont }}>
+                  Sinh ngày:{" "}
+                  <strong>{formatDateVN(contract.tenantInfo?.dob)}</strong>
+                </Typography>
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography sx={{ fontFamily: serifFont }}>
+                  CCCD/CMND: <strong>{contract.tenantInfo?.cccd || "—"}</strong>
+                </Typography>
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography sx={{ fontFamily: serifFont }}>
+                  Giới tính:{" "}
+                  <strong>
+                    {genderMap[contract.tenantInfo?.gender] || "—"}
+                  </strong>
+                </Typography>
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography sx={{ fontFamily: serifFont }}>
+                  Điện thoại:{" "}
+                  <strong>{contract.tenantId?.phoneNumber || "—"}</strong>
+                </Typography>
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography sx={{ fontFamily: serifFont }}>
+                  Email: <strong>{contract.tenantId?.email || "—"}</strong>
+                </Typography>
+              </Grid>
+              <Grid size={12}>
+                <Typography sx={{ fontFamily: serifFont }}>
+                  Hộ khẩu thường trú:{" "}
+                  <strong>{contract.tenantInfo?.address || "—"}</strong>
+                </Typography>
+              </Grid>
+            </Grid>
+          </Box>
+
+          {/* Danh sách người ở cùng */}
+          <Typography
+            paragraph
+            sx={{ mt: 2, fontFamily: serifFont, fontSize: "1.1rem" }}
+          >
+            <strong>Danh sách người ở cùng trong phòng</strong> (
+            {(contract.coResidents?.length || 0) + 1}/
+            {contract.roomId?.roomTypeId?.personMax || "?"} người):
+          </Typography>
+          <Box sx={{ pl: 3 }}>
+            {contract.coResidents && contract.coResidents.length > 0 ? (
+              <Box
+                component="table"
+                sx={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontFamily: serifFont,
+                  fontSize: "1.05rem",
+                  mb: 1.5,
+                }}
+              >
+                <Box component="thead">
+                  <Box component="tr">
+                    {["STT", "Họ và tên", "Số CCCD/CMND"].map((h) => (
+                      <Box
+                        component="th"
+                        key={h}
+                        sx={{
+                          border: "1px solid #333",
+                          py: 0.8,
+                          px: 1.5,
+                          textAlign: "center",
+                          fontWeight: "bold",
+                          bgcolor: "#fafafa",
+                          fontFamily: serifFont,
+                        }}
+                      >
+                        {h}
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+                <Box component="tbody">
+                  {contract.coResidents.map((person: any, idx: number) => (
+                    <Box component="tr" key={idx}>
+                      <Box
+                        component="td"
+                        sx={{
+                          border: "1px solid #333",
+                          py: 0.5,
+                          px: 1.5,
+                          textAlign: "center",
+                          fontFamily: serifFont,
+                          width: "50px",
+                        }}
+                      >
+                        {idx + 1}
+                      </Box>
+                      <Box
+                        component="td"
+                        sx={{
+                          border: "1px solid #333",
+                          py: 0.5,
+                          px: 1.5,
+                          fontFamily: serifFont,
+                        }}
+                      >
+                        {person.fullName || "—"}
+                      </Box>
+                      <Box
+                        component="td"
+                        sx={{
+                          border: "1px solid #333",
+                          py: 0.5,
+                          px: 1.5,
+                          textAlign: "center",
+                          fontFamily: serifFont,
+                        }}
+                      >
+                        {person.cccd || "—"}
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            ) : (
+              <Typography
+                sx={{
+                  fontStyle: "italic",
+                  fontFamily: serifFont,
+                  fontSize: "1.05rem",
+                  mb: 1,
+                }}
+              >
+                Không có người ở cùng.
+              </Typography>
+            )}
+          </Box>
+
+          {/* Agreement */}
+          <Typography paragraph sx={{ fontFamily: serifFont }}>
+            Hai bên cùng thỏa thuận ký kết hợp đồng thuê nhà với các điều khoản
+            sau:
+          </Typography>
+
+          {/* Điều 1 */}
+          <Typography
+            component="div"
+            sx={{ mb: 2, fontFamily: serifFont, fontSize: "1.1rem" }}
+          >
+            <strong>Điều 1:</strong> Bên A đồng ý cho Bên B thuê phòng số{" "}
+            <strong>{contract.roomId?.name || "—"}</strong>
+            {contract.roomId?.roomTypeId?.typeName && (
+              <>
+                {" "}
+                (Loại: <strong>{contract.roomId.roomTypeId.typeName}</strong>)
+              </>
+            )}
+            .
+            <br />- Thời hạn thuê: <strong>{contract.duration}</strong> tháng,
+            bắt đầu từ ngày <strong>{formatDateVN(contract.startDate)}</strong>{" "}
+            đến ngày <strong>{formatDateVN(contract.endDate)}</strong>.
+            <br />- Giá thuê phòng là:{" "}
+            <strong style={{ color: "#d32f2f" }}>
+              {roomPrice.toLocaleString()}
+            </strong>{" "}
+            VNĐ/tháng. (Giá này cố định theo loại phòng).
+            <br />- Tiền đặt cọc: <strong>
+              {roomPrice.toLocaleString()}
+            </strong>{" "}
+            VNĐ (Tương đương 01 tháng tiền phòng).
+            <span
+              style={{
+                color: "#2e7d32",
+                fontWeight: "bold",
+                marginLeft: 8,
+              }}
+            >
+              ✓ Đã cọc
+            </span>
+          </Typography>
+
+          {/* Điều 2 - Thiết bị */}
+          <Typography
+            component="div"
+            sx={{ mb: 1, fontFamily: serifFont, fontSize: "1.1rem" }}
+          >
+            <strong>Điều 2:</strong> Các trang thiết bị, tài sản bàn giao kèm
+            theo phòng:
+          </Typography>
+          <Box sx={{ pl: 3, mb: 2 }}>
+            {contract.assets && contract.assets.length > 0 ? (
+              <Box
+                component="table"
+                sx={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontFamily: serifFont,
+                  fontSize: "1.05rem",
+                  mb: 1,
+                }}
+              >
+                <Box component="thead">
+                  <Box component="tr">
+                    {[
+                      "STT",
+                      "Tên thiết bị",
+                      "Số lượng",
+                      "Đơn vị",
+                      "Tình trạng",
+                    ].map((h) => (
+                      <Box
+                        component="th"
+                        key={h}
+                        sx={{
+                          border: "1px solid #333",
+                          py: 0.8,
+                          px: 1.5,
+                          textAlign: "center",
+                          fontWeight: "bold",
+                          bgcolor: "#fafafa",
+                          fontFamily: serifFont,
+                        }}
+                      >
+                        {h}
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+                <Box component="tbody">
+                  {contract.assets.map((asset: any, index: number) => (
+                    <Box component="tr" key={index}>
+                      <Box
+                        component="td"
+                        sx={{
+                          border: "1px solid #333",
+                          py: 0.5,
+                          px: 1.5,
+                          textAlign: "center",
+                          fontFamily: serifFont,
+                        }}
+                      >
+                        {index + 1}
+                      </Box>
+                      <Box
+                        component="td"
+                        sx={{
+                          border: "1px solid #333",
+                          py: 0.5,
+                          px: 1.5,
+                          fontFamily: serifFont,
+                        }}
+                      >
+                        {asset.deviceId?.name || "Thiết bị"}
+                        {asset.deviceId?.brand
+                          ? ` (${asset.deviceId.brand})`
+                          : ""}
+                      </Box>
+                      <Box
+                        component="td"
+                        sx={{
+                          border: "1px solid #333",
+                          py: 0.5,
+                          px: 1.5,
+                          textAlign: "center",
+                          fontWeight: "bold",
+                          fontFamily: serifFont,
+                        }}
+                      >
+                        {asset.quantity || 1}
+                      </Box>
+                      <Box
+                        component="td"
+                        sx={{
+                          border: "1px solid #333",
+                          py: 0.5,
+                          px: 1.5,
+                          textAlign: "center",
+                          fontFamily: serifFont,
+                        }}
+                      >
+                        {asset.deviceId?.unit || "cái"}
+                      </Box>
+                      <Box
+                        component="td"
+                        sx={{
+                          border: "1px solid #333",
+                          py: 0.5,
+                          px: 1.5,
+                          textAlign: "center",
+                          fontFamily: serifFont,
+                        }}
+                      >
+                        {asset.condition === "Good"
+                          ? "Tốt"
+                          : asset.condition || "Tốt"}
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            ) : (
+              <Typography
+                sx={{
+                  fontStyle: "italic",
+                  fontFamily: serifFont,
+                  fontSize: "1.05rem",
+                }}
+              >
+                Không có thiết bị bàn giao.
+              </Typography>
+            )}
+          </Box>
+
+          {/* Điều 3 - Dịch vụ */}
+          <Typography
+            paragraph
+            sx={{ mt: 2, fontFamily: serifFont, fontSize: "1.1rem" }}
+          >
+            <strong>Điều 3:</strong> Các dịch vụ hàng tháng đi kèm:
+          </Typography>
+          <Box sx={{ pl: 3 }}>
+            {fixedServices.length > 0 || optionalServices.length > 0 ? (
+              <>
+                {fixedServices.length > 0 && (
+                  <Box sx={{ mb: 2.5 }}>
+                    <Typography
+                      sx={{
+                        fontWeight: "bold",
+                        fontFamily: serifFont,
+                        fontSize: "1.1rem",
+                        mb: 0.5,
+                        textDecoration: "underline",
+                      }}
+                    >
+                      a) Dịch vụ cố định hàng tháng:
+                    </Typography>
+                    {fixedServices.map((service: any, idx: number) => (
+                      <Typography
+                        key={idx}
+                        sx={{
+                          fontFamily: serifFont,
+                          fontSize: "1.1rem",
+                          pl: 2,
+                          mb: 0.3,
+                          lineHeight: 1.8,
+                        }}
+                      >
+                        {idx + 1}. {service.name}:{" "}
+                        <strong style={{ color: "#d32f2f" }}>
+                          {(service.currentPrice || 0).toLocaleString()}
+                        </strong>{" "}
+                        {getServiceUnit(service.name)}{" "}
+                        <span style={{ color: "#2e7d32" }}>
+                          (Bắt buộc — tính vào hóa đơn hàng tháng)
+                        </span>
+                      </Typography>
+                    ))}
+                  </Box>
+                )}
+
+                {optionalServices.length > 0 && (
+                  <Box sx={{ mb: 2 }}>
+                    <Typography
+                      sx={{
+                        fontWeight: "bold",
+                        fontFamily: serifFont,
+                        fontSize: "1.1rem",
+                        mb: 0.5,
+                        textDecoration: "underline",
+                      }}
+                    >
+                      b) Dịch vụ tùy chọn đã đăng ký:
+                    </Typography>
+                    {optionalServices.map((service: any, idx: number) => (
+                      <Typography
+                        key={idx}
+                        sx={{
+                          fontFamily: serifFont,
+                          fontSize: "1.1rem",
+                          pl: 2,
+                          mb: 0.3,
+                          lineHeight: 1.8,
+                        }}
+                      >
+                        {idx + 1}. {service.name}:{" "}
+                        <strong style={{ color: "#d32f2f" }}>
+                          {(service.currentPrice || 0).toLocaleString()}
+                        </strong>{" "}
+                        VNĐ/tháng
+                        {service.quantity && service.quantity > 0 && (
+                          <span>
+                            {" "}
+                            × <strong>{service.quantity}</strong> ={" "}
+                            <strong style={{ color: "#d32f2f" }}>
+                              {(
+                                (service.currentPrice || 0) * service.quantity
+                              ).toLocaleString()}
+                            </strong>{" "}
+                            VNĐ/tháng
+                          </span>
+                        )}
+                      </Typography>
+                    ))}
+                  </Box>
+                )}
+              </>
+            ) : (
+              <Typography
+                sx={{
+                  pl: 2,
+                  fontStyle: "italic",
+                  fontFamily: serifFont,
+                }}
+              >
+                Không có dịch vụ đi kèm.
+              </Typography>
+            )}
+          </Box>
+
+          {/* Điều 4 - Quy định chung */}
+          <Typography
+            paragraph
+            sx={{ mt: 2, fontFamily: serifFont, fontSize: "1.1rem" }}
+          >
+            <strong>Điều 4:</strong> Quy định chung:
+          </Typography>
+          <Box sx={{ pl: 3 }}>
+            <Typography
+              sx={{ fontFamily: serifFont, fontSize: "1.05rem", mb: 0.5 }}
+            >
+              - Bên B phải thanh toán tiền thuê phòng và các dịch vụ đúng hạn
+              hàng tháng.
+            </Typography>
+            <Typography
+              sx={{ fontFamily: serifFont, fontSize: "1.05rem", mb: 0.5 }}
+            >
+              - Bên B không được tự ý sửa chữa, thay đổi kết cấu phòng khi chưa
+              có sự đồng ý của Bên A.
+            </Typography>
+            <Typography
+              sx={{ fontFamily: serifFont, fontSize: "1.05rem", mb: 0.5 }}
+            >
+              - Khi hết hạn hợp đồng, nếu không gia hạn, Bên B phải bàn giao lại
+              phòng và các tài sản trong tình trạng tốt.
+            </Typography>
+            <Typography
+              sx={{ fontFamily: serifFont, fontSize: "1.05rem", mb: 0.5 }}
+            >
+              - Hợp đồng được lập thành 02 bản, mỗi bên giữ 01 bản có giá trị
+              pháp lý ngang nhau.
+            </Typography>
+          </Box>
+
+          {/* Chữ ký */}
+        </Box>
+
+        {/* Contract Images */}
+        {contract.images && contract.images.length > 0 && (
+          <Box
+            sx={{
+              mt: 4,
+              pt: 3,
+              borderTop: "1px solid #333",
+            }}
+          >
+            <Typography
+              sx={{
+                fontWeight: "bold",
+                fontFamily: serifFont,
+                fontSize: "1.1rem",
+                mb: 1.5,
+              }}
+            >
+              Ảnh hợp đồng bản cứng (đã ký)
+            </Typography>
+            <Grid container spacing={2}>
+              {contract.images.map((url: string, idx: number) => (
+                <Grid size={{ xs: 6, sm: 4, md: 3 }} key={idx}>
+                  <Box
+                    onClick={() => setLightboxImage(url)}
+                    sx={{
+                      cursor: "pointer",
+                      border: "1px solid #333",
+                      overflow: "hidden",
+                      transition: "transform 0.2s, box-shadow 0.2s",
+                      "&:hover": {
+                        transform: "scale(1.03)",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                      },
+                    }}
+                  >
+                    <img
+                      src={url}
+                      alt={`Hợp đồng ${idx + 1}`}
+                      style={{
+                        width: "100%",
+                        height: 180,
+                        objectFit: "cover",
+                        display: "block",
+                      }}
+                    />
+                    <Typography
+                      sx={{
+                        display: "block",
+                        textAlign: "center",
+                        py: 0.5,
+                        fontFamily: serifFont,
+                        fontSize: "0.9rem",
+                        borderTop: "1px solid #333",
+                      }}
+                    >
+                      Ảnh {idx + 1}
+                    </Typography>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        )}
+      </Paper>
+
+      {/* Lightbox Modal */}
+      <Modal
+        open={!!lightboxImage}
+        onClose={() => setLightboxImage(null)}
+        closeAfterTransition
+        slots={{ backdrop: Backdrop }}
+        slotProps={{ backdrop: { sx: { bgcolor: "rgba(0,0,0,0.85)" } } }}
+      >
+        <Box
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            p: 2,
+          }}
+          onClick={() => setLightboxImage(null)}
+        >
+          <IconButton
+            onClick={() => setLightboxImage(null)}
+            sx={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              color: "#fff",
+              bgcolor: "rgba(255,255,255,0.15)",
+              "&:hover": { bgcolor: "rgba(255,255,255,0.3)" },
+              zIndex: 10,
+            }}
+          >
+            <CloseIcon fontSize="large" />
+          </IconButton>
+          {lightboxImage && (
+            <img
+              src={lightboxImage}
+              alt="Ảnh hợp đồng phóng to"
+              style={{
+                maxWidth: "90vw",
+                maxHeight: "90vh",
+                objectFit: "contain",
+                borderRadius: 8,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
+        </Box>
+      </Modal>
+    </Container>
+  );
 };
 
 export default ContractDetail;
