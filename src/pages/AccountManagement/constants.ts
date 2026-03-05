@@ -21,6 +21,7 @@ export interface AccountItem {
   status: string;
   createdAt?: string;
   fullname?: string | null;
+  roomName?: string | null;
 }
 
 export interface AccountDetail extends AccountItem {

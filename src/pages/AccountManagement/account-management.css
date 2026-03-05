@@ -685,18 +685,6 @@
   font-size: 0.95rem;
 }
 
-.create-account-modal-body .form-group input.input-error,
-.create-account-modal-body .form-group select.input-error {
-  border-color: #dc2626;
-  box-shadow: 0 0 0 1px #fecaca;
-}
-
-.field-error-text {
-  margin: 0.1rem 0 0;
-  font-size: 0.8rem;
-  color: #dc2626;
-}
-
 .readonly-role {
   width: 100%;
   padding: 0.65rem 0.75rem;
