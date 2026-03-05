@@ -317,8 +317,8 @@ export default function ManagerAccountList() {
                       <div className="detail-row"><span className="detail-label">Tên đăng nhập:</span><span className="detail-value">{detailAccount.username}</span></div>
                       <div className="detail-row"><span className="detail-label">Email:</span><span className="detail-value">{detailAccount.email}</span></div>
                       <div className="detail-row"><span className="detail-label">Số điện thoại:</span><span className="detail-value">{detailAccount.phoneNumber || '-'}</span></div>
-                      <div className="detail-row"><span className="detail-label">Vai trò:</span><span className="role-badge">{ROLE_LABELS[detailAccount.role] || detailAccount.role}</span></div>
-                      <div className="detail-row"><span className="detail-label">Trạng thái:</span>
+                      <div className="detail-row detail-row-inline-badge"><span className="detail-label">Vai trò:</span><span className="role-badge">{ROLE_LABELS[detailAccount.role] || detailAccount.role}</span></div>
+                      <div className="detail-row detail-row-inline-badge"><span className="detail-label">Trạng thái:</span>
                         <span className={`status-badge status-${detailAccount.status}`}>{STATUS_LABELS[detailAccount.status] || detailAccount.status}</span>
                       </div>
                       <div className="detail-row"><span className="detail-label">Ngày tạo:</span><span className="detail-value">{formatAccountDate(detailAccount.createdAt)}</span></div>
