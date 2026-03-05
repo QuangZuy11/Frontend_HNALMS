@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Eye } from 'lucide-react';
 import { accountService } from '../../../services/accountService';
 import {
@@ -20,7 +20,7 @@ export default function TenantAccountList() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
-  const [limit] = useState(11);
+  const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
   const { user } = useAuth();
   const isOwner = user?.role === 'owner';
@@ -35,6 +35,30 @@ export default function TenantAccountList() {
       document.body.style.overflow = '';
     };
   }, []);
+
+  // Tính số dòng/trang theo chiều cao để bảng luôn đầy đặn và không cần scroll
+  useEffect(() => {
+    const calculateLimit = () => {
+      const viewportHeight = window.innerHeight;
+      let nextLimit = 8;
+
+      if (viewportHeight >= 1050) nextLimit = 12;
+      else if (viewportHeight >= 950) nextLimit = 11;
+      else if (viewportHeight >= 860) nextLimit = 10;
+      else if (viewportHeight >= 780) nextLimit = 9;
+
+      setLimit((prev) => (prev === nextLimit ? prev : nextLimit));
+    };
+
+    calculateLimit();
+    window.addEventListener('resize', calculateLimit);
+
+    return () => window.removeEventListener('resize', calculateLimit);
+  }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [limit]);
 
   const fetchAccounts = useCallback(async () => {
     try {
@@ -140,6 +164,14 @@ export default function TenantAccountList() {
       return fullname.includes(term) || email.includes(term) || phone.includes(termNorm);
     });
 
+  const paddedAccounts = useMemo<(AccountItem | null)[]>(() => {
+    if (loading || error || accounts.length === 0 || filteredAccounts.length === 0) return filteredAccounts;
+    const padded: (AccountItem | null)[] = [...filteredAccounts];
+    const emptyCount = Math.max(0, limit - padded.length);
+    for (let i = 0; i < emptyCount; i += 1) padded.push(null);
+    return padded;
+  }, [filteredAccounts, limit, loading, error, accounts.length]);
+
   const totalPages = Math.max(1, Math.ceil((total || 0) / limit));
 
   return (
@@ -177,49 +209,63 @@ export default function TenantAccountList() {
             <p>Không tìm thấy cư dân phù hợp với từ khóa tìm kiếm.</p>
           </div>
         ) : (
-          <div className="created-accounts-table-wrap">
-            <table className="created-accounts-table">
-              <thead>
-                <tr>
-                  <th>STT</th>
-                  <th>Họ và tên</th>
-                  <th>Email</th>
-                  <th>Số điện thoại</th>
-                  <th>Trạng thái</th>
-                  <th>Ngày tạo</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredAccounts.map((acc, index) => (
-                  <tr key={acc._id}>
-                    <td>{(page - 1) * limit + index + 1}</td>
-                    <td>{acc.fullname ?? '-'}</td>
-                    <td>{acc.email}</td>
-                    <td>{acc.phoneNumber || '-'}</td>
-                    <td><span className={`status-badge status-${acc.status}`}>{STATUS_LABELS[acc.status] || acc.status}</span></td>
-                    <td>{formatAccountDate(acc.createdAt)}</td>
-                    <td>
-                      <div className="action-buttons">
-                        <button
-                          type="button"
-                          className="btn-view-detail btn-icon"
-                          onClick={() => handleViewDetail(acc._id)}
-                          title="Xem chi tiết"
-                          aria-label="Xem chi tiết"
-                        >
-                          <Eye size={18} />
-                        </button>
-                      </div>
-                    </td>
+          <>
+            <div className="created-accounts-table-wrap created-accounts-table-wrap-fixed">
+              <table className="created-accounts-table created-accounts-table-fixed">
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Họ và tên</th>
+                    <th>Email</th>
+                    <th>Số điện thoại</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày tạo</th>
+                    <th>Thao tác</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="accounts-pagination">
-              <div className="accounts-pagination-info">
-
-              </div>
+                </thead>
+                <tbody>
+                  {paddedAccounts.map((acc, index) => (
+                    <tr key={acc?._id ?? `empty-${index}`} className={!acc ? 'table-empty-row' : ''}>
+                      {acc ? (
+                        <>
+                          <td>{(page - 1) * limit + index + 1}</td>
+                          <td>{acc.fullname ?? '-'}</td>
+                          <td>{acc.email}</td>
+                          <td>{acc.phoneNumber || '-'}</td>
+                          <td><span className={`status-badge status-${acc.status}`}>{STATUS_LABELS[acc.status] || acc.status}</span></td>
+                          <td>{formatAccountDate(acc.createdAt)}</td>
+                          <td>
+                            <div className="action-buttons">
+                              <button
+                                type="button"
+                                className="btn-view-detail btn-icon"
+                                onClick={() => handleViewDetail(acc._id)}
+                                title="Xem chi tiết"
+                                aria-label="Xem chi tiết"
+                              >
+                                <Eye size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td>&nbsp;</td>
+                          <td>&nbsp;</td>
+                          <td>&nbsp;</td>
+                          <td>&nbsp;</td>
+                          <td>&nbsp;</td>
+                          <td>&nbsp;</td>
+                          <td>&nbsp;</td>
+                        </>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="accounts-pagination accounts-pagination-fixed">
+              <div className="accounts-pagination-info" />
               <div className="accounts-pagination-controls">
                 <button
                   type="button"
@@ -248,7 +294,7 @@ export default function TenantAccountList() {
                 </button>
               </div>
             </div>
-          </div>
+          </>
         )}
 
         {showDetailModal && (

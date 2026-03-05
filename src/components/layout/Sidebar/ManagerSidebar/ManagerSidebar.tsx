@@ -55,12 +55,12 @@ const MENU_ITEMS = [
     path: "/manager/invoices",
     subItems: []
   },
-  {
-    title: "Chỉ Số Điện & Nước",
-    icon: <Zap size={20} />,
-    path: "/manager/utilities",
-    subItems: []
-  },
+  // {
+  //   title: "Chỉ Số Điện & Nước",
+  //   icon: <Zap size={20} />,
+  //   path: "/manager/utilities",
+  //   subItems: []
+  // },
   {
     title: "Dịch Vụ",
     icon: <ShoppingBag size={20} />,
