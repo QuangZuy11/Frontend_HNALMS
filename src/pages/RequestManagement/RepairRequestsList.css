@@ -1,26 +1,25 @@
 .repair-requests-page {
-  height: calc(100vh - 70px);
-  padding: 16px 20px;
-  width: 100%;
-  box-sizing: border-box;
+  padding: 10px 35px 35px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  background: linear-gradient(180deg, #f8fbff 0%, #f3f7fc 100%);
+  min-height: calc(100vh - 64px);
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+.repair-requests-page *,
+.repair-requests-page *::before,
+.repair-requests-page *::after {
+  font-family: inherit;
 }
 
 .repair-requests-card {
   background: #ffffff;
-  border-radius: 14px;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-  border: 1px solid #dbe4ee;
-  padding: 20px 22px 20px;
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
   flex: 1;
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .repair-requests-header {
@@ -122,10 +121,10 @@
 .repair-table-wrap {
   flex: 1;
   overflow: auto;
-  border-radius: 12px;
-  border: 1px solid #dbe4ee;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  border-radius: 8px;
+  box-shadow: 0px 3px 3px -2px rgba(0, 0, 0, 0.2), 0px 3px 4px 0px rgba(0, 0, 0, 0.14), 0px 1px 8px 0px rgba(0, 0, 0, 0.12);
   background: #ffffff;
+  margin-bottom: 20px;
 }
 
 .repair-table {
@@ -137,16 +136,17 @@
 
 .repair-table th,
 .repair-table td {
-  padding: 14px 12px;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 16px;
+  border-bottom: 1px solid rgba(224, 224, 224, 1);
   text-align: left;
   vertical-align: middle;
 }
 
 .repair-table th {
-  background-color: #f1f5f9;
-  font-weight: 700;
-  color: #334155;
+  background-color: #e3eafc;
+  font-weight: bold;
+  color: #1e40af;
+  font-size: 15px;
   white-space: nowrap;
 }
 
@@ -154,12 +154,8 @@
   transition: background-color 0.18s ease;
 }
 
-.repair-table tbody tr:nth-child(even) {
-  background-color: #fcfdff;
-}
-
 .repair-table tbody tr:hover {
-  background-color: #eef6ff;
+  background-color: rgba(0, 0, 0, 0.04);
 }
 
 /* Căn giữa cột Thao tác */
@@ -673,56 +669,29 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  margin-top: 10px;
-  padding: 0.9rem 0.25rem 0 0.25rem;
+  padding: 0.85rem 1rem 0.25rem;
   font-size: 0.875rem;
   color: #4b5563;
+  margin-top: auto;
+  border-top: 1px solid #f3f4f6;
 }
 
 .repair-pagination--manager {
-  justify-content: center;
+  justify-content: space-between;
   gap: 0.9rem;
 }
 
 .repair-pagination-info {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   gap: 1rem;
   font-size: 0.875rem;
-  color: #475569;
-}
-
-.repair-pagination--manager .repair-pagination-info {
-  margin-right: 0.5rem;
-  font-size: 0.875rem;
-  color: #475569;
-}
-
-.repair-pagination--manager .repair-pagination-controls {
-  gap: 0.4rem;
-}
-
-.repair-pagination--manager .pagination-arrow-btn {
-  min-width: 40px;
-  height: 36px;
-  border-radius: 6px;
-  background: #f1f5f9;
-  border: 1px solid #d1d5db;
   color: #6b7280;
 }
 
-.repair-pagination--manager .pagination-arrow-btn:hover:not(:disabled) {
-  background: #e5e7eb;
-  border-color: #cbd5e1;
-}
-
-.repair-pagination--manager .pagination-current-page {
-  min-width: 40px;
-  height: 36px;
-  border-radius: 6px;
-  background: #1a237e;
-  border: 1px solid #1a237e;
+.repair-pagination--manager .repair-pagination-info {
+  margin-right: 0;
 }
 
 .repair-pagination-info strong {
@@ -759,50 +728,78 @@
 .repair-pagination-controls {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  gap: 0.35rem;
 }
 
 .pagination-arrow-btn {
-  min-width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  border: 1px solid #cbd5e1;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
   background: #fff;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
-  color: #111827;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  padding: 0 10px;
+  color: #374151;
+  transition: all 0.15s ease;
+  padding: 0;
 }
 
 .pagination-arrow-btn:hover:not(:disabled) {
-  background-color: #f8fafc;
-  border-color: #94a3b8;
+  background: #f3f4f6;
+  border-color: #9ca3af;
 }
 
 .pagination-arrow-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
 .pagination-current-page {
-  min-width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  border: 1px solid #1a237e;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
   background: #1a237e;
+  border: 1px solid #1a237e;
   color: #fff;
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 600;
+  cursor: default;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: default;
-  padding: 0 10px;
+}
+
+.pagination-current-page:hover {
+  background: #303f9f;
+  border-color: #303f9f;
+}
+
+.repair-pagination--manager .pagination-arrow-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+
+.repair-pagination--manager .pagination-arrow-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.repair-pagination--manager .pagination-current-page {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #1a237e;
+  border: 1px solid #1a237e;
+}
+
+.repair-page-arrow {
+  font-size: 1.1rem;
+  font-weight: 700;
 }
 
 .repair-pagination-btn {

@@ -14,22 +14,9 @@ import {
   Box,
   CircularProgress,
   Chip,
-  Button,
-  TextField,
-  MenuItem,
-  Select,
-  FormControl,
-  InputAdornment,
 } from "@mui/material";
-import {
-  Add as AddIcon,
-  Search as SearchIcon,
-  Clear as ClearIcon,
-  NavigateBefore as PrevIcon,
-  NavigateNext as NextIcon,
-  FirstPage as FirstPageIcon,
-  LastPage as LastPageIcon,
-} from "@mui/icons-material";
+import { Add as AddIcon } from "@mui/icons-material";
+import "./DepositRoom.css";
 
 interface Room {
   _id: string;
@@ -170,296 +157,293 @@ const DepositRoom = () => {
   }
 
   return (
-    <Box
-      sx={{
-        p: 4,
-        display: "flex",
-        flexDirection: "column",
-        minHeight: "calc(100vh - 64px)",
-      }}
-    >
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 4,
-        }}
-      >
-        <Typography variant="h4" sx={{ fontWeight: "bold", color: "#1a237e" }}>
-          Danh sách tiền cọc
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate(`${basePath}/deposits/floor-map`)}
-          sx={{
-            bgcolor: "#1a237e",
-            "&:hover": { bgcolor: "#303f9f" },
-            textTransform: "none",
-            fontWeight: 600,
-            px: 3,
-            py: 1,
-          }}
+    <div className="deposit-page">
+      <div className="deposit-card">
+        <div className="deposit-header">
+          <div>
+            <h2>Danh sách tiền cọc</h2>
+            <p className="subtitle">Quản lý tiền cọc phòng tại tòa nhà</p>
+          </div>
+          <button
+            className="deposit-header-btn"
+            onClick={() => navigate(`${basePath}/deposits/floor-map`)}
+          >
+            <AddIcon style={{ fontSize: 20 }} />
+            Tạo Cọc Mới
+          </button>
+        </div>
+
+        {/* Filter Section */}
+        <div className="deposit-filters" style={{ marginBottom: 20 }}>
+          <div className="deposit-filter-wrapper">
+            <label htmlFor="deposit-name" className="deposit-filter-label">
+              Tên:
+            </label>
+            <input
+              type="text"
+              id="deposit-name"
+              className="deposit-filter-input"
+              placeholder="Nhập tên người cọc"
+              value={filterName}
+              onChange={(e) => setFilterName(e.target.value)}
+            />
+          </div>
+          <div className="deposit-filter-wrapper">
+            <label htmlFor="deposit-contact" className="deposit-filter-label">
+              SĐT/Email:
+            </label>
+            <input
+              type="text"
+              id="deposit-contact"
+              className="deposit-filter-input"
+              placeholder="Nhập SĐT hoặc Email"
+              value={filterContact}
+              onChange={(e) => setFilterContact(e.target.value)}
+            />
+          </div>
+          <div className="deposit-filter-wrapper">
+            <label htmlFor="deposit-room" className="deposit-filter-label">
+              Phòng:
+            </label>
+            <input
+              type="text"
+              id="deposit-room"
+              className="deposit-filter-input"
+              placeholder="Nhập số phòng"
+              value={filterRoom}
+              onChange={(e) => setFilterRoom(e.target.value)}
+              style={{ minWidth: 120 }}
+            />
+          </div>
+          <div className="deposit-filter-wrapper">
+            <label htmlFor="deposit-status" className="deposit-filter-label">
+              Trạng thái:
+            </label>
+            <select
+              id="deposit-status"
+              className="deposit-filter-select"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="all">Tất cả</option>
+              <option value="Held">Đang giữ</option>
+              <option value="Refunded">Đã hoàn</option>
+              <option value="Forfeited">Đã phạt</option>
+            </select>
+          </div>
+        </div>
+
+        <TableContainer
+          component={Paper}
+          elevation={3}
+          sx={{ borderRadius: 2, overflow: "hidden", flex: 1 }}
         >
-          Tạo Cọc Mới
-        </Button>
-      </Box>
-
-      {/* Filter Section */}
-      <Box
-        sx={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 1,
-          mb: 2,
-          justifyContent: "flex-end",
-          alignItems: "center",
-        }}
-      >
-        <TextField
-          size="small"
-          placeholder="Tên..."
-          value={filterName}
-          onChange={(e) => setFilterName(e.target.value)}
-          sx={{
-            width: 110,
-            "& .MuiInputBase-input": { py: 0.75, fontSize: 13 },
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: "#94a3b8", fontSize: 16 }} />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <TextField
-          size="small"
-          placeholder="SĐT/Email"
-          value={filterContact}
-          onChange={(e) => setFilterContact(e.target.value)}
-          sx={{
-            width: 110,
-            "& .MuiInputBase-input": { py: 0.75, fontSize: 13 },
-          }}
-        />
-        <TextField
-          size="small"
-          placeholder="Phòng"
-          value={filterRoom}
-          onChange={(e) => setFilterRoom(e.target.value)}
-          sx={{
-            width: 80,
-            "& .MuiInputBase-input": { py: 0.75, fontSize: 13 },
-          }}
-        />
-        <FormControl size="small" sx={{ minWidth: 95 }}>
-          <Select
-            value={filterStatus}
-            displayEmpty
-            onChange={(e) => setFilterStatus(e.target.value)}
-            sx={{ fontSize: 13, "& .MuiSelect-select": { py: 0.75 } }}
-          >
-            <MenuItem value="all" sx={{ fontSize: 13 }}>
-              Trạng thái
-            </MenuItem>
-            <MenuItem value="Held" sx={{ fontSize: 13 }}>
-              Đang giữ
-            </MenuItem>
-            <MenuItem value="Refunded" sx={{ fontSize: 13 }}>
-              Đã hoàn
-            </MenuItem>
-            <MenuItem value="Forfeited" sx={{ fontSize: 13 }}>
-              Đã phạt
-            </MenuItem>
-          </Select>
-        </FormControl>
-        {(filterName ||
-          filterContact ||
-          filterRoom ||
-          filterStatus !== "all") && (
-          <Button
-            size="small"
-            onClick={() => {
-              setFilterName("");
-              setFilterContact("");
-              setFilterRoom("");
-              setFilterStatus("all");
-            }}
-            sx={{ minWidth: "auto", p: 0.5, color: "#94a3b8" }}
-          >
-            <ClearIcon sx={{ fontSize: 18 }} />
-          </Button>
-        )}
-      </Box>
-
-      <TableContainer
-        component={Paper}
-        elevation={3}
-        sx={{ borderRadius: 2, overflow: "hidden", flex: 1 }}
-      >
-        <Table sx={{ minWidth: 650 }}>
-          <TableHead sx={{ bgcolor: "#f5f5f5" }}>
-            <TableRow>
-              <TableCell sx={{ fontWeight: "bold" }}>STT</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Tên người cọc</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>SĐT / Email</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Phòng</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Số tiền cọc</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Ngày cọc</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Trạng thái</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {paginatedDeposits.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
-                  Không có dữ liệu cọc phòng
-                </TableCell>
-              </TableRow>
-            ) : (
-              paginatedDeposits.map((deposit, index) => (
-                <TableRow
-                  key={deposit._id}
+          <Table sx={{ minWidth: 650 }}>
+            <TableHead>
+              <TableRow sx={{ bgcolor: "#e3eafc" }}>
+                <TableCell
                   sx={{
-                    "&:last-child td, &:last-child th": { border: 0 },
-                    "&:hover": { bgcolor: "#f9f9f9" },
+                    fontWeight: "bold",
+                    color: "#1e40af",
+                    fontSize: 15,
+                    border: 0,
                   }}
                 >
-                  <TableCell>
-                    {(currentPage - 1) * ROWS_PER_PAGE + index + 1}
+                  STT
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: "bold",
+                    color: "#1e40af",
+                    fontSize: 15,
+                    border: 0,
+                  }}
+                >
+                  Tên người cọc
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: "bold",
+                    color: "#1e40af",
+                    fontSize: 15,
+                    border: 0,
+                  }}
+                >
+                  SĐT / Email
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: "bold",
+                    color: "#1e40af",
+                    fontSize: 15,
+                    border: 0,
+                  }}
+                >
+                  Phòng
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: "bold",
+                    color: "#1e40af",
+                    fontSize: 15,
+                    border: 0,
+                  }}
+                >
+                  Số tiền cọc
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: "bold",
+                    color: "#1e40af",
+                    fontSize: 15,
+                    border: 0,
+                  }}
+                >
+                  Ngày cọc
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: "bold",
+                    color: "#1e40af",
+                    fontSize: 15,
+                    border: 0,
+                  }}
+                >
+                  Trạng thái
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {paginatedDeposits.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+                    Không có dữ liệu cọc phòng
                   </TableCell>
-                  <TableCell>{deposit.name}</TableCell>
-                  <TableCell>
-                    {deposit.phone}
-                    <br />
-                    <Typography variant="caption" color="text.secondary">
-                      {deposit.email}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>{deposit.room?.name || "N/A"}</TableCell>
-                  <TableCell sx={{ fontWeight: "medium", color: "error.main" }}>
-                    {formatCurrency(deposit.amount)}
-                  </TableCell>
-                  <TableCell>
-                    {deposit.createdDate
-                      ? format(
+                </TableRow>
+              ) : (
+                paginatedDeposits.map((deposit, index) => (
+                  <TableRow
+                    key={deposit._id}
+                    sx={{
+                      "&:last-child td, &:last-child th": { border: 0 },
+                      "&:hover": { bgcolor: "#f9f9f9" },
+                    }}
+                  >
+                    <TableCell>
+                      {(currentPage - 1) * ROWS_PER_PAGE + index + 1}
+                    </TableCell>
+                    <TableCell>{deposit.name}</TableCell>
+                    <TableCell>
+                      {deposit.phone}
+                      <br />
+                      <Typography variant="caption" color="text.secondary">
+                        {deposit.email}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>{deposit.room?.name || "N/A"}</TableCell>
+                    <TableCell
+                      sx={{ fontWeight: "medium", color: "error.main" }}
+                    >
+                      {formatCurrency(deposit.amount)}
+                    </TableCell>
+                    <TableCell>
+                      {deposit.createdDate
+                        ? format(
                           new Date(deposit.createdDate),
                           "dd/MM/yyyy HH:mm",
                         )
-                      : deposit.createdAt
-                        ? format(
+                        : deposit.createdAt
+                          ? format(
                             new Date(deposit.createdAt),
                             "dd/MM/yyyy HH:mm",
                           )
-                        : "N/A"}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={
-                        deposit.status === "Held"
-                          ? "Đang giữ"
-                          : deposit.status === "Refunded"
-                            ? "Đã hoàn"
-                            : "Đã phạt"
-                      }
-                      color={getStatusColor(deposit.status) as any}
-                      size="small"
-                      sx={{ fontWeight: "bold" }}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                          : "N/A"}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={
+                          deposit.status === "Held"
+                            ? "Đang giữ"
+                            : deposit.status === "Refunded"
+                              ? "Đã hoàn"
+                              : "Đã phạt"
+                        }
+                        color={getStatusColor(deposit.status) as any}
+                        size="small"
+                        sx={{ fontWeight: "bold" }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-      {/* Pagination - always at bottom */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: 1,
-          py: 2,
-          mt: "auto",
-        }}
-      >
-        <Typography variant="body2" color="text.secondary" sx={{ mr: 2 }}>
-          Tổng: {filteredDeposits.length} bản ghi | Trang {currentPage}/
-          {totalPages}
-        </Typography>
-        <Button
-          size="small"
-          variant="outlined"
-          disabled={currentPage === 1}
-          onClick={() => setCurrentPage(1)}
-          sx={{ minWidth: 36, p: 0.5 }}
-        >
-          <FirstPageIcon fontSize="small" />
-        </Button>
-        <Button
-          size="small"
-          variant="outlined"
-          disabled={currentPage === 1}
-          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          sx={{ minWidth: 36, p: 0.5 }}
-        >
-          <PrevIcon fontSize="small" />
-        </Button>
-
-        {(() => {
-          const pages: number[] = [];
-          let start = Math.max(1, currentPage - 2);
-          let end = Math.min(totalPages, currentPage + 2);
-          if (currentPage <= 2) end = Math.min(totalPages, 5);
-          if (currentPage >= totalPages - 1)
-            start = Math.max(1, totalPages - 4);
-          for (let i = start; i <= end; i++) pages.push(i);
-          return pages.map((page) => (
-            <Button
-              key={page}
-              size="small"
-              variant={page === currentPage ? "contained" : "outlined"}
-              onClick={() => setCurrentPage(page)}
-              sx={{
-                minWidth: 36,
-                p: 0.5,
-                ...(page === currentPage && {
-                  bgcolor: "#1a237e",
-                  "&:hover": { bgcolor: "#303f9f" },
-                }),
-              }}
+        {/* Pagination */}
+        <div className="deposit-pagination">
+          <span className="deposit-pagination-info">
+            Tổng: <strong>{filteredDeposits.length}</strong> bản ghi &nbsp;|&nbsp; Trang <strong>{currentPage}</strong>/{totalPages}
+          </span>
+          <div className="deposit-pagination-controls">
+            <button
+              className="deposit-page-btn deposit-page-arrow"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(1)}
+              title="Trang đầu"
             >
-              {page}
-            </Button>
-          ));
-        })()}
+              «
+            </button>
+            <button
+              className="deposit-page-btn deposit-page-arrow"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              title="Trang trước"
+            >
+              ‹
+            </button>
 
-        <Button
-          size="small"
-          variant="outlined"
-          disabled={currentPage === totalPages}
-          onClick={() =>
-            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-          }
-          sx={{ minWidth: 36, p: 0.5 }}
-        >
-          <NextIcon fontSize="small" />
-        </Button>
-        <Button
-          size="small"
-          variant="outlined"
-          disabled={currentPage === totalPages}
-          onClick={() => setCurrentPage(totalPages)}
-          sx={{ minWidth: 36, p: 0.5 }}
-        >
-          <LastPageIcon fontSize="small" />
-        </Button>
-      </Box>
-    </Box>
+            {(() => {
+              const pages: number[] = [];
+              let start = Math.max(1, currentPage - 2);
+              let end = Math.min(totalPages, currentPage + 2);
+              if (currentPage <= 2) end = Math.min(totalPages, 5);
+              if (currentPage >= totalPages - 1)
+                start = Math.max(1, totalPages - 4);
+              for (let i = start; i <= end; i++) pages.push(i);
+              return pages.map((page) => (
+                <button
+                  key={page}
+                  className={`deposit-page-btn ${page === currentPage ? "deposit-page-active" : ""}`}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </button>
+              ));
+            })()}
+
+            <button
+              className="deposit-page-btn deposit-page-arrow"
+              disabled={currentPage === totalPages}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
+              title="Trang sau"
+            >
+              ›
+            </button>
+            <button
+              className="deposit-page-btn deposit-page-arrow"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(totalPages)}
+              title="Trang cuối"
+            >
+              »
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

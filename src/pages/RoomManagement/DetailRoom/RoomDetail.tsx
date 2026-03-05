@@ -175,7 +175,9 @@ export default function RoomDetail() {
             {error || "Không tìm thấy phòng"}
           </p>
           <button
-            onClick={() => navigate("/rooms")}
+            onClick={() => {
+              navigate("/rooms");
+            }}
             className="mt-4 btn-primary"
           >
             Quay lại danh sách
@@ -191,7 +193,12 @@ export default function RoomDetail() {
     <main className="room-detail-page">
       <div className="room-detail-container">
         {/* Back Button */}
-        <button onClick={() => navigate("/rooms")} className="back-button">
+        <button
+          onClick={() => {
+            navigate("/rooms");
+          }}
+          className="back-button"
+        >
           <ChevronLeft className="icon" />
           Quay lại danh sách
         </button>
@@ -267,9 +274,8 @@ export default function RoomDetail() {
                   {room.images.map((image, index) => (
                     <div
                       key={index}
-                      className={`thumbnail-wrapper ${
-                        index === currentImageIndex ? "active" : ""
-                      }`}
+                      className={`thumbnail-wrapper ${index === currentImageIndex ? "active" : ""
+                        }`}
                       onClick={() => setCurrentImageIndex(index)}
                     >
                       <img

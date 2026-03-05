@@ -456,27 +456,6 @@ export default function ManagerDashboard() {
           </div>
         </div>
       </section>
-
-      {/* Alerts */}
-      {alerts.length > 0 && (
-        <section className="alerts-section">
-          <h3>Cảnh Báo & Thông Báo</h3>
-          <div className="alerts-list">
-            {alerts.map((alert, index) => {
-              const Icon = alert.icon;
-              return (
-                <div key={index} className={`alert-item alert-${alert.type}`}>
-                  <Icon className="alert-icon" />
-                  <div className="alert-content">
-                    <span className="alert-title">{alert.title}</span>
-                    <span className="alert-message">{alert.message}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
     </div>
   );
 }
