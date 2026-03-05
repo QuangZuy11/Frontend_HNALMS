@@ -12,6 +12,11 @@ interface CreateFormData {
   role: 'manager' | 'accountant';
 }
 
+type CreateFormErrors = Partial<Record<keyof CreateFormData, string>>;
+
+const phoneRegex = /^0\d{9}$/;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function ManagerAccountList() {
   const [accounts, setAccounts] = useState<AccountItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,6 +41,7 @@ export default function ManagerAccountList() {
   const [createSaving, setCreateSaving] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
+  const [createFormErrors, setCreateFormErrors] = useState<CreateFormErrors>({});
   const tableRef = useRef<HTMLDivElement | null>(null);
 
   const fetchAccounts = useCallback(async () => {
@@ -159,6 +165,7 @@ export default function ManagerAccountList() {
     setCreateFormData({ username: '', phoneNumber: '', email: '', password: '', role: 'manager' });
     setCreateError(null);
     setCreateSuccess(null);
+    setCreateFormErrors({});
   };
 
   const closeCreateModal = () => {
@@ -166,17 +173,67 @@ export default function ManagerAccountList() {
     setCreateFormData({ username: '', phoneNumber: '', email: '', password: '', role: 'manager' });
     setCreateError(null);
     setCreateSuccess(null);
+    setCreateFormErrors({});
+  };
+
+  const validateCreateField = (name: keyof CreateFormData, value: string): string => {
+    const trimmedValue = value.trim();
+    if (name === 'role') {
+      if (!trimmedValue) return 'Vui lòng chọn vai trò';
+      return '';
+    }
+
+    if (!trimmedValue) {
+      return 'Trường này là bắt buộc';
+    }
+
+    switch (name) {
+      case 'username':
+        if (trimmedValue.length < 3) return 'Tên đăng nhập phải có ít nhất 3 ký tự';
+        if (/\s/.test(trimmedValue)) return 'Tên đăng nhập không được chứa khoảng trắng';
+        return '';
+      case 'phoneNumber':
+        if (!phoneRegex.test(trimmedValue)) return 'Số điện thoại phải gồm 10 số và bắt đầu bằng 0';
+        return '';
+      case 'email':
+        if (!emailRegex.test(trimmedValue)) return 'Email không hợp lệ';
+        return '';
+      case 'password':
+        if (trimmedValue.length < 6) return 'Mật khẩu phải có ít nhất 6 ký tự';
+        return '';
+      default:
+        return '';
+    }
+  };
+
+  const validateCreateForm = (): boolean => {
+    const nextErrors: CreateFormErrors = {};
+    (Object.keys(createFormData) as (keyof CreateFormData)[]).forEach((key) => {
+      const value = createFormData[key] ?? '';
+      const errorMsg = validateCreateField(key, String(value));
+      if (errorMsg) nextErrors[key] = errorMsg;
+    });
+    setCreateFormErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
   const handleCreateChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setCreateFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === 'username' || name === 'phoneNumber' || name === 'email' || name === 'password' || name === 'role') {
+      const fieldName = name as keyof CreateFormData;
+      const errorMsg = validateCreateField(fieldName, value);
+      setCreateFormErrors((prev) => ({ ...prev, [fieldName]: errorMsg || undefined }));
+    }
   };
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreateError(null);
     setCreateSuccess(null);
+    if (!validateCreateForm()) {
+      return;
+    }
     try {
       setCreateSaving(true);
       await accountService.createManagerOrAccountant({
@@ -356,26 +413,80 @@ export default function ManagerAccountList() {
                 <form onSubmit={handleCreateSubmit} className="create-account-form">
                   <div className="form-group">
                     <label htmlFor="create-username">Tên đăng nhập *</label>
-                    <input type="text" id="create-username" name="username" value={createFormData.username} onChange={handleCreateChange} required minLength={3} />
+                    <input
+                      type="text"
+                      id="create-username"
+                      name="username"
+                      value={createFormData.username}
+                      onChange={handleCreateChange}
+                      required
+                      minLength={3}
+                      className={createFormErrors.username ? 'input-error' : ''}
+                      aria-invalid={!!createFormErrors.username}
+                    />
+                    {createFormErrors.username && <p className="field-error-text">{createFormErrors.username}</p>}
                   </div>
                   <div className="form-group">
                     <label htmlFor="create-phoneNumber">Số điện thoại *</label>
-                    <input type="tel" id="create-phoneNumber" name="phoneNumber" value={createFormData.phoneNumber} onChange={handleCreateChange} placeholder="0901234567" required />
+                    <input
+                      type="tel"
+                      id="create-phoneNumber"
+                      name="phoneNumber"
+                      value={createFormData.phoneNumber}
+                      onChange={handleCreateChange}
+                      placeholder="0901234567"
+                      required
+                      className={createFormErrors.phoneNumber ? 'input-error' : ''}
+                      aria-invalid={!!createFormErrors.phoneNumber}
+                    />
+                    {createFormErrors.phoneNumber && <p className="field-error-text">{createFormErrors.phoneNumber}</p>}
                   </div>
                   <div className="form-group">
                     <label htmlFor="create-email">Email *</label>
-                    <input type="email" id="create-email" name="email" value={createFormData.email} onChange={handleCreateChange} placeholder="email@example.com" required />
+                    <input
+                      type="email"
+                      id="create-email"
+                      name="email"
+                      value={createFormData.email}
+                      onChange={handleCreateChange}
+                      placeholder="email@example.com"
+                      required
+                      className={createFormErrors.email ? 'input-error' : ''}
+                      aria-invalid={!!createFormErrors.email}
+                    />
+                    {createFormErrors.email && <p className="field-error-text">{createFormErrors.email}</p>}
                   </div>
                   <div className="form-group">
                     <label htmlFor="create-password">Mật khẩu *</label>
-                    <input type="password" id="create-password" name="password" value={createFormData.password} onChange={handleCreateChange} placeholder="Ít nhất 6 ký tự" required minLength={6} />
+                    <input
+                      type="password"
+                      id="create-password"
+                      name="password"
+                      value={createFormData.password}
+                      onChange={handleCreateChange}
+                      placeholder="Ít nhất 6 ký tự"
+                      required
+                      minLength={6}
+                      className={createFormErrors.password ? 'input-error' : ''}
+                      aria-invalid={!!createFormErrors.password}
+                    />
+                    {createFormErrors.password && <p className="field-error-text">{createFormErrors.password}</p>}
                   </div>
                   <div className="form-group">
                     <label htmlFor="create-role">Vai trò *</label>
-                    <select id="create-role" name="role" value={createFormData.role} onChange={handleCreateChange} required>
+                    <select
+                      id="create-role"
+                      name="role"
+                      value={createFormData.role}
+                      onChange={handleCreateChange}
+                      required
+                      className={createFormErrors.role ? 'input-error' : ''}
+                      aria-invalid={!!createFormErrors.role}
+                    >
                       <option value="manager">Quản lý</option>
                       <option value="accountant">Kế toán</option>
                     </select>
+                    {createFormErrors.role && <p className="field-error-text">{createFormErrors.role}</p>}
                   </div>
                   <div className="form-actions">
                     <button type="button" onClick={closeCreateModal} className="btn-secondary" disabled={createSaving}>Hủy</button>

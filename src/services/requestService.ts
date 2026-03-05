@@ -56,7 +56,7 @@ export const requestService = {
   // Cập nhật trạng thái yêu cầu sửa chữa
   updateRepairStatus: async (
     requestId: string,
-    status: 'Pending' | 'Processing' | 'Done' | 'Unpair',
+    status: 'Pending' | 'Processing' | 'Done' | 'Unpaid',
     cost?: number,
     notes?: string,
     invoice?: {

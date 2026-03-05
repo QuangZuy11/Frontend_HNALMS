@@ -72,7 +72,7 @@ export default function RepairRequestsList() {
   // không cho sửa tay nữa nên bỏ modal chỉnh sửa cost.
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<
-    'ALL' | 'Pending' | 'Processing' | 'Unpair' | 'Done'
+    'ALL' | 'Pending' | 'Processing' | 'Unpaid' | 'Done' | 'Paid'
   >(
     'ALL',
   );
@@ -169,10 +169,31 @@ export default function RepairRequestsList() {
     });
   };
 
+  const canTransitionStatus = (
+    current: 'Pending' | 'Processing' | 'Done' | 'Unpaid' | 'Paid',
+    target: 'Pending' | 'Processing' | 'Done' | 'Unpaid' | 'Paid',
+  ) => {
+    const order: Array<'Pending' | 'Processing' | 'Done' | 'Unpaid' | 'Paid'> = [
+      'Pending',
+      'Processing',
+      'Done',
+      'Unpaid',
+      'Paid',
+    ];
+    const currentIndex = order.indexOf(current);
+    const targetIndex = order.indexOf(target);
+
+    // Không cho lùi trạng thái hoặc nhảy cóc
+    // Chỉ cho phép: giữ nguyên hoặc tiến đúng 1 bước
+    if (currentIndex === -1 || targetIndex === -1) return false;
+    return targetIndex === currentIndex || targetIndex === currentIndex + 1;
+  };
+
   const getStatusLabel = (request: RepairRequest) => {
     if (request.status === 'Pending') return 'Chờ xử lý';
     if (request.status === 'Processing') return 'Đang xử lý';
-    if (request.status === 'Unpair') return 'Chờ thanh toán';
+    if (request.status === 'Unpaid') return 'Chờ thanh toán';
+    if (request.status === 'Paid') return 'Đã thanh toán';
     return 'Đã xử lý';
   };
 
@@ -190,7 +211,7 @@ export default function RepairRequestsList() {
 
   const handleUpdateStatus = async (
     request: RepairRequest,
-    nextStatus: 'Pending' | 'Processing' | 'Done' | 'Unpair',
+    nextStatus: 'Pending' | 'Processing' | 'Done' | 'Unpaid',
   ) => {
     // Nếu chuyển sang "Đã xử lý", hiện modal chọn loại xử lý (có phí / miễn phí)
     if (nextStatus === 'Done') {
@@ -604,22 +625,24 @@ export default function RepairRequestsList() {
                 id="status-filter"
                 className="repair-filter-select"
                 value={statusFilter}
-                onChange={(e) =>
-                  setStatusFilter(
-                    e.target.value as
-                    | 'ALL'
-                    | 'Pending'
-                    | 'Processing'
-                    | 'Done'
-                    | 'Unpair',
-                  )
-                }
+                    onChange={(e) =>
+                      setStatusFilter(
+                        e.target.value as
+                        | 'ALL'
+                        | 'Pending'
+                        | 'Processing'
+                        | 'Done'
+                        | 'Unpaid'
+                        | 'Paid',
+                      )
+                    }
               >
                 <option value="ALL">Tất cả</option>
                 <option value="Pending">Chờ xử lý</option>
                 <option value="Processing">Đang xử lý</option>
                 <option value="Done">Đã xử lý</option>
-                <option value="Unpair">Chờ thanh toán</option>
+                <option value="Unpaid">Chờ thanh toán</option>
+                <option value="Paid">Đã thanh toán</option>
               </select>
             </div>
           </div>
@@ -875,34 +898,50 @@ export default function RepairRequestsList() {
                           | 'Pending'
                           | 'Processing'
                           | 'Done'
-                          | 'Unpair',
+                          | 'Unpaid',
                         )
                       }
                       disabled={
                         updatingId === selectedRequest._id ||
                         selectedRequest.status === 'Done' ||
-                        selectedRequest.status === 'Unpair'
+                        selectedRequest.status === 'Unpaid' ||
+                        selectedRequest.status === 'Paid'
                       }
                     >
-                      <option value="Pending" disabled={selectedRequest.status !== 'Pending'}>
+                      <option
+                        value="Pending"
+                        disabled={
+                          !canTransitionStatus(
+                            selectedRequest.status as 'Pending' | 'Processing' | 'Done' | 'Unpaid' | 'Paid',
+                            'Pending',
+                          )
+                        }
+                      >
                         Chờ xử lý
                       </option>
                       <option
                         value="Processing"
                         disabled={
-                          selectedRequest.status === 'Done' ||
-                          selectedRequest.status === 'Unpair'
+                          !canTransitionStatus(
+                            selectedRequest.status as 'Pending' | 'Processing' | 'Done' | 'Unpaid' | 'Paid',
+                            'Processing',
+                          )
                         }
                       >
                         Đang xử lý
                       </option>
                       <option
                         value="Done"
-                        disabled={selectedRequest.status === 'Unpair'}
+                        disabled={
+                          !canTransitionStatus(
+                            selectedRequest.status as 'Pending' | 'Processing' | 'Done' | 'Unpaid' | 'Paid',
+                            'Done',
+                          )
+                        }
                       >
                         Đã xử lý
                       </option>
-                      <option value="Unpair" disabled>
+                      <option value="Unpaid" disabled>
                         Chờ thanh toán
                       </option>
                     </select>

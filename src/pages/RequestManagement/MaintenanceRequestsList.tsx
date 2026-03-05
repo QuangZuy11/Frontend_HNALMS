@@ -9,7 +9,7 @@ interface RepairRequest {
   type: 'Sửa chữa' | 'Bảo trì' | string;
   description: string;
   images: string[];
-  status: 'Pending' | 'Processing' | 'Done' | 'Unpair' | string;
+  status: 'Pending' | 'Processing' | 'Done' | 'Unpaid' | string;
   createdDate?: string;
   paymentType?: 'REVENUE' | 'EXPENSE' | null;
   cost?: number;
@@ -54,7 +54,7 @@ export default function MaintenanceRequestsList() {
     financialAmount: '',
   });
   const [statusFilter, setStatusFilter] = useState<
-    'ALL' | 'Pending' | 'Processing' | 'Unpair' | 'Done'
+    'ALL' | 'Pending' | 'Processing' | 'Unpaid' | 'Done'
   >('ALL');
   const [roomSearch, setRoomSearch] = useState<string>('');
   const [tenantSearch, setTenantSearch] = useState<string>('');
@@ -126,7 +126,7 @@ export default function MaintenanceRequestsList() {
   const getStatusLabel = (request: RepairRequest) => {
     if (request.status === 'Pending') return 'Chờ xử lý';
     if (request.status === 'Processing') return 'Đang xử lý';
-    if (request.status === 'Unpair') return 'Chờ thanh toán';
+    if (request.status === 'Unpaid') return 'Chờ thanh toán';
     return 'Đã xử lý';
   };
 
@@ -412,7 +412,7 @@ export default function MaintenanceRequestsList() {
                     | 'Pending'
                     | 'Processing'
                     | 'Done'
-                    | 'Unpair',
+                    | 'Unpaid',
                   )
                 }
               >
@@ -420,7 +420,7 @@ export default function MaintenanceRequestsList() {
                 <option value="Pending">Chờ xử lý</option>
                 <option value="Processing">Đang xử lý</option>
                 <option value="Done">Đã xử lý</option>
-                <option value="Unpair">Chờ thanh toán</option>
+                <option value="Unpaid">Chờ thanh toán</option>
               </select>
             </div>
           </div>
