@@ -5,11 +5,20 @@ import {
     Building2,
     Users,
     FileText,
-
     BarChart3,
     Bell,
     ChevronDown,
     ChevronRight,
+    DoorOpen,
+    Settings,
+    BookOpen,
+    Cpu,
+    Layers,
+    Star,
+    TrendingUp,
+    DollarSign,
+    Activity,
+    Wrench,
 } from 'lucide-react';
 import './OwnerSidebar.css';
 import logo from '../../../../assets/images/Logo.png';
@@ -17,7 +26,7 @@ import logo from '../../../../assets/images/Logo.png';
 // Định nghĩa cấu trúc menu cho Chủ sở hữu
 const MENU_ITEMS = [
     {
-        title: "Tổng quan", //Dashboard
+        title: "Tổng quan",
         icon: <LayoutDashboard size={20} />,
         path: "/owner",
         subItems: []
@@ -27,12 +36,12 @@ const MENU_ITEMS = [
         icon: <Building2 size={20} />,
         path: "/owner/buildings",
         subItems: [
-            { title: "Danh sách phòng", path: "/owner/rooms" },
-            { title: "Cấu hình tòa nhà", path: "/owner/building-config" }, // tầng & loại phòng 
-            { title: "Nội quy tòa nhà", path: "/owner/rules" },
-            { title: "Danh sách thiết bị", path: "/owner/devices" },
-            { title: "Thiết bị theo loại phòng", path: "/owner/room-devices" },
-            { title: "Danh sách dịch vụ", path: "/owner/services" },
+            { title: "Danh sách phòng", path: "/owner/rooms", icon: <DoorOpen size={16} /> },
+            { title: "Cấu hình tòa nhà", path: "/owner/building-config", icon: <Settings size={16} /> },
+            { title: "Nội quy tòa nhà", path: "/owner/rules", icon: <BookOpen size={16} /> },
+            { title: "Danh sách thiết bị", path: "/owner/devices", icon: <Cpu size={16} /> },
+            { title: "Thiết bị theo loại phòng", path: "/owner/room-devices", icon: <Layers size={16} /> },
+            { title: "Danh sách dịch vụ", path: "/owner/services", icon: <Star size={16} /> },
         ]
     },
     {
@@ -46,20 +55,19 @@ const MENU_ITEMS = [
         icon: <FileText size={20} />,
         path: "/owner/contracts",
         subItems: [
-            { title: "Danh sách hợp đồng", path: "/owner/contracts/list" },
-            { title: "Danh sách cư dân", path: "/owner/contracts/tenants" },
+            { title: "Danh sách hợp đồng", path: "/owner/contracts/list", icon: <FileText size={16} /> },
+            { title: "Danh sách cư dân", path: "/owner/contracts/tenants", icon: <Users size={16} /> },
         ]
     },
-
     {
         title: "Báo cáo & Thống kê",
         icon: <BarChart3 size={20} />,
         path: "/owner/reports",
         subItems: [
-            { title: "Dòng tiền", path: "/owner/reports/summary" },
-            { title: "Doanh thu", path: "/owner/reports/revenue" },
-            { title: "Hiệu suất", path: "/owner/reports/occupancy" },
-            { title: "Sửa chữa & Bảo trì", path: "/owner/reports/maintenance" },
+            { title: "Dòng tiền", path: "/owner/reports/summary", icon: <TrendingUp size={16} /> },
+            { title: "Doanh thu", path: "/owner/reports/revenue", icon: <DollarSign size={16} /> },
+            { title: "Hiệu suất", path: "/owner/reports/occupancy", icon: <Activity size={16} /> },
+            { title: "Sửa chữa & Bảo trì", path: "/owner/reports/maintenance", icon: <Wrench size={16} /> },
         ]
     },
     {
@@ -94,7 +102,10 @@ const OwnerSidebar = () => {
                 <nav className="sidebar-nav">
                     {MENU_ITEMS.map((item, index) => {
                         const hasSubItems = item.subItems && item.subItems.length > 0;
-                        const isActiveParent = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+                        // Fix: items không có subItems chỉ match exact path, tránh highlight sai
+                        const isActiveParent = hasSubItems
+                            ? location.pathname === item.path || location.pathname.startsWith(item.path + '/')
+                            : location.pathname === item.path;
                         const isExpanded = expandedMenus[index] || isActiveParent;
 
                         return (
@@ -131,7 +142,8 @@ const OwnerSidebar = () => {
                                                     to={sub.path}
                                                     className={`submenu-item ${isActiveSub ? 'sub-active' : ''}`}
                                                 >
-                                                    <span className="dot">•</span> {sub.title}
+                                                    <span className="submenu-icon">{sub.icon}</span>
+                                                    {sub.title}
                                                 </Link>
                                             );
                                         })}

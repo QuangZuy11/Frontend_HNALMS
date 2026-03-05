@@ -205,7 +205,7 @@ export default function ManagerAccountList() {
       <div className="created-accounts-card">
         <div className="created-accounts-header">
           <div>
-            <h1>Danh sách Quản lý & Kế toán</h1>
+            <h2>Danh sách Quản lý & Kế toán</h2>
             <p className="created-accounts-subtitle">Các tài khoản Quản lý, Kế toán</p>
           </div>
           <div className="created-accounts-actions">
@@ -249,52 +249,52 @@ export default function ManagerAccountList() {
           <>
             <div className="created-accounts-table-wrap owner-accounts-modern-table-wrap" ref={tableRef}>
               <table className="created-accounts-table owner-accounts-modern-table">
-              <thead>
-                <tr>
-                  <th>STT</th>
-                  <th>Tên đăng nhập</th>
-                  <th>Email</th>
-                  <th>Số điện thoại</th>
-                  <th>Vai trò</th>
-                  <th>Trạng thái</th>
-                  <th>Ngày tạo</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredAccounts.map((acc, index) => (
-                  <tr key={acc._id}>
-                    <td>{(page - 1) * limit + index + 1}</td>
-                    <td>{acc.username}</td>
-                    <td>{acc.email}</td>
-                    <td>{acc.phoneNumber || '-'}</td>
-                    <td>
-                      <span className="role-badge">
-                        {ROLE_LABELS[acc.role] || acc.role}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`status-badge status-${acc.status}`}>
-                        {STATUS_LABELS[acc.status] || acc.status}
-                      </span>
-                    </td>
-                    <td>{formatAccountDate(acc.createdAt)}</td>
-                    <td>
-                      <div className="action-buttons">
-                        <button
-                          type="button"
-                          className="btn-view-detail btn-icon"
-                          onClick={() => handleViewDetail(acc._id)}
-                          title="Xem chi tiết"
-                          aria-label="Xem chi tiết"
-                        >
-                          <Eye size={18} />
-                        </button>
-                      </div>
-                    </td>
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Tên đăng nhập</th>
+                    <th>Email</th>
+                    <th>Số điện thoại</th>
+                    <th>Vai trò</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày tạo</th>
+                    <th>Thao tác</th>
                   </tr>
-                ))}
-              </tbody>
+                </thead>
+                <tbody>
+                  {filteredAccounts.map((acc, index) => (
+                    <tr key={acc._id}>
+                      <td>{(page - 1) * limit + index + 1}</td>
+                      <td>{acc.username}</td>
+                      <td>{acc.email}</td>
+                      <td>{acc.phoneNumber || '-'}</td>
+                      <td>
+                        <span className="role-badge">
+                          {ROLE_LABELS[acc.role] || acc.role}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`status-badge status-${acc.status}`}>
+                          {STATUS_LABELS[acc.status] || acc.status}
+                        </span>
+                      </td>
+                      <td>{formatAccountDate(acc.createdAt)}</td>
+                      <td>
+                        <div className="action-buttons">
+                          <button
+                            type="button"
+                            className="btn-view-detail btn-icon"
+                            onClick={() => handleViewDetail(acc._id)}
+                            title="Xem chi tiết"
+                            aria-label="Xem chi tiết"
+                          >
+                            <Eye size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </div>
           </>
