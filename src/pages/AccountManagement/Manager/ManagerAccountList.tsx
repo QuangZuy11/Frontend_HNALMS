@@ -205,7 +205,7 @@ export default function ManagerAccountList() {
       <div className="created-accounts-card">
         <div className="created-accounts-header">
           <div>
-            <h2>Danh sách Quản lý & Kế toán</h2>
+            <h2>Danh Sách Nhân Sự Tòa Nhà </h2>
             <p className="created-accounts-subtitle">Các tài khoản Quản lý, Kế toán</p>
           </div>
           <div className="created-accounts-actions">

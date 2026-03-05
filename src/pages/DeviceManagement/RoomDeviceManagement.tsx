@@ -299,10 +299,6 @@ const RoomDeviceManagement: React.FC = () => {
             <div className="rdm-stat-label">Tổng số lượng</div>
             <div className="rdm-stat-value">{totalQuantity}</div>
           </div>
-          <div className="rdm-stat-card">
-            <div className="rdm-stat-label">Tình trạng tốt</div>
-            <div className="rdm-stat-value">{goodCount}</div>
-          </div>
         </div>
       )}
 
@@ -335,9 +331,6 @@ const RoomDeviceManagement: React.FC = () => {
                 <th style={{ width: "18%" }}>Model / Hãng</th>
                 <th style={{ width: "13%" }}>Danh mục</th>
                 <th style={{ width: "10%", textAlign: "center" }}>Số lượng</th>
-                <th style={{ width: "12%", textAlign: "center" }}>
-                  Tình trạng
-                </th>
                 <th style={{ width: "12%", textAlign: "center" }}>Thao tác</th>
               </tr>
             </thead>
@@ -373,11 +366,6 @@ const RoomDeviceManagement: React.FC = () => {
                   </td>
                   <td style={{ textAlign: "center", fontWeight: 600 }}>
                     {rd.quantity}
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    <span className={getConditionBadge(rd.condition)}>
-                      {conditionLabel[rd.condition] ?? rd.condition}
-                    </span>
                   </td>
                   <td>
                     <div className="rdm-actions" style={{ justifyContent: "center" }}>
@@ -484,25 +472,6 @@ const RoomDeviceManagement: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Condition */}
-                <div className="rdm-form-group">
-                  <label>
-                    Tình trạng <span>*</span>
-                  </label>
-                  <select
-                    className="rdm-form-select"
-                    value={addForm.condition}
-                    onChange={(e) =>
-                      setAddForm({ ...addForm, condition: e.target.value })
-                    }
-                  >
-                    {CONDITION_OPTIONS.map((c) => (
-                      <option key={c} value={c}>
-                        {conditionLabel[c] ?? c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </div>
 
               <div className="rdm-modal-footer">
@@ -551,15 +520,13 @@ const RoomDeviceManagement: React.FC = () => {
                   <label>Thiết bị</label>
                   <input
                     className="rdm-form-input"
-                    value={`${editingRecord.deviceId?.name ?? ""}${
-                      editingRecord.deviceId?.brand
+                    value={`${editingRecord.deviceId?.name ?? ""}${editingRecord.deviceId?.brand
                         ? ` — ${editingRecord.deviceId.brand}`
                         : ""
-                    }${
-                      editingRecord.deviceId?.model
+                      }${editingRecord.deviceId?.model
                         ? ` (${editingRecord.deviceId.model})`
                         : ""
-                    }`}
+                      }`}
                     readOnly
                     style={{ background: "#f8fafc", color: "#64748b" }}
                   />
@@ -585,25 +552,6 @@ const RoomDeviceManagement: React.FC = () => {
                   />
                 </div>
 
-                {/* Condition */}
-                <div className="rdm-form-group">
-                  <label>
-                    Tình trạng <span>*</span>
-                  </label>
-                  <select
-                    className="rdm-form-select"
-                    value={editForm.condition}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, condition: e.target.value })
-                    }
-                  >
-                    {CONDITION_OPTIONS.map((c) => (
-                      <option key={c} value={c}>
-                        {conditionLabel[c] ?? c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </div>
 
               <div className="rdm-modal-footer">

@@ -253,7 +253,7 @@ export default function TenantAccountList() {
           mb: 4,
         }}
       >
-        <Typography variant="h4" sx={{ fontWeight: "bold", color: "#1a237e" }}>
+        <Typography variant="h5" sx={{ fontWeight: "bold", color: "#000000" }}>
           Danh sách cư dân
         </Typography>
       </Box>

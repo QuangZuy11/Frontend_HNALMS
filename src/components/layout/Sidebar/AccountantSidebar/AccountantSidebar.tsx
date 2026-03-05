@@ -3,11 +3,14 @@ import { Link, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard,
     FileText,
-    DollarSign,
     Receipt,
     BarChart3,
     ChevronDown,
     ChevronRight,
+    ArrowDownCircle,
+    ArrowUpCircle,
+    TrendingUp,
+    CreditCard,
 } from 'lucide-react';
 import './AccountantSidebar.css';
 import logo from '../../../../assets/images/Logo.png';
@@ -24,20 +27,15 @@ const MENU_ITEMS = [
         title: "Hóa đơn",
         icon: <Receipt size={20} />,
         path: "/accountant/invoices",
-        subItems: [
-            { title: "Danh sách hóa đơn", path: "/accountant/invoices/list" },
-            { title: "Tạo hóa đơn", path: "/accountant/invoices/create" },
-            { title: "Hóa đơn quá hạn", path: "/accountant/invoices/overdue" },
-        ]
+        subItems: []
     },
     {
-        title: "Phiếu thu / chi",
+        title: "Phiếu Thu & Chi",
         icon: <FileText size={20} />,
         path: "/accountant/transactions",
         subItems: [
-            { title: "Phiếu thu", path: "/accountant/transactions/receipts" },
-            { title: "Phiếu chi", path: "/accountant/transactions/payments" },
-            { title: "Phiếu điều chỉnh", path: "/accountant/transactions/adjustments" },
+            { title: "Phiếu thu", path: "/accountant/transactions/receipts", icon: <ArrowDownCircle size={16} /> },
+            { title: "Phiếu chi", path: "/accountant/transactions/payments", icon: <ArrowUpCircle size={16} /> },
         ]
     },
     {
@@ -45,20 +43,11 @@ const MENU_ITEMS = [
         icon: <BarChart3 size={20} />,
         path: "/accountant/reports",
         subItems: [
-            { title: "Báo cáo doanh thu", path: "/accountant/reports/revenue" },
-            { title: "Báo cáo công nợ", path: "/accountant/reports/debt" },
-            { title: "Báo cáo điện nước", path: "/accountant/reports/utilities" },
+            { title: "Báo cáo doanh thu", path: "/accountant/reports/revenue", icon: <TrendingUp size={16} /> },
+            { title: "Báo cáo công nợ", path: "/accountant/reports/debt", icon: <CreditCard size={16} /> },
         ]
     },
-    {
-        title: "Chỉ số điện nước",
-        icon: <DollarSign size={20} />,
-        path: "/accountant/utilities",
-        subItems: [
-            { title: "Nhập chỉ số", path: "/accountant/utilities/input" },
-            { title: "Lịch sử chỉ số", path: "/accountant/utilities/history" },
-        ]
-    },
+
 ];
 
 const AccountantSidebar = () => {
@@ -66,10 +55,10 @@ const AccountantSidebar = () => {
     const location = useLocation();
 
     // Xử lý đóng mở menu con
-    const toggleMenu = (index: number) => {
+    const toggleMenu = (index: number, currentExpanded: boolean) => {
         setExpandedMenus((prev) => ({
             ...prev,
-            [index]: !prev[index]
+            [index]: !currentExpanded
         }));
     };
 
@@ -85,14 +74,18 @@ const AccountantSidebar = () => {
                 <nav className="sidebar-nav">
                     {MENU_ITEMS.map((item, index) => {
                         const hasSubItems = item.subItems.length > 0;
-                        const isActiveParent = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
-                        const isExpanded = expandedMenus[index] || isActiveParent;
+                        // Fix: items không có subItems chỉ match exact path, tránh highlight sai
+                        const isActiveParent = hasSubItems
+                            ? location.pathname === item.path || location.pathname.startsWith(item.path + '/')
+                            : location.pathname === item.path;
+                        // Dùng ?? để toggle thủ công được ưu tiên hơn isActiveParent
+                        const isExpanded = expandedMenus[index] ?? isActiveParent;
 
                         return (
                             <div key={index} className="menu-group">
                                 {/* Parent Item */}
                                 <div
-                                    onClick={() => hasSubItems ? toggleMenu(index) : null}
+                                    onClick={() => hasSubItems ? toggleMenu(index, isExpanded) : null}
                                     className={`menu-item ${isActiveParent ? 'active' : ''}`}
                                 >
                                     {hasSubItems ? (
@@ -122,7 +115,8 @@ const AccountantSidebar = () => {
                                                     to={sub.path}
                                                     className={`submenu-item ${isActiveSub ? 'sub-active' : ''}`}
                                                 >
-                                                    <span className="dot">•</span> {sub.title}
+                                                    <span className="submenu-icon">{sub.icon}</span>
+                                                    {sub.title}
                                                 </Link>
                                             );
                                         })}

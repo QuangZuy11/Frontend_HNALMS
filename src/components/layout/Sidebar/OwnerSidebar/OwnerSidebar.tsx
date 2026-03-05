@@ -55,8 +55,8 @@ const MENU_ITEMS = [
         icon: <FileText size={20} />,
         path: "/owner/contracts",
         subItems: [
-            { title: "Danh sách hợp đồng", path: "/owner/contracts/list", icon: <FileText size={16} /> },
-            { title: "Danh sách cư dân", path: "/owner/contracts/tenants", icon: <Users size={16} /> },
+            { title: "Hợp đồng", path: "/owner/contracts/list", icon: <FileText size={16} /> },
+            { title: "Cư dân", path: "/owner/contracts/tenants", icon: <Users size={16} /> },
         ]
     },
     {
@@ -83,10 +83,10 @@ const OwnerSidebar = () => {
     const location = useLocation();
 
     // Xử lý đóng mở menu con
-    const toggleMenu = (index: number) => {
+    const toggleMenu = (index: number, currentExpanded: boolean) => {
         setExpandedMenus((prev) => ({
             ...prev,
-            [index]: !prev[index]
+            [index]: !currentExpanded
         }));
     };
 
@@ -106,13 +106,15 @@ const OwnerSidebar = () => {
                         const isActiveParent = hasSubItems
                             ? location.pathname === item.path || location.pathname.startsWith(item.path + '/')
                             : location.pathname === item.path;
-                        const isExpanded = expandedMenus[index] || isActiveParent;
+                        // Dùng ?? để khi user đã toggle thủ công thì giá trị đó được ưu tiên
+                        // thay vì bị isActiveParent ghi đè → cho phép đóng dropdown khi đang ở sub-route
+                        const isExpanded = expandedMenus[index] ?? isActiveParent;
 
                         return (
                             <div key={index} className="menu-group">
                                 {/* Parent Item */}
                                 <div
-                                    onClick={() => hasSubItems ? toggleMenu(index) : null}
+                                    onClick={() => hasSubItems ? toggleMenu(index, isExpanded) : null}
                                     className={`menu-item ${isActiveParent && !hasSubItems ? 'active' : ''} ${hasSubItems && isExpanded ? 'expanded' : ''}`}
                                 >
                                     {hasSubItems ? (
