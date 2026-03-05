@@ -316,6 +316,10 @@ export default function TenantAccountList() {
           <Select
             value={filterStatus}
             displayEmpty
+            renderValue={(selected) => {
+              if (selected === "all") return "Trạng thái";
+              return selected === "active" ? "Hoạt động" : "Không hoạt động";
+            }}
             onChange={(e) => setFilterStatus(e.target.value)}
             sx={{
               fontSize: 14,
@@ -324,17 +328,11 @@ export default function TenantAccountList() {
               backgroundColor: "#ffffff",
             }}
           >
-            <MenuItem value="all" sx={{ fontSize: 14 }}>
-              Trạng thái
-            </MenuItem>
             <MenuItem value="active" sx={{ fontSize: 14 }}>
               Hoạt động
             </MenuItem>
             <MenuItem value="inactive" sx={{ fontSize: 14 }}>
               Không hoạt động
-            </MenuItem>
-            <MenuItem value="suspended" sx={{ fontSize: 14 }}>
-              Tạm khóa
             </MenuItem>
           </Select>
         </FormControl>
