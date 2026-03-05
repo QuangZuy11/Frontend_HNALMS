@@ -21,7 +21,7 @@ interface InvoiceItem {
   usage: number;
   unitPrice: number;
   amount: number;
-  isIndex?: boolean; // Cập nhật thêm isIndex
+  isIndex?: boolean; 
 }
 
 interface Invoice {
@@ -36,7 +36,7 @@ interface Invoice {
   items?: InvoiceItem[]; 
 }
 
-const ITEMS_PER_PAGE = 15; // Số dòng trên 1 trang
+const ITEMS_PER_PAGE = 15; 
 
 const InvoiceManager = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -51,9 +51,7 @@ const InvoiceManager = () => {
     direction: 'asc' 
   });
 
-  // State phân trang
   const [currentPage, setCurrentPage] = useState(1);
-
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
 
   const [showReadingModal, setShowReadingModal] = useState(false);
@@ -84,7 +82,6 @@ const InvoiceManager = () => {
     fetchServices();
   }, []);
 
-  // Reset về trang 1 mỗi khi thay đổi bộ lọc hoặc tìm kiếm
   useEffect(() => {
     setCurrentPage(1);
     setSelectedInvoiceIds([]); 
@@ -368,7 +365,6 @@ const InvoiceManager = () => {
     setSortConfig({ key, direction });
   };
 
-  // --- LỌC VÀ SẮP XẾP DỮ LIỆU TỔNG ---
   const sortedAndFilteredInvoices = useMemo(() => {
     const filtered = invoices.filter(inv => {
       const matchSearch = 
@@ -403,14 +399,12 @@ const InvoiceManager = () => {
     return filtered;
   }, [invoices, searchTerm, filterStatus, filterType, sortConfig]);
 
-  // --- TÍNH TOÁN PHÂN TRANG ---
   const totalPages = Math.ceil(sortedAndFilteredInvoices.length / ITEMS_PER_PAGE);
   const paginatedInvoices = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return sortedAndFilteredInvoices.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [sortedAndFilteredInvoices, currentPage]);
 
-  // --- LOGIC TICK CHỌN (Chỉ thao tác trên trang hiện tại) ---
   const allDraftsInView = paginatedInvoices.filter(i => i.status === 'Draft');
   const isAllSelected = allDraftsInView.length > 0 && allDraftsInView.every(inv => selectedInvoiceIds.includes(inv._id));
 
@@ -431,9 +425,52 @@ const InvoiceManager = () => {
     );
   };
 
-  // [ĐÃ FIX LỖI] Định nghĩa 2 biến hiển thị ở đây để Modal có thể sử dụng
   const elecServiceInfo = services.find(s => ['điện', 'dien'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
   const waterServiceInfo = services.find(s => ['nước', 'nuoc'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
+
+  // --- [MỚI] HÀM RENDER TRẠNG THÁI CÓ MÀU SẮC ---
+  const renderStatusBadge = (status: string) => {
+    let bgColor = '';
+    let textColor = '';
+    let text = '';
+
+    switch (status) {
+      case 'Draft':
+        bgColor = '#f1f5f9';
+        textColor = '#64748b';
+        text = 'Bản Nháp';
+        break;
+      case 'Unpaid':
+        bgColor = '#fef2f2';
+        textColor = '#ef4444';
+        text = 'Chưa thu';
+        break;
+      case 'Paid':
+        bgColor = '#f0fdf4';
+        textColor = '#16a34a';
+        text = 'Đã thu';
+        break;
+      default:
+        bgColor = '#f1f5f9';
+        textColor = '#64748b';
+        text = status;
+    }
+
+    return (
+      <span style={{
+        backgroundColor: bgColor,
+        color: textColor,
+        padding: '4px 10px',
+        borderRadius: '9999px',
+        fontSize: '12px',
+        fontWeight: 600,
+        display: 'inline-block',
+        whiteSpace: 'nowrap'
+      }}>
+        {text}
+      </span>
+    );
+  };
 
   const renderSortableHeader = (label: string, key: string) => {
     const isSorted = sortConfig.key === key;
@@ -575,11 +612,10 @@ const InvoiceManager = () => {
                   <td>{inv.title}</td>
                   <td className="text-price">{formatCurrency(inv.totalAmount)}</td>
                   <td>{formatDate(inv.dueDate)}</td>
-                  <td>
-                    <span className={`status-badge status-${inv.status.toLowerCase()}`}>
-                      {inv.status === 'Draft' ? 'Bản Nháp' : inv.status === 'Unpaid' ? 'Chưa thu' : 'Đã thu'}
-                    </span>
-                  </td>
+                  
+                  {/* SỬ DỤNG HÀM RENDER BADGE Ở ĐÂY */}
+                  <td>{renderStatusBadge(inv.status)}</td>
+                  
                   <td>
                     <div style={{ display: 'flex', gap: 8 }}>
                       {isDraft && (
@@ -781,9 +817,8 @@ const InvoiceManager = () => {
               <div className="detail-row">
                 <span className="detail-label">Trạng thái:</span>
                 <span className="detail-value" style={{ textAlign: 'left' }}>
-                  <span className={`status-badge status-${selectedInvoice.status.toLowerCase()}`}>
-                    {selectedInvoice.status === 'Draft' ? 'Bản Nháp' : selectedInvoice.status === 'Unpaid' ? 'Chưa thu' : 'Đã thu'}
-                  </span>
+                  {/* SỬ DỤNG HÀM RENDER BADGE TẠI MODAL CHI TIẾT */}
+                  {renderStatusBadge(selectedInvoice.status)}
                 </span>
               </div>
 

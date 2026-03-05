@@ -52,9 +52,7 @@ const InvoiceList = () => {
     direction: 'asc' 
   });
 
-  // [MỚI] State phân trang
   const [currentPage, setCurrentPage] = useState(1);
-
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
   const [showDetailModal, setShowDetailModal] = useState(false); 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -71,10 +69,9 @@ const InvoiceList = () => {
     fetchInvoices();
   }, []);
 
-  // [MỚI] Reset về trang 1 mỗi khi thay đổi bộ lọc hoặc tìm kiếm
   useEffect(() => {
     setCurrentPage(1);
-    setSelectedInvoiceIds([]); // Reset lại danh sách chọn cho an toàn
+    setSelectedInvoiceIds([]); 
   }, [searchTerm, filterStatus, filterType, sortConfig]);
 
   const fetchInvoices = async () => {
@@ -90,7 +87,6 @@ const InvoiceList = () => {
     }
   };
 
-  // --- LOGIC XÁC NHẬN THANH TOÁN ---
   const handlePaymentSingle = async (id: string) => {
     try {
       await axios.put(`${API_BASE_URL}/invoices/${id}/pay`);
@@ -104,8 +100,6 @@ const InvoiceList = () => {
   const handlePaymentBulk = async () => {
     try {
       let idsToPay = selectedInvoiceIds;
-      
-      // Nếu không chọn ID nào, hệ thống lấy TẤT CẢ hóa đơn Unpaid trên MÀN HÌNH LỌC (Không phân biệt trang)
       if (idsToPay.length === 0) {
         idsToPay = sortedAndFilteredInvoices.filter(inv => inv.status === 'Unpaid').map(inv => inv._id);
       }
@@ -185,7 +179,6 @@ const InvoiceList = () => {
     setSortConfig({ key, direction });
   };
 
-  // --- LỌC VÀ SẮP XẾP DỮ LIỆU TỔNG ---
   const sortedAndFilteredInvoices = useMemo(() => {
     const filtered = invoices.filter(inv => {
       const matchSearch = 
@@ -220,26 +213,21 @@ const InvoiceList = () => {
     return filtered;
   }, [invoices, searchTerm, filterStatus, filterType, sortConfig]);
 
-  // --- [MỚI] TÍNH TOÁN PHÂN TRANG ---
   const totalPages = Math.ceil(sortedAndFilteredInvoices.length / ITEMS_PER_PAGE);
   const paginatedInvoices = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return sortedAndFilteredInvoices.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [sortedAndFilteredInvoices, currentPage]);
 
-  // --- LOGIC TICK CHỌN (Chỉ thao tác trên trang hiện tại) ---
   const allUnpaidInView = paginatedInvoices.filter(i => i.status === 'Unpaid');
-  // Nếu tất cả các hóa đơn Unpaid trên trang hiện tại đều nằm trong selectedInvoiceIds thì đánh dấu check All
   const isAllSelected = allUnpaidInView.length > 0 && allUnpaidInView.every(inv => selectedInvoiceIds.includes(inv._id));
 
   const toggleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
       const unpaidIdsOnPage = paginatedInvoices.filter(inv => inv.status === 'Unpaid').map(inv => inv._id);
-      // Giữ nguyên các hóa đơn đã chọn ở trang khác, thêm các hóa đơn ở trang này vào
       setSelectedInvoiceIds(prev => [...new Set([...prev, ...unpaidIdsOnPage])]);
     } else {
       const unpaidIdsOnPage = paginatedInvoices.map(inv => inv._id);
-      // Bỏ chọn các hóa đơn ở trang hiện tại
       setSelectedInvoiceIds(prev => prev.filter(id => !unpaidIdsOnPage.includes(id)));
     }
   };
@@ -248,6 +236,50 @@ const InvoiceList = () => {
     if (status !== 'Unpaid') return; 
     setSelectedInvoiceIds(prev => 
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  // --- [MỚI] HÀM RENDER TRẠNG THÁI CÓ MÀU SẮC ---
+  const renderStatusBadge = (status: string) => {
+    let bgColor = '';
+    let textColor = '';
+    let text = '';
+
+    switch (status) {
+      case 'Draft':
+        bgColor = '#f1f5f9';
+        textColor = '#64748b';
+        text = 'Bản Nháp';
+        break;
+      case 'Unpaid':
+        bgColor = '#fef2f2';
+        textColor = '#ef4444';
+        text = 'Chưa thu';
+        break;
+      case 'Paid':
+        bgColor = '#f0fdf4';
+        textColor = '#16a34a';
+        text = 'Đã thu';
+        break;
+      default:
+        bgColor = '#f1f5f9';
+        textColor = '#64748b';
+        text = status;
+    }
+
+    return (
+      <span style={{
+        backgroundColor: bgColor,
+        color: textColor,
+        padding: '4px 10px',
+        borderRadius: '9999px',
+        fontSize: '12px',
+        fontWeight: 600,
+        display: 'inline-block',
+        whiteSpace: 'nowrap'
+      }}>
+        {text}
+      </span>
     );
   };
 
@@ -278,7 +310,7 @@ const InvoiceList = () => {
       <div className="page-header">
         <div>
           <h2>Quản lý Thu chi & Công nợ</h2>
-          <p>Nghiệp vụ Kế toán: Tra cứu hóa đơn và xác nhận thanh toán tiền phòng</p>
+          <p>Tra cứu hóa đơn và xác nhận thanh toán tiền phòng</p>
         </div>
       </div>
 
@@ -373,11 +405,10 @@ const InvoiceList = () => {
                     {formatCurrency(inv.totalAmount)}
                   </td>
                   <td>{formatDate(inv.dueDate)}</td>
-                  <td>
-                    <span className={`status-badge status-${inv.status.toLowerCase()}`}>
-                      {inv.status === 'Draft' ? 'Bản Nháp' : inv.status === 'Unpaid' ? 'Chưa thu' : 'Đã thu'}
-                    </span>
-                  </td>
+                  
+                  {/* SỬ DỤNG HÀM RENDER BADGE Ở ĐÂY */}
+                  <td>{renderStatusBadge(inv.status)}</td>
+                  
                   <td>
                     <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                       {isUnpaid && (
@@ -415,7 +446,7 @@ const InvoiceList = () => {
         </table>
       </div>
 
-      {/* [MỚI] THANH ĐIỀU HƯỚNG PHÂN TRANG */}
+      {/* THANH ĐIỀU HƯỚNG PHÂN TRANG */}
       {sortedAndFilteredInvoices.length > 0 && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: '#fff', border: '1px solid #e2e8f0', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
           <div style={{ fontSize: '14px', color: '#64748b' }}>
@@ -477,9 +508,8 @@ const InvoiceList = () => {
               <div className="detail-row">
                 <span className="detail-label">Trạng thái:</span>
                 <span className="detail-value" style={{ textAlign: 'left' }}>
-                  <span className={`status-badge status-${selectedInvoice.status.toLowerCase()}`}>
-                    {selectedInvoice.status === 'Draft' ? 'Bản Nháp' : selectedInvoice.status === 'Unpaid' ? 'Chưa thu' : 'Đã thu'}
-                  </span>
+                  {/* SỬ DỤNG HÀM RENDER BADGE TẠI MODAL CHI TIẾT */}
+                  {renderStatusBadge(selectedInvoice.status)}
                 </span>
               </div>
 
@@ -499,7 +529,6 @@ const InvoiceList = () => {
                         <tr key={index} style={{ borderTop: '1px solid #e2e8f0' }}>
                           <td style={{ padding: '10px 12px' }}>{item.itemName}</td>
                           <td style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b' }}>
-                            {/* Render thông minh dựa vào isIndex */}
                             {item.isIndex === true ? (
                               <span style={{ fontSize: '13px' }}>
                                 Tiêu thụ: <b>{item.usage}</b> <br/> (Cũ: {item.oldIndex} - Mới: {item.newIndex})
