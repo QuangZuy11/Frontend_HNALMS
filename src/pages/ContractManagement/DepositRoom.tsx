@@ -25,6 +25,10 @@ import {
   Add as AddIcon,
   Search as SearchIcon,
   Clear as ClearIcon,
+  NavigateBefore as PrevIcon,
+  NavigateNext as NextIcon,
+  FirstPage as FirstPageIcon,
+  LastPage as LastPageIcon,
 } from "@mui/icons-material";
 
 interface Room {
@@ -87,6 +91,10 @@ const DepositRoom = () => {
   const [filterRoom, setFilterRoom] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
+  // Pagination
+  const ROWS_PER_PAGE = 13;
+  const [currentPage, setCurrentPage] = useState(1);
+
   // Filter deposits based on filter values
   const filteredDeposits = deposits.filter((deposit) => {
     const matchName = deposit.name
@@ -104,6 +112,21 @@ const DepositRoom = () => {
 
     return matchName && matchContact && matchRoom && matchStatus;
   });
+
+  // Pagination calculations
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredDeposits.length / ROWS_PER_PAGE),
+  );
+  const paginatedDeposits = filteredDeposits.slice(
+    (currentPage - 1) * ROWS_PER_PAGE,
+    currentPage * ROWS_PER_PAGE,
+  );
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterName, filterContact, filterRoom, filterStatus]);
 
   useEffect(() => {
     const fetchDeposits = async () => {
@@ -147,7 +170,14 @@ const DepositRoom = () => {
   }
 
   return (
-    <Box sx={{ p: 4 }}>
+    <Box
+      sx={{
+        p: 4,
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "calc(100vh - 64px)",
+      }}
+    >
       <Box
         sx={{
           display: "flex",
@@ -249,25 +279,25 @@ const DepositRoom = () => {
           filterContact ||
           filterRoom ||
           filterStatus !== "all") && (
-            <Button
-              size="small"
-              onClick={() => {
-                setFilterName("");
-                setFilterContact("");
-                setFilterRoom("");
-                setFilterStatus("all");
-              }}
-              sx={{ minWidth: "auto", p: 0.5, color: "#94a3b8" }}
-            >
-              <ClearIcon sx={{ fontSize: 18 }} />
-            </Button>
-          )}
+          <Button
+            size="small"
+            onClick={() => {
+              setFilterName("");
+              setFilterContact("");
+              setFilterRoom("");
+              setFilterStatus("all");
+            }}
+            sx={{ minWidth: "auto", p: 0.5, color: "#94a3b8" }}
+          >
+            <ClearIcon sx={{ fontSize: 18 }} />
+          </Button>
+        )}
       </Box>
 
       <TableContainer
         component={Paper}
         elevation={3}
-        sx={{ borderRadius: 2, overflow: "hidden" }}
+        sx={{ borderRadius: 2, overflow: "hidden", flex: 1 }}
       >
         <Table sx={{ minWidth: 650 }}>
           <TableHead sx={{ bgcolor: "#f5f5f5" }}>
@@ -282,14 +312,14 @@ const DepositRoom = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredDeposits.length === 0 ? (
+            {paginatedDeposits.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
                   Không có dữ liệu cọc phòng
                 </TableCell>
               </TableRow>
             ) : (
-              filteredDeposits.map((deposit, index) => (
+              paginatedDeposits.map((deposit, index) => (
                 <TableRow
                   key={deposit._id}
                   sx={{
@@ -297,7 +327,9 @@ const DepositRoom = () => {
                     "&:hover": { bgcolor: "#f9f9f9" },
                   }}
                 >
-                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>
+                    {(currentPage - 1) * ROWS_PER_PAGE + index + 1}
+                  </TableCell>
                   <TableCell>{deposit.name}</TableCell>
                   <TableCell>
                     {deposit.phone}
@@ -312,9 +344,15 @@ const DepositRoom = () => {
                   </TableCell>
                   <TableCell>
                     {deposit.createdDate
-                      ? format(new Date(deposit.createdDate), "dd/MM/yyyy HH:mm")
+                      ? format(
+                          new Date(deposit.createdDate),
+                          "dd/MM/yyyy HH:mm",
+                        )
                       : deposit.createdAt
-                        ? format(new Date(deposit.createdAt), "dd/MM/yyyy HH:mm")
+                        ? format(
+                            new Date(deposit.createdAt),
+                            "dd/MM/yyyy HH:mm",
+                          )
                         : "N/A"}
                   </TableCell>
                   <TableCell>
@@ -337,6 +375,90 @@ const DepositRoom = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Pagination - always at bottom */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: 1,
+          py: 2,
+          mt: "auto",
+        }}
+      >
+        <Typography variant="body2" color="text.secondary" sx={{ mr: 2 }}>
+          Tổng: {filteredDeposits.length} bản ghi | Trang {currentPage}/
+          {totalPages}
+        </Typography>
+        <Button
+          size="small"
+          variant="outlined"
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage(1)}
+          sx={{ minWidth: 36, p: 0.5 }}
+        >
+          <FirstPageIcon fontSize="small" />
+        </Button>
+        <Button
+          size="small"
+          variant="outlined"
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          sx={{ minWidth: 36, p: 0.5 }}
+        >
+          <PrevIcon fontSize="small" />
+        </Button>
+
+        {(() => {
+          const pages: number[] = [];
+          let start = Math.max(1, currentPage - 2);
+          let end = Math.min(totalPages, currentPage + 2);
+          if (currentPage <= 2) end = Math.min(totalPages, 5);
+          if (currentPage >= totalPages - 1)
+            start = Math.max(1, totalPages - 4);
+          for (let i = start; i <= end; i++) pages.push(i);
+          return pages.map((page) => (
+            <Button
+              key={page}
+              size="small"
+              variant={page === currentPage ? "contained" : "outlined"}
+              onClick={() => setCurrentPage(page)}
+              sx={{
+                minWidth: 36,
+                p: 0.5,
+                ...(page === currentPage && {
+                  bgcolor: "#1a237e",
+                  "&:hover": { bgcolor: "#303f9f" },
+                }),
+              }}
+            >
+              {page}
+            </Button>
+          ));
+        })()}
+
+        <Button
+          size="small"
+          variant="outlined"
+          disabled={currentPage === totalPages}
+          onClick={() =>
+            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+          }
+          sx={{ minWidth: 36, p: 0.5 }}
+        >
+          <NextIcon fontSize="small" />
+        </Button>
+        <Button
+          size="small"
+          variant="outlined"
+          disabled={currentPage === totalPages}
+          onClick={() => setCurrentPage(totalPages)}
+          sx={{ minWidth: 36, p: 0.5 }}
+        >
+          <LastPageIcon fontSize="small" />
+        </Button>
+      </Box>
     </Box>
   );
 };
