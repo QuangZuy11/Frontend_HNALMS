@@ -74,17 +74,29 @@ const CreateContract = () => {
   const preFilledRoomId = location.state?.roomId;
   const preFilledDepositId = location.state?.depositId;
 
+  // Restore saved form data from sessionStorage (when returning from deposit creation)
+  const savedDraft = (() => {
+    try {
+      const raw = sessionStorage.getItem("contractFormDraft");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+
   const [rooms, setRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [roomDevices, setRoomDevices] = useState<any[]>([]);
   const [availableServices, setAvailableServices] = useState<ServiceItem[]>([]);
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>(
-    [],
+    savedDraft?.selectedServices || [],
   );
   const [vehicleQuantities, setVehicleQuantities] = useState<
     Record<string, number>
-  >({});
-  const [contractImages, setContractImages] = useState<string[]>([]);
+  >(savedDraft?.vehicleQuantities || {});
+  const [contractImages, setContractImages] = useState<string[]>(
+    savedDraft?.contractImages || [],
+  );
   const [uploading, setUploading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -98,11 +110,12 @@ const CreateContract = () => {
     handleSubmit,
     watch,
     setValue,
+    getValues,
     register,
     formState: { errors },
   } = useForm<ContractFormValues>({
     mode: "onChange",
-    defaultValues: {
+    defaultValues: savedDraft?.formValues || {
       roomId: preFilledRoomId || "",
       startDate: new Date().toISOString().split("T")[0],
       duration: 12,
@@ -128,6 +141,13 @@ const CreateContract = () => {
     control,
     name: "coResidents",
   });
+
+  // Clear saved draft after restoring
+  useEffect(() => {
+    if (savedDraft) {
+      sessionStorage.removeItem("contractFormDraft");
+    }
+  }, []);
 
   // Fetch Rooms and Services on Mount
   useEffect(() => {
@@ -512,11 +532,13 @@ const CreateContract = () => {
           paymentCycle: 1,
         },
         // bookServices for the separate bookservices collection
-        // Only serviceId, and quantity only for quantity_based services
+        // quantity_based: use selected quantity; per-person fixed (Internet, Vệ Sinh): use person count
         bookServices: selectedServices.map((s) => {
           const entry: any = { serviceId: s.serviceId, category: s.category };
           if (s.category === "quantity_based") {
             entry.quantity = s.quantity;
+          } else if (isPerPersonService(s.name)) {
+            entry.quantity = (data.coResidents?.length || 0) + 1;
           }
           return entry;
         }),
@@ -525,6 +547,7 @@ const CreateContract = () => {
 
       const res = await axios.post(`${API_URL}/contracts/create`, payload);
       if (res.data.success) {
+        sessionStorage.removeItem("contractFormDraft");
         alert(
           `Đã tạo hợp đồng thành công.\nĐã gửi tài khoản và mật khẩu đến email đăng ký: ${data.tenantInfo?.email || "của khách hàng"}.`,
         );
@@ -919,33 +942,131 @@ const CreateContract = () => {
                                 fontFamily: '"Times New Roman", serif',
                               }}
                             >
-                              <TextField
-                                variant="standard"
-                                fullWidth
-                                placeholder="Số CCCD..."
-                                {...register(
-                                  `coResidents.${index}.cccd` as const,
-                                  {
-                                    required: "Bắt buộc",
-                                    pattern: {
-                                      value: /^[0-9]{12}$/,
-                                      message: "CCCD phải gồm 12 chữ số",
-                                    },
-                                  },
-                                )}
-                                error={!!errors.coResidents?.[index]?.cccd}
-                                helperText={
-                                  errors.coResidents?.[index]?.cccd
-                                    ?.message as string
-                                }
-                                InputProps={{
-                                  disableUnderline: true,
-                                  style: {
-                                    fontSize: "1.05rem",
-                                    fontFamily: '"Times New Roman", serif',
-                                  },
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
                                 }}
-                              />
+                              >
+                                <TextField
+                                  variant="standard"
+                                  fullWidth
+                                  placeholder="Số CCCD..."
+                                  {...register(
+                                    `coResidents.${index}.cccd` as const,
+                                    {
+                                      required: "Bắt buộc",
+                                      pattern: {
+                                        value: /^[0-9]{12}$/,
+                                        message: "CCCD phải gồm 12 chữ số",
+                                      },
+                                    },
+                                  )}
+                                  error={!!errors.coResidents?.[index]?.cccd}
+                                  helperText={
+                                    errors.coResidents?.[index]?.cccd
+                                      ?.message as string
+                                  }
+                                  InputProps={{
+                                    disableUnderline: true,
+                                    style: {
+                                      fontSize: "1.05rem",
+                                      fontFamily: '"Times New Roman", serif',
+                                    },
+                                  }}
+                                  sx={{ flex: 1 }}
+                                />
+                                <input
+                                  type="file"
+                                  accept="image/jpg,image/jpeg,image/png"
+                                  style={{ display: "none" }}
+                                  id={`coResident-ocr-input-${index}`}
+                                  onChange={async (e) => {
+                                    const files = e.target.files;
+                                    if (!files || files.length === 0) return;
+                                    const formData = new FormData();
+                                    formData.append("image", files[0]);
+                                    try {
+                                      const res = await axios.post(
+                                        "https://api.fpt.ai/vision/idr/vnm",
+                                        formData,
+                                        {
+                                          headers: {
+                                            "api-key":
+                                              "UJ4VXI9R2N49AIyl2TCnofOH31cJP4Rw",
+                                            "Content-Type":
+                                              "multipart/form-data",
+                                          },
+                                        },
+                                      );
+                                      if (
+                                        res.data?.errorCode === 0 &&
+                                        res.data?.data &&
+                                        res.data.data.length > 0
+                                      ) {
+                                        const data = res.data.data[0];
+                                        if (data.name)
+                                          setValue(
+                                            `coResidents.${index}.fullName`,
+                                            data.name,
+                                            { shouldValidate: true },
+                                          );
+                                        if (data.id)
+                                          setValue(
+                                            `coResidents.${index}.cccd`,
+                                            data.id,
+                                            { shouldValidate: true },
+                                          );
+                                        alert(
+                                          "Đã nhận diện và điền tự động dữ liệu CCCD thành công!",
+                                        );
+                                      } else {
+                                        alert(
+                                          "Không thể nhận diện CCCD. Vui lòng thử lại với ảnh rõ nét hơn.",
+                                        );
+                                      }
+                                    } catch (err) {
+                                      alert(
+                                        "Lỗi khi kết nối tới FPT.AI: " +
+                                          (err.response?.data?.errorMessage ||
+                                            err.message),
+                                      );
+                                    }
+                                    // Reset file input
+                                    document.getElementById(
+                                      `coResident-ocr-input-${index}`,
+                                    ).value = "";
+                                  }}
+                                />
+                                <label
+                                  htmlFor={`coResident-ocr-input-${index}`}
+                                >
+                                  <Button
+                                    variant="outlined"
+                                    size="small"
+                                    sx={{
+                                      fontFamily: '"Times New Roman", serif',
+                                      fontSize: "0.9rem",
+                                      textTransform: "none",
+                                      color: "#333",
+                                      borderColor: "#333",
+                                      borderStyle: "dashed",
+                                      px: 1.5,
+                                      py: 0.5,
+                                      minWidth: 0,
+                                      ml: 1,
+                                      "&:hover": {
+                                        borderColor: "#000",
+                                        bgcolor: "#fafafa",
+                                      },
+                                    }}
+                                    component="span"
+                                  >
+                                    Quét CCCD
+                                  </Button>
+                                </label>
+                              </Box>
                             </Box>
                             <Box
                               component="td"
@@ -1203,6 +1324,17 @@ const CreateContract = () => {
                         variant="outlined"
                         size="small"
                         onClick={() => {
+                          // Save current form data to sessionStorage before leaving
+                          const draft = {
+                            formValues: getValues(),
+                            selectedServices,
+                            vehicleQuantities,
+                            contractImages,
+                          };
+                          sessionStorage.setItem(
+                            "contractFormDraft",
+                            JSON.stringify(draft),
+                          );
                           const basePath = location.pathname.startsWith(
                             "/owner",
                           )
