@@ -51,7 +51,7 @@ const InvoiceManager = () => {
     direction: 'asc' 
   });
 
-  // [MỚI] State phân trang
+  // State phân trang
   const [currentPage, setCurrentPage] = useState(1);
 
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
@@ -84,7 +84,7 @@ const InvoiceManager = () => {
     fetchServices();
   }, []);
 
-  // [MỚI] Reset về trang 1 mỗi khi thay đổi bộ lọc hoặc tìm kiếm
+  // Reset về trang 1 mỗi khi thay đổi bộ lọc hoặc tìm kiếm
   useEffect(() => {
     setCurrentPage(1);
     setSelectedInvoiceIds([]); 
@@ -403,7 +403,7 @@ const InvoiceManager = () => {
     return filtered;
   }, [invoices, searchTerm, filterStatus, filterType, sortConfig]);
 
-  // --- [MỚI] TÍNH TOÁN PHÂN TRANG ---
+  // --- TÍNH TOÁN PHÂN TRANG ---
   const totalPages = Math.ceil(sortedAndFilteredInvoices.length / ITEMS_PER_PAGE);
   const paginatedInvoices = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -430,6 +430,10 @@ const InvoiceManager = () => {
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
   };
+
+  // [ĐÃ FIX LỖI] Định nghĩa 2 biến hiển thị ở đây để Modal có thể sử dụng
+  const elecServiceInfo = services.find(s => ['điện', 'dien'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
+  const waterServiceInfo = services.find(s => ['nước', 'nuoc'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
 
   const renderSortableHeader = (label: string, key: string) => {
     const isSorted = sortConfig.key === key;
@@ -618,7 +622,7 @@ const InvoiceManager = () => {
         </table>
       </div>
 
-      {/* [MỚI] THANH ĐIỀU HƯỚNG PHÂN TRANG */}
+      {/* THANH ĐIỀU HƯỚNG PHÂN TRANG */}
       {sortedAndFilteredInvoices.length > 0 && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: '#fff', border: '1px solid #e2e8f0', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
           <div style={{ fontSize: '14px', color: '#64748b' }}>
@@ -646,7 +650,7 @@ const InvoiceManager = () => {
         </div>
       )}
 
-      {/* CÁC MODAL GIỮ NGUYÊN BÊN DƯỚI */}
+      {/* MODAL 1: NHẬP SỐ */}
       {showReadingModal && selectedInvoice && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ width: '600px' }}>
@@ -743,9 +747,10 @@ const InvoiceManager = () => {
         </div>
       )}
 
+      {/* MODAL 2: CHI TIẾT HÓA ĐƠN */}
       {showDetailModal && selectedInvoice && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ width: '700px' }}>
+          <div className="modal-content" style={{ width: '650px' }}>
             <div className="modal-header">
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <FileText size={20}/> Chi tiết Hóa đơn
@@ -835,7 +840,7 @@ const InvoiceManager = () => {
         </div>
       )}
 
-      {/* MODAL HỘP THOẠI XÁC NHẬN CHUYÊN NGHIỆP */}
+      {/* MODAL 3: XÁC NHẬN CHUYÊN NGHIỆP */}
       {confirmModal.isOpen && (
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }}>
@@ -862,7 +867,7 @@ const InvoiceManager = () => {
         </div>
       )}
 
-      {/* MODAL 5: GHI CHỈ SỐ HÀNG LOẠT */}
+      {/* MODAL 4: GHI CHỈ SỐ HÀNG LOẠT */}
       {showBulkReadingModal && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ width: '900px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
