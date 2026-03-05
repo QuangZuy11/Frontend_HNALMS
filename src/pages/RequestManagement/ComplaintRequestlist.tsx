@@ -326,7 +326,7 @@ export default function ComplaintRequestList() {
       <div className="repair-requests-card">
         <div className="repair-requests-header">
           <div>
-            <h1>Danh sách khiếu nại</h1>
+            <h2>Danh sách khiếu nại</h2>
             <p className="subtitle">Các khiếu nại do cư dân gửi lên tòa nhà</p>
           </div>
           <div className="repair-filter-wrapper" style={{ gap: 16, flexWrap: 'wrap' }}>

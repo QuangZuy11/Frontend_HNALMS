@@ -365,7 +365,7 @@ export default function MaintenanceRequestsList() {
       <div className="repair-requests-card">
         <div className="repair-requests-header">
           <div>
-            <h1>Danh sách yêu cầu bảo trì</h1>
+            <h2>Danh sách yêu cầu bảo trì</h2>
             <p className="subtitle">
               Các yêu cầu bảo trì do cư dân gửi lên tòa nhà
             </p>
