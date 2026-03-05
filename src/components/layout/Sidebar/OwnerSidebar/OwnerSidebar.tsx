@@ -31,6 +31,7 @@ const MENU_ITEMS = [
             { title: "Cấu hình tòa nhà", path: "/owner/building-config" }, // tầng & loại phòng 
             { title: "Nội quy tòa nhà", path: "/owner/rules" },
             { title: "Danh sách thiết bị", path: "/owner/devices" },
+            { title: "Thiết bị theo loại phòng", path: "/owner/room-devices" },
             { title: "Danh sách dịch vụ", path: "/owner/services" },
         ]
     },
