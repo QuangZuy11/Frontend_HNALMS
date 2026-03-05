@@ -5,6 +5,8 @@
   height: calc(100vh - 70px);
   padding: 16px 20px;
   width: 100%;
+  max-width: 1920px;
+  margin: 0 auto;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -20,6 +22,7 @@
   padding: 20px 22px 16px;
   box-sizing: border-box;
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -191,15 +194,67 @@
 
 .created-accounts-table-wrap {
   flex: 1;
+  min-height: 0;
   overflow: hidden;
   border-radius: 0.5rem;
   border: 1px solid #e5e7eb;
+}
+
+.created-accounts-table-wrap-fixed {
+  display: flex;
+  flex-direction: column;
 }
 
 .created-accounts-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9375rem;
+}
+
+.created-accounts-table-fixed {
+  table-layout: fixed;
+}
+
+.created-accounts-table-fixed th,
+.created-accounts-table-fixed td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.created-accounts-table-fixed th:nth-child(1),
+.created-accounts-table-fixed td:nth-child(1) {
+  width: 64px;
+}
+
+.created-accounts-table-fixed th:nth-child(2),
+.created-accounts-table-fixed td:nth-child(2) {
+  width: 20%;
+}
+
+.created-accounts-table-fixed th:nth-child(3),
+.created-accounts-table-fixed td:nth-child(3) {
+  width: 24%;
+}
+
+.created-accounts-table-fixed th:nth-child(4),
+.created-accounts-table-fixed td:nth-child(4) {
+  width: 15%;
+}
+
+.created-accounts-table-fixed th:nth-child(5),
+.created-accounts-table-fixed td:nth-child(5) {
+  width: 13%;
+}
+
+.created-accounts-table-fixed th:nth-child(6),
+.created-accounts-table-fixed td:nth-child(6) {
+  width: 16%;
+}
+
+.created-accounts-table-fixed th:nth-child(7),
+.created-accounts-table-fixed td:nth-child(7) {
+  width: 90px;
 }
 
 .created-accounts-table th,
@@ -328,6 +383,15 @@
   padding: 0.75rem 1rem 0.25rem 1rem;
   font-size: 0.875rem;
   color: #4b5563;
+}
+
+.accounts-pagination-fixed {
+  margin-top: auto;
+  border-top: 1px solid #f3f4f6;
+}
+
+.table-empty-row td {
+  color: transparent;
 }
 
 .accounts-pagination-info strong {
@@ -742,22 +806,143 @@
   padding-top: 0.5rem;
 }
 
+@media (min-width: 1600px) {
+  .created-accounts-page {
+    padding: 24px 32px;
+  }
+
+  .created-accounts-card {
+    padding: 24px 28px 20px;
+  }
+
+  .created-accounts-header h1 {
+    font-size: 1.65rem;
+  }
+
+  .created-accounts-subtitle {
+    font-size: 1rem;
+  }
+
+  .created-accounts-table {
+    font-size: 0.98rem;
+  }
+
+  .created-accounts-table th,
+  .created-accounts-table td {
+    padding: 1rem 1.35rem;
+  }
+}
+
+@media (max-width: 1280px) {
+  .created-accounts-page {
+    padding: 12px 14px;
+  }
+
+  .created-accounts-card {
+    padding: 14px 14px 12px;
+  }
+
+  .created-accounts-header h1 {
+    font-size: 1.3rem;
+  }
+
+  .created-accounts-search {
+    min-width: 220px;
+  }
+
+  .created-accounts-search .search-input {
+    min-width: 220px;
+  }
+
+  .created-accounts-table-wrap {
+    overflow: hidden;
+  }
+
+  .created-accounts-table {
+    min-width: 0;
+  }
+
+  .created-accounts-table th,
+  .created-accounts-table td {
+    padding: 0.7rem 0.85rem;
+    font-size: 0.88rem;
+    white-space: nowrap;
+  }
+
+  .accounts-pagination {
+    padding: 0.6rem 0.75rem 0.2rem 0.75rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .created-accounts-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .created-accounts-search {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .created-accounts-search .search-input {
+    min-width: 0;
+  }
+}
+
 @media (max-width: 768px) {
   .created-accounts-page {
     padding: 1rem;
   }
 
   .created-accounts-card {
-    padding: 1.25rem;
+    padding: 1rem;
+    border-radius: 0.65rem;
   }
 
-  .created-accounts-header {
-    flex-direction: column;
+  .created-accounts-header h1 {
+    font-size: 1.15rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .created-accounts-subtitle {
+    font-size: 0.85rem;
+  }
+
+  .created-accounts-table {
+    min-width: 0;
   }
 
   .created-accounts-table th,
   .created-accounts-table td {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.84rem;
+  }
+
+  .accounts-pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .created-accounts-page {
+    padding: 0.75rem;
+  }
+
+  .created-accounts-card {
+    padding: 0.85rem;
+  }
+
+  .created-accounts-header h1 {
+    font-size: 1.05rem;
+  }
+
+  .created-accounts-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .created-accounts-table {
+    min-width: 0;
   }
 }
