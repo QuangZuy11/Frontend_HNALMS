@@ -110,7 +110,7 @@
 }
 
 .header-logo-img {
-  height: 9.5rem;
+  height: 3.5rem;
   width: auto;
   object-fit: contain;
 }
@@ -191,8 +191,10 @@
   gap: 0.5rem;
   padding: 0.45rem 0.9rem;
   min-height: 2.4rem;
-  max-width: 280px; /* Giới hạn độ rộng tối đa */
-  background: #3579c6; /* màu chính theo yêu cầu */
+  max-width: 280px;
+  /* Giới hạn độ rộng tối đa */
+  background: #3579c6;
+  /* màu chính theo yêu cầu */
   border: 1px solid transparent;
   border-radius: 9999px;
   cursor: pointer;
@@ -241,7 +243,8 @@
   color: #ffffff;
   font-weight: 600;
   font-size: 0.9375rem;
-  width: 80px; /* Kích thước cố định ngắn hơn */
+  width: 80px;
+  /* Kích thước cố định ngắn hơn */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

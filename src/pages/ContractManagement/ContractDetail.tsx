@@ -19,6 +19,143 @@ import CloseIcon from "@mui/icons-material/Close";
 
 const API_URL = "http://localhost:9999/api";
 
+// Self-contained Deposit Modal that fetches data on-demand
+function DepositModal({ open, onClose, depositId, serifFont }: {
+  open: boolean;
+  onClose: () => void;
+  depositId: any;
+  serifFont: string;
+}) {
+  const [deposit, setDeposit] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || !depositId) return;
+
+    // If depositId is already a populated object (has name field), use it directly
+    if (typeof depositId === "object" && depositId.name) {
+      setDeposit(depositId);
+      return;
+    }
+
+    // Otherwise, fetch from API using the string ID
+    const id = typeof depositId === "string" ? depositId : depositId._id || depositId;
+    setLoading(true);
+    axios.get(`${API_URL}/deposits`)
+      .then((res) => {
+        if (res.data.success) {
+          const found = res.data.data.find((d: any) => d._id === id);
+          setDeposit(found || null);
+        }
+      })
+      .catch((err) => console.error("Error fetching deposit:", err))
+      .finally(() => setLoading(false));
+  }, [open, depositId]);
+
+  const statusLabel = (status: string) => {
+    switch (status) {
+      case "Held": return "Đang giữ";
+      case "Refunded": return "Đã hoàn";
+      case "Forfeited": return "Đã phạt";
+      default: return status;
+    }
+  };
+
+  const statusColor = (status: string) => {
+    switch (status) {
+      case "Held": return "primary";
+      case "Refunded": return "success";
+      default: return "error";
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      closeAfterTransition
+      slots={{ backdrop: Backdrop }}
+      slotProps={{ backdrop: { sx: { bgcolor: "rgba(0,0,0,0.5)" } } }}
+    >
+      <Box
+        sx={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          bgcolor: "#fff",
+          borderRadius: 2,
+          boxShadow: 24,
+          p: 4,
+          minWidth: 400,
+          maxWidth: 500,
+          fontFamily: serifFont,
+        }}
+      >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Typography sx={{ fontWeight: "bold", fontSize: "1.2rem", fontFamily: serifFont }}>
+            Thông tin đặt cọc
+          </Typography>
+          <IconButton size="small" onClick={onClose}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+
+        {loading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
+            <CircularProgress size={28} />
+          </Box>
+        ) : deposit ? (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, fontFamily: serifFont }}>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Typography sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}>Người cọc:</Typography>
+              <Typography sx={{ fontWeight: 600, fontFamily: serifFont }}>{deposit.name || "—"}</Typography>
+            </Box>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Typography sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}>Số điện thoại:</Typography>
+              <Typography sx={{ fontFamily: serifFont }}>{deposit.phone || "—"}</Typography>
+            </Box>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Typography sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}>Email:</Typography>
+              <Typography sx={{ fontFamily: serifFont }}>{deposit.email || "—"}</Typography>
+            </Box>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Typography sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}>Số tiền cọc:</Typography>
+              <Typography sx={{ fontWeight: 600, color: "#d32f2f", fontFamily: serifFont }}>
+                {(deposit.amount || 0).toLocaleString("vi-VN")} VNĐ
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Typography sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}>Trạng thái:</Typography>
+              <Chip
+                label={statusLabel(deposit.status)}
+                color={statusColor(deposit.status) as any}
+                size="small"
+                sx={{ fontWeight: 600 }}
+              />
+            </Box>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Typography sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}>Ngày cọc:</Typography>
+              <Typography sx={{ fontFamily: serifFont }}>
+                {deposit.createdAt
+                  ? new Date(deposit.createdAt).toLocaleDateString("vi-VN", {
+                    day: "2-digit", month: "2-digit", year: "numeric",
+                    hour: "2-digit", minute: "2-digit",
+                  })
+                  : "—"}
+              </Typography>
+            </Box>
+          </Box>
+        ) : (
+          <Typography sx={{ fontStyle: "italic", fontFamily: serifFont }}>
+            Không tìm thấy thông tin đặt cọc.
+          </Typography>
+        )}
+      </Box>
+    </Modal>
+  );
+}
+
 const ContractDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -26,12 +163,14 @@ const ContractDetail = () => {
   const [contract, setContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [showDepositModal, setShowDepositModal] = useState(false);
 
   useEffect(() => {
     const fetchContract = async () => {
       try {
         const res = await axios.get(`${API_URL}/contracts/${id}`);
         if (res.data.success) {
+          console.log("📋 Contract depositId:", res.data.data.depositId);
           setContract(res.data.data);
         }
       } catch (err) {
@@ -460,15 +599,32 @@ const ContractDetail = () => {
               {roomPrice.toLocaleString()}
             </strong>{" "}
             VNĐ (Tương đương 01 tháng tiền phòng).
-            <span
-              style={{
-                color: "#2e7d32",
-                fontWeight: "bold",
-                marginLeft: 8,
-              }}
-            >
-              ✓ Đã cọc
-            </span>
+            {contract.depositId ? (
+              <span
+                onClick={() => setShowDepositModal(true)}
+                style={{
+                  color: "#2e7d32",
+                  fontWeight: "bold",
+                  marginLeft: 8,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                  textDecorationStyle: "dotted" as const,
+                }}
+                title="Xem thông tin cọc"
+              >
+                ✓ Đã cọc
+              </span>
+            ) : (
+              <span
+                style={{
+                  color: "#2e7d32",
+                  fontWeight: "bold",
+                  marginLeft: 8,
+                }}
+              >
+                ✓ Đã cọc
+              </span>
+            )}
           </Typography>
 
           {/* Điều 2 - Thiết bị */}
@@ -863,6 +1019,14 @@ const ContractDetail = () => {
           )}
         </Box>
       </Modal>
+
+      {/* Deposit Detail Modal */}
+      <DepositModal
+        open={showDepositModal}
+        onClose={() => setShowDepositModal(false)}
+        depositId={contract?.depositId}
+        serifFont={serifFont}
+      />
     </Container>
   );
 };
