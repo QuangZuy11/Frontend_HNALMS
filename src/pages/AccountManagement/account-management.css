@@ -806,6 +806,110 @@
   padding-top: 0.5rem;
 }
 
+/* Manager Residents - style aligned with /manager/deposits */
+.tenant-list-deposit-style {
+  padding: 20px 24px;
+}
+
+.tenant-list-card {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e2e8f0;
+  padding: 16px 18px 12px;
+}
+
+.tenant-list-header {
+  margin-bottom: 0.75rem;
+}
+
+.tenant-list-header h1 {
+  color: #1a237e;
+}
+
+.tenant-list-search .search-input {
+  height: 36px;
+  font-size: 0.85rem;
+}
+
+.tenant-table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tenant-table {
+  table-layout: auto;
+  width: 100%;
+}
+
+.tenant-table th,
+.tenant-table td {
+  padding: 0.62rem 0.75rem;
+  font-size: 0.86rem;
+  white-space: normal;
+}
+
+.tenant-table th {
+  background: #f8fafc;
+  font-weight: 700;
+}
+
+.tenant-contact-cell {
+  color: #111827;
+  font-weight: 500;
+}
+
+.tenant-contact-sub {
+  color: #6b7280;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.tenant-pagination {
+  margin-top: auto;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 0.75rem;
+  padding-bottom: 0.4rem;
+}
+
+.tenant-pagination-controls {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+@media (max-width: 1366px) {
+  .tenant-list-deposit-style {
+    padding: 14px 12px;
+  }
+
+  .tenant-list-card {
+    padding: 12px 12px 10px;
+  }
+
+  .tenant-table th,
+  .tenant-table td {
+    font-size: 0.82rem;
+    padding: 0.54rem 0.56rem;
+  }
+
+  .tenant-contact-sub {
+    font-size: 0.74rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .tenant-table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .tenant-table thead,
+  .tenant-table tbody,
+  .tenant-table tr {
+    min-width: 760px;
+  }
+}
+
 @media (min-width: 1600px) {
   .created-accounts-page {
     padding: 24px 32px;
