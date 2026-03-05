@@ -36,14 +36,14 @@ interface Invoice {
   items?: InvoiceItem[]; 
 }
 
-const ITEMS_PER_PAGE = 15; // Số lượng hóa đơn trên 1 trang
+const ITEMS_PER_PAGE = 15; 
 
 const InvoiceList = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Kế toán thường quan tâm nhất đến hóa đơn Chưa thu
+  // Mặc định Kế toán xem hóa đơn Chưa thu (Bỏ qua Draft)
   const [filterStatus, setFilterStatus] = useState<string>('Unpaid');
   const [filterType, setFilterType] = useState<string>('All');
 
@@ -78,7 +78,12 @@ const InvoiceList = () => {
     setLoading(true);
     try {
       const res = await axios.get(`${API_BASE_URL}/invoices`);
-      setInvoices(res.data.data || []);
+      const allData = res.data.data || [];
+      
+      // LỌC BỎ HOÀN TOÀN BẢN NHÁP (Draft) ĐỐI VỚI KẾ TOÁN
+      const validInvoices = allData.filter((inv: Invoice) => inv.status !== 'Draft');
+      
+      setInvoices(validInvoices);
       setSelectedInvoiceIds([]); 
     } catch (error) { 
       toastr.error("Lỗi tải danh sách hóa đơn"); 
@@ -100,6 +105,7 @@ const InvoiceList = () => {
   const handlePaymentBulk = async () => {
     try {
       let idsToPay = selectedInvoiceIds;
+      
       if (idsToPay.length === 0) {
         idsToPay = sortedAndFilteredInvoices.filter(inv => inv.status === 'Unpaid').map(inv => inv._id);
       }
@@ -239,18 +245,12 @@ const InvoiceList = () => {
     );
   };
 
-  // --- [MỚI] HÀM RENDER TRẠNG THÁI CÓ MÀU SẮC ---
   const renderStatusBadge = (status: string) => {
     let bgColor = '';
     let textColor = '';
     let text = '';
 
     switch (status) {
-      case 'Draft':
-        bgColor = '#f1f5f9';
-        textColor = '#64748b';
-        text = 'Bản Nháp';
-        break;
       case 'Unpaid':
         bgColor = '#fef2f2';
         textColor = '#ef4444';
@@ -310,7 +310,7 @@ const InvoiceList = () => {
       <div className="page-header">
         <div>
           <h2>Quản lý Thu chi & Công nợ</h2>
-          <p>Tra cứu hóa đơn và xác nhận thanh toán tiền phòng</p>
+          <p>Nghiệp vụ Kế toán: Tra cứu hóa đơn và xác nhận thanh toán tiền phòng</p>
         </div>
       </div>
 
@@ -334,7 +334,6 @@ const InvoiceList = () => {
             style={{ width: '180px', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0', outline: 'none', background: '#fff', color: '#334155', cursor: 'pointer', boxSizing: 'border-box' }}
           >
             <option value="All">Tất cả trạng thái</option>
-            <option value="Draft">Bản Nháp (Chưa gửi)</option>
             <option value="Unpaid">Chưa thu (Đang nợ)</option>
             <option value="Paid">Đã thu (Hoàn tất)</option>
           </select>
@@ -406,7 +405,6 @@ const InvoiceList = () => {
                   </td>
                   <td>{formatDate(inv.dueDate)}</td>
                   
-                  {/* SỬ DỤNG HÀM RENDER BADGE Ở ĐÂY */}
                   <td>{renderStatusBadge(inv.status)}</td>
                   
                   <td>
@@ -446,7 +444,6 @@ const InvoiceList = () => {
         </table>
       </div>
 
-      {/* THANH ĐIỀU HƯỚNG PHÂN TRANG */}
       {sortedAndFilteredInvoices.length > 0 && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: '#fff', border: '1px solid #e2e8f0', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
           <div style={{ fontSize: '14px', color: '#64748b' }}>
@@ -474,7 +471,6 @@ const InvoiceList = () => {
         </div>
       )}
 
-      {/* MODAL CHI TIẾT HÓA ĐƠN */}
       {showDetailModal && selectedInvoice && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ width: '700px' }}>
@@ -508,7 +504,6 @@ const InvoiceList = () => {
               <div className="detail-row">
                 <span className="detail-label">Trạng thái:</span>
                 <span className="detail-value" style={{ textAlign: 'left' }}>
-                  {/* SỬ DỤNG HÀM RENDER BADGE TẠI MODAL CHI TIẾT */}
                   {renderStatusBadge(selectedInvoice.status)}
                 </span>
               </div>
@@ -583,7 +578,6 @@ const InvoiceList = () => {
         </div>
       )}
 
-      {/* MODAL HỘP THOẠI XÁC NHẬN */}
       {confirmModal.isOpen && (
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div className="modal-content" style={{ width: '420px', textAlign: 'center', padding: '24px' }}>
