@@ -21,6 +21,7 @@ interface InvoiceItem {
   usage: number;
   unitPrice: number;
   amount: number;
+  isIndex?: boolean; // Cập nhật thêm isIndex
 }
 
 interface Invoice {
@@ -35,6 +36,8 @@ interface Invoice {
   items?: InvoiceItem[]; 
 }
 
+const ITEMS_PER_PAGE = 15; // Số dòng trên 1 trang
+
 const InvoiceManager = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,7 +51,9 @@ const InvoiceManager = () => {
     direction: 'asc' 
   });
 
-  // [MỚI] State lưu trữ các ID hóa đơn được tích chọn
+  // [MỚI] State phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
 
   const [showReadingModal, setShowReadingModal] = useState(false);
@@ -79,6 +84,12 @@ const InvoiceManager = () => {
     fetchServices();
   }, []);
 
+  // [MỚI] Reset về trang 1 mỗi khi thay đổi bộ lọc hoặc tìm kiếm
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedInvoiceIds([]); 
+  }, [searchTerm, filterStatus, filterType, sortConfig]);
+
   const fetchServices = async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/services`);
@@ -93,7 +104,7 @@ const InvoiceManager = () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/invoices`);
       setInvoices(res.data.data || []);
-      setSelectedInvoiceIds([]); // Reset lại list chọn sau khi fetch
+      setSelectedInvoiceIds([]); 
     } catch (error) { toastr.error("Lỗi tải hóa đơn"); } 
     finally { setLoading(false); }
   };
@@ -265,7 +276,6 @@ const InvoiceManager = () => {
     }
   };
 
-  // --- [MỚI] LOGIC PHÁT HÀNH HÓA ĐƠN ---
   const handleReleaseSingle = async (id: string) => {
     try {
       await axios.put(`${API_BASE_URL}/invoices/${id}/release`);
@@ -276,7 +286,6 @@ const InvoiceManager = () => {
 
   const handleReleaseBulk = async () => {
     try {
-      // Nếu không chọn ID nào, lấy TẤT CẢ hóa đơn đang là Draft
       let idsToRelease = selectedInvoiceIds;
       if (idsToRelease.length === 0) {
         idsToRelease = sortedAndFilteredInvoices.filter(inv => inv.status === 'Draft').map(inv => inv._id);
@@ -288,7 +297,6 @@ const InvoiceManager = () => {
       }
 
       setLoading(true);
-      // Gọi API vòng lặp (hoặc bạn có thể viết 1 API ReleaseMany ở Backend sau này)
       for (const id of idsToRelease) {
         await axios.put(`${API_BASE_URL}/invoices/${id}/release`);
       }
@@ -335,24 +343,6 @@ const InvoiceManager = () => {
     setConfirmModal({ isOpen: false, action: null, message: '' });
   };
 
-  // --- LOGIC TICK CHỌN ---
-  const toggleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
-      // Chỉ chọn những hóa đơn đang Draft
-      const draftIds = sortedAndFilteredInvoices.filter(inv => inv.status === 'Draft').map(inv => inv._id);
-      setSelectedInvoiceIds(draftIds);
-    } else {
-      setSelectedInvoiceIds([]);
-    }
-  };
-
-  const toggleSelectOne = (id: string, status: string) => {
-    if (status !== 'Draft') return; // Chỉ cho phép chọn Draft
-    setSelectedInvoiceIds(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
-  };
-
   const handleViewDetail = async (id: string) => {
     try {
       const res = await axios.get(`${API_BASE_URL}/invoices/${id}`);
@@ -378,6 +368,7 @@ const InvoiceManager = () => {
     setSortConfig({ key, direction });
   };
 
+  // --- LỌC VÀ SẮP XẾP DỮ LIỆU TỔNG ---
   const sortedAndFilteredInvoices = useMemo(() => {
     const filtered = invoices.filter(inv => {
       const matchSearch = 
@@ -412,8 +403,33 @@ const InvoiceManager = () => {
     return filtered;
   }, [invoices, searchTerm, filterStatus, filterType, sortConfig]);
 
-  const elecServiceInfo = services.find(s => ['điện', 'dien'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
-  const waterServiceInfo = services.find(s => ['nước', 'nuoc'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
+  // --- [MỚI] TÍNH TOÁN PHÂN TRANG ---
+  const totalPages = Math.ceil(sortedAndFilteredInvoices.length / ITEMS_PER_PAGE);
+  const paginatedInvoices = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return sortedAndFilteredInvoices.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [sortedAndFilteredInvoices, currentPage]);
+
+  // --- LOGIC TICK CHỌN (Chỉ thao tác trên trang hiện tại) ---
+  const allDraftsInView = paginatedInvoices.filter(i => i.status === 'Draft');
+  const isAllSelected = allDraftsInView.length > 0 && allDraftsInView.every(inv => selectedInvoiceIds.includes(inv._id));
+
+  const toggleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      const draftIdsOnPage = paginatedInvoices.filter(inv => inv.status === 'Draft').map(inv => inv._id);
+      setSelectedInvoiceIds(prev => [...new Set([...prev, ...draftIdsOnPage])]);
+    } else {
+      const draftIdsOnPage = paginatedInvoices.map(inv => inv._id);
+      setSelectedInvoiceIds(prev => prev.filter(id => !draftIdsOnPage.includes(id)));
+    }
+  };
+
+  const toggleSelectOne = (id: string, status: string) => {
+    if (status !== 'Draft') return; 
+    setSelectedInvoiceIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
 
   const renderSortableHeader = (label: string, key: string) => {
     const isSorted = sortConfig.key === key;
@@ -436,9 +452,6 @@ const InvoiceManager = () => {
       </th>
     );
   };
-
-  const allDraftsInView = sortedAndFilteredInvoices.filter(i => i.status === 'Draft');
-  const isAllSelected = allDraftsInView.length > 0 && selectedInvoiceIds.length === allDraftsInView.length;
 
   return (
     <div className="invoice-container">
@@ -506,7 +519,6 @@ const InvoiceManager = () => {
             <Plus size={18} /> Tạo Hóa Đơn
           </button>
 
-          {/* [MỚI] Nút Phát Hành */}
           <button 
             className="btn btn-success" 
             style={{ whiteSpace: 'nowrap', background: '#16a34a', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500 }} 
@@ -518,11 +530,10 @@ const InvoiceManager = () => {
         </div>
       </div>
 
-      <div className="table-container">
+      <div className="table-container" style={{ borderRadius: '8px 8px 0 0', borderBottom: 'none' }}>
         <table className="invoice-table">
           <thead>
             <tr>
-              {/* [MỚI] Cột Checkbox Header */}
               <th style={{ width: '40px', textAlign: 'center' }}>
                 <input 
                   type="checkbox" 
@@ -542,11 +553,10 @@ const InvoiceManager = () => {
             </tr>
           </thead>
           <tbody>
-            {sortedAndFilteredInvoices.map((inv) => {
+            {paginatedInvoices.map((inv) => {
               const isDraft = inv.status === 'Draft';
               return (
                 <tr key={inv._id} style={{ background: selectedInvoiceIds.includes(inv._id) ? '#f0fdf4' : 'transparent' }}>
-                  {/* [MỚI] Cột Checkbox Body */}
                   <td style={{ textAlign: 'center' }}>
                     <input 
                       type="checkbox" 
@@ -568,7 +578,7 @@ const InvoiceManager = () => {
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: 8 }}>
-                      {inv.status === 'Draft' && (
+                      {isDraft && (
                         <>
                           <button className="btn-icon" title="Sửa Điện/Nước" onClick={() => handleOpenReading(inv)}>
                             <Edit3 size={18} color="#0284c7" />
@@ -597,7 +607,7 @@ const InvoiceManager = () => {
               );
             })}
             
-            {sortedAndFilteredInvoices.length === 0 && (
+            {paginatedInvoices.length === 0 && (
                <tr>
                  <td colSpan={8} style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
                    Không tìm thấy hóa đơn nào khớp với kết quả lọc.
@@ -608,6 +618,35 @@ const InvoiceManager = () => {
         </table>
       </div>
 
+      {/* [MỚI] THANH ĐIỀU HƯỚNG PHÂN TRANG */}
+      {sortedAndFilteredInvoices.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: '#fff', border: '1px solid #e2e8f0', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
+          <div style={{ fontSize: '14px', color: '#64748b' }}>
+            Hiển thị <b>{(currentPage - 1) * ITEMS_PER_PAGE + 1}</b> đến <b>{Math.min(currentPage * ITEMS_PER_PAGE, sortedAndFilteredInvoices.length)}</b> trong tổng số <b>{sortedAndFilteredInvoices.length}</b> hóa đơn
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              style={{ padding: '6px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: currentPage === 1 ? '#f1f5f9' : '#fff', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', color: currentPage === 1 ? '#94a3b8' : '#334155', fontWeight: 500 }}
+            >
+              Trước
+            </button>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', background: '#f1f5f9', padding: '6px 16px', borderRadius: '6px' }}>
+              Trang {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              style={{ padding: '6px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: currentPage === totalPages ? '#f1f5f9' : '#fff', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', color: currentPage === totalPages ? '#94a3b8' : '#334155', fontWeight: 500 }}
+            >
+              Sau
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* CÁC MODAL GIỮ NGUYÊN BÊN DƯỚI */}
       {showReadingModal && selectedInvoice && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ width: '600px' }}>
@@ -706,7 +745,7 @@ const InvoiceManager = () => {
 
       {showDetailModal && selectedInvoice && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ width: '650px' }}>
+          <div className="modal-content" style={{ width: '700px' }}>
             <div className="modal-header">
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <FileText size={20}/> Chi tiết Hóa đơn
@@ -749,7 +788,7 @@ const InvoiceManager = () => {
                     <thead style={{ background: '#f8fafc' }}>
                       <tr>
                         <th style={{ padding: '10px 12px', textAlign: 'left' }}>Nội dung thu</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'center' }}>Số lượng</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'center' }}>Số lượng / Chỉ số</th>
                         <th style={{ padding: '10px 12px', textAlign: 'right' }}>Đơn giá</th>
                         <th style={{ padding: '10px 12px', textAlign: 'right' }}>Thành tiền</th>
                       </tr>
@@ -758,7 +797,15 @@ const InvoiceManager = () => {
                       {selectedInvoice.items.map((item, index) => (
                         <tr key={index} style={{ borderTop: '1px solid #e2e8f0' }}>
                           <td style={{ padding: '10px 12px' }}>{item.itemName}</td>
-                          <td style={{ padding: '10px 12px', textAlign: 'center' }}>{item.usage}</td>
+                          <td style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b' }}>
+                            {item.isIndex === true ? (
+                              <span style={{ fontSize: '13px' }}>
+                                Tiêu thụ: <b>{item.usage}</b> <br/> (Cũ: {item.oldIndex} - Mới: {item.newIndex})
+                              </span>
+                            ) : (
+                              <span>{item.usage}</span>
+                            )}
+                          </td>
                           <td style={{ padding: '10px 12px', textAlign: 'right', color: '#64748b' }}>
                             {formatCurrency(item.unitPrice)}
                           </td>
@@ -774,9 +821,9 @@ const InvoiceManager = () => {
               
               <div className="detail-row" style={{ borderBottom: 'none', marginTop: 12, background: '#f1f5f9', padding: 16, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'nowrap' }}>
                 <span className="detail-label" style={{ fontSize: 16, fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', width: 'auto', marginRight: '20px' }}>
-                  TỔNG THANH TOÁN:
+                  TỔNG CẦN THU:
                 </span>
-                <span className="detail-value text-price" style={{ fontSize: 22, color: '#2563eb', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}>
+                <span className="detail-value text-price" style={{ fontSize: 24, color: '#2563eb', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}>
                   {formatCurrency(selectedInvoice.totalAmount)}
                 </span>
               </div>
