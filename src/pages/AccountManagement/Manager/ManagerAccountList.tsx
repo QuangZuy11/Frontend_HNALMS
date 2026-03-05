@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Eye } from 'lucide-react';
 import { accountService } from '../../../services/accountService';
 import { ROLE_LABELS, STATUS_LABELS, formatAccountDate, type AccountItem, type AccountDetail } from '../constants';
@@ -36,17 +36,7 @@ export default function ManagerAccountList() {
   const [createSaving, setCreateSaving] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
-
-  // Khoá scroll trang này
-  useEffect(() => {
-    const main = document.querySelector('.dashboard-layout-main') as HTMLElement;
-    if (main) main.style.overflowY = 'hidden';
-    document.body.style.overflow = 'hidden';
-    return () => {
-      if (main) main.style.overflowY = '';
-      document.body.style.overflow = '';
-    };
-  }, []);
+  const tableRef = useRef<HTMLDivElement | null>(null);
 
   const fetchAccounts = useCallback(async () => {
     try {
@@ -90,6 +80,25 @@ export default function ManagerAccountList() {
       });
 
   const totalPages = Math.max(1, Math.ceil((total || 0) / limit));
+
+  const getVisiblePages = () => {
+    const pages: number[] = [];
+    let start = Math.max(1, page - 2);
+    let end = Math.min(totalPages, page + 2);
+
+    if (page <= 2) end = Math.min(totalPages, 5);
+    if (page >= totalPages - 1) start = Math.max(1, totalPages - 4);
+
+    for (let i = start; i <= end; i += 1) pages.push(i);
+    return pages;
+  };
+
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage);
+    if (tableRef.current) {
+      tableRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   const handleViewDetail = async (accountId: string) => {
     try {
@@ -192,7 +201,7 @@ export default function ManagerAccountList() {
   };
 
   return (
-    <div className="created-accounts-page">
+    <div className="created-accounts-page owner-accounts-modern-page">
       <div className="created-accounts-card">
         <div className="created-accounts-header">
           <div>
@@ -237,8 +246,9 @@ export default function ManagerAccountList() {
             <p>Không tìm thấy tài khoản phù hợp với từ khóa tìm kiếm.</p>
           </div>
         ) : (
-          <div className="created-accounts-table-wrap">
-            <table className="created-accounts-table">
+          <>
+            <div className="created-accounts-table-wrap owner-accounts-modern-table-wrap" ref={tableRef}>
+              <table className="created-accounts-table owner-accounts-modern-table">
               <thead>
                 <tr>
                   <th>STT</th>
@@ -285,40 +295,9 @@ export default function ManagerAccountList() {
                   </tr>
                 ))}
               </tbody>
-            </table>
-            <div className="accounts-pagination">
-              <div className="accounts-pagination-info">
-
-              </div>
-              <div className="accounts-pagination-controls">
-                <button
-                  type="button"
-                  className="pagination-arrow-btn"
-                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={page === 1 || loading}
-                  aria-label="Trang trước"
-                >
-                  ‹
-                </button>
-                <button
-                  type="button"
-                  className="pagination-current-page"
-                  disabled
-                >
-                  {page}
-                </button>
-                <button
-                  type="button"
-                  className="pagination-arrow-btn"
-                  onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={page >= totalPages || loading}
-                  aria-label="Trang sau"
-                >
-                  ›
-                </button>
-              </div>
+              </table>
             </div>
-          </div>
+          </>
         )}
 
         {showDetailModal && (
@@ -408,6 +387,66 @@ export default function ManagerAccountList() {
           </div>
         )}
       </div>
+
+      {!loading && !error && (
+        <div className="accounts-pagination owner-accounts-modern-pagination owner-accounts-pagination-outside">
+          <div className="accounts-pagination-info">
+            Tổng: <strong>{total}</strong> bản ghi | Trang <strong>{page}</strong>/{totalPages}
+          </div>
+          <div className="accounts-pagination-controls">
+            <button
+              type="button"
+              className="pagination-arrow-btn"
+              onClick={() => handlePageChange(1)}
+              disabled={page === 1 || loading}
+              aria-label="Trang đầu"
+            >
+              «
+            </button>
+            <button
+              type="button"
+              className="pagination-arrow-btn"
+              onClick={() => handlePageChange(Math.max(page - 1, 1))}
+              disabled={page === 1 || loading}
+              aria-label="Trang trước"
+            >
+              ‹
+            </button>
+
+            {getVisiblePages().map((pageNumber) => (
+              <button
+                key={pageNumber}
+                type="button"
+                className={pageNumber === page ? 'pagination-current-page' : 'pagination-arrow-btn'}
+                onClick={() => handlePageChange(pageNumber)}
+                disabled={loading}
+                aria-label={`Trang ${pageNumber}`}
+              >
+                {pageNumber}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              className="pagination-arrow-btn"
+              onClick={() => handlePageChange(Math.min(page + 1, totalPages))}
+              disabled={page >= totalPages || loading}
+              aria-label="Trang sau"
+            >
+              ›
+            </button>
+            <button
+              type="button"
+              className="pagination-arrow-btn"
+              onClick={() => handlePageChange(totalPages)}
+              disabled={page >= totalPages || loading}
+              aria-label="Trang cuối"
+            >
+              »
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

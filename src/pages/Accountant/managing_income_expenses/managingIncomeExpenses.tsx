@@ -431,36 +431,6 @@ export default function ManagingIncomeExpenses() {
           </div>
         )}
 
-        {!loading && !error && filteredTickets.length > 0 && (
-          <div className="payments-pagination">
-            <button
-              type="button"
-              className="payments-page-nav"
-              disabled={safePage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            >
-              {"<"}
-            </button>
-
-            <button
-              type="button"
-              className="payments-page-number active"
-              aria-current="page"
-            >
-              {safePage}
-            </button>
-
-            <button
-              type="button"
-              className="payments-page-nav"
-              disabled={safePage === totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            >
-              {">"}
-            </button>
-          </div>
-        )}
-
         {showCreateModal && (
           <div className="payments-modal-overlay" onClick={closeCreateModal}>
             <div className="payments-modal" onClick={(e) => e.stopPropagation()}>
@@ -697,6 +667,43 @@ export default function ManagingIncomeExpenses() {
           </div>
         )}
       </div>
+
+      {/* Thanh phân trang đặt ngoài bảng, giống màn phiếu thu/hóa đơn */}
+      {!loading && !error && filteredTickets.length > 0 && (
+        <div className="payments-pagination payments-pagination-outside">
+          <div className="payments-pagination-info">
+            Tổng: <strong>{filteredTickets.length}</strong> phiếu chi | Trang{" "}
+            <strong>{safePage}</strong>/{totalPages}
+          </div>
+          <div className="payments-pagination-controls">
+            <button
+              type="button"
+              className="payments-page-nav"
+              disabled={safePage === 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            >
+              {"<"}
+            </button>
+
+            <button
+              type="button"
+              className="payments-page-number active"
+              aria-current="page"
+            >
+              {safePage}
+            </button>
+
+            <button
+              type="button"
+              className="payments-page-nav"
+              disabled={safePage === totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            >
+              {">"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

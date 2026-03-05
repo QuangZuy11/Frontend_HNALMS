@@ -85,15 +85,15 @@ export default function RepairRequestsList() {
   const { isManager } = useAuth();
   const tableRef = useRef<HTMLDivElement | null>(null);
 
-  // Khoá scroll trang này
+  // Không khoá scroll toàn trang nữa để hành vi giống màn cư dân (/manager/residents),
+  // màn cư dân dùng scroll mặc định của layout. Khi vào màn hình, scroll về đầu.
   useEffect(() => {
-    const main = document.querySelector('.dashboard-layout-main') as HTMLElement;
-    if (main) main.style.overflowY = 'hidden';
-    document.body.style.overflow = 'hidden';
-    return () => {
-      if (main) main.style.overflowY = '';
-      document.body.style.overflow = '';
-    };
+    const main = document.querySelector('.dashboard-layout-main') as HTMLElement | null;
+    if (main) {
+      main.scrollTop = 0;
+    } else {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
   }, []);
 
   const fetchRequests = useCallback(async () => {
@@ -145,6 +145,18 @@ export default function RepairRequestsList() {
   const handleItemsPerPageChange = (limit: number) => {
     setItemsPerPage(limit);
     setCurrentPage(1); // Reset về trang 1 khi thay đổi số item mỗi trang
+  };
+
+  const getVisiblePages = () => {
+    const pages: number[] = [];
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(totalPages, currentPage + 2);
+
+    if (currentPage <= 2) end = Math.min(totalPages, 5);
+    if (currentPage >= totalPages - 1) start = Math.max(1, totalPages - 4);
+
+    for (let i = start; i <= end; i += 1) pages.push(i);
+    return pages;
   };
 
   const formatDate = (dateStr?: string) => {
@@ -557,7 +569,7 @@ export default function RepairRequestsList() {
               Các yêu cầu sửa chữa/bảo trì do cư dân gửi lên tòa nhà
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="repair-requests-filters">
             <div className="repair-filter-wrapper">
               <label htmlFor="tenant-search" className="repair-filter-label">
                 Cư dân:
@@ -702,63 +714,6 @@ export default function RepairRequestsList() {
         )}
 
         {/* Pagination */}
-        {!loading && !error && requests.length > 0 && (
-          <div className="repair-pagination">
-            <div className="repair-pagination-info">
-              {!isManager && (
-                <>
-                  <span>
-                    Hiển thị {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} -{' '}
-                    {Math.min(currentPage * itemsPerPage, totalItems)} trong tổng số {totalItems} yêu cầu
-                  </span>
-                  <div className="repair-pagination-items-per-page">
-                    <label htmlFor="items-per-page">Hiển thị:</label>
-                    <select
-                      id="items-per-page"
-                      value={itemsPerPage}
-                      onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                      className="repair-pagination-select"
-                    >
-                      <option value={5}>5</option>
-                      <option value={8}>8</option>
-                      <option value={10}>10</option>
-                      <option value={11}>11</option>
-                      <option value={20}>20</option>
-                    </select>
-                  </div>
-                </>
-              )}
-            </div>
-            <div className="repair-pagination-controls">
-              <button
-                type="button"
-                className="pagination-arrow-btn"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1 || loading}
-                aria-label="Trang trước"
-              >
-                ‹
-              </button>
-              <button
-                type="button"
-                className="pagination-current-page"
-                disabled
-              >
-                {currentPage}
-              </button>
-              <button
-                type="button"
-                className="pagination-arrow-btn"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage >= totalPages || totalPages === 0 || loading}
-                aria-label="Trang sau"
-              >
-                ›
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Modal xem chi tiết */}
         {selectedRequest && (
           <div className="repair-modal-overlay" onClick={handleCloseDetail}>
@@ -1322,6 +1277,87 @@ export default function RepairRequestsList() {
           </div>
         )}
       </div>
+
+      {/* Pagination đưa ra ngoài thẻ bảng để giống màn cư dân */}
+      {!loading && !error && (
+        <div className={`repair-pagination ${isManager ? 'repair-pagination--manager' : ''}`}>
+          <div className="repair-pagination-info">
+            <span>
+              Tổng: <strong>{totalItems}</strong> bản ghi | Trang <strong>{currentPage}</strong>/
+              {Math.max(totalPages, 1)}
+            </span>
+            {!isManager && (
+              <div className="repair-pagination-items-per-page">
+                <label htmlFor="items-per-page">Hiển thị:</label>
+                <select
+                  id="items-per-page"
+                  value={itemsPerPage}
+                  onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                  className="repair-pagination-select"
+                >
+                  <option value={5}>5</option>
+                  <option value={8}>8</option>
+                  <option value={10}>10</option>
+                  <option value={11}>11</option>
+                  <option value={20}>20</option>
+                </select>
+              </div>
+            )}
+          </div>
+          <div className="repair-pagination-controls">
+            <button
+              type="button"
+              className="pagination-arrow-btn"
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1 || loading}
+              aria-label="Trang đầu"
+            >
+              «
+            </button>
+            <button
+              type="button"
+              className="pagination-arrow-btn"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1 || loading}
+              aria-label="Trang trước"
+            >
+              ‹
+            </button>
+
+            {getVisiblePages().map((pageNumber) => (
+              <button
+                key={pageNumber}
+                type="button"
+                className={pageNumber === currentPage ? 'pagination-current-page' : 'pagination-arrow-btn'}
+                onClick={() => handlePageChange(pageNumber)}
+                disabled={loading}
+                aria-label={`Trang ${pageNumber}`}
+              >
+                {pageNumber}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              className="pagination-arrow-btn"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages || totalPages === 0 || loading}
+              aria-label="Trang sau"
+            >
+              ›
+            </button>
+            <button
+              type="button"
+              className="pagination-arrow-btn"
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage >= totalPages || totalPages === 0 || loading}
+              aria-label="Trang cuối"
+            >
+              »
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

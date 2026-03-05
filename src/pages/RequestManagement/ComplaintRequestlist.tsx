@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Eye } from 'lucide-react';
 import { complaintService } from '../../services/complaintService';
+import useAuth from '../../hooks/useAuth';
 import './RepairRequestsList.css';
 
 interface Complaint {
@@ -60,6 +61,8 @@ export default function ComplaintRequestList() {
   const [roomSearch, setRoomSearch] = useState('');
   const [page, setPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const { isManager } = useAuth();
+  const tableRef = useRef<HTMLDivElement | null>(null);
   const [showDoneModal, setShowDoneModal] = useState(false);
   const [completingComplaint, setCompletingComplaint] = useState<Complaint | null>(null);
   const [doneNote, setDoneNote] = useState('');
@@ -120,7 +123,6 @@ export default function ComplaintRequestList() {
     complaint: Complaint,
     nextStatus: 'Pending' | 'Processing' | 'Done',
   ) => {
-    // Chỉ cho phép chuyển tiến: Pending -> Processing -> Done
     const statusRank: Record<Complaint['status'], number> = {
       Pending: 0,
       Processing: 1,
@@ -130,7 +132,6 @@ export default function ComplaintRequestList() {
     const nextRank = statusRank[nextStatus];
     if (nextRank <= currentRank) return;
 
-    // Nếu chuyển sang Đã xử lý -> mở modal nhập ghi chú
     if (nextStatus === 'Done') {
       setCompletingComplaint(complaint);
       setDoneNote('');
@@ -258,7 +259,6 @@ export default function ComplaintRequestList() {
     }
   };
 
-  // helper chuẩn hoá để tìm kiếm không phân biệt hoa/thường & dấu
   const normalize = (value: string) =>
     value
       .normalize('NFD')
@@ -296,6 +296,30 @@ export default function ComplaintRequestList() {
     startIndex,
     startIndex + itemsPerPage,
   );
+
+  const getVisiblePages = () => {
+    const pages: number[] = [];
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(totalPages, currentPage + 2);
+
+    if (currentPage <= 2) end = Math.min(totalPages, 5);
+    if (currentPage >= totalPages - 1) start = Math.max(1, totalPages - 4);
+
+    for (let i = start; i <= end; i += 1) pages.push(i);
+    return pages;
+  };
+
+  const handleItemsPerPageChange = (limit: number) => {
+    setItemsPerPage(limit);
+    setPage(1);
+  };
+
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage);
+    if (tableRef.current) {
+      tableRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   return (
     <div className="repair-requests-page">
@@ -389,7 +413,7 @@ export default function ComplaintRequestList() {
         )}
 
         {!loading && !error && complaints.length > 0 && (
-          <div className="repair-table-wrap">
+          <div className="repair-table-wrap" ref={tableRef}>
             <table className="repair-table">
               <thead>
                 <tr>
@@ -450,40 +474,6 @@ export default function ComplaintRequestList() {
           </div>
         )}
 
-        {/* Pagination */}
-        {!loading && !error && totalItems > 0 && (
-          <div className="repair-pagination repair-pagination--right">
-            <div className="repair-pagination-controls">
-              <button
-                type="button"
-                className="pagination-arrow-btn"
-                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1 || loading}
-                aria-label="Trang trước"
-              >
-                ‹
-              </button>
-              <button
-                type="button"
-                className="pagination-current-page"
-                disabled
-              >
-                {currentPage}
-              </button>
-              <button
-                type="button"
-                className="pagination-arrow-btn"
-                onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={currentPage >= totalPages || loading}
-                aria-label="Trang sau"
-              >
-                ›
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Modal xem chi tiết khiếu nại */}
         {selectedComplaint && (
           <div className="repair-modal-overlay" onClick={handleCloseDetail}>
             <div className="repair-modal repair-detail-modal" onClick={(e) => e.stopPropagation()}>
@@ -499,10 +489,8 @@ export default function ComplaintRequestList() {
                 </button>
               </div>
               <div className="repair-modal-body">
-                {/* Layout 2 cột thông tin */}
                 <div className="detail-grid-layout">
                   <div className="detail-grid-fields">
-                    {/* Hàng 1: Phòng + Cư dân */}
                     <div className="detail-field-group">
                       <div className="detail-field">
                         <span className="detail-field-label">Phòng</span>
@@ -517,7 +505,6 @@ export default function ComplaintRequestList() {
                         </span>
                       </div>
                     </div>
-                    {/* Hàng 2: Số điện thoại + Loại khiếu nại */}
                     <div className="detail-field-group">
                       <div className="detail-field">
                         <span className="detail-field-label">Số điện thoại</span>
@@ -530,7 +517,6 @@ export default function ComplaintRequestList() {
                         <span className="detail-field-value">{selectedComplaint.category}</span>
                       </div>
                     </div>
-                    {/* Hàng 3: Mức độ + Trạng thái */}
                     <div className="detail-field-group">
                       <div className="detail-field">
                         <span className="detail-field-label">Mức độ</span>
@@ -555,7 +541,6 @@ export default function ComplaintRequestList() {
                         </span>
                       </div>
                     </div>
-                    {/* Hàng 4: Ngày tạo */}
                     <div className="detail-field-group">
                       <div className="detail-field">
                         <span className="detail-field-label">Ngày tạo</span>
@@ -565,10 +550,8 @@ export default function ComplaintRequestList() {
                       </div>
                     </div>
                   </div>
-                  {/* Không có ảnh cho khiếu nại */}
                 </div>
 
-                {/* Email - toàn chiều rộng */}
                 <div className="detail-email-row">
                   <span className="detail-field-label">Email</span>
                   <span className="detail-email-value">
@@ -576,13 +559,11 @@ export default function ComplaintRequestList() {
                   </span>
                 </div>
 
-                {/* Nội dung khiếu nại */}
                 <div className="detail-description-block">
                   <span className="detail-field-label">Nội dung</span>
                   <p className="detail-description-text">{selectedComplaint.content}</p>
                 </div>
 
-                {/* Phản hồi (nếu có) */}
                 {selectedComplaint.response && (
                   <div className="detail-description-block">
                     <span className="detail-field-label">Phản hồi</span>
@@ -590,7 +571,6 @@ export default function ComplaintRequestList() {
                   </div>
                 )}
 
-                {/* Tình trạng xử lý + nút Xong */}
                 <div className="detail-status-actions">
                   <div className="detail-status-actions-select-row">
                     <span className="detail-status-clock">🕐</span>
@@ -641,7 +621,6 @@ export default function ComplaintRequestList() {
           </div>
         )}
 
-        {/* Modal nhập ghi chú khi chuyển sang Đã xử lý */}
         {showDoneModal && completingComplaint && (
           <div className="repair-modal-overlay" onClick={handleCloseDoneModal}>
             <div
@@ -696,7 +675,86 @@ export default function ComplaintRequestList() {
           </div>
         )}
       </div>
+
+      {!loading && !error && (
+        <div className={`repair-pagination ${isManager ? 'repair-pagination--manager' : ''}`}>
+          <div className="repair-pagination-info">
+            <span>
+              Tổng: <strong>{totalItems}</strong> bản ghi | Trang{' '}
+              <strong>{currentPage}</strong>/{Math.max(totalPages, 1)}
+            </span>
+            {!isManager && (
+              <div className="repair-pagination-items-per-page">
+                <label htmlFor="items-per-page">Hiển thị:</label>
+                <select
+                  id="items-per-page"
+                  value={itemsPerPage}
+                  onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                  className="repair-pagination-select"
+                >
+                  <option value={5}>5</option>
+                  <option value={8}>8</option>
+                  <option value={10}>10</option>
+                  <option value={11}>11</option>
+                  <option value={20}>20</option>
+                </select>
+              </div>
+            )}
+          </div>
+          <div className="repair-pagination-controls">
+            <button
+              type="button"
+              className="pagination-arrow-btn"
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1 || loading}
+              aria-label="Trang đầu"
+            >
+              «
+            </button>
+            <button
+              type="button"
+              className="pagination-arrow-btn"
+              onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+              disabled={currentPage === 1 || loading}
+              aria-label="Trang trước"
+            >
+              ‹
+            </button>
+
+            {getVisiblePages().map((pageNumber) => (
+              <button
+                key={pageNumber}
+                type="button"
+                className={pageNumber === currentPage ? 'pagination-current-page' : 'pagination-arrow-btn'}
+                onClick={() => handlePageChange(pageNumber)}
+                disabled={loading}
+                aria-label={`Trang ${pageNumber}`}
+              >
+                {pageNumber}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              className="pagination-arrow-btn"
+              onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
+              disabled={currentPage >= totalPages || loading}
+              aria-label="Trang sau"
+            >
+              ›
+            </button>
+            <button
+              type="button"
+              className="pagination-arrow-btn"
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage >= totalPages || loading}
+              aria-label="Trang cuối"
+            >
+              »
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

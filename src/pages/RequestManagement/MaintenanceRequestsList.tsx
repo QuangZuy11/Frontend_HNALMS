@@ -59,7 +59,7 @@ export default function MaintenanceRequestsList() {
   const [roomSearch, setRoomSearch] = useState<string>('');
   const [tenantSearch, setTenantSearch] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage] = useState<number>(10);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
   const { isManager } = useAuth();
   const tableRef = useRef<HTMLDivElement | null>(null);
 
@@ -106,6 +106,11 @@ export default function MaintenanceRequestsList() {
     if (tableRef.current) {
       tableRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+  };
+
+  const handleItemsPerPageChange = (limit: number) => {
+    setItemsPerPage(limit);
+    setCurrentPage(1);
   };
 
   const formatDate = (dateStr?: string) => {
@@ -335,6 +340,18 @@ export default function MaintenanceRequestsList() {
   const startIndex = (safePage - 1) * itemsPerPage;
   const paginatedRequests = filteredRequests.slice(startIndex, startIndex + itemsPerPage);
 
+  const getVisiblePages = () => {
+    const pages: number[] = [];
+    let start = Math.max(1, safePage - 2);
+    let end = Math.min(totalPages, safePage + 2);
+
+    if (safePage <= 2) end = Math.min(totalPages, 5);
+    if (safePage >= totalPages - 1) start = Math.max(1, totalPages - 4);
+
+    for (let i = start; i <= end; i += 1) pages.push(i);
+    return pages;
+  };
+
   if (!isManager) {
     return (
       <div className="repair-requests-page">
@@ -421,7 +438,7 @@ export default function MaintenanceRequestsList() {
           </div>
         )}
 
-        {!loading && !error && filteredRequests.length > 0 && (
+        {!loading && !error && (
           <div className="repair-table-wrap" ref={tableRef}>
             <table className="repair-table">
               <thead>
@@ -492,38 +509,6 @@ export default function MaintenanceRequestsList() {
         )}
 
         {/* Pagination */}
-        {!loading && !error && filteredRequests.length > 0 && (
-          <div className="repair-pagination repair-pagination--right">
-            <div className="repair-pagination-controls">
-              <button
-                type="button"
-                className="pagination-arrow-btn"
-                onClick={() => handlePageChange(safePage - 1)}
-                disabled={safePage === 1 || loading}
-                aria-label="Trang trước"
-              >
-                ‹
-              </button>
-              <button
-                type="button"
-                className="pagination-current-page"
-                disabled
-              >
-                {safePage}
-              </button>
-              <button
-                type="button"
-                className="pagination-arrow-btn"
-                onClick={() => handlePageChange(safePage + 1)}
-                disabled={safePage >= totalPages || totalPages === 0 || loading}
-                aria-label="Trang sau"
-              >
-                ›
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Modal xem chi tiết */}
         {selectedRequest && (
           <div className="repair-modal-overlay" onClick={handleCloseDetail}>
@@ -870,6 +855,87 @@ export default function MaintenanceRequestsList() {
           </div>
         )}
       </div>
+
+      {/* Pagination đưa ra ngoài thẻ card và dùng chung thiết kế với màn yêu cầu sửa chữa */}
+      {!loading && !error && (
+        <div className={`repair-pagination ${isManager ? 'repair-pagination--manager' : ''}`}>
+          <div className="repair-pagination-info">
+            <span>
+              Tổng: <strong>{filteredRequests.length}</strong> bản ghi | Trang{' '}
+              <strong>{safePage}</strong>/{Math.max(totalPages, 1)}
+            </span>
+            {!isManager && (
+              <div className="repair-pagination-items-per-page">
+                <label htmlFor="items-per-page">Hiển thị:</label>
+                <select
+                  id="items-per-page"
+                  value={itemsPerPage}
+                  onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                  className="repair-pagination-select"
+                >
+                  <option value={5}>5</option>
+                  <option value={8}>8</option>
+                  <option value={10}>10</option>
+                  <option value={11}>11</option>
+                  <option value={20}>20</option>
+                </select>
+              </div>
+            )}
+          </div>
+          <div className="repair-pagination-controls">
+            <button
+              type="button"
+              className="pagination-arrow-btn"
+              onClick={() => handlePageChange(1)}
+              disabled={safePage === 1 || loading}
+              aria-label="Trang đầu"
+            >
+              «
+            </button>
+            <button
+              type="button"
+              className="pagination-arrow-btn"
+              onClick={() => handlePageChange(safePage - 1)}
+              disabled={safePage === 1 || loading}
+              aria-label="Trang trước"
+            >
+              ‹
+            </button>
+
+            {getVisiblePages().map((pageNumber) => (
+              <button
+                key={pageNumber}
+                type="button"
+                className={pageNumber === safePage ? 'pagination-current-page' : 'pagination-arrow-btn'}
+                onClick={() => handlePageChange(pageNumber)}
+                disabled={loading}
+                aria-label={`Trang ${pageNumber}`}
+              >
+                {pageNumber}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              className="pagination-arrow-btn"
+              onClick={() => handlePageChange(safePage + 1)}
+              disabled={safePage >= totalPages || totalPages === 0 || loading}
+              aria-label="Trang sau"
+            >
+              ›
+            </button>
+            <button
+              type="button"
+              className="pagination-arrow-btn"
+              onClick={() => handlePageChange(totalPages)}
+              disabled={safePage >= totalPages || totalPages === 0 || loading}
+              aria-label="Trang cuối"
+            >
+              »
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

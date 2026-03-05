@@ -6,14 +6,16 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: linear-gradient(180deg, #f8fbff 0%, #f3f7fc 100%);
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
 
 .repair-requests-card {
   background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(53, 121, 198, 0.12);
-  border: 1px solid rgba(53, 121, 198, 0.15);
-  padding: 20px 22px 24px;
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  border: 1px solid #dbe4ee;
+  padding: 20px 22px 20px;
   flex: 1;
   box-sizing: border-box;
   display: flex;
@@ -26,17 +28,36 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .repair-requests-header h1 {
-  font-size: 20px;
+  font-size: 34px;
   margin: 0;
+  font-weight: 800;
+  color: #1a237e;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .repair-requests-header .subtitle {
   margin-top: 4px;
   color: #64748b;
   font-size: 14px;
+}
+
+.repair-requests-filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  padding: 14px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #dbe4ee;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
 }
 
 .repair-filter-wrapper {
@@ -47,17 +68,20 @@
 
 .repair-filter-label {
   font-size: 14px;
-  color: #64748b;
+  color: #475569;
   white-space: nowrap;
+  font-weight: 600;
 }
 
 .repair-filter-select {
-  padding: 6px 10px;
-  border-radius: 8px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
   border: 1px solid #d1d5db;
   font-size: 14px;
   background-color: #ffffff;
   cursor: pointer;
+  min-width: 170px;
 }
 
 .repair-filter-select:focus {
@@ -97,12 +121,16 @@
 
 .repair-table-wrap {
   flex: 1;
-  overflow: hidden;
-  padding-bottom: 8px;
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid #dbe4ee;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  background: #ffffff;
 }
 
 .repair-table {
   width: 100%;
+  min-width: 980px;
   border-collapse: collapse;
   font-size: 14px;
 }
@@ -116,9 +144,22 @@
 }
 
 .repair-table th {
-  background-color: #f8fafc;
-  font-weight: 600;
+  background-color: #f1f5f9;
+  font-weight: 700;
+  color: #334155;
   white-space: nowrap;
+}
+
+.repair-table tbody tr {
+  transition: background-color 0.18s ease;
+}
+
+.repair-table tbody tr:nth-child(even) {
+  background-color: #fcfdff;
+}
+
+.repair-table tbody tr:hover {
+  background-color: #eef6ff;
 }
 
 /* Căn giữa cột Thao tác */
@@ -632,9 +673,15 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  padding: 0.75rem 1rem 0.25rem 1rem;
+  margin-top: 10px;
+  padding: 0.9rem 0.25rem 0 0.25rem;
   font-size: 0.875rem;
   color: #4b5563;
+}
+
+.repair-pagination--manager {
+  justify-content: center;
+  gap: 0.9rem;
 }
 
 .repair-pagination-info {
@@ -643,7 +690,39 @@
   align-items: center;
   gap: 1rem;
   font-size: 0.875rem;
-  color: #4b5563;
+  color: #475569;
+}
+
+.repair-pagination--manager .repair-pagination-info {
+  margin-right: 0.5rem;
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.repair-pagination--manager .repair-pagination-controls {
+  gap: 0.4rem;
+}
+
+.repair-pagination--manager .pagination-arrow-btn {
+  min-width: 40px;
+  height: 36px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  border: 1px solid #d1d5db;
+  color: #6b7280;
+}
+
+.repair-pagination--manager .pagination-arrow-btn:hover:not(:disabled) {
+  background: #e5e7eb;
+  border-color: #cbd5e1;
+}
+
+.repair-pagination--manager .pagination-current-page {
+  min-width: 40px;
+  height: 36px;
+  border-radius: 6px;
+  background: #1a237e;
+  border: 1px solid #1a237e;
 }
 
 .repair-pagination-info strong {
@@ -681,26 +760,28 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .pagination-arrow-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  border: 1px solid #d1d5db;
+  min-width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
   background: #fff;
-  font-size: 1rem;
+  font-size: 0.95rem;
   cursor: pointer;
   color: #111827;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  padding: 0 10px;
 }
 
 .pagination-arrow-btn:hover:not(:disabled) {
-  background-color: #f9fafb;
-  border-color: #d1d5db;
+  background-color: #f8fafc;
+  border-color: #94a3b8;
 }
 
 .pagination-arrow-btn:disabled {
@@ -709,18 +790,19 @@
 }
 
 .pagination-current-page {
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  border: none;
-  background: #2563eb;
+  min-width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #1a237e;
+  background: #1a237e;
   color: #fff;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: default;
+  padding: 0 10px;
 }
 
 .repair-pagination-btn {

@@ -1050,3 +1050,143 @@
     min-width: 0;
   }
 }
+
+/* Owner /accounts - modern style aligned with manager refreshed UI */
+.owner-accounts-modern-page {
+  background: #f1f5fb;
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+.owner-accounts-modern-card {
+  border-radius: 14px;
+  border: 1px solid #d7e0ee;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+}
+
+.owner-accounts-modern-page .created-accounts-header {
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.owner-accounts-modern-page .created-accounts-header h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #1b2f8a;
+  letter-spacing: 0.2px;
+  margin-bottom: 2px;
+}
+
+.owner-accounts-modern-page .created-accounts-subtitle {
+  display: none;
+}
+
+.owner-accounts-modern-page .created-accounts-actions {
+  width: 100%;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f3f6fb;
+  border: 1px solid #d9e2f1;
+}
+
+.owner-accounts-modern-page .created-accounts-search {
+  min-width: 280px;
+}
+
+.owner-accounts-modern-page .created-accounts-search .search-input {
+  min-width: 280px;
+}
+
+.owner-accounts-modern-page .created-accounts-search .search-input,
+.owner-accounts-modern-page .filter-role-group select,
+.owner-accounts-modern-page .btn-create {
+  height: 38px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.owner-accounts-modern-page .created-accounts-search .search-input,
+.owner-accounts-modern-page .filter-role-group select {
+  border-color: #cfd8e6;
+  background: #fff;
+}
+
+.owner-accounts-modern-page .btn-create {
+  background: #1a237e;
+}
+
+.owner-accounts-modern-page .btn-create:hover {
+  background: #2b3fa3;
+}
+
+.owner-accounts-modern-table-wrap {
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid #dbe4ee;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+  background: #fff;
+}
+
+.owner-accounts-modern-table {
+  min-width: 980px;
+}
+
+.owner-accounts-modern-table th {
+  background: #eef2f7;
+  color: #25324a;
+  font-weight: 700;
+}
+
+.owner-accounts-modern-table tbody tr {
+  transition: background-color 0.16s ease;
+}
+
+.owner-accounts-modern-table tbody tr:hover {
+  background: #f7faff;
+}
+
+.owner-accounts-modern-pagination {
+  margin-top: 12px;
+  padding: 0.4rem 0 0 0;
+  justify-content: center;
+}
+
+.owner-accounts-pagination-outside {
+  width: 100%;
+  margin-top: 10px;
+  padding: 0.2rem 0.25rem 0 0.25rem;
+}
+
+.owner-accounts-pagination-outside {
+  width: 100%;
+  margin-top: 10px;
+  padding: 0.2rem 0.25rem 0 0.25rem;
+}
+
+.owner-accounts-modern-page .accounts-pagination-info {
+  margin-right: 0.75rem;
+}
+
+.owner-accounts-modern-page .accounts-pagination-controls {
+  flex-wrap: wrap;
+}
+
+.owner-accounts-modern-page .pagination-arrow-btn {
+  min-width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  padding: 0 10px;
+}
+
+.owner-accounts-modern-page .pagination-current-page {
+  min-width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  border: 1px solid #1a237e;
+  background: #1a237e;
+  padding: 0 10px;
+}

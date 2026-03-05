@@ -239,6 +239,11 @@ export default function TenantAccountList() {
         display: "flex",
         flexDirection: "column",
         minHeight: "calc(100vh - 64px)",
+        background: "linear-gradient(180deg, #f8fbff 0%, #f3f7fc 100%)",
+        fontFamily: "system-ui, Avenir, Helvetica, Arial, sans-serif",
+        "& .MuiTypography-root, & .MuiTableCell-root, & .MuiInputBase-root, & .MuiButton-root, & .MuiChip-root, & .MuiMenuItem-root": {
+          fontFamily: "system-ui, Avenir, Helvetica, Arial, sans-serif",
+        },
       }}
     >
       <Box
@@ -249,7 +254,15 @@ export default function TenantAccountList() {
           mb: 4,
         }}
       >
-        <Typography variant="h4" sx={{ fontWeight: "bold", color: "#1a237e" }}>
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 800,
+            color: "#1a237e",
+            letterSpacing: "0.2px",
+            textShadow: "0 1px 0 rgba(255,255,255,0.7)",
+          }}
+        >
           Danh sách cư dân
         </Typography>
       </Box>
@@ -258,10 +271,15 @@ export default function TenantAccountList() {
         sx={{
           display: "flex",
           flexWrap: "wrap",
-          gap: 1,
-          mb: 2,
+          gap: 1.5,
+          mb: 2.5,
           justifyContent: "flex-end",
           alignItems: "center",
+          p: 1.75,
+          borderRadius: 2.5,
+          background: "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
+          border: "1px solid #dbe4ee",
+          boxShadow: "0 4px 14px rgba(15, 23, 42, 0.04)",
         }}
       >
         <TextField
@@ -270,15 +288,21 @@ export default function TenantAccountList() {
           value={searchName}
           onChange={(e) => setSearchName(e.target.value)}
           sx={{
-            width: 120,
-            "& .MuiInputBase-input": { py: 0.75, fontSize: 13 },
+            width: 220,
+            "& .MuiInputBase-input": { py: 1.05, fontSize: 14 },
+            "& .MuiOutlinedInput-root": {
+              borderRadius: 2,
+              backgroundColor: "#ffffff",
+            },
           }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: "#94a3b8", fontSize: 16 }} />
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: "#94a3b8", fontSize: 18 }} />
+                </InputAdornment>
+              ),
+            },
           }}
         />
 
@@ -288,28 +312,37 @@ export default function TenantAccountList() {
           value={searchContact}
           onChange={(e) => setSearchContact(e.target.value)}
           sx={{
-            width: 130,
-            "& .MuiInputBase-input": { py: 0.75, fontSize: 13 },
+            width: 240,
+            "& .MuiInputBase-input": { py: 1.05, fontSize: 14 },
+            "& .MuiOutlinedInput-root": {
+              borderRadius: 2,
+              backgroundColor: "#ffffff",
+            },
           }}
         />
 
-        <FormControl size="small" sx={{ minWidth: 110 }}>
+        <FormControl size="small" sx={{ minWidth: 170 }}>
           <Select
             value={filterStatus}
             displayEmpty
             onChange={(e) => setFilterStatus(e.target.value)}
-            sx={{ fontSize: 13, "& .MuiSelect-select": { py: 0.75 } }}
+            sx={{
+              fontSize: 14,
+              "& .MuiSelect-select": { py: 1.05 },
+              borderRadius: 2,
+              backgroundColor: "#ffffff",
+            }}
           >
-            <MenuItem value="all" sx={{ fontSize: 13 }}>
+            <MenuItem value="all" sx={{ fontSize: 14 }}>
               Trạng thái
             </MenuItem>
-            <MenuItem value="active" sx={{ fontSize: 13 }}>
+            <MenuItem value="active" sx={{ fontSize: 14 }}>
               Hoạt động
             </MenuItem>
-            <MenuItem value="inactive" sx={{ fontSize: 13 }}>
+            <MenuItem value="inactive" sx={{ fontSize: 14 }}>
               Không hoạt động
             </MenuItem>
-            <MenuItem value="suspended" sx={{ fontSize: 13 }}>
+            <MenuItem value="suspended" sx={{ fontSize: 14 }}>
               Tạm khóa
             </MenuItem>
           </Select>
@@ -323,7 +356,15 @@ export default function TenantAccountList() {
               setSearchContact("");
               setFilterStatus("all");
             }}
-            sx={{ minWidth: "auto", p: 0.5, color: "#94a3b8" }}
+            sx={{
+              minWidth: "auto",
+              p: 0.75,
+              color: "#64748b",
+              borderRadius: 2,
+              bgcolor: "#ffffff",
+              border: "1px solid #dbe4ee",
+              "&:hover": { bgcolor: "#f8fafc", borderColor: "#cbd5e1" },
+            }}
           >
             <ClearIcon sx={{ fontSize: 18 }} />
           </Button>
@@ -332,18 +373,25 @@ export default function TenantAccountList() {
 
       <TableContainer
         component={Paper}
-        elevation={3}
-        sx={{ borderRadius: 2, overflow: "hidden", flex: 1 }}
+        elevation={0}
+        sx={{
+          borderRadius: 3,
+          overflow: "hidden",
+          flex: 1,
+          border: "1px solid #dbe4ee",
+          boxShadow: "0 10px 24px rgba(15, 23, 42, 0.08)",
+          backgroundColor: "#ffffff",
+        }}
       >
         <Table sx={{ minWidth: 650 }}>
-          <TableHead sx={{ bgcolor: "#f5f5f5" }}>
+          <TableHead sx={{ bgcolor: "#f1f5f9" }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: "bold" }}>STT</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Họ và tên</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>SĐT / Email</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Trạng thái</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Ngày tạo</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Thao tác</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#334155", py: 1.6 }}>STT</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#334155", py: 1.6 }}>Họ và tên</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#334155", py: 1.6 }}>SĐT / Email</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#334155", py: 1.6 }}>Trạng thái</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#334155", py: 1.6 }}>Ngày tạo</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#334155", py: 1.6 }}>Thao tác</TableCell>
             </TableRow>
           </TableHead>
 
@@ -360,7 +408,10 @@ export default function TenantAccountList() {
                   key={acc._id}
                   sx={{
                     "&:last-child td, &:last-child th": { border: 0 },
-                    "&:hover": { bgcolor: "#f9f9f9" },
+                    "& td": { py: 1.35 },
+                    transition: "background-color 0.18s ease",
+                    "&:nth-of-type(even)": { bgcolor: "#fcfdff" },
+                    "&:hover": { bgcolor: "#eef6ff" },
                   }}
                 >
                   <TableCell>{(page - 1) * ROWS_PER_PAGE + index + 1}</TableCell>
