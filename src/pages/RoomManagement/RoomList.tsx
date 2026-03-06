@@ -91,23 +91,23 @@ export default function RoomList() {
   // Get floor label from floorsData instead of rooms (works even when no rooms match)
   const currentFloorLabel = showFloorMap
     ? (() => {
-        const selectedFloor = floorsData.find(
-          (f) => f._id === filters.selectedFloors[0],
-        );
-        if (selectedFloor) {
-          const name = selectedFloor.name;
-          // Check if name already starts with "Tầng"
-          if (name.toLowerCase().startsWith("tầng")) {
-            return name;
-          }
-          return `Tầng ${name}`;
+      const selectedFloor = floorsData.find(
+        (f) => f._id === filters.selectedFloors[0],
+      );
+      if (selectedFloor) {
+        const name = selectedFloor.name;
+        // Check if name already starts with "Tầng"
+        if (name.toLowerCase().startsWith("tầng")) {
+          return name;
         }
-        // Fallback to room data if floorsData not available
-        const roomFloorLabel = rooms.find(
-          (r) => r.floorId?._id === filters.selectedFloors[0],
-        )?.floorLabel;
-        return roomFloorLabel || "";
-      })()
+        return `Tầng ${name}`;
+      }
+      // Fallback to room data if floorsData not available
+      const roomFloorLabel = rooms.find(
+        (r) => r.floorId?._id === filters.selectedFloors[0],
+      )?.floorLabel;
+      return roomFloorLabel || "";
+    })()
     : "";
 
   useEffect(() => {
@@ -314,8 +314,8 @@ export default function RoomList() {
               <>
                 {/* Case: Floor selected + Room Type selected + No rooms match -> Show "No rooms found" instead of empty map */}
                 {showFloorMap &&
-                filters.selectedRoomTypes.length > 0 &&
-                rooms.length === 0 ? (
+                  filters.selectedRoomTypes.length > 0 &&
+                  rooms.length === 0 ? (
                   <div className="empty-state">
                     <p>Không có phòng loại này tại {currentFloorLabel}</p>
                   </div>
@@ -364,6 +364,7 @@ export default function RoomList() {
                         highlightedRooms={rooms}
                         floorName={currentFloorLabel || `Tầng`}
                         legendType="guest"
+                        showDateYear={filters.selectedRoomTypes.length === 0 || sidebarCollapsed}
                       />
                     ) : (
                       <FloorMap
@@ -373,6 +374,7 @@ export default function RoomList() {
                         highlightedRooms={rooms}
                         floorName={currentFloorLabel || `Tầng`}
                         legendType="guest"
+                        showDateYear={filters.selectedRoomTypes.length === 0 || sidebarCollapsed}
                       />
                     )}
                     <RoomTypeDetail room={rooms[0]} />
@@ -413,6 +415,7 @@ export default function RoomList() {
                       highlightedRooms={rooms}
                       floorName={currentFloorLabel || `Tầng`}
                       legendType="guest"
+                      showDateYear={filters.selectedRoomTypes.length === 0 || sidebarCollapsed}
                     />
                   ) : (
                     <FloorMap
@@ -422,6 +425,7 @@ export default function RoomList() {
                       highlightedRooms={rooms}
                       floorName={currentFloorLabel || `Tầng`}
                       legendType="guest"
+                      showDateYear={filters.selectedRoomTypes.length === 0 || sidebarCollapsed}
                     />
                   )
                 ) : (

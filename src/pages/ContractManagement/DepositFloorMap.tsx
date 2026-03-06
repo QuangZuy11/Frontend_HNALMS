@@ -1,13 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import {
-  Box,
-  Typography,
-  CircularProgress,
-  Tabs,
-  Tab,
-  Paper,
-} from "@mui/material";
+import { Box, Typography, CircularProgress } from "@mui/material";
+import { Building } from "lucide-react";
 import { roomService } from "../../services/roomService";
 import FloorMap from "../RoomManagement/RoomList/components/FloorMap";
 import FloorMapLevel2 from "../RoomManagement/RoomList/components/FloorMapLevel2";
@@ -138,13 +132,6 @@ const DepositFloorMap = () => {
     }
   };
 
-  const handleFloorChange = (
-    _event: React.SyntheticEvent,
-    newValue: string,
-  ) => {
-    setSelectedFloor(newValue);
-  };
-
   if (loading) {
     return (
       <Box
@@ -173,113 +160,85 @@ const DepositFloorMap = () => {
   const currentFloor = floors.find((f) => f._id === selectedFloor);
 
   return (
-    <Box sx={{ p: 3 }}>
+    <div className="contract-container">
       {/* Page Header */}
-      <Typography
-        variant="h4"
-        sx={{ mb: 1, fontWeight: "bold", color: "#1a237e" }}
-      >
-        Tạo Cọc Phòng
-      </Typography>
-      <Typography variant="body1" sx={{ mb: 3, color: "#666" }}>
+      <h2 className="contract-page-title">Tạo Cọc Phòng</h2>
+      <p className="contract-page-subtitle" style={{ marginBottom: 20 }}>
         Chọn phòng trống trên sơ đồ tầng để tạo đơn cọc mới
-      </Typography>
+      </p>
 
-      {/* Floor Tabs */}
-      <Paper sx={{ mb: 3, borderRadius: 2 }}>
-        <Tabs
-          value={selectedFloor}
-          onChange={handleFloorChange}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{
-            borderBottom: 1,
-            borderColor: "divider",
-            "& .MuiTab-root": {
-              fontWeight: 600,
-              textTransform: "none",
-              minWidth: 100,
-            },
-            "& .Mui-selected": {
-              color: "#1a237e !important",
-            },
-            "& .MuiTabs-indicator": {
-              backgroundColor: "#1a237e",
-            },
-          }}
-        >
-          {floors.map((floor) => (
-            <Tab
-              key={floor._id}
-              value={floor._id}
-              label={`Tầng ${getFloorNumber(floor.name)}`}
-            />
-          ))}
-        </Tabs>
-      </Paper>
-
-      {/* Legend */}
+      {/* Floor Filter Pills */}
+      <div className="contract-floor-pills">
+        {floors.map((floor) => (
+          <button
+            key={floor._id}
+            className={`floor-pill${selectedFloor === floor._id ? " active" : ""}`}
+            onClick={() => setSelectedFloor(floor._id)}
+          >
+            <Building size={14} />
+            Tầng {getFloorNumber(floor.name)}
+          </button>
+        ))}
+      </div>
 
       {/* Floor Map */}
-      <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
-        <div className="contract-floor-map">
-          {currentFloorRooms.length > 0 ? (
-            // Render floor-specific map based on floor name
-            getFloorNumber(currentFloor?.name || "") === "1" ? (
-              <FloorMap
-                rooms={currentFloorRooms}
-                floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
-                onRoomSelect={handleRoomSelect}
-                legendType="deposit"
-              />
-            ) : getFloorNumber(currentFloor?.name || "") === "2" ? (
-              <FloorMapLevel2
-                rooms={currentFloorRooms}
-                floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
-                onRoomSelect={handleRoomSelect}
-                legendType="deposit"
-              />
-            ) : getFloorNumber(currentFloor?.name || "") === "3" ? (
-              <FloorMapLevel3
-                rooms={currentFloorRooms}
-                floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
-                onRoomSelect={handleRoomSelect}
-                legendType="deposit"
-              />
-            ) : getFloorNumber(currentFloor?.name || "") === "4" ? (
-              <FloorMapLevel4
-                rooms={currentFloorRooms}
-                floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
-                onRoomSelect={handleRoomSelect}
-                legendType="deposit"
-              />
-            ) : getFloorNumber(currentFloor?.name || "") === "5" ? (
-              <FloorMapLevel5
-                rooms={currentFloorRooms}
-                floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
-                onRoomSelect={handleRoomSelect}
-                legendType="deposit"
-              />
-            ) : (
-              <FloorMap
-                rooms={currentFloorRooms}
-                floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
-                onRoomSelect={handleRoomSelect}
-                legendType="deposit"
-              />
-            )
+      <div className="contract-floor-map">
+        {currentFloorRooms.length > 0 ? (
+          // Render floor-specific map based on floor name
+          getFloorNumber(currentFloor?.name || "") === "1" ? (
+            <FloorMap
+              rooms={currentFloorRooms}
+              floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
+              onRoomSelect={handleRoomSelect}
+              legendType="deposit"
+            />
+          ) : getFloorNumber(currentFloor?.name || "") === "2" ? (
+            <FloorMapLevel2
+              rooms={currentFloorRooms}
+              floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
+              onRoomSelect={handleRoomSelect}
+              legendType="deposit"
+            />
+          ) : getFloorNumber(currentFloor?.name || "") === "3" ? (
+            <FloorMapLevel3
+              rooms={currentFloorRooms}
+              floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
+              onRoomSelect={handleRoomSelect}
+              legendType="deposit"
+            />
+          ) : getFloorNumber(currentFloor?.name || "") === "4" ? (
+            <FloorMapLevel4
+              rooms={currentFloorRooms}
+              floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
+              onRoomSelect={handleRoomSelect}
+              legendType="deposit"
+            />
+          ) : getFloorNumber(currentFloor?.name || "") === "5" ? (
+            <FloorMapLevel5
+              rooms={currentFloorRooms}
+              floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
+              onRoomSelect={handleRoomSelect}
+              legendType="deposit"
+            />
           ) : (
-            <Box sx={{ p: 4, textAlign: "center" }}>
-              <Typography color="text.secondary">
-                Không có phòng nào ở tầng này
-              </Typography>
-            </Box>
-          )}
-        </div>
-      </Paper>
+            <FloorMap
+              rooms={currentFloorRooms}
+              floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
+              onRoomSelect={handleRoomSelect}
+              legendType="deposit"
+            />
+          )
+        ) : (
+          <Box sx={{ p: 4, textAlign: "center" }}>
+            <Typography color="text.secondary">
+              Không có phòng nào ở tầng này
+            </Typography>
+          </Box>
+        )}
+      </div>
 
       {/* Room Stats */}
-    </Box>
+    </div>
   );
 };
 
