@@ -305,9 +305,6 @@ export default function ManagingIncomeExpenses() {
         <div className="payments-header">
           <div>
             <h1>Danh sách phiếu chi</h1>
-            <p className="subtitle">
-              Các phiếu chi phát sinh từ sửa chữa miễn phí và các nghiệp vụ khác
-            </p>
           </div>
           <div className="payments-header-actions">
             <button

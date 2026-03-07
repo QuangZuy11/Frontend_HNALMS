@@ -581,17 +581,17 @@ export default function ManagerAccountList() {
                   <div className="detail-section">
                     <h3>Thông tin đăng nhập</h3>
                     <div className="detail-row"><span className="detail-label">Tên đăng nhập:</span><span className="detail-value">{detailAccount.username}</span></div>
-                    <div className="detail-row"><span className="detail-label">Email:</span><span className="detail-value">{detailAccount.email}</span></div>
-                    <div className="detail-row"><span className="detail-label">Số điện thoại:</span><span className="detail-value">{detailAccount.phoneNumber || '-'}</span></div>
+                    <div className="detail-row"><span className="detail-label">Email:</span><span className="detail-value detail-value-email">{detailAccount.email}</span></div>
+                    <div className="detail-row"><span className="detail-label">Số điện thoại:</span><span className={`detail-value ${!detailAccount.phoneNumber ? 'detail-value-empty' : ''}`}>{detailAccount.phoneNumber || 'Chưa cập nhật'}</span></div>
                     <div className="detail-row detail-row-inline-badge"><span className="detail-label">Vai trò:</span><span className="role-badge">{ROLE_LABELS[detailAccount.role] || detailAccount.role}</span></div>
                     <div className="detail-row detail-row-inline-badge"><span className="detail-label">Trạng thái:</span><span className={`status-badge status-${detailAccount.status}`}>{STATUS_LABELS[detailAccount.status] || detailAccount.status}</span></div>
                     <div className="detail-row"><span className="detail-label">Ngày tạo:</span><span className="detail-value">{formatAccountDate(detailAccount.createdAt)}</span></div>
                   </div>
                   <div className="detail-section">
                     <h3>Thông tin cá nhân</h3>
-                    <div className="detail-row"><span className="detail-label">Họ và tên:</span><span className="detail-value">{detailAccount.fullname || '-'}</span></div>
-                    <div className="detail-row"><span className="detail-label">CCCD:</span><span className="detail-value">{detailAccount.cccd || '-'}</span></div>
-                    <div className="detail-row"><span className="detail-label">Địa chỉ:</span><span className="detail-value">{detailAccount.address || '-'}</span></div>
+                    <div className="detail-row"><span className={`detail-label ${!detailAccount.fullname ? 'detail-label-empty' : ''}`}>Họ và tên:</span><span className={`detail-value ${!detailAccount.fullname ? 'detail-value-empty' : ''}`}>{detailAccount.fullname || 'Chưa cập nhật'}</span></div>
+                    <div className="detail-row"><span className={`detail-label ${!detailAccount.cccd ? 'detail-label-empty' : ''}`}>CCCD:</span><span className={`detail-value ${!detailAccount.cccd ? 'detail-value-empty' : ''}`}>{detailAccount.cccd || 'Chưa cập nhật'}</span></div>
+                    <div className="detail-row"><span className={`detail-label ${!detailAccount.address ? 'detail-label-empty' : ''}`}>Địa chỉ:</span><span className={`detail-value ${!detailAccount.address ? 'detail-value-empty' : ''}`}>{detailAccount.address || 'Chưa cập nhật'}</span></div>
                   </div>
                   <div className="detail-actions">
                     {detailAccount.status === 'active' ? (
