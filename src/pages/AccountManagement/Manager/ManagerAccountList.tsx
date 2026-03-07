@@ -1,7 +1,41 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Eye } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
+import {
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  FormControl,
+  IconButton,
+  InputAdornment,
+  MenuItem,
+  Paper,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+} from '@mui/material';
+import {
+  Search as SearchIcon,
+  Clear as ClearIcon,
+  Visibility as VisibilityIcon,
+  NavigateBefore as PrevIcon,
+  NavigateNext as NextIcon,
+  FirstPage as FirstPageIcon,
+  LastPage as LastPageIcon,
+} from '@mui/icons-material';
 import { accountService } from '../../../services/accountService';
-import { ROLE_LABELS, STATUS_LABELS, formatAccountDate, type AccountItem, type AccountDetail } from '../constants';
+import {
+  ROLE_LABELS,
+  STATUS_LABELS,
+  formatAccountDate,
+  type AccountItem,
+  type AccountDetail,
+} from '../constants';
 import '../account-management.css';
 
 interface CreateFormData {
@@ -12,6 +46,17 @@ interface CreateFormData {
   role: 'manager' | 'accountant';
 }
 
+const getStatusColor = (status: string): 'success' | 'warning' | 'default' => {
+  switch (status) {
+    case 'active':
+      return 'success';
+    case 'suspended':
+      return 'warning';
+    default:
+      return 'default';
+  }
+};
+
 export default function ManagerAccountList() {
   const [accounts, setAccounts] = useState<AccountItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,10 +66,12 @@ export default function ManagerAccountList() {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [total, setTotal] = useState(0);
+
   const [disablingId, setDisablingId] = useState<string | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailAccount, setDetailAccount] = useState<AccountDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createFormData, setCreateFormData] = useState<CreateFormData>({
     username: '',
@@ -36,7 +83,6 @@ export default function ManagerAccountList() {
   const [createSaving, setCreateSaving] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
-  const tableRef = useRef<HTMLDivElement | null>(null);
 
   const fetchAccounts = useCallback(async () => {
     try {
@@ -44,6 +90,7 @@ export default function ManagerAccountList() {
       setError(null);
       const offset = (page - 1) * limit;
       const response = await accountService.list('managers', { offset, limit });
+
       if (response.success && response.data) {
         setAccounts(response.data);
         setTotal(response.total ?? response.data.length);
@@ -52,7 +99,6 @@ export default function ManagerAccountList() {
         setTotal(0);
       }
     } catch (err) {
-      console.error('Error fetching managers:', err);
       const errObj = err as { response?: { data?: { message?: string } } };
       setError(errObj?.response?.data?.message || 'Không thể tải danh sách');
       setAccounts([]);
@@ -65,19 +111,26 @@ export default function ManagerAccountList() {
     fetchAccounts();
   }, [fetchAccounts]);
 
-  const filteredByRole = filterRole ? accounts.filter((acc) => acc.role === filterRole) : accounts;
-  const filteredAccounts =
-    searchTerm.trim() === ''
-      ? filteredByRole
-      : filteredByRole.filter((acc) => {
-        const term = searchTerm.trim().toLowerCase();
-        const fullname = (acc.fullname ?? '').toLowerCase();
-        const username = (acc.username ?? '').toLowerCase();
-        const email = (acc.email ?? '').toLowerCase();
-        const phone = (acc.phoneNumber ?? '').replace(/\s/g, '');
-        const termNorm = term.replace(/\s/g, '');
-        return fullname.includes(term) || username.includes(term) || email.includes(term) || phone.includes(termNorm);
-      });
+  const filteredAccounts = useMemo(() => {
+    const filteredByRole = filterRole ? accounts.filter((acc) => acc.role === filterRole) : accounts;
+
+    if (searchTerm.trim() === '') return filteredByRole;
+
+    const term = searchTerm.trim().toLowerCase();
+    const termNorm = term.replace(/\s/g, '');
+
+    return filteredByRole.filter((acc) => {
+      const fullname = (acc.fullname ?? '').toLowerCase();
+      const username = (acc.username ?? '').toLowerCase();
+      const email = (acc.email ?? '').toLowerCase();
+      const phone = (acc.phoneNumber ?? '').replace(/\s/g, '');
+
+      return fullname.includes(term)
+        || username.includes(term)
+        || email.includes(term)
+        || phone.includes(termNorm);
+    });
+  }, [accounts, filterRole, searchTerm]);
 
   const totalPages = Math.max(1, Math.ceil((total || 0) / limit));
 
@@ -95,9 +148,6 @@ export default function ManagerAccountList() {
 
   const handlePageChange = (nextPage: number) => {
     setPage(nextPage);
-    if (tableRef.current) {
-      tableRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
   };
 
   const handleViewDetail = async (accountId: string) => {
@@ -120,13 +170,18 @@ export default function ManagerAccountList() {
 
   const handleDisable = async (accountId: string) => {
     if (!window.confirm('Bạn có chắc muốn đóng tài khoản này?')) return;
+
     try {
       setDisablingId(accountId);
       const response = await accountService.disable('managers', accountId);
       const updated = response.data;
+
       if (updated?._id) {
         setAccounts((prev) => prev.map((acc) => (acc._id === updated._id ? { ...acc, status: updated.status } : acc)));
-        if (detailAccount?._id === accountId) setDetailAccount((prev) => (prev ? { ...prev, status: updated?.status || prev.status } : prev));
+
+        if (detailAccount?._id === accountId) {
+          setDetailAccount((prev) => (prev ? { ...prev, status: updated?.status || prev.status } : prev));
+        }
       }
     } catch (err) {
       const errObj = err as { response?: { data?: { message?: string } } };
@@ -138,13 +193,18 @@ export default function ManagerAccountList() {
 
   const handleEnable = async (accountId: string) => {
     if (!window.confirm('Bạn có chắc muốn mở lại tài khoản này?')) return;
+
     try {
       setDisablingId(accountId);
       const response = await accountService.enable('managers', accountId);
       const updated = response.data;
+
       if (updated?._id) {
         setAccounts((prev) => prev.map((acc) => (acc._id === updated._id ? { ...acc, status: updated.status } : acc)));
-        if (detailAccount?._id === accountId) setDetailAccount((prev) => (prev ? { ...prev, status: updated?.status || prev.status } : prev));
+
+        if (detailAccount?._id === accountId) {
+          setDetailAccount((prev) => (prev ? { ...prev, status: updated?.status || prev.status } : prev));
+        }
       }
     } catch (err) {
       const errObj = err as { response?: { data?: { message?: string } } };
@@ -168,15 +228,16 @@ export default function ManagerAccountList() {
     setCreateSuccess(null);
   };
 
-  const handleCreateChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleCreateChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setCreateFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleCreateSubmit = async (e: React.FormEvent) => {
+  const handleCreateSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setCreateError(null);
     setCreateSuccess(null);
+
     try {
       setCreateSaving(true);
       await accountService.createManagerOrAccountant({
@@ -186,12 +247,11 @@ export default function ManagerAccountList() {
         password: createFormData.password,
         role: createFormData.role,
       });
+
       setCreateSuccess('Tạo tài khoản thành công!');
       setCreateFormData({ username: '', phoneNumber: '', email: '', password: '', role: 'manager' });
       fetchAccounts();
-      setTimeout(() => {
-        closeCreateModal();
-      }, 1200);
+      setTimeout(() => closeCreateModal(), 1200);
     } catch (err: unknown) {
       const errObj = err as { response?: { data?: { message?: string } } };
       setCreateError(errObj?.response?.data?.message || 'Không thể tạo tài khoản');
@@ -200,253 +260,396 @@ export default function ManagerAccountList() {
     }
   };
 
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ mt: 4, textAlign: 'center', color: 'error.main' }}>
+        <Typography variant="h6">Lỗi tải danh sách quản lý và kế toán</Typography>
+        <Typography variant="body1" sx={{ mb: 2 }}>
+          {error}
+        </Typography>
+        <Button variant="outlined" onClick={fetchAccounts}>
+          Thử lại
+        </Button>
+      </Box>
+    );
+  }
+
   return (
-    <div className="created-accounts-page owner-accounts-modern-page">
-      <div className="created-accounts-card">
-        <div className="created-accounts-header">
-          <div>
-            <h1>Danh sách Quản lý & Kế toán</h1>
-            <p className="created-accounts-subtitle">Các tài khoản Quản lý, Kế toán</p>
-          </div>
-          <div className="created-accounts-actions">
-            {accounts.length > 0 && (
-              <div className="created-accounts-search">
-                <input
-                  type="text"
-                  placeholder="Tìm theo tên đăng nhập, email hoặc SĐT..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="search-input"
-                  aria-label="Tìm kiếm"
-                />
-              </div>
+    <Box
+      sx={{
+        p: 'clamp(16px, 2vw, 32px)',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 'calc(100vh - 64px)',
+        fontFamily: 'system-ui, Avenir, Helvetica, Arial, sans-serif',
+        '& .MuiTypography-root, & .MuiTableCell-root, & .MuiInputBase-root, & .MuiButton-root, & .MuiChip-root, & .MuiMenuItem-root': {
+          fontFamily: 'system-ui, Avenir, Helvetica, Arial, sans-serif',
+        },
+      }}
+    >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1a237e' }}>
+          Danh sách Quản lý & Kế toán
+        </Typography>
+      </Box>
+
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 1.5,
+          mb: 2.5,
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          p: 1.75,
+          borderRadius: 2.5,
+          background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
+          border: '1px solid #dbe4ee',
+          boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)',
+          rowGap: 1,
+        }}
+      >
+        <TextField
+          size="small"
+          placeholder="Tìm theo tên đăng nhập, email hoặc SĐT"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          sx={{
+            width: 'clamp(220px, 28vw, 320px)',
+            '& .MuiInputBase-input': { py: 1.05, fontSize: 14 },
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
+              backgroundColor: '#ffffff',
+            },
+          }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: '#94a3b8', fontSize: 18 }} />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+
+        <FormControl size="small" sx={{ minWidth: 'clamp(140px, 14vw, 170px)' }}>
+          <Select
+            value={filterRole}
+            displayEmpty
+            renderValue={(selected) => {
+              if (!selected) return 'Tất cả';
+              return selected === 'manager' ? 'Quản lý' : 'Kế toán';
+            }}
+            onChange={(e) => setFilterRole(e.target.value)}
+            sx={{
+              fontSize: 14,
+              '& .MuiSelect-select': { py: 1.05 },
+              borderRadius: 2,
+              backgroundColor: '#ffffff',
+            }}
+          >
+            <MenuItem value="" sx={{ fontSize: 14 }}>
+              Tất cả
+            </MenuItem>
+            <MenuItem value="manager" sx={{ fontSize: 14 }}>
+              Quản lý
+            </MenuItem>
+            <MenuItem value="accountant" sx={{ fontSize: 14 }}>
+              Kế toán
+            </MenuItem>
+          </Select>
+        </FormControl>
+
+        <Button
+          type="button"
+          variant="contained"
+          onClick={openCreateModal}
+          sx={{
+            px: 2,
+            height: 38,
+            borderRadius: 2,
+            backgroundColor: '#1a237e',
+            '&:hover': { backgroundColor: '#303f9f' },
+            textTransform: 'none',
+            fontWeight: 600,
+          }}
+        >
+          + Tạo tài khoản
+        </Button>
+
+        {(searchTerm || filterRole) && (
+          <Button
+            size="small"
+            onClick={() => {
+              setSearchTerm('');
+              setFilterRole('');
+            }}
+            sx={{ minWidth: 'auto', p: 0.5, color: '#94a3b8' }}
+          >
+            <ClearIcon sx={{ fontSize: 18 }} />
+          </Button>
+        )}
+      </Box>
+
+      <TableContainer
+        component={Paper}
+        elevation={3}
+        sx={{
+          borderRadius: 2,
+          overflow: 'hidden',
+          flex: 1,
+        }}
+      >
+        <Table
+          sx={{
+            width: '100%',
+            tableLayout: 'fixed',
+            '& .MuiTableCell-root': {
+              px: 'clamp(6px, 0.8vw, 16px)',
+              py: 'clamp(10px, 1vw, 14px)',
+              fontSize: 'clamp(12px, 0.85vw, 14px)',
+              verticalAlign: 'middle',
+            },
+          }}
+        >
+          <TableHead sx={{ bgcolor: '#f5f5f5' }}>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 'bold', width: '6%' }}>STT</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', width: '16%' }}>Tên đăng nhập</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', width: '24%' }}>Email</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', width: '13%' }}>Số điện thoại</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', width: '10%' }}>Vai trò</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', width: '12%' }}>Trạng thái</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', width: '12%' }}>Ngày tạo</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', width: '7%' }}>Thao tác</TableCell>
+            </TableRow>
+          </TableHead>
+
+          <TableBody>
+            {filteredAccounts.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} align="center" sx={{ py: 3 }}>
+                  Không có dữ liệu tài khoản
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredAccounts.map((acc, index) => (
+                <TableRow
+                  key={acc._id}
+                  sx={{
+                    '&:last-child td, &:last-child th': { border: 0 },
+                    '&:hover': { bgcolor: '#f9f9f9' },
+                  }}
+                >
+                  <TableCell>{(page - 1) * limit + index + 1}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.3 }}>
+                    {acc.username || '-'}
+                  </TableCell>
+                  <TableCell sx={{ whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.3 }}>
+                    {acc.email || '-'}
+                  </TableCell>
+                  <TableCell sx={{ whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.3 }}>
+                    {acc.phoneNumber || '-'}
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={ROLE_LABELS[acc.role] || acc.role}
+                      size="small"
+                      sx={{
+                        fontWeight: 'bold',
+                        backgroundColor: '#eef5ff',
+                        color: '#2f66b1',
+                        height: 'auto',
+                        '& .MuiChip-label': {
+                          display: 'block',
+                          whiteSpace: 'normal',
+                          overflow: 'visible',
+                          textOverflow: 'clip',
+                          lineHeight: 1.2,
+                          py: 0.5,
+                        },
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={STATUS_LABELS[acc.status] || acc.status}
+                      color={getStatusColor(acc.status)}
+                      size="small"
+                      sx={{
+                        fontWeight: 'bold',
+                        height: 'auto',
+                        '& .MuiChip-label': {
+                          display: 'block',
+                          whiteSpace: 'normal',
+                          overflow: 'visible',
+                          textOverflow: 'clip',
+                          lineHeight: 1.2,
+                          py: 0.5,
+                        },
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>{formatAccountDate(acc.createdAt)}</TableCell>
+                  <TableCell>
+                    <IconButton color="primary" size="small" onClick={() => handleViewDetail(acc._id)}>
+                      <VisibilityIcon fontSize="small" />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
             )}
-            <div className="filter-role-group">
-              <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)}>
-                <option value="">Tất cả</option>
-                <option value="manager">Quản lý</option>
-                <option value="accountant">Kế toán</option>
-              </select>
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 1,
+          py: 2,
+          mt: 'auto',
+          flexWrap: 'wrap',
+        }}
+      >
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ mr: 2, whiteSpace: 'nowrap' }}
+        >
+          Tổng: {total} bản ghi | Trang {page}/{totalPages}
+        </Typography>
+
+        <Button size="small" variant="outlined" disabled={page === 1 || loading} onClick={() => handlePageChange(1)} sx={{ minWidth: 36, p: 0.5 }}>
+          <FirstPageIcon fontSize="small" />
+        </Button>
+        <Button size="small" variant="outlined" disabled={page === 1 || loading} onClick={() => handlePageChange(Math.max(page - 1, 1))} sx={{ minWidth: 36, p: 0.5 }}>
+          <PrevIcon fontSize="small" />
+        </Button>
+
+        {getVisiblePages().map((pageNumber) => (
+          <Button
+            key={pageNumber}
+            size="small"
+            variant={pageNumber === page ? 'contained' : 'outlined'}
+            onClick={() => handlePageChange(pageNumber)}
+            disabled={loading}
+            sx={{
+              minWidth: 36,
+              p: 0.5,
+              ...(pageNumber === page && {
+                bgcolor: '#1a237e',
+                '&:hover': { bgcolor: '#303f9f' },
+              }),
+            }}
+          >
+            {pageNumber}
+          </Button>
+        ))}
+
+        <Button size="small" variant="outlined" disabled={page >= totalPages || loading} onClick={() => handlePageChange(Math.min(page + 1, totalPages))} sx={{ minWidth: 36, p: 0.5 }}>
+          <NextIcon fontSize="small" />
+        </Button>
+        <Button size="small" variant="outlined" disabled={page >= totalPages || loading} onClick={() => handlePageChange(totalPages)} sx={{ minWidth: 36, p: 0.5 }}>
+          <LastPageIcon fontSize="small" />
+        </Button>
+      </Box>
+
+      {showDetailModal && (
+        <div className="create-account-modal-overlay" onClick={() => setShowDetailModal(false)}>
+          <div className="account-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="create-account-modal-header">
+              <h2>Chi tiết tài khoản</h2>
+              <button type="button" className="modal-close-btn" onClick={() => setShowDetailModal(false)} aria-label="Đóng">×</button>
             </div>
-            <button type="button" className="btn-create" onClick={openCreateModal}>+ Tạo tài khoản</button>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="created-accounts-loading"><div className="spinner" /><p>Đang tải...</p></div>
-        ) : error ? (
-          <div className="form-error"><p>{error}</p><button type="button" onClick={fetchAccounts} className="btn-retry">Thử lại</button></div>
-        ) : accounts.length === 0 ? (
-          <div className="created-accounts-empty">
-            <p>Chưa có tài khoản Quản lý/Kế toán nào.</p>
-            <button type="button" className="btn-primary" onClick={openCreateModal}>Tạo tài khoản đầu tiên</button>
-          </div>
-        ) : filteredAccounts.length === 0 ? (
-          <div className="created-accounts-empty">
-            <p>Không tìm thấy tài khoản phù hợp với từ khóa tìm kiếm.</p>
-          </div>
-        ) : (
-          <>
-            <div className="created-accounts-table-wrap owner-accounts-modern-table-wrap" ref={tableRef}>
-              <table className="created-accounts-table owner-accounts-modern-table">
-              <thead>
-                <tr>
-                  <th>STT</th>
-                  <th>Tên đăng nhập</th>
-                  <th>Email</th>
-                  <th>Số điện thoại</th>
-                  <th>Vai trò</th>
-                  <th>Trạng thái</th>
-                  <th>Ngày tạo</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredAccounts.map((acc, index) => (
-                  <tr key={acc._id}>
-                    <td>{(page - 1) * limit + index + 1}</td>
-                    <td>{acc.username}</td>
-                    <td>{acc.email}</td>
-                    <td>{acc.phoneNumber || '-'}</td>
-                    <td>
-                      <span className="role-badge">
-                        {ROLE_LABELS[acc.role] || acc.role}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`status-badge status-${acc.status}`}>
-                        {STATUS_LABELS[acc.status] || acc.status}
-                      </span>
-                    </td>
-                    <td>{formatAccountDate(acc.createdAt)}</td>
-                    <td>
-                      <div className="action-buttons">
-                        <button
-                          type="button"
-                          className="btn-view-detail btn-icon"
-                          onClick={() => handleViewDetail(acc._id)}
-                          title="Xem chi tiết"
-                          aria-label="Xem chi tiết"
-                        >
-                          <Eye size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              </table>
+            <div className="account-detail-modal-body">
+              {detailLoading ? (
+                <div className="detail-loading"><div className="spinner" /><p>Đang tải...</p></div>
+              ) : detailAccount ? (
+                <div className="detail-content">
+                  <div className="detail-section">
+                    <h3>Thông tin đăng nhập</h3>
+                    <div className="detail-row"><span className="detail-label">Tên đăng nhập:</span><span className="detail-value">{detailAccount.username}</span></div>
+                    <div className="detail-row"><span className="detail-label">Email:</span><span className="detail-value">{detailAccount.email}</span></div>
+                    <div className="detail-row"><span className="detail-label">Số điện thoại:</span><span className="detail-value">{detailAccount.phoneNumber || '-'}</span></div>
+                    <div className="detail-row detail-row-inline-badge"><span className="detail-label">Vai trò:</span><span className="role-badge">{ROLE_LABELS[detailAccount.role] || detailAccount.role}</span></div>
+                    <div className="detail-row detail-row-inline-badge"><span className="detail-label">Trạng thái:</span><span className={`status-badge status-${detailAccount.status}`}>{STATUS_LABELS[detailAccount.status] || detailAccount.status}</span></div>
+                    <div className="detail-row"><span className="detail-label">Ngày tạo:</span><span className="detail-value">{formatAccountDate(detailAccount.createdAt)}</span></div>
+                  </div>
+                  <div className="detail-section">
+                    <h3>Thông tin cá nhân</h3>
+                    <div className="detail-row"><span className="detail-label">Họ và tên:</span><span className="detail-value">{detailAccount.fullname || '-'}</span></div>
+                    <div className="detail-row"><span className="detail-label">CCCD:</span><span className="detail-value">{detailAccount.cccd || '-'}</span></div>
+                    <div className="detail-row"><span className="detail-label">Địa chỉ:</span><span className="detail-value">{detailAccount.address || '-'}</span></div>
+                  </div>
+                  <div className="detail-actions">
+                    {detailAccount.status === 'active' ? (
+                      <button type="button" className="btn-disable" onClick={() => handleDisable(detailAccount._id)} disabled={disablingId === detailAccount._id}>Đóng tài khoản</button>
+                    ) : (
+                      <button type="button" className="btn-enable" onClick={() => handleEnable(detailAccount._id)} disabled={disablingId === detailAccount._id}>Mở lại</button>
+                    )}
+                  </div>
+                </div>
+              ) : null}
             </div>
-          </>
-        )}
-
-        {showDetailModal && (
-          <div className="create-account-modal-overlay" onClick={() => setShowDetailModal(false)}>
-            <div className="account-detail-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="create-account-modal-header">
-                <h2>Chi tiết tài khoản</h2>
-                <button type="button" className="modal-close-btn" onClick={() => setShowDetailModal(false)} aria-label="Đóng">×</button>
-              </div>
-              <div className="account-detail-modal-body">
-                {detailLoading ? (
-                  <div className="detail-loading"><div className="spinner" /><p>Đang tải...</p></div>
-                ) : detailAccount ? (
-                  <div className="detail-content">
-                    <div className="detail-section">
-                      <h3>Thông tin đăng nhập</h3>
-                      <div className="detail-row"><span className="detail-label">Tên đăng nhập:</span><span className="detail-value">{detailAccount.username}</span></div>
-                      <div className="detail-row"><span className="detail-label">Email:</span><span className="detail-value">{detailAccount.email}</span></div>
-                      <div className="detail-row"><span className="detail-label">Số điện thoại:</span><span className="detail-value">{detailAccount.phoneNumber || '-'}</span></div>
-                      <div className="detail-row detail-row-inline-badge"><span className="detail-label">Vai trò:</span><span className="role-badge">{ROLE_LABELS[detailAccount.role] || detailAccount.role}</span></div>
-                      <div className="detail-row detail-row-inline-badge"><span className="detail-label">Trạng thái:</span>
-                        <span className={`status-badge status-${detailAccount.status}`}>{STATUS_LABELS[detailAccount.status] || detailAccount.status}</span>
-                      </div>
-                      <div className="detail-row"><span className="detail-label">Ngày tạo:</span><span className="detail-value">{formatAccountDate(detailAccount.createdAt)}</span></div>
-                    </div>
-                    <div className="detail-section">
-                      <h3>Thông tin cá nhân</h3>
-                      <div className="detail-row"><span className="detail-label">Họ và tên:</span><span className="detail-value">{detailAccount.fullname || '-'}</span></div>
-                      <div className="detail-row"><span className="detail-label">CCCD:</span><span className="detail-value">{detailAccount.cccd || '-'}</span></div>
-                      <div className="detail-row"><span className="detail-label">Địa chỉ:</span><span className="detail-value">{detailAccount.address || '-'}</span></div>
-                    </div>
-                    <div className="detail-actions">
-                      {detailAccount.status === 'active' ? (
-                        <button type="button" className="btn-disable" onClick={() => handleDisable(detailAccount._id)} disabled={disablingId === detailAccount._id}>Đóng tài khoản</button>
-                      ) : (
-                        <button type="button" className="btn-enable" onClick={() => handleEnable(detailAccount._id)} disabled={disablingId === detailAccount._id}>Mở lại</button>
-                      )}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showCreateModal && (
-          <div className="create-account-modal-overlay" onClick={closeCreateModal}>
-            <div className="create-account-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="create-account-modal-header">
-                <h2>Tạo tài khoản Quản lý / Kế toán</h2>
-                <button type="button" className="modal-close-btn" onClick={closeCreateModal} aria-label="Đóng">×</button>
-              </div>
-              <div className="create-account-modal-body">
-                {createError && <div className="form-error"><p>{createError}</p></div>}
-                {createSuccess && <div className="form-success"><p>{createSuccess}</p></div>}
-                <form onSubmit={handleCreateSubmit} className="create-account-form">
-                  <div className="form-group">
-                    <label htmlFor="create-username">Tên đăng nhập *</label>
-                    <input type="text" id="create-username" name="username" value={createFormData.username} onChange={handleCreateChange} required minLength={3} />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="create-phoneNumber">Số điện thoại *</label>
-                    <input type="tel" id="create-phoneNumber" name="phoneNumber" value={createFormData.phoneNumber} onChange={handleCreateChange} placeholder="0901234567" required />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="create-email">Email *</label>
-                    <input type="email" id="create-email" name="email" value={createFormData.email} onChange={handleCreateChange} placeholder="email@example.com" required />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="create-password">Mật khẩu *</label>
-                    <input type="password" id="create-password" name="password" value={createFormData.password} onChange={handleCreateChange} placeholder="Ít nhất 6 ký tự" required minLength={6} />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="create-role">Vai trò *</label>
-                    <select id="create-role" name="role" value={createFormData.role} onChange={handleCreateChange} required>
-                      <option value="manager">Quản lý</option>
-                      <option value="accountant">Kế toán</option>
-                    </select>
-                  </div>
-                  <div className="form-actions">
-                    <button type="button" onClick={closeCreateModal} className="btn-secondary" disabled={createSaving}>Hủy</button>
-                    <button type="submit" className="btn-primary" disabled={createSaving}>{createSaving ? 'Đang tạo...' : 'Tạo tài khoản'}</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {!loading && !error && (
-        <div className="accounts-pagination owner-accounts-modern-pagination owner-accounts-pagination-outside">
-          <div className="accounts-pagination-info">
-            Tổng: <strong>{total}</strong> bản ghi | Trang <strong>{page}</strong>/{totalPages}
-          </div>
-          <div className="accounts-pagination-controls">
-            <button
-              type="button"
-              className="pagination-arrow-btn"
-              onClick={() => handlePageChange(1)}
-              disabled={page === 1 || loading}
-              aria-label="Trang đầu"
-            >
-              «
-            </button>
-            <button
-              type="button"
-              className="pagination-arrow-btn"
-              onClick={() => handlePageChange(Math.max(page - 1, 1))}
-              disabled={page === 1 || loading}
-              aria-label="Trang trước"
-            >
-              ‹
-            </button>
-
-            {getVisiblePages().map((pageNumber) => (
-              <button
-                key={pageNumber}
-                type="button"
-                className={pageNumber === page ? 'pagination-current-page' : 'pagination-arrow-btn'}
-                onClick={() => handlePageChange(pageNumber)}
-                disabled={loading}
-                aria-label={`Trang ${pageNumber}`}
-              >
-                {pageNumber}
-              </button>
-            ))}
-
-            <button
-              type="button"
-              className="pagination-arrow-btn"
-              onClick={() => handlePageChange(Math.min(page + 1, totalPages))}
-              disabled={page >= totalPages || loading}
-              aria-label="Trang sau"
-            >
-              ›
-            </button>
-            <button
-              type="button"
-              className="pagination-arrow-btn"
-              onClick={() => handlePageChange(totalPages)}
-              disabled={page >= totalPages || loading}
-              aria-label="Trang cuối"
-            >
-              »
-            </button>
           </div>
         </div>
       )}
-    </div>
+
+      {showCreateModal && (
+        <div className="create-account-modal-overlay" onClick={closeCreateModal}>
+          <div className="create-account-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="create-account-modal-header">
+              <h2>Tạo tài khoản Quản lý / Kế toán</h2>
+              <button type="button" className="modal-close-btn" onClick={closeCreateModal} aria-label="Đóng">×</button>
+            </div>
+            <div className="create-account-modal-body">
+              {createError && <div className="form-error"><p>{createError}</p></div>}
+              {createSuccess && <div className="form-success"><p>{createSuccess}</p></div>}
+              <form onSubmit={handleCreateSubmit} className="create-account-form">
+                <div className="form-group">
+                  <label htmlFor="create-username">Tên đăng nhập *</label>
+                  <input type="text" id="create-username" name="username" value={createFormData.username} onChange={handleCreateChange} required minLength={3} />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="create-phoneNumber">Số điện thoại *</label>
+                  <input type="tel" id="create-phoneNumber" name="phoneNumber" value={createFormData.phoneNumber} onChange={handleCreateChange} placeholder="0901234567" required />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="create-email">Email *</label>
+                  <input type="email" id="create-email" name="email" value={createFormData.email} onChange={handleCreateChange} placeholder="email@example.com" required />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="create-password">Mật khẩu *</label>
+                  <input type="password" id="create-password" name="password" value={createFormData.password} onChange={handleCreateChange} placeholder="Ít nhất 6 ký tự" required minLength={6} />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="create-role">Vai trò *</label>
+                  <select id="create-role" name="role" value={createFormData.role} onChange={handleCreateChange} required>
+                    <option value="manager">Quản lý</option>
+                    <option value="accountant">Kế toán</option>
+                  </select>
+                </div>
+                <div className="form-actions">
+                  <button type="button" onClick={closeCreateModal} className="btn-secondary" disabled={createSaving}>Hủy</button>
+                  <button type="submit" className="btn-primary" disabled={createSaving}>{createSaving ? 'Đang tạo...' : 'Tạo tài khoản'}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+    </Box>
   );
 }
