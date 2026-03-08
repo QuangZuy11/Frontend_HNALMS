@@ -115,15 +115,36 @@
   width: 148px;
 }
 
-.payments-filter-select {
-  min-width: 140px;
+.payments-filters .filter-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.payments-btn-primary,
+.payments-btn-secondary {
+  border-radius: 8px;
+  border: none;
+  padding: 8px 14px;
+  font-size: 13px;
   cursor: pointer;
 }
 
-.payments-filter-input:focus,
-.payments-filter-select:focus {
-  border-color: #3579c6;
-  box-shadow: 0 0 0 3px rgba(53, 121, 198, 0.12);
+.payments-btn-primary {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.payments-btn-primary:disabled,
+.payments-btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.payments-btn-secondary {
+  background-color: #e2e8f0;
+  color: #0f172a;
 }
 
 /* â”€â”€ Create button â”€â”€ */
@@ -205,14 +226,7 @@
   border: 1px solid #dbeafe;
 }
 
-.payments-amount {
-  font-weight: 700;
-  color: #0f172a;
-  font-size: 14px;
-}
-
-/* â”€â”€ Status badge â”€â”€ */
-.status-badge {
+.payments-status-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -231,18 +245,13 @@
   flex-shrink: 0;
 }
 
-.status-badge.unpaid {
-  background: #fff1f2;
-  color: #be123c;
-  border: 1px solid #fecdd3;
+.payments-status-badge.unpaid {
+  background-color: #e0f2fe;
+  color: #0369a1;
 }
 
-.status-badge.unpaid::before {
-  background: #f43f5e;
-}
-
-.status-badge.paid {
-  background: #f0fdf4;
+.payments-status-badge.paid {
+  background-color: #dcfce7;
   color: #166534;
   border: 1px solid #bbf7d0;
 }
@@ -727,7 +736,7 @@
     padding: 9px 5px;
   }
 
-  .status-badge {
+  .payments-status-badge {
     font-size: 10px;
     padding: 2px 6px;
   }

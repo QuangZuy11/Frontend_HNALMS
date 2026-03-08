@@ -394,7 +394,7 @@ export default function ManagingIncomeExpenses() {
                     <td><span className="payments-amount">{formatCurrency(t.amount)}</span></td>
                     <td>
                       <span
-                        className={`status-badge ${toUiStatus(t.status) === "paid" ? "paid" : "unpaid"
+                        className={`payments-status-badge ${toUiStatus(t.status) === "paid" ? "paid" : "unpaid"
                           }`}
                       >
                         {statusLabel(t.status)}
@@ -541,7 +541,7 @@ export default function ManagingIncomeExpenses() {
               >
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className="payments-btn-secondary"
                   onClick={closeCreateModal}
                   disabled={creating}
                 >
@@ -549,7 +549,7 @@ export default function ManagingIncomeExpenses() {
                 </button>
                 <button
                   type="button"
-                  className="btn-primary"
+                  className="payments-btn-primary"
                   onClick={handleCreateTicket}
                   disabled={
                     creating ||
