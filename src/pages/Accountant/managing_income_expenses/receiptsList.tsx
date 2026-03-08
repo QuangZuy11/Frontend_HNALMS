@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { cashFlowService } from "../../../services/cashFlowService";
-import "./managingIncomeExpenses.css";
+import "./receiptsList.css";
 import { Eye } from "lucide-react";
 
 interface ReceiptTicket {
@@ -287,78 +287,86 @@ export default function ReceiptsList() {
   };
 
   return (
-    <div className="payments-page">
-      <div className="payments-card">
-        <div className="payments-card-header">
-          <h2>Danh sách phiếu thu</h2>
-          <button
-            type="button"
-            className="payments-create-btn"
-            onClick={openCreateModal}
-          >
-            + Tạo phiếu thu
-          </button>
-        </div>
-        <div className="payments-toolbar">
-          <div className="payments-filter-group">
-            <label htmlFor="from-date">Từ ngày</label>
-            <input
-              id="from-date"
-              type="date"
-              className="payments-filter-input"
-              value={fromDate}
-              onChange={(e) => {
-                setFromDate(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
+    <div className="receipts-page">
+      <div className="receipts-card">
+        <div className="receipts-header">
+          <div>
+            <h1>Danh sách phiếu thu</h1>
           </div>
-          <div className="payments-filter-group">
-            <label htmlFor="to-date">Đến ngày</label>
-            <input
-              id="to-date"
-              type="date"
-              className="payments-filter-input"
-              value={toDate}
-              onChange={(e) => {
-                setToDate(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-          </div>
-          <div className="payments-filter-group">
-            <label htmlFor="status-filter">Trạng thái</label>
-            <select
-              id="status-filter"
-              className="payments-filter-select payments-status-filter"
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value as "all" | "paid" | "unpaid");
-                setCurrentPage(1);
-              }}
+          <div className="receipts-header-actions">
+            <button
+              type="button"
+              className="receipts-create-btn"
+              onClick={openCreateModal}
             >
-              <option value="all">Tất cả</option>
-              <option value="unpaid">Chưa thanh toán</option>
-              <option value="paid">Đã thanh toán</option>
-            </select>
+              Tạo phiếu thu
+            </button>
+            <div className="receipts-filter-wrapper">
+              <label htmlFor="from-date" className="receipts-filter-label">
+                Từ ngày:
+              </label>
+              <input
+                id="from-date"
+                type="date"
+                className="receipts-filter-input"
+                value={fromDate}
+                onChange={(e) => {
+                  setFromDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+            <div className="receipts-filter-wrapper">
+              <label htmlFor="to-date" className="receipts-filter-label">
+                Đến ngày:
+              </label>
+              <input
+                id="to-date"
+                type="date"
+                className="receipts-filter-input"
+                value={toDate}
+                onChange={(e) => {
+                  setToDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+            <div className="receipts-filter-wrapper">
+              <label htmlFor="status-filter" className="receipts-filter-label">
+                Trạng thái:
+              </label>
+              <select
+                id="status-filter"
+                className="receipts-filter-select receipts-status-filter"
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value as "all" | "paid" | "unpaid");
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="all">Tất cả</option>
+                <option value="unpaid">Chưa thanh toán</option>
+                <option value="paid">Đã thanh toán</option>
+              </select>
+            </div>
           </div>
         </div>
 
         {error && (
-          <div className="payments-error">
+          <div className="receipts-error">
             <p>{error}</p>
           </div>
         )}
 
         {!loading && !error && tickets.length === 0 && (
-          <div className="payments-empty">
+          <div className="receipts-empty">
             <p>Chưa có phiếu thu nào.</p>
           </div>
         )}
 
         {!loading && !error && tickets.length > 0 && (
-          <div className="payments-table-wrap">
-            <table className="payments-table">
+          <div className="receipts-table-wrap">
+            <table className="receipts-table">
               <thead>
                 <tr>
                   <th>STT</th>
@@ -376,21 +384,22 @@ export default function ReceiptsList() {
                     <td>{startIndex + index + 1}</td>
                     <td><span className="payments-code-badge">{t.paymentVoucher || "—"}</span></td>
                     <td>{t.title}</td>
-                    <td><span className="payments-amount">{formatCurrency(t.amount)}</span></td>
-                    <td>
-                      <span
-                        className={`status-badge ${toUiStatus(t.status) === "paid" ? "paid" : "unpaid"
-                          }`}
-                      >
-                        {statusLabel(t.status)}
-                      </span>
-                    </td>
+                    <td>{formatCurrency(t.amount)}</td>
+                  <td>
+                    <span
+                      className={`receipts-status-badge ${
+                        toUiStatus(t.status) === "paid" ? "paid" : "unpaid"
+                      }`}
+                    >
+                      {statusLabel(t.status)}
+                    </span>
+                  </td>
                     <td>{formatDate(t.createdAt || t.transactionDate)}</td>
                     <td>
-                      <div className="payments-actions">
+                      <div className="receipts-actions">
                         <button
                           type="button"
-                          className="payments-icon-btn"
+                          className="receipts-icon-btn"
                           title="Xem"
                           onClick={() => setSelectedTicket(t)}
                         >
@@ -407,66 +416,66 @@ export default function ReceiptsList() {
 
         {selectedTicket && (
           <div
-            className="payments-modal-overlay"
+            className="receipts-modal-overlay"
             onClick={() => setSelectedTicket(null)}
           >
             <div
-              className="payments-modal"
+              className="receipts-modal"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="payments-modal-header">
+              <div className="receipts-modal-header">
                 <h3>Chi tiết phiếu thu</h3>
                 <button
                   type="button"
-                  className="payments-modal-close"
+                  className="receipts-modal-close"
                   onClick={() => setSelectedTicket(null)}
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="payments-modal-body">
-                <div className="payments-detail-row">
-                  <span className="payments-detail-label">Mã phiếu</span>
-                  <span className="payments-detail-value">
+              <div className="receipts-modal-body">
+                <div className="receipts-detail-row">
+                  <span className="receipts-detail-label">Mã phiếu</span>
+                  <span className="receipts-detail-value">
                     {selectedTicket.paymentVoucher || "-"}
                   </span>
                 </div>
-                <div className="payments-detail-row">
-                  <span className="payments-detail-label">Tiêu đề</span>
-                  <span className="payments-detail-value">
+                <div className="receipts-detail-row">
+                  <span className="receipts-detail-label">Tiêu đề</span>
+                  <span className="receipts-detail-value">
                     {selectedTicket.title}
                   </span>
                 </div>
-                <div className="payments-detail-row">
-                  <span className="payments-detail-label">Số tiền</span>
-                  <span className="payments-detail-value">
+                <div className="receipts-detail-row">
+                  <span className="receipts-detail-label">Số tiền</span>
+                  <span className="receipts-detail-value">
                     {formatCurrency(selectedTicket.amount)} VNĐ
                   </span>
                 </div>
                 {toUiStatus(selectedTicket.status) === "paid" && (
-                  <div className="payments-detail-row">
-                    <span className="payments-detail-label">
+                  <div className="receipts-detail-row">
+                    <span className="receipts-detail-label">
                       Ngày kế toán thanh toán
                     </span>
-                    <span className="payments-detail-value">
+                    <span className="receipts-detail-value">
                       {formatDate(selectedTicket.accountantPaidAt)}
                     </span>
                   </div>
                 )}
-                <div className="payments-detail-row">
-                  <span className="payments-detail-label">Ngày tạo</span>
-                  <span className="payments-detail-value">
+                <div className="receipts-detail-row">
+                  <span className="receipts-detail-label">Ngày tạo</span>
+                  <span className="receipts-detail-value">
                     {formatDate(
                       selectedTicket.createdAt || selectedTicket.transactionDate
                     )}
                   </span>
                 </div>
-                <div className="payments-detail-row payments-detail-row--column">
-                  <span className="payments-detail-label">Trạng thái</span>
-                  <div className="payments-detail-value payments-detail-status">
+                <div className="receipts-detail-row receipts-detail-row--column">
+                  <span className="receipts-detail-label">Trạng thái</span>
+                  <div className="receipts-detail-value receipts-detail-status">
                     <select
-                      className="payments-status-select payments-status-select--compact"
+                      className="receipts-status-select receipts-status-select--compact"
                       value={toUiStatus(selectedTicket.status)}
                       onChange={(e) =>
                         handleChangeStatus(
@@ -487,32 +496,32 @@ export default function ReceiptsList() {
         )}
 
         {showCreateModal && (
-          <div className="payments-modal-overlay" onClick={closeCreateModal}>
+          <div className="receipts-modal-overlay" onClick={closeCreateModal}>
             <div
-              className="payments-modal"
+              className="receipts-modal"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="payments-modal-header">
+              <div className="receipts-modal-header">
                 <h3>Tạo phiếu thu</h3>
                 <button
                   type="button"
-                  className="payments-modal-close"
+                  className="receipts-modal-close"
                   onClick={closeCreateModal}
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="payments-modal-body">
+              <div className="receipts-modal-body">
                 {formError && (
                   <div
-                    className="payments-error"
+                    className="receipts-error"
                     style={{ marginTop: 0, marginBottom: 12 }}
                   >
                     {formError}
                   </div>
                 )}
-                <div className="payments-form-group">
+                <div className="receipts-form-group">
                   <label>Mã phiếu</label>
                   <input
                     type="text"
@@ -522,16 +531,16 @@ export default function ReceiptsList() {
                         : autoVoucherCode || "Chưa tạo được mã phiếu"
                     }
                     disabled
-                    className="payments-form-input"
+                    className="receipts-form-input"
                   />
                   {autoVoucherError && (
-                    <span className="payments-form-error">
+                    <span className="receipts-form-error">
                       {autoVoucherError}
                     </span>
                   )}
                 </div>
 
-                <div className="payments-form-group">
+                <div className="receipts-form-group">
                   <label>Tiêu đề *</label>
                   <input
                     type="text"
@@ -545,17 +554,17 @@ export default function ReceiptsList() {
                         setCreateErrors((prev) => ({ ...prev, title: "" }));
                       }
                     }}
-                    className="payments-form-input"
+                    className="receipts-form-input"
                     placeholder="Nhập tiêu đề phiếu thu"
                   />
                   {createErrors.title && (
-                    <span className="payments-form-error">
+                    <span className="receipts-form-error">
                       {createErrors.title}
                     </span>
                   )}
                 </div>
 
-                <div className="payments-form-group">
+                <div className="receipts-form-group">
                   <label>Số tiền *</label>
                   <input
                     type="number"
@@ -571,20 +580,20 @@ export default function ReceiptsList() {
                         setCreateErrors((prev) => ({ ...prev, amount: "" }));
                       }
                     }}
-                    className="payments-form-input"
+                    className="receipts-form-input"
                     placeholder="Nhập số tiền"
                   />
                   {createErrors.amount && (
-                    <span className="payments-form-error">
+                    <span className="receipts-form-error">
                       {createErrors.amount}
                     </span>
                   )}
                 </div>
 
-                <div className="payments-form-group">
+                <div className="receipts-form-group">
                   <label>Trạng thái *</label>
                   <select
-                    className="payments-form-input"
+                    className="receipts-form-input"
                     value={createForm.status}
                     onChange={(e) =>
                       setCreateForm((prev) => ({
@@ -598,19 +607,19 @@ export default function ReceiptsList() {
                   </select>
                 </div>
 
-                <div className="payments-form-group">
+                <div className="receipts-form-group">
                   <label>Ngày tạo</label>
                   <input
                     type="text"
                     value={formatDate(new Date().toISOString())}
                     disabled
-                    className="payments-form-input"
+                    className="receipts-form-input"
                   />
                 </div>
               </div>
 
               <div
-                className="payments-modal-footer"
+                className="receipts-modal-footer"
                 style={{
                   display: "flex",
                   justifyContent: "flex-end",
@@ -620,7 +629,7 @@ export default function ReceiptsList() {
               >
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className="receipts-btn-secondary"
                   onClick={closeCreateModal}
                   disabled={creating}
                 >
@@ -628,7 +637,7 @@ export default function ReceiptsList() {
                 </button>
                 <button
                   type="button"
-                  className="btn-primary"
+                  className="receipts-btn-primary"
                   onClick={handleCreateTicket}
                   disabled={
                     creating ||
@@ -649,15 +658,15 @@ export default function ReceiptsList() {
 
       {/* Thanh phân trang đặt ngoài bảng, giống màn hóa đơn */}
       {!loading && !error && tickets.length > 0 && (
-        <div className="payments-pagination payments-pagination-outside">
-          <div className="payments-pagination-info">
+        <div className="receipts-pagination receipts-pagination-outside">
+          <div className="receipts-pagination-info">
             Tổng: <strong>{tickets.length}</strong> phiếu thu | Trang{" "}
             <strong>{safePage}</strong>/{totalPages}
           </div>
-          <div className="payments-pagination-controls">
+          <div className="receipts-pagination-controls">
             <button
               type="button"
-              className="payments-page-nav"
+              className="receipts-page-nav"
               disabled={safePage === 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             >
@@ -666,7 +675,7 @@ export default function ReceiptsList() {
 
             <button
               type="button"
-              className="payments-page-number active"
+              className="receipts-page-number active"
               aria-current="page"
             >
               {safePage}
@@ -674,7 +683,7 @@ export default function ReceiptsList() {
 
             <button
               type="button"
-              className="payments-page-nav"
+              className="receipts-page-nav"
               disabled={safePage === totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             >
