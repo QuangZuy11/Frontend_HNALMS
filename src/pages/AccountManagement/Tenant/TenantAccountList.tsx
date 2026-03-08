@@ -239,7 +239,6 @@ export default function TenantAccountList() {
         display: "flex",
         flexDirection: "column",
         minHeight: "calc(100vh - 64px)",
-        background: "linear-gradient(180deg, #f8fbff 0%, #f3f7fc 100%)",
         fontFamily: "system-ui, Avenir, Helvetica, Arial, sans-serif",
         "& .MuiTypography-root, & .MuiTableCell-root, & .MuiInputBase-root, & .MuiButton-root, & .MuiChip-root, & .MuiMenuItem-root": {
           fontFamily: "system-ui, Avenir, Helvetica, Arial, sans-serif",
@@ -254,15 +253,7 @@ export default function TenantAccountList() {
           mb: 4,
         }}
       >
-        <Typography
-          variant="h4"
-          sx={{
-            fontWeight: 800,
-            color: "#1a237e",
-            letterSpacing: "0.2px",
-            textShadow: "0 1px 0 rgba(255,255,255,0.7)",
-          }}
-        >
+        <Typography variant="h4" sx={{ fontWeight: "bold", color: "#1a237e" }}>
           Danh sách cư dân
         </Typography>
       </Box>
@@ -356,15 +347,7 @@ export default function TenantAccountList() {
               setSearchContact("");
               setFilterStatus("all");
             }}
-            sx={{
-              minWidth: "auto",
-              p: 0.75,
-              color: "#64748b",
-              borderRadius: 2,
-              bgcolor: "#ffffff",
-              border: "1px solid #dbe4ee",
-              "&:hover": { bgcolor: "#f8fafc", borderColor: "#cbd5e1" },
-            }}
+            sx={{ minWidth: "auto", p: 0.5, color: "#94a3b8" }}
           >
             <ClearIcon sx={{ fontSize: 18 }} />
           </Button>
@@ -373,32 +356,26 @@ export default function TenantAccountList() {
 
       <TableContainer
         component={Paper}
-        elevation={0}
-        sx={{
-          borderRadius: 3,
-          overflow: "hidden",
-          flex: 1,
-          border: "1px solid #dbe4ee",
-          boxShadow: "0 10px 24px rgba(15, 23, 42, 0.08)",
-          backgroundColor: "#ffffff",
-        }}
+        elevation={3}
+        sx={{ borderRadius: 2, overflow: "hidden", flex: 1 }}
       >
         <Table sx={{ minWidth: 650 }}>
-          <TableHead sx={{ bgcolor: "#f1f5f9" }}>
+          <TableHead sx={{ bgcolor: "#f5f5f5" }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: 700, color: "#334155", py: 1.6 }}>STT</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#334155", py: 1.6 }}>Họ và tên</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#334155", py: 1.6 }}>SĐT / Email</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#334155", py: 1.6 }}>Trạng thái</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#334155", py: 1.6 }}>Ngày tạo</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#334155", py: 1.6 }}>Thao tác</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>STT</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Họ và tên</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Phòng</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>SĐT / Email</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Trạng thái</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Ngày tạo</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Thao tác</TableCell>
             </TableRow>
           </TableHead>
 
           <TableBody>
             {paginatedAccounts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
                   Không có dữ liệu cư dân
                 </TableCell>
               </TableRow>
@@ -408,14 +385,12 @@ export default function TenantAccountList() {
                   key={acc._id}
                   sx={{
                     "&:last-child td, &:last-child th": { border: 0 },
-                    "& td": { py: 1.35 },
-                    transition: "background-color 0.18s ease",
-                    "&:nth-of-type(even)": { bgcolor: "#fcfdff" },
-                    "&:hover": { bgcolor: "#eef6ff" },
+                    "&:hover": { bgcolor: "#f9f9f9" },
                   }}
                 >
                   <TableCell>{(page - 1) * ROWS_PER_PAGE + index + 1}</TableCell>
                   <TableCell>{acc.fullname || "-"}</TableCell>
+                  <TableCell>{acc.roomName || "-"}</TableCell>
                   <TableCell>
                     {acc.phoneNumber || "-"}
                     <br />
