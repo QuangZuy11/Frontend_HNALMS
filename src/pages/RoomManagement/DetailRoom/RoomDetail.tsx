@@ -228,10 +228,10 @@ export default function RoomDetail() {
                   </div>
                   <span
                     className={`overlay-status ${room.status === "Available" || room.status === "Trống"
-                        ? "available"
-                        : room.status === "Deposited"
-                          ? "deposited"
-                          : "occupied"
+                      ? "available"
+                      : room.status === "Deposited"
+                        ? "deposited"
+                        : "occupied"
                       }`}
                   >
                     {room.status === "Available" || room.status === "Trống"
@@ -303,10 +303,10 @@ export default function RoomDetail() {
                 </div>
                 <span
                   className={`overlay-status ${room.status === "Available" || room.status === "Trống"
-                      ? "available"
-                      : room.status === "Deposited"
-                        ? "deposited"
-                        : "occupied"
+                    ? "available"
+                    : room.status === "Deposited"
+                      ? "deposited"
+                      : "occupied"
                     }`}
                 >
                   {room.status === "Available" || room.status === "Trống"
@@ -402,8 +402,7 @@ export default function RoomDetail() {
                           <div className="service-info">
                             <div className="service-name">{svc.name}</div>
                             <div className="service-description">
-                              {svc.description ||
-                                `${svc.currentPrice?.toLocaleString("vi-VN")}đ/${svc.type === "Extension" ? "đơn vị" : "tháng"}`}
+                              {svc.currentPrice ? (svc.currentPrice >= 1000 ? `${svc.currentPrice / 1000}k` : svc.currentPrice) : "0"}/ 1 người
                             </div>
                           </div>
                         </div>
