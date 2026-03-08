@@ -440,19 +440,51 @@
 }
 
 .account-detail-modal {
-  background: #fff;
-  border-radius: 0.75rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  max-width: 520px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: hidden;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #dbe4f0;
+  box-shadow: 0 20px 42px rgba(15, 23, 42, 0.18);
+  max-width: 680px;
+  width: min(680px, 95vw);
+  max-height: 88vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   transform-origin: center top;
-  animation: accounts-modal-in 0.2s ease-out;
+  animation: accounts-modal-in 0.22s ease-out;
+}
+
+.account-detail-modal .create-account-modal-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e5ecf5;
+  background: linear-gradient(180deg, #f7faff 0%, #f1f6ff 100%);
+}
+
+.account-detail-modal .create-account-modal-header h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1a237e;
+}
+
+.account-detail-modal .modal-close-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  color: #475569;
+  transition: all 0.16s ease;
+}
+
+.account-detail-modal .modal-close-btn:hover {
+  background: rgba(148, 163, 184, 0.16);
+  color: #0f172a;
 }
 
 .account-detail-modal-body {
-  padding: 1.5rem;
+  padding: 1rem 1.1rem 1.1rem;
+  background: #fbfdff;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
 }
 
 .detail-loading {
@@ -463,64 +495,126 @@
 }
 
 .detail-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  align-items: stretch;
 }
 
 .detail-section {
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #f3f4f6;
+  padding: 0.8rem 0.88rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  min-width: 0;
+  height: 100%;
 }
 
 .detail-section h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #111827;
-  margin: 0 0 1rem 0;
+  font-size: 0.97rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 0.55rem 0;
+  padding-bottom: 0.36rem;
+  border-bottom: 1px dashed #d7e2ef;
 }
 
 .detail-row {
   display: flex;
   align-items: flex-start;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
-  font-size: 0.9375rem;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 0.4rem 0;
+  font-size: 0.92rem;
+}
+
+.detail-row:not(:last-child) {
+  border-bottom: 1px dashed #edf2f7;
 }
 
 .detail-label {
-  flex: 0 0 auto !important;
-  width: auto !important;
-  color: #6b7280;
-  font-weight: 500;
-  margin-right: 0;
-  padding-right: 0;
+  color: #64748b;
+  font-weight: 600;
   white-space: nowrap;
+  flex: 0 0 112px;
 }
 
 .detail-value {
+  color: #0f172a;
+  font-weight: 500;
+  min-width: 0;
+  overflow-wrap: anywhere;
   flex: 1;
-  color: #111827;
+}
+
+.detail-value-empty {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.detail-label-empty {
+  color: #7b8aa1;
+}
+
+.detail-value-email {
+  display: block;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
   word-break: break-word;
+  font-size: 0.89rem;
+  max-width: 100%;
+}
+
+.account-detail-modal .detail-row-inline-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-detail-modal .detail-row-inline-badge .role-badge,
+.account-detail-modal .detail-row-inline-badge .status-badge {
   margin-left: 0;
-  padding-left: 0;
+  width: fit-content;
 }
 
-.detail-content .detail-row {
-  gap: 0.5rem;
+.account-detail-modal .role-badge {
+  background: #e8f0ff;
+  color: #1e40af;
+  border: 1px solid #c7d7fe;
+  font-weight: 700;
 }
 
-.detail-content .detail-label {
-  margin-right: 0;
-  padding-right: 0;
+.account-detail-modal .status-badge {
+  font-weight: 700;
 }
 
-.detail-content .detail-value {
-  margin-left: 0;
-  padding-left: 0;
+.account-detail-modal .detail-actions {
+  grid-column: 1 / -1;
+  margin-top: 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
 }
 
-/* Tighter label:value spacing for specific rows */
+.account-detail-modal .btn-disable,
+.account-detail-modal .btn-enable {
+  min-width: 140px;
+  padding: 0.55rem 0.95rem;
+  border-radius: 10px;
+  font-weight: 700;
+  transition: transform 0.14s ease, box-shadow 0.16s ease;
+}
+
+.account-detail-modal .btn-disable:hover:not(:disabled),
+.account-detail-modal .btn-enable:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.12);
+}
+
+/* Resident detail modal - one-table style, keep original data structure */
 .detail-row-tight {
   gap: 0.25rem !important;
 }
@@ -534,54 +628,168 @@
   margin-left: 0;
 }
 
-.detail-content-manager {
-  gap: 0.5rem !important;
-}
-
-.detail-content-manager .detail-section-divider {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--primary);
-  padding: 0.35rem 0 0.2rem 0;
-  margin-top: 0.25rem;
-}
-
-.detail-content-manager .detail-section-divider:first-child {
-  margin-top: 0;
-  padding-top: 0;
-}
-
-.detail-content-manager .detail-section-block {
+.account-detail-modal .detail-content-manager {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding: 0.15rem 0 0.35rem 0;
+  gap: 0.75rem;
+  background: transparent;
 }
 
-.detail-content-manager .detail-row {
-  gap: 0.5rem;
-  padding: 0.2rem 0;
+.account-detail-modal .detail-content-manager .detail-section-divider {
+  margin: 0;
+  width: 100%;
+  padding: 0.58rem 0.82rem;
+  background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+  color: #1f3a8a;
+  font-size: 0.93rem;
+  font-weight: 700;
+  border: 1px solid #dbe4f0;
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+  letter-spacing: 0.08px;
+  box-sizing: border-box;
+}
+
+.account-detail-modal .detail-content-manager .detail-section-block {
+  width: 100%;
+  margin-top: -1px;
+  padding: 0.2rem 0.82rem 0.28rem;
+  background: #ffffff;
+  border: 1px solid #dbe4f0;
+  border-radius: 0 0 10px 10px;
+  box-sizing: border-box;
+}
+
+.account-detail-modal .detail-content-manager .detail-row {
+  display: flex;
+  align-items: flex-start;
   justify-content: flex-start;
-  align-items: center;
-  border-bottom: none;
+  gap: 6px;
+  padding: 0.34rem 0;
 }
 
-.detail-content-manager .detail-row-tight {
-  gap: 0.4rem;
-  padding: 0.2rem 0;
-  align-items: center;
+.account-detail-modal .detail-content-manager .detail-row + .detail-row {
+  margin-top: 0;
+  border-top: 1px dashed #edf2f7;
 }
 
-.detail-content-manager .detail-row .status-badge {
-  flex: 0 0 auto;
-  align-self: center;
+.account-detail-modal .detail-content-manager .detail-label {
+  color: #64748b;
+  font-weight: 600;
+  white-space: nowrap;
+  flex: 0 0 104px;
 }
 
-.detail-content-manager .detail-value,
-.detail-content-manager .detail-value-black {
-  flex: 1;
-  color: #111827;
+.account-detail-modal .detail-content-manager .detail-value,
+.account-detail-modal .detail-content-manager .detail-value-black {
+  color: #0f172a;
   font-weight: 500;
+  line-height: 1.42;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  flex: 1;
+}
+
+.account-detail-modal .detail-content-manager .status-badge {
+  width: fit-content;
+  font-weight: 700;
+}
+
+.account-detail-modal .detail-content-manager .detail-actions {
+  margin-top: 0.25rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid #e2e8f0;
+  background: transparent;
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 900px) {
+  .detail-content {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .detail-section {
+    height: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .account-detail-modal {
+    max-width: 600px;
+    width: min(600px, 95vw);
+    max-height: 86vh;
+  }
+
+  .account-detail-modal-body {
+    padding: 0.8rem;
+  }
+
+  .detail-section {
+    padding: 0.75rem;
+  }
+
+  .detail-row,
+  .account-detail-modal .detail-row-inline-badge {
+    grid-template-columns: minmax(92px, 40%) minmax(0, 1fr);
+    column-gap: 0.55rem;
+  }
+
+  .account-detail-modal .detail-content-manager .detail-section-divider,
+  .account-detail-modal .detail-content-manager .detail-section-block,
+  .account-detail-modal .detail-content-manager .detail-actions {
+    padding-left: 0.74rem;
+    padding-right: 0.74rem;
+  }
+
+  .account-detail-modal .detail-content-manager .detail-row {
+    gap: 5px;
+  }
+
+  .account-detail-modal .detail-content-manager .detail-label {
+    flex-basis: 96px;
+  }
+}
+
+@media (max-width: 560px) {
+  .account-detail-modal {
+    max-width: 100%;
+    width: 96vw;
+    max-height: 84vh;
+  }
+
+  .detail-row,
+  .account-detail-modal .detail-row-inline-badge {
+    gap: 5px;
+  }
+
+  .detail-label {
+    flex-basis: 104px;
+  }
+
+  .detail-label {
+    white-space: nowrap;
+  }
+
+  .detail-value-email {
+    white-space: normal;
+    font-size: 0.84rem;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 100%;
+  }
+
+  .account-detail-modal .detail-content-manager .detail-row {
+    gap: 4px;
+  }
+
+  .account-detail-modal .detail-content-manager .detail-label {
+    flex-basis: 88px;
+    white-space: nowrap;
+  }
 }
 
 .create-account-modal-overlay {

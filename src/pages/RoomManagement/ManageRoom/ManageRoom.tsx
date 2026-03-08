@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import axios from "axios";
-import { Tabs, Tab, Box } from "@mui/material";
+import { Building as BuildingIcon } from "lucide-react";
 
 // [MỚI] Import toastr và CSS của toastr
 import toastr from "toastr";
@@ -32,6 +32,14 @@ import {
   FileSpreadsheet,
   List as ListIcon,
   Map as MapIcon,
+  User,
+  Users,
+  Calendar,
+  FileText,
+  Phone,
+  Mail,
+  CreditCard,
+  Zap,
 } from "lucide-react";
 import "./ManageRoom.css";
 
@@ -73,6 +81,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const [floors, setFloors] = useState<Floor[]>([]);
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
   const [loading, setLoading] = useState(false);
+  const [contracts, setContracts] = useState<any[]>([]);
 
   // View Mode
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
@@ -91,6 +100,8 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
   const [viewingRoom, setViewingRoom] = useState<Room | null>(null);
+  const [roomBookServices, setRoomBookServices] = useState<any[]>([]);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -107,16 +118,20 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [roomsRes, floorsRes, typesRes] = await Promise.all([
+      const [roomsRes, floorsRes, typesRes, contractsRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/rooms`),
         axios.get(`${API_BASE_URL}/floors`),
         axios.get(`${API_BASE_URL}/roomtypes`),
+        axios.get(`${API_BASE_URL}/contracts`),
       ]);
 
       setRooms(roomsRes.data.data || roomsRes.data || []);
       const floorsData = floorsRes.data.data || floorsRes.data || [];
       setFloors(floorsData);
       setRoomTypes(typesRes.data.data || typesRes.data || []);
+      if (contractsRes.data.success) {
+        setContracts(contractsRes.data.data || []);
+      }
 
       setExpandedFloors(floorsData.map((f: Floor) => f._id));
     } catch (error) {
@@ -151,13 +166,34 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     return floors.find((f) => f._id === idOrObj)?.name || "---";
   };
 
+  // Get active contract for a room
+  const getContractForRoom = (roomId: string) => {
+    return (
+      contracts.find(
+        (c: any) => c.status === "active" && c.roomId?._id === roomId,
+      ) || null
+    );
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "---";
+    return new Date(dateStr).toLocaleDateString("vi-VN");
+  };
+
   // Prepare rooms for map view with parsed prices to avoid NaNk
   const mappedRoomsForMap = useMemo(() => {
     return rooms.map((room: any) => {
       let priceNum = 0;
-      const rType = typeof room.roomTypeId === "object" ? room.roomTypeId : getRoomTypeDetail(room.roomTypeId);
+      const rType =
+        typeof room.roomTypeId === "object"
+          ? room.roomTypeId
+          : getRoomTypeDetail(room.roomTypeId);
 
-      if (rType && typeof rType.currentPrice === "object" && rType.currentPrice.$numberDecimal) {
+      if (
+        rType &&
+        typeof rType.currentPrice === "object" &&
+        rType.currentPrice.$numberDecimal
+      ) {
         priceNum = parseFloat(rType.currentPrice.$numberDecimal);
       } else if (typeof rType?.currentPrice === "number") {
         priceNum = rType.currentPrice;
@@ -168,10 +204,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       return {
         ...room,
         price: priceNum,
-        priceLabel: priceNum > 0
-          ? `${(priceNum / 1000000).toFixed(1)}M`
-          : "Chưa có giá",
-        floorLabel: getFloorName(room.floorId)
+        priceLabel:
+          priceNum > 0 ? `${(priceNum / 1000000).toFixed(1)}M` : "Chưa có giá",
+        floorLabel: getFloorName(room.floorId),
       };
     });
   }, [rooms, roomTypes, floors]);
@@ -292,7 +327,11 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       const detailErrors = error.response?.data?.errors;
 
       if (detailErrors && detailErrors.length > 0) {
-        toastr.error(`${msg}<br/>- ${detailErrors.join("<br/>- ")}`, "Lỗi Import", { timeOut: 10000, escapeHtml: false });
+        toastr.error(
+          `${msg}<br/>- ${detailErrors.join("<br/>- ")}`,
+          "Lỗi Import",
+          { timeOut: 10000, escapeHtml: false },
+        );
       } else {
         toastr.error(msg);
       }
@@ -304,7 +343,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   // --- CRUD HANDLERS ---
   const handleOpenAdd = () => {
     if (floors.length === 0 || roomTypes.length === 0) {
-      toastr.warning("Vui lòng tạo Tầng và Loại phòng trước khi thêm phòng mới!");
+      toastr.warning(
+        "Vui lòng tạo Tầng và Loại phòng trước khi thêm phòng mới!",
+      );
       return;
     }
     setIsEditing(false);
@@ -340,9 +381,27 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     setShowModal(true);
   };
 
-  const handleViewDetail = (room: Room) => {
+  const handleViewDetail = async (room: Room) => {
     setViewingRoom(room);
     setShowDetailModal(true);
+    setRoomBookServices([]);
+    // If room has an active contract, fetch its detail (with bookServices)
+    const contract = getContractForRoom(room._id);
+    if (contract) {
+      try {
+        setLoadingDetail(true);
+        const res = await axios.get(
+          `${API_BASE_URL}/contracts/${contract._id}`,
+        );
+        if (res.data.success && res.data.data?.bookServices) {
+          setRoomBookServices(res.data.data.bookServices);
+        }
+      } catch (err) {
+        console.error("Error fetching contract detail:", err);
+      } finally {
+        setLoadingDetail(false);
+      }
+    }
   };
 
   const handleToggleActive = async (room: Room) => {
@@ -374,7 +433,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       setShowModal(false);
       fetchData();
     } catch (error: any) {
-      toastr.error("Lỗi lưu dữ liệu: " + (error.response?.data?.message || error.message));
+      toastr.error(
+        "Lỗi lưu dữ liệu: " + (error.response?.data?.message || error.message),
+      );
     }
   };
 
@@ -385,7 +446,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         toastr.success("Xóa phòng thành công!");
         fetchData();
       } catch (e: any) {
-        toastr.error("Lỗi xóa phòng: " + (e.response?.data?.message || e.message));
+        toastr.error(
+          "Lỗi xóa phòng: " + (e.response?.data?.message || e.message),
+        );
       }
     }
   };
@@ -433,15 +496,41 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
 
       {/* THANH CÔNG CỤ (TOOLBAR) - Ẩn khi readOnly */}
       {!readOnly && (
-        <div className="toolbar-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+        <div
+          className="toolbar-actions"
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "1rem",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            marginBottom: "1rem",
+          }}
+        >
           {/* VIEW TOGGLE */}
-          <div style={{ display: "flex", background: "#fff", borderRadius: "8px", border: "1px solid #ddd", padding: "4px", marginRight: 'auto' }}>
+          <div
+            style={{
+              display: "flex",
+              background: "#fff",
+              borderRadius: "8px",
+              border: "1px solid #ddd",
+              padding: "4px",
+              marginRight: "auto",
+            }}
+          >
             <button
               onClick={() => setViewMode("list")}
               style={{
-                display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", border: "none", borderRadius: "4px",
-                cursor: "pointer", background: viewMode === "list" ? "#3579C6" : "transparent",
-                color: viewMode === "list" ? "#fff" : "#666", fontWeight: viewMode === "list" ? "bold" : "normal"
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "6px 12px",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                background: viewMode === "list" ? "#3579C6" : "transparent",
+                color: viewMode === "list" ? "#fff" : "#666",
+                fontWeight: viewMode === "list" ? "bold" : "normal",
               }}
             >
               <ListIcon size={16} /> Danh sách
@@ -449,16 +538,23 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
             <button
               onClick={() => setViewMode("map")}
               style={{
-                display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", border: "none", borderRadius: "4px",
-                cursor: "pointer", background: viewMode === "map" ? "#3579C6" : "transparent",
-                color: viewMode === "map" ? "#fff" : "#666", fontWeight: viewMode === "map" ? "bold" : "normal"
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "6px 12px",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                background: viewMode === "map" ? "#3579C6" : "transparent",
+                color: viewMode === "map" ? "#fff" : "#666",
+                fontWeight: viewMode === "map" ? "bold" : "normal",
               }}
             >
               <MapIcon size={16} /> Sơ đồ
             </button>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
             <button className="btn-secondary" onClick={handleDownloadTemplate}>
               <Download size={18} /> Tải mẫu Excel
             </button>
@@ -483,14 +579,35 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
 
       {/* VIEW TOGGLE KHI READONLY CHỈ CÓ NÚT TOGGLE */}
       {readOnly && (
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1rem" }}>
-          <div style={{ display: "flex", background: "#fff", borderRadius: "8px", border: "1px solid #ddd", padding: "4px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            marginBottom: "1rem",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              background: "#fff",
+              borderRadius: "8px",
+              border: "1px solid #ddd",
+              padding: "4px",
+            }}
+          >
             <button
               onClick={() => setViewMode("list")}
               style={{
-                display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", border: "none", borderRadius: "4px",
-                cursor: "pointer", background: viewMode === "list" ? "#3579C6" : "transparent",
-                color: viewMode === "list" ? "#fff" : "#666", fontWeight: viewMode === "list" ? "bold" : "normal"
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "6px 12px",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                background: viewMode === "list" ? "#3579C6" : "transparent",
+                color: viewMode === "list" ? "#fff" : "#666",
+                fontWeight: viewMode === "list" ? "bold" : "normal",
               }}
             >
               <ListIcon size={16} /> Danh sách
@@ -498,9 +615,16 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
             <button
               onClick={() => setViewMode("map")}
               style={{
-                display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", border: "none", borderRadius: "4px",
-                cursor: "pointer", background: viewMode === "map" ? "#3579C6" : "transparent",
-                color: viewMode === "map" ? "#fff" : "#666", fontWeight: viewMode === "map" ? "bold" : "normal"
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "6px 12px",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                background: viewMode === "map" ? "#3579C6" : "transparent",
+                color: viewMode === "map" ? "#fff" : "#666",
+                fontWeight: viewMode === "map" ? "bold" : "normal",
               }}
             >
               <MapIcon size={16} /> Sơ đồ
@@ -567,11 +691,16 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                         </thead>
                         <tbody>
                           {floorRooms.map((room) => {
-                            const typeDetail = getRoomTypeDetail(room.roomTypeId);
+                            const typeDetail = getRoomTypeDetail(
+                              room.roomTypeId,
+                            );
                             const rowOpacity = room.isActive ? 1 : 0.5;
 
                             return (
-                              <tr key={room._id} style={{ opacity: rowOpacity }}>
+                              <tr
+                                key={room._id}
+                                style={{ opacity: rowOpacity }}
+                              >
                                 <td
                                   style={{
                                     fontFamily: "monospace",
@@ -671,51 +800,96 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         </div>
       ) : (
         <div className="floor-map-view">
-          <Tabs
-            value={activeMapFloor}
-            onChange={(_, v) => setActiveMapFloor(v)}
-            sx={{ mb: 2, background: "#fff", borderRadius: "8px", border: "1px solid #eee" }}
-            variant="scrollable"
-          >
-            <Tab label="Tầng 1" />
-            <Tab label="Tầng 2" />
-            <Tab label="Tầng 3" />
-            <Tab label="Tầng 4" />
-            <Tab label="Tầng 5" />
-          </Tabs>
+          <div className="room-floor-pills">
+            {["Tầng 1", "Tầng 2", "Tầng 3", "Tầng 4", "Tầng 5"].map(
+              (floor, idx) => (
+                <button
+                  key={idx}
+                  className={`floor-pill${activeMapFloor === idx ? " active" : ""}`}
+                  onClick={() => setActiveMapFloor(idx)}
+                >
+                  <BuildingIcon size={14} />
+                  {floor}
+                </button>
+              ),
+            )}
+          </div>
 
-          <Box sx={{ border: "1px solid #ddd", borderRadius: 2, overflow: "hidden", minHeight: "400px", background: "#fff" }}>
+          <div
+            style={{
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              overflow: "hidden",
+              minHeight: "400px",
+              background: "#fff",
+            }}
+          >
             {activeMapFloor === 0 && (
               <FloorMap
-                rooms={mappedRoomsForMap.filter(r => r.floorLabel === "1" || r.floorLabel === "Tầng 1" || r.name.startsWith("1"))}
-                onRoomSelect={(room) => readOnly ? handleViewDetail(room) : handleOpenEdit(room)}
+                rooms={mappedRoomsForMap.filter(
+                  (r) =>
+                    r.floorLabel === "1" ||
+                    r.floorLabel === "Tầng 1" ||
+                    r.name.startsWith("1"),
+                )}
+                onRoomSelect={(room) =>
+                  readOnly ? handleViewDetail(room) : handleOpenEdit(room)
+                }
               />
             )}
             {activeMapFloor === 1 && (
               <FloorMapLevel2
-                rooms={mappedRoomsForMap.filter(r => r.floorLabel === "2" || r.floorLabel === "Tầng 2" || r.name.startsWith("2"))}
-                onRoomSelect={(room) => readOnly ? handleViewDetail(room) : handleOpenEdit(room)}
+                rooms={mappedRoomsForMap.filter(
+                  (r) =>
+                    r.floorLabel === "2" ||
+                    r.floorLabel === "Tầng 2" ||
+                    r.name.startsWith("2"),
+                )}
+                onRoomSelect={(room) =>
+                  readOnly ? handleViewDetail(room) : handleOpenEdit(room)
+                }
               />
             )}
             {activeMapFloor === 2 && (
               <FloorMapLevel3
-                rooms={mappedRoomsForMap.filter(r => r.floorLabel === "3" || r.floorLabel === "Tầng 3" || r.name.startsWith("3"))}
-                onRoomSelect={(room) => readOnly ? handleViewDetail(room) : handleOpenEdit(room)}
+                rooms={mappedRoomsForMap.filter(
+                  (r) =>
+                    r.floorLabel === "3" ||
+                    r.floorLabel === "Tầng 3" ||
+                    r.name.startsWith("3"),
+                )}
+                onRoomSelect={(room) =>
+                  readOnly ? handleViewDetail(room) : handleOpenEdit(room)
+                }
               />
             )}
             {activeMapFloor === 3 && (
               <FloorMapLevel4
-                rooms={mappedRoomsForMap.filter(r => r.floorLabel === "4" || r.floorLabel === "Tầng 4" || r.name.startsWith("4"))}
-                onRoomSelect={(room) => readOnly ? handleViewDetail(room) : handleOpenEdit(room)}
+                rooms={mappedRoomsForMap.filter(
+                  (r) =>
+                    r.floorLabel === "4" ||
+                    r.floorLabel === "Tầng 4" ||
+                    r.name.startsWith("4"),
+                )}
+                onRoomSelect={(room) =>
+                  readOnly ? handleViewDetail(room) : handleOpenEdit(room)
+                }
               />
             )}
             {activeMapFloor === 4 && (
               <FloorMapLevel5
-                rooms={mappedRoomsForMap.filter(r => r.floorLabel === "5" || r.floorLabel === "Tầng 5" || r.name.startsWith("5"))}
-                onRoomSelect={(room) => readOnly ? handleViewDetail(room) : handleOpenEdit(room)}
+                rooms={mappedRoomsForMap.filter(
+                  (r) =>
+                    r.floorLabel === "5" ||
+                    r.floorLabel === "Tầng 5" ||
+                    r.name.startsWith("5"),
+                )}
+                onRoomSelect={(room) =>
+                  readOnly ? handleViewDetail(room) : handleOpenEdit(room)
+                }
               />
             )}
-          </Box>
+          </div>
         </div>
       )}
 
@@ -861,107 +1035,264 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       )}
 
       {/* --- MODAL XEM CHI TIẾT --- */}
-      {showDetailModal && viewingRoom && (
-        <div className="modal-overlay" style={{ zIndex: 1100 }}>
-          <div className="modal-content detail-view">
-            <div className="modal-header">
-              <h3>Chi tiết Phòng: {viewingRoom.name}</h3>
-              <button onClick={() => setShowDetailModal(false)}>
-                <X size={20} />
-              </button>
-            </div>
-            <div className="detail-body">
-              <div className="detail-grid">
-                <div className="detail-item">
-                  <label>Mã phòng:</label>
-                  <span>{viewingRoom.roomCode || "---"}</span>
+      {showDetailModal &&
+        viewingRoom &&
+        (() => {
+          const roomContract = getContractForRoom(viewingRoom._id);
+          return (
+            <div className="rd-overlay" style={{ zIndex: 1100 }}>
+              <div className="rd-content">
+                <div className="rd-header">
+                  <h3>Chi tiết Phòng: {viewingRoom.name}</h3>
+                  <button onClick={() => setShowDetailModal(false)}>
+                    <X size={20} />
+                  </button>
                 </div>
-                <div className="detail-item">
-                  <label>Trạng thái:</label>
-                  <span>{renderStatus(viewingRoom.status)}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Kích hoạt:</label>
-                  <span
-                    style={{
-                      color: viewingRoom.isActive ? "green" : "red",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {viewingRoom.isActive ? "Đang hoạt động" : "Đã vô hiệu hóa"}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <label>Thuộc Tầng:</label>
-                  <span>{getFloorName(viewingRoom.floorId)}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Loại phòng:</label>
-                  <span>
-                    {getRoomTypeDetail(viewingRoom.roomTypeId)?.typeName ||
-                      "---"}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <label>Giá niêm yết:</label>
-                  <span className="text-price">
-                    {getRoomTypeDetail(viewingRoom.roomTypeId)
-                      ? formatCurrency(
-                        getRoomTypeDetail(viewingRoom.roomTypeId)!
-                          .currentPrice,
-                      )
-                      : "---"}
-                  </span>
-                </div>
-                <div className="detail-item full">
-                  <label>Mô tả:</label>
-                  <p>{viewingRoom.description || "Không có mô tả."}</p>
-                </div>
-              </div>
-              <div className="detail-images-area">
-                <h4>Hình ảnh tham khảo (Theo loại phòng)</h4>
-                {(() => {
-                  const typeDetail = getRoomTypeDetail(viewingRoom.roomTypeId);
-                  const images = typeDetail?.images || [];
-                  if (images.length === 0)
-                    return (
-                      <p className="text-muted-italic">Chưa có hình ảnh.</p>
-                    );
-                  return (
-                    <div className="detail-image-list">
-                      {images.map((img, idx) => (
-                        <div key={idx} className="detail-img-item">
-                          <img src={img} alt="img" />
-                        </div>
-                      ))}
+
+                <div className="rd-two-panel">
+                  {/* === CỘT TRÁI: Thông tin phòng + Hợp đồng === */}
+                  <div className="rd-panel">
+                    <div className="rd-section-title">
+                      <Home size={16} />
+                      <span>Thông tin Phòng</span>
                     </div>
-                  );
-                })()}
+                    <div className="rd-grid">
+                      <div className="rd-field">
+                        <label>Mã phòng:</label>
+                        <span>{viewingRoom.roomCode || "---"}</span>
+                      </div>
+                      <div className="rd-field">
+                        <label>Trạng thái:</label>
+                        <span>{renderStatus(viewingRoom.status)}</span>
+                      </div>
+                      <div className="rd-field">
+                        <label>Kích hoạt:</label>
+                        <span
+                          style={{
+                            color: viewingRoom.isActive ? "green" : "red",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {viewingRoom.isActive
+                            ? "Đang hoạt động"
+                            : "Vô hiệu hóa"}
+                        </span>
+                      </div>
+                      <div className="rd-field">
+                        <label>Thuộc Tầng:</label>
+                        <span>{getFloorName(viewingRoom.floorId)}</span>
+                      </div>
+                      <div className="rd-field">
+                        <label>Loại phòng:</label>
+                        <span>
+                          {getRoomTypeDetail(viewingRoom.roomTypeId)
+                            ?.typeName || "---"}
+                        </span>
+                      </div>
+                      <div className="rd-field">
+                        <label>Giá niêm yết:</label>
+                        <span className="text-price">
+                          {getRoomTypeDetail(viewingRoom.roomTypeId)
+                            ? formatCurrency(
+                                getRoomTypeDetail(viewingRoom.roomTypeId)!
+                                  .currentPrice,
+                              )
+                            : "---"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {roomContract && (
+                      <>
+                        <div
+                          className="rd-section-title"
+                          style={{ marginTop: 16 }}
+                        >
+                          <FileText size={16} />
+                          <span>Hợp đồng</span>
+                        </div>
+                        <div className="rd-grid">
+                          <div className="rd-field">
+                            <label>Mã HĐ:</label>
+                            <span
+                              style={{
+                                fontFamily: "monospace",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {roomContract.contractCode}
+                            </span>
+                          </div>
+                          <div className="rd-field">
+                            <label>Thời hạn:</label>
+                            <span>{roomContract.duration} tháng</span>
+                          </div>
+                          <div className="rd-field">
+                            <label>Bắt đầu:</label>
+                            <span>{formatDate(roomContract.startDate)}</span>
+                          </div>
+                          <div className="rd-field">
+                            <label>Kết thúc:</label>
+                            <span>{formatDate(roomContract.endDate)}</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* === CỘT PHẢI: Người thuê + Dịch vụ === */}
+                  <div className="rd-panel">
+                    {roomContract ? (
+                      <>
+                        <div className="rd-section-title">
+                          <User size={16} />
+                          <span>Người thuê chính</span>
+                        </div>
+                        <div className="rd-grid">
+                          <div className="rd-field full">
+                            <label>
+                              <User size={12} style={{ marginRight: 4 }} />
+                              Họ tên:
+                            </label>
+                            <span>
+                              {roomContract.tenantId?.username || "---"}
+                            </span>
+                          </div>
+                          <div className="rd-field">
+                            <label>
+                              <Phone size={12} style={{ marginRight: 4 }} />
+                              SĐT:
+                            </label>
+                            <span>
+                              {roomContract.tenantId?.phoneNumber || "---"}
+                            </span>
+                          </div>
+                          <div className="rd-field">
+                            <label>
+                              <Mail size={12} style={{ marginRight: 4 }} />
+                              Email:
+                            </label>
+                            <span
+                              style={{ fontSize: 12, wordBreak: "break-all" }}
+                            >
+                              {roomContract.tenantId?.email || "---"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Người ở cùng */}
+                        {roomContract.coResidents &&
+                          roomContract.coResidents.length > 0 && (
+                            <>
+                              <div
+                                className="rd-section-title"
+                                style={{ marginTop: 16 }}
+                              >
+                                <Users size={16} />
+                                <span>
+                                  Người ở cùng (
+                                  {roomContract.coResidents.length})
+                                </span>
+                              </div>
+                              <div className="rd-co-residents-list">
+                                {roomContract.coResidents.map(
+                                  (person: any, idx: number) => (
+                                    <div
+                                      key={idx}
+                                      className="rd-co-resident-card"
+                                    >
+                                      <span className="rd-co-resident-name">
+                                        {person.fullName}
+                                      </span>
+                                      <div className="rd-co-resident-row">
+                                        {person.phone && (
+                                          <span className="rd-co-resident-info">
+                                            <Phone size={11} /> {person.phone}
+                                          </span>
+                                        )}
+                                        {person.cccd && (
+                                          <span className="rd-co-resident-info">
+                                            <CreditCard size={11} />{" "}
+                                            {person.cccd}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            </>
+                          )}
+
+                        {/* Dịch vụ đã đăng ký */}
+                        <div
+                          className="rd-section-title"
+                          style={{ marginTop: 16 }}
+                        >
+                          <Zap size={16} />
+                          <span>Dịch vụ tùy chọn đã đăng ký</span>
+                        </div>
+                        {loadingDetail ? (
+                          <p style={{ color: "#94a3b8", fontSize: 13 }}>
+                            Đang tải...
+                          </p>
+                        ) : roomBookServices.length > 0 ? (
+                          <div className="rd-services-list">
+                            {roomBookServices.map((svc: any, idx: number) => (
+                              <div key={idx} className="rd-service-tag">
+                                <span className="rd-service-tag-name">
+                                  {svc.name}
+                                </span>
+                                <span className="rd-service-tag-price">
+                                  {svc.currentPrice
+                                    ? formatCurrency(svc.currentPrice)
+                                    : ""}
+                                  {svc.quantity > 1 ? ` ×${svc.quantity}` : ""}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p
+                            className="text-muted-italic"
+                            style={{ fontSize: 13 }}
+                          >
+                            Chưa đăng ký dịch vụ nào
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <div className="rd-empty-contract">
+                        <FileText size={20} style={{ color: "#94a3b8" }} />
+                        <span>Phòng hiện chưa có hợp đồng</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rd-actions">
+                  <button
+                    className="btn-secondary"
+                    onClick={() => setShowDetailModal(false)}
+                  >
+                    Đóng
+                  </button>
+                  {!readOnly && (
+                    <button
+                      className="btn-primary"
+                      onClick={() => {
+                        setShowDetailModal(false);
+                        handleOpenEdit(viewingRoom);
+                      }}
+                    >
+                      <Edit size={16} /> Chỉnh sửa
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="modal-actions">
-              <button
-                className="btn-secondary"
-                onClick={() => setShowDetailModal(false)}
-              >
-                Đóng
-              </button>
-              {/* Nút Chỉnh sửa - Ẩn khi readOnly */}
-              {!readOnly && (
-                <button
-                  className="btn-primary"
-                  onClick={() => {
-                    setShowDetailModal(false);
-                    handleOpenEdit(viewingRoom);
-                  }}
-                >
-                  <Edit size={16} /> Chỉnh sửa
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+          );
+        })()}
     </div>
   );
 };

@@ -149,11 +149,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.15) 0%,
-    transparent 50%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.15) 0%,
+      transparent 50%);
   pointer-events: none;
 }
 
@@ -169,18 +167,34 @@
 }
 
 .room-expiry-label {
-  font-size: 0.55rem;
+  font-size: 0.58rem;
   color: #ffffff;
   font-weight: 700;
-  line-height: 1;
+  line-height: 1.1;
   margin-top: 3px;
   position: relative;
   z-index: 1;
   background: rgba(239, 68, 68, 0.85);
-  padding: 2px 6px;
+  padding: 2px 2px;
   border-radius: 3px;
   white-space: nowrap;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.02em;
+}
+
+.room-contract-dates {
+  font-size: 0.58rem;
+  color: #ffffff;
+  font-weight: 600;
+  line-height: 1.1;
+  margin-top: 2px;
+  position: relative;
+  z-index: 1;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 2px 2px;
+  border-radius: 3px;
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+  opacity: 0.9;
 }
 
 .room-node-label {
@@ -218,13 +232,11 @@
 }
 
 .room-node.status-occupied::before {
-  background: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 4px,
-    rgba(0, 0, 0, 0.03) 4px,
-    rgba(0, 0, 0, 0.03) 8px
-  );
+  background: repeating-linear-gradient(45deg,
+      transparent,
+      transparent 4px,
+      rgba(0, 0, 0, 0.03) 4px,
+      rgba(0, 0, 0, 0.03) 8px);
 }
 
 .room-node.status-occupied .room-node-name {

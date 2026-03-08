@@ -302,69 +302,60 @@ export default function ManagingIncomeExpenses() {
   return (
     <div className="payments-page">
       <div className="payments-card">
-        <div className="payments-header">
+        <div className="payments-card-header">
           <div>
             <h1>Danh sách phiếu chi</h1>
-            <p className="subtitle">
-              Các phiếu chi phát sinh từ sửa chữa miễn phí và các nghiệp vụ khác
-            </p>
           </div>
-          <div className="payments-header-actions">
-            <button
-              type="button"
-              className="payments-create-btn"
-              onClick={openCreateModal}
+          <button
+            type="button"
+            className="payments-create-btn"
+            onClick={openCreateModal}
+          >
+            + Tạo phiếu chi
+          </button>
+        </div>
+        <div className="payments-toolbar">
+          <div className="payments-filter-group">
+            <label htmlFor="from-date">Từ ngày</label>
+            <input
+              id="from-date"
+              type="date"
+              className="payments-filter-input"
+              value={fromDate}
+              onChange={(e) => {
+                setFromDate(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+          <div className="payments-filter-group">
+            <label htmlFor="to-date">Đến ngày</label>
+            <input
+              id="to-date"
+              type="date"
+              className="payments-filter-input"
+              value={toDate}
+              onChange={(e) => {
+                setToDate(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+          <div className="payments-filter-group">
+            <label htmlFor="status-filter">Trạng thái</label>
+            <select
+              id="status-filter"
+              className="payments-filter-select payments-status-filter"
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value as "all" | "paid" | "unpaid");
+                setCurrentPage(1);
+              }}
             >
-              Tạo phiếu chi
-            </button>
-            <div className="payments-filter-wrapper">
-              <label htmlFor="from-date" className="payments-filter-label">
-                Từ ngày:
-              </label>
-              <input
-                id="from-date"
-                type="date"
-                className="payments-filter-input"
-                value={fromDate}
-                onChange={(e) => {
-                  setFromDate(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-            </div>
-            <div className="payments-filter-wrapper">
-              <label htmlFor="to-date" className="payments-filter-label">
-                Đến ngày:
-              </label>
-              <input
-                id="to-date"
-                type="date"
-                className="payments-filter-input"
-                value={toDate}
-                onChange={(e) => {
-                  setToDate(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-            </div>
-            <div className="payments-filter-wrapper">
-              <label htmlFor="status-filter" className="payments-filter-label">
-                Trạng thái:
-              </label>
-              <select
-                id="status-filter"
-                className="payments-filter-select payments-status-filter"
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value as "all" | "paid" | "unpaid");
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="all">Tất cả</option>
-                <option value="unpaid">Chưa thanh toán</option>
-                <option value="paid">Đã thanh toán</option>
-              </select>
-            </div>
+              <option value="all">Tất cả</option>
+              <option value="unpaid">Chưa thanh toán</option>
+              <option value="paid">Đã thanh toán</option>
+            </select>
           </div>
         </div>
 
@@ -398,9 +389,9 @@ export default function ManagingIncomeExpenses() {
                 {paginatedTickets.map((t, index) => (
                   <tr key={t._id}>
                     <td>{startIndex + index + 1}</td>
-                    <td>{t.paymentVoucher || "-"}</td>
+                    <td><span className="payments-code-badge">{t.paymentVoucher || "—"}</span></td>
                     <td>{t.title}</td>
-                    <td>{formatCurrency(t.amount)}</td>
+                    <td><span className="payments-amount">{formatCurrency(t.amount)}</span></td>
                     <td>
                       <span
                         className={`status-badge ${toUiStatus(t.status) === "paid" ? "paid" : "unpaid"

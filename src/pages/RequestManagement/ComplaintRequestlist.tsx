@@ -15,8 +15,9 @@ interface Complaint {
   | 'Thái độ phục vụ'
   | 'Khác';
   priority: 'Low' | 'Medium' | 'High';
-  status: 'Pending' | 'Processing' | 'Done';
+  status: 'Pending' | 'Processing' | 'Done' | 'Rejected';
   response?: string | null;
+  managerNote?: string | null;
   responseBy?: {
     _id: string;
     username: string;
@@ -39,7 +40,7 @@ interface Complaint {
   } | null;
 }
 
-type StatusFilter = 'ALL' | 'Pending' | 'Processing' | 'Done';
+type StatusFilter = 'ALL' | 'Pending' | 'Processing' | 'Done' | 'Rejected';
 type CategoryFilter =
   | 'ALL'
   | 'Tiếng ồn'
@@ -63,10 +64,11 @@ export default function ComplaintRequestList() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const { isManager } = useAuth();
   const tableRef = useRef<HTMLDivElement | null>(null);
-  const [showDoneModal, setShowDoneModal] = useState(false);
+  const [showStatusNoteModal, setShowStatusNoteModal] = useState(false);
+  const [statusNoteMode, setStatusNoteMode] = useState<'Done' | 'Rejected'>('Done');
   const [completingComplaint, setCompletingComplaint] = useState<Complaint | null>(null);
-  const [doneNote, setDoneNote] = useState('');
-  const [doneNoteError, setDoneNoteError] = useState('');
+  const [statusNote, setStatusNote] = useState('');
+  const [statusNoteError, setStatusNoteError] = useState('');
 
   useEffect(() => {
     fetchComplaints();
@@ -121,26 +123,23 @@ export default function ComplaintRequestList() {
 
   const handleUpdateStatus = async (
     complaint: Complaint,
-    nextStatus: 'Pending' | 'Processing' | 'Done',
+    nextStatus: 'Pending' | 'Processing' | 'Done' | 'Rejected',
   ) => {
-    const statusRank: Record<Complaint['status'], number> = {
-      Pending: 0,
-      Processing: 1,
-      Done: 2,
-    };
-    const currentRank = statusRank[complaint.status];
-    const nextRank = statusRank[nextStatus];
-    if (nextRank <= currentRank) return;
+    if (nextStatus === complaint.status) return;
 
-    if (nextStatus === 'Done') {
+    if (nextStatus === 'Done' || nextStatus === 'Rejected') {
       setCompletingComplaint(complaint);
-      setDoneNote('');
-      setDoneNoteError('');
-      setShowDoneModal(true);
+      setStatusNoteMode(nextStatus);
+      setStatusNote('');
+      setStatusNoteError('');
+      setShowStatusNoteModal(true);
       return;
     }
 
-    const confirmText = `Bạn có chắc muốn chuyển khiếu nại này sang trạng thái "${nextStatus}"?`;
+    const confirmText =
+      nextStatus === 'Processing'
+        ? 'Bạn có chắc muốn chuyển khiếu nại này sang trạng thái "Đang xử lý"?'
+        : `Bạn có chắc muốn chuyển khiếu nại này sang trạng thái "${nextStatus}"?`;
     if (!window.confirm(confirmText)) return;
 
     try {
@@ -157,6 +156,7 @@ export default function ComplaintRequestList() {
                 ...c,
                 status: updated.status,
                 response: updated.response,
+                managerNote: updated.managerNote,
                 responseBy: updated.responseBy,
                 responseDate: updated.responseDate,
               }
@@ -171,6 +171,7 @@ export default function ComplaintRequestList() {
                 ...prev,
                 status: updated.status,
                 response: updated.response,
+                managerNote: updated.managerNote,
                 responseBy: updated.responseBy,
                 responseDate: updated.responseDate,
               }
@@ -189,29 +190,38 @@ export default function ComplaintRequestList() {
     }
   };
 
-  const handleCloseDoneModal = () => {
+  const handleCloseStatusNoteModal = () => {
     if (updatingId) return;
-    setShowDoneModal(false);
+    setShowStatusNoteModal(false);
     setCompletingComplaint(null);
-    setDoneNote('');
-    setDoneNoteError('');
+    setStatusNote('');
+    setStatusNoteError('');
   };
 
-  const handleConfirmDone = async () => {
+  const handleConfirmStatusNote = async () => {
     if (!completingComplaint) return;
 
-    if (!doneNote.trim()) {
-      setDoneNoteError('Vui lòng nhập ghi chú xử lý');
+    if (!statusNote.trim()) {
+      setStatusNoteError('Vui lòng nhập ghi chú xử lý');
       return;
     }
 
     try {
       setUpdatingId(completingComplaint._id);
-      const res = await complaintService.updateComplaintStatus(
-        completingComplaint._id,
-        'Done',
-        doneNote.trim(),
-      );
+
+      const res =
+        statusNoteMode === 'Done'
+          ? await complaintService.updateComplaintStatus(
+            completingComplaint._id,
+            'Done',
+            statusNote.trim(),
+          )
+          : await complaintService.updateComplaintStatus(
+            completingComplaint._id,
+            'Rejected',
+            undefined,
+            statusNote.trim(),
+          );
       const updated = res.data;
 
       if (updated?._id) {
@@ -222,6 +232,7 @@ export default function ComplaintRequestList() {
                 ...c,
                 status: updated.status,
                 response: updated.response,
+                managerNote: updated.managerNote,
                 responseBy: updated.responseBy,
                 responseDate: updated.responseDate,
               }
@@ -236,6 +247,7 @@ export default function ComplaintRequestList() {
                 ...prev,
                 status: updated.status,
                 response: updated.response,
+                managerNote: updated.managerNote,
                 responseBy: updated.responseBy,
                 responseDate: updated.responseDate,
               }
@@ -244,10 +256,10 @@ export default function ComplaintRequestList() {
         }
       }
 
-      setShowDoneModal(false);
+      setShowStatusNoteModal(false);
       setCompletingComplaint(null);
-      setDoneNote('');
-      setDoneNoteError('');
+      setStatusNote('');
+      setStatusNoteError('');
     } catch (err: unknown) {
       console.error('Lỗi khi cập nhật trạng thái khiếu nại:', err);
       const anyErr = err as { response?: { data?: { error?: { message?: string } } } };
@@ -326,7 +338,7 @@ export default function ComplaintRequestList() {
       <div className="repair-requests-card">
         <div className="repair-requests-header">
           <div>
-            <h1>Danh sách khiếu nại</h1>
+            <h2>Danh sách khiếu nại</h2>
             <p className="subtitle">Các khiếu nại do cư dân gửi lên tòa nhà</p>
           </div>
           <div className="repair-filter-wrapper" style={{ gap: 16, flexWrap: 'wrap' }}>
@@ -376,6 +388,7 @@ export default function ComplaintRequestList() {
                 <option value="Pending">Chờ xử lý</option>
                 <option value="Processing">Đang xử lý</option>
                 <option value="Done">Đã xử lý</option>
+                <option value="Rejected">Từ chối</option>
               </select>
             </div>
             <div className="repair-filter-wrapper">
@@ -451,7 +464,9 @@ export default function ComplaintRequestList() {
                           ? 'Chờ xử lý'
                           : c.status === 'Processing'
                             ? 'Đang xử lý'
-                            : 'Đã xử lý'}
+                            : c.status === 'Rejected'
+                              ? 'Từ chối'
+                              : 'Đã xử lý'}
                       </span>
                     </td>
                     <td>{formatDate(c.createdDate)}</td>
@@ -536,7 +551,9 @@ export default function ComplaintRequestList() {
                               ? 'Chờ xử lý'
                               : selectedComplaint.status === 'Processing'
                                 ? 'Đang xử lý'
-                                : 'Đã xử lý'}
+                                : selectedComplaint.status === 'Rejected'
+                                  ? 'Từ chối'
+                                  : 'Đã xử lý'}
                           </span>
                         </span>
                       </div>
@@ -571,6 +588,13 @@ export default function ComplaintRequestList() {
                   </div>
                 )}
 
+                {selectedComplaint.managerNote && (
+                  <div className="detail-description-block">
+                    <span className="detail-field-label">Ghi chú xử lý của quản lý</span>
+                    <p className="detail-description-text">{selectedComplaint.managerNote}</p>
+                  </div>
+                )}
+
                 <div className="detail-status-actions">
                   <div className="detail-status-actions-select-row">
                     <span className="detail-status-clock">🕐</span>
@@ -581,11 +605,13 @@ export default function ComplaintRequestList() {
                       onChange={(e) =>
                         handleUpdateStatus(
                           selectedComplaint,
-                          e.target.value as 'Pending' | 'Processing' | 'Done',
+                          e.target.value as 'Pending' | 'Processing' | 'Done' | 'Rejected',
                         )
                       }
                       disabled={
-                        updatingId === selectedComplaint._id || selectedComplaint.status === 'Done'
+                        updatingId === selectedComplaint._id ||
+                        selectedComplaint.status === 'Done' ||
+                        selectedComplaint.status === 'Rejected'
                       }
                     >
                       <option
@@ -602,6 +628,9 @@ export default function ComplaintRequestList() {
                       </option>
                       <option value="Done" disabled={selectedComplaint.status === 'Done'}>
                         Đã xử lý
+                      </option>
+                      <option value="Rejected" disabled={selectedComplaint.status === 'Rejected'}>
+                        Từ chối
                       </option>
                     </select>
                     {updatingId === selectedComplaint._id && (
@@ -621,18 +650,22 @@ export default function ComplaintRequestList() {
           </div>
         )}
 
-        {showDoneModal && completingComplaint && (
-          <div className="repair-modal-overlay" onClick={handleCloseDoneModal}>
+        {showStatusNoteModal && completingComplaint && (
+          <div className="repair-modal-overlay" onClick={handleCloseStatusNoteModal}>
             <div
               className="repair-modal repair-complete-modal"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="repair-modal-header">
-                <h2>Ghi chú xử lý khiếu nại</h2>
+                <h2>
+                  {statusNoteMode === 'Rejected'
+                    ? 'Ghi chú xử lý khiếu nại (Từ chối)'
+                    : 'Ghi chú xử lý khiếu nại'}
+                </h2>
                 <button
                   type="button"
                   className="modal-close-btn"
-                  onClick={handleCloseDoneModal}
+                  onClick={handleCloseStatusNoteModal}
                   aria-label="Đóng"
                 >
                   ×
@@ -640,23 +673,27 @@ export default function ComplaintRequestList() {
               </div>
               <div className="repair-modal-body">
                 <div className="complete-form-group">
-                  <label htmlFor="done-note">Ghi chú xử lý *</label>
+                  <label htmlFor="status-note">Ghi chú xử lý khiếu nại *</label>
                   <textarea
-                    id="done-note"
-                    value={doneNote}
+                    id="status-note"
+                    value={statusNote}
                     onChange={(e) => {
-                      setDoneNote(e.target.value);
-                      if (doneNoteError) setDoneNoteError('');
+                      setStatusNote(e.target.value);
+                      if (statusNoteError) setStatusNoteError('');
                     }}
-                    placeholder="Nhập nội dung xử lý khiếu nại..."
+                    placeholder={
+                      statusNoteMode === 'Rejected'
+                        ? 'Nhập lý do từ chối khiếu nại...'
+                        : 'Nhập nội dung xử lý khiếu nại...'
+                    }
                   />
-                  {doneNoteError && <span className="error-message">{doneNoteError}</span>}
+                  {statusNoteError && <span className="error-message">{statusNoteError}</span>}
                 </div>
                 <div className="complete-form-actions">
                   <button
                     type="button"
                     className="btn-cancel"
-                    onClick={handleCloseDoneModal}
+                    onClick={handleCloseStatusNoteModal}
                     disabled={updatingId === completingComplaint._id}
                   >
                     Hủy
@@ -664,10 +701,14 @@ export default function ComplaintRequestList() {
                   <button
                     type="button"
                     className="btn-submit"
-                    onClick={handleConfirmDone}
+                    onClick={handleConfirmStatusNote}
                     disabled={updatingId === completingComplaint._id}
                   >
-                    {updatingId === completingComplaint._id ? 'Đang xử lý...' : 'Hoàn thành'}
+                    {updatingId === completingComplaint._id
+                      ? 'Đang xử lý...'
+                      : statusNoteMode === 'Rejected'
+                        ? 'Xác nhận từ chối'
+                        : 'Hoàn thành'}
                   </button>
                 </div>
               </div>

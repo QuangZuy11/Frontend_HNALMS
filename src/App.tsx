@@ -284,7 +284,7 @@ function LayoutWrapper() {
           <Route index element={<AccountantDashboard />} />
           <Route path="profile" element={<ViewProfile />} />
           {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
-          <Route path="invoices/list" element={<InvoiceList />} />
+          <Route path="invoices" element={<InvoiceList />} />
           {/* Phiếu thu / chi */}
           <Route
             path="transactions/receipts"
