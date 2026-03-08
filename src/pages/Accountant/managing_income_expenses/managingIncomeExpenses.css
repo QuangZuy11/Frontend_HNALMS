@@ -108,7 +108,9 @@
   color: #334155;
   background: #ffffff;
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .payments-filter-input {
@@ -162,7 +164,9 @@
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.15s, box-shadow 0.15s;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
   box-shadow: 0 2px 6px rgba(37, 99, 235, 0.28);
 }
 
@@ -214,7 +218,7 @@
 }
 
 .payments-code-badge {
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   font-size: 12.5px;
   font-weight: 700;
   color: #1e40af;
@@ -238,7 +242,7 @@
 }
 
 .status-badge::before {
-  content: '';
+  content: "";
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -399,8 +403,12 @@
 }
 
 @keyframes pmOverlayIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .payments-modal {
@@ -413,8 +421,14 @@
 }
 
 @keyframes pmModalIn {
-  from { opacity: 0; transform: translateY(-10px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .payments-modal-header {
@@ -434,7 +448,7 @@
 
 .payments-modal-close {
   border: none;
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
   cursor: pointer;
   font-size: 16px;
   line-height: 1;
@@ -449,7 +463,7 @@
 }
 
 .payments-modal-close:hover {
-  background: rgba(255,255,255,0.28);
+  background: rgba(255, 255, 255, 0.28);
 }
 
 .payments-modal-body {
@@ -463,7 +477,172 @@
   gap: 8px;
   border-top: 1px solid #f1f5f9;
 }
+/* ══════════════════════════════════════════════════════════
+   Chi tiết phiếu chi – Modal riêng (paychi-)
+   ══════════════════════════════════════════════════════════ */
+.paychi-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 2000;
+  animation: paychiOverlayIn 0.18s ease-out;
+}
 
+@keyframes paychiOverlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.paychi-modal {
+  width: min(520px, 100%);
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.22);
+  overflow: hidden;
+  animation: paychiModalIn 0.2s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+
+@keyframes paychiModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.paychi-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+}
+
+.paychi-modal-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.paychi-modal-close {
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  color: #ffffff;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.paychi-modal-close:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.paychi-modal-body {
+  padding: 20px;
+}
+
+.paychi-modal-footer {
+  padding: 12px 20px 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* ── Detail rows ── */
+.paychi-detail-row {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.paychi-detail-row:last-child {
+  border-bottom: none;
+}
+
+.paychi-detail-row--column {
+  align-items: flex-start;
+}
+
+.paychi-detail-label {
+  width: 160px;
+  min-width: 160px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.paychi-detail-value {
+  color: #0f172a;
+  font-size: 13.5px;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.paychi-detail-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.paychi-status-select {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid #dde3ec;
+  font-size: 13px;
+  color: #334155;
+  background: #ffffff;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.paychi-status-select:disabled {
+  opacity: 0.6;
+  cursor: default;
+  background: #f8fafc;
+}
+
+.paychi-done-btn {
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 8px;
+  border: none;
+  background: #16a34a;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.paychi-done-btn:hover {
+  background: #15803d;
+}
+
+/* ══════════════════════════════════════════════════════════ */
 /* â”€â”€ Detail rows in modal â”€â”€ */
 .payments-detail-table {
   width: 100%;
@@ -516,8 +695,13 @@
   transition: background 0.15s;
 }
 
-.btn-primary:hover:not(:disabled) { background: #1d4ed8; }
-.btn-primary:disabled { opacity: 0.55; cursor: default; }
+.btn-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
 
 .btn-secondary {
   height: 36px;
@@ -529,11 +713,19 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
-.btn-secondary:hover:not(:disabled) { background: #f8fafc; border-color: #cbd5e1; }
-.btn-secondary:disabled { opacity: 0.55; cursor: default; }
+.btn-secondary:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+.btn-secondary:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
 
 .payments-done-button {
   height: 36px;
@@ -548,7 +740,9 @@
   transition: background 0.15s;
 }
 
-.payments-done-button:hover { background: #15803d; }
+.payments-done-button:hover {
+  background: #15803d;
+}
 
 /* â”€â”€ Form â”€â”€ */
 .payments-form-group {
@@ -574,7 +768,9 @@
   background: #ffffff;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .payments-detail-status {

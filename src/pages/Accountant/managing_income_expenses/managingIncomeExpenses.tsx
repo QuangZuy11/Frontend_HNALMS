@@ -31,14 +31,14 @@ export default function ManagingIncomeExpenses() {
   const [error, setError] = useState<string | null>(null);
   // roomSearch removed (màn này không cần tìm kiếm theo phòng)
   const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "unpaid">(
-    "all"
+    "all",
   );
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 11;
   const [selectedTicket, setSelectedTicket] = useState<FinancialTicket | null>(
-    null
+    null,
   );
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [creating, setCreating] = useState<boolean>(false);
@@ -65,12 +65,14 @@ export default function ManagingIncomeExpenses() {
 
   // Khoá scroll trang này
   useEffect(() => {
-    const main = document.querySelector('.dashboard-layout-main') as HTMLElement;
-    if (main) main.style.overflowY = 'hidden';
-    document.body.style.overflow = 'hidden';
+    const main = document.querySelector(
+      ".dashboard-layout-main",
+    ) as HTMLElement;
+    if (main) main.style.overflowY = "hidden";
+    document.body.style.overflow = "hidden";
     return () => {
-      if (main) main.style.overflowY = '';
-      document.body.style.overflow = '';
+      if (main) main.style.overflowY = "";
+      document.body.style.overflow = "";
     };
   }, []);
 
@@ -111,9 +113,8 @@ export default function ManagingIncomeExpenses() {
         (err as { response?: { data?: { message?: string } } }).response?.data
           ?.message
       ) {
-        msg = (
-          err as { response?: { data?: { message?: string } } }
-        ).response!.data!.message as string;
+        msg = (err as { response?: { data?: { message?: string } } }).response!
+          .data!.message as string;
       }
       setError(msg);
     } finally {
@@ -230,7 +231,11 @@ export default function ManagingIncomeExpenses() {
 
   const toUiStatus = (status?: string): UiPaymentStatus => {
     const s = (status || "").toLowerCase();
-    if (s === "paid" || s.includes("đã thanh toán") || s.includes("da thanh toan"))
+    if (
+      s === "paid" ||
+      s.includes("đã thanh toán") ||
+      s.includes("da thanh toan")
+    )
       return "paid";
     return "unpaid";
   };
@@ -245,32 +250,42 @@ export default function ManagingIncomeExpenses() {
 
   const handleChangeStatus = async (
     ticketId: string,
-    uiStatus: UiPaymentStatus
+    uiStatus: UiPaymentStatus,
   ) => {
     // optimistic update
     setTickets((prev) =>
-      prev.map((t) => (t._id === ticketId ? { ...t, status: toApiStatus(uiStatus) } : t))
+      prev.map((t) =>
+        t._id === ticketId ? { ...t, status: toApiStatus(uiStatus) } : t,
+      ),
     );
 
     try {
       const res = await cashFlowService.updatePaymentTicketStatus(
         ticketId,
-        toApiStatus(uiStatus)
+        toApiStatus(uiStatus),
       );
 
       if (res?.success && res?.data?._id) {
         setTickets((prev) =>
           prev.map((t) =>
             t._id === ticketId
-              ? { ...t, status: res.data.status, accountantPaidAt: res.data.accountantPaidAt }
-              : t
-          )
+              ? {
+                  ...t,
+                  status: res.data.status,
+                  accountantPaidAt: res.data.accountantPaidAt,
+                }
+              : t,
+          ),
         );
 
         setSelectedTicket((prev) =>
           prev && prev._id === ticketId
-            ? { ...prev, status: res.data.status, accountantPaidAt: res.data.accountantPaidAt }
-            : prev
+            ? {
+                ...prev,
+                status: res.data.status,
+                accountantPaidAt: res.data.accountantPaidAt,
+              }
+            : prev,
         );
       }
     } catch (err) {
@@ -289,14 +304,14 @@ export default function ManagingIncomeExpenses() {
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredTickets.length / pageSize) || 1
+    Math.ceil(filteredTickets.length / pageSize) || 1,
   );
 
   const safePage = Math.min(currentPage, totalPages);
   const startIndex = (safePage - 1) * pageSize;
   const paginatedTickets = filteredTickets.slice(
     startIndex,
-    startIndex + pageSize
+    startIndex + pageSize,
   );
 
   return (
@@ -389,20 +404,27 @@ export default function ManagingIncomeExpenses() {
                 {paginatedTickets.map((t, index) => (
                   <tr key={t._id}>
                     <td>{startIndex + index + 1}</td>
-                    <td><span className="payments-code-badge">{t.paymentVoucher || "—"}</span></td>
+                    <td>
+                      <span className="payments-code-badge">
+                        {t.paymentVoucher || "—"}
+                      </span>
+                    </td>
                     <td>{t.title}</td>
-                    <td><span className="payments-amount">{formatCurrency(t.amount)}</span></td>
+                    <td>
+                      <span className="payments-amount">
+                        {formatCurrency(t.amount)}
+                      </span>
+                    </td>
                     <td>
                       <span
-                        className={`payments-status-badge ${toUiStatus(t.status) === "paid" ? "paid" : "unpaid"
-                          }`}
+                        className={`payments-status-badge ${
+                          toUiStatus(t.status) === "paid" ? "paid" : "unpaid"
+                        }`}
                       >
                         {statusLabel(t.status)}
                       </span>
                     </td>
-                    <td>
-                      {formatDate(t.createdAt || t.transactionDate)}
-                    </td>
+                    <td>{formatDate(t.createdAt || t.transactionDate)}</td>
                     <td>
                       <div className="payments-actions">
                         <button
@@ -424,7 +446,10 @@ export default function ManagingIncomeExpenses() {
 
         {showCreateModal && (
           <div className="payments-modal-overlay" onClick={closeCreateModal}>
-            <div className="payments-modal" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="payments-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="payments-modal-header">
                 <h3>Tạo phiếu chi</h3>
                 <button
@@ -458,7 +483,9 @@ export default function ManagingIncomeExpenses() {
                     className="payments-form-input"
                   />
                   {autoVoucherError && (
-                    <span className="payments-form-error">{autoVoucherError}</span>
+                    <span className="payments-form-error">
+                      {autoVoucherError}
+                    </span>
                   )}
                 </div>
 
@@ -468,7 +495,10 @@ export default function ManagingIncomeExpenses() {
                     type="text"
                     value={createForm.title}
                     onChange={(e) => {
-                      setCreateForm((prev) => ({ ...prev, title: e.target.value }));
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }));
                       if (createErrors.title) {
                         setCreateErrors((prev) => ({ ...prev, title: "" }));
                       }
@@ -477,7 +507,9 @@ export default function ManagingIncomeExpenses() {
                     placeholder="Nhập tiêu đề phiếu chi"
                   />
                   {createErrors.title && (
-                    <span className="payments-form-error">{createErrors.title}</span>
+                    <span className="payments-form-error">
+                      {createErrors.title}
+                    </span>
                   )}
                 </div>
 
@@ -489,7 +521,10 @@ export default function ManagingIncomeExpenses() {
                     step="1000"
                     value={createForm.amount}
                     onChange={(e) => {
-                      setCreateForm((prev) => ({ ...prev, amount: e.target.value }));
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        amount: e.target.value,
+                      }));
                       if (createErrors.amount) {
                         setCreateErrors((prev) => ({ ...prev, amount: "" }));
                       }
@@ -498,7 +533,9 @@ export default function ManagingIncomeExpenses() {
                     placeholder="Nhập số tiền"
                   />
                   {createErrors.amount && (
-                    <span className="payments-form-error">{createErrors.amount}</span>
+                    <span className="payments-form-error">
+                      {createErrors.amount}
+                    </span>
                   )}
                 </div>
 
@@ -567,71 +604,69 @@ export default function ManagingIncomeExpenses() {
 
         {selectedTicket && (
           <div
-            className="payments-modal-overlay"
+            className="paychi-modal-overlay"
             onClick={() => setSelectedTicket(null)}
           >
-            <div
-              className="payments-modal"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="payments-modal-header">
+            <div className="paychi-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="paychi-modal-header">
                 <h3>Chi tiết phiếu chi</h3>
                 <button
                   type="button"
-                  className="payments-modal-close"
+                  className="paychi-modal-close"
                   onClick={() => setSelectedTicket(null)}
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="payments-modal-body">
-                <div className="payments-detail-row">
-                  <span className="payments-detail-label">Mã phiếu</span>
-                  <span className="payments-detail-value">
+              <div className="paychi-modal-body">
+                <div className="paychi-detail-row">
+                  <span className="paychi-detail-label">Mã phiếu</span>
+                  <span className="paychi-detail-value">
                     {selectedTicket.paymentVoucher || "-"}
                   </span>
                 </div>
-                <div className="payments-detail-row">
-                  <span className="payments-detail-label">Tiêu đề</span>
-                  <span className="payments-detail-value">
+                <div className="paychi-detail-row">
+                  <span className="paychi-detail-label">Tiêu đề</span>
+                  <span className="paychi-detail-value">
                     {selectedTicket.title}
                   </span>
                 </div>
-                <div className="payments-detail-row">
-                  <span className="payments-detail-label">Số tiền</span>
-                  <span className="payments-detail-value">
+                <div className="paychi-detail-row">
+                  <span className="paychi-detail-label">Số tiền</span>
+                  <span className="paychi-detail-value">
                     {formatCurrency(selectedTicket.amount)} VNĐ
                   </span>
                 </div>
-                <div className="payments-detail-row">
-                  <span className="payments-detail-label">Ngày tạo</span>
-                  <span className="payments-detail-value">
+                <div className="paychi-detail-row">
+                  <span className="paychi-detail-label">Ngày tạo</span>
+                  <span className="paychi-detail-value">
                     {formatDate(
-                      selectedTicket.createdAt || selectedTicket.transactionDate
+                      selectedTicket.createdAt ||
+                        selectedTicket.transactionDate,
                     )}
                   </span>
                 </div>
                 {toUiStatus(selectedTicket.status) === "paid" && (
-                  <div className="payments-detail-row">
-                    <span className="payments-detail-label">
+                  <div className="paychi-detail-row">
+                    <span className="paychi-detail-label">
                       Ngày kế toán thanh toán
                     </span>
-                    <span className="payments-detail-value">
+                    <span className="paychi-detail-value">
                       {formatDate(selectedTicket.accountantPaidAt)}
                     </span>
                   </div>
                 )}
-                <div className="payments-detail-row payments-detail-row--column">
-                  <span className="payments-detail-label">Trạng thái</span>
-                  <div className="payments-detail-value payments-detail-status">
+                <div className="paychi-detail-row paychi-detail-row--column">
+                  <span className="paychi-detail-label">Trạng thái</span>
+                  <div className="paychi-detail-value paychi-detail-status">
                     <select
-                      className="payments-status-select payments-status-select--compact"
+                      className="paychi-status-select"
                       value={toUiStatus(selectedTicket.status)}
                       onChange={(e) =>
                         handleChangeStatus(
                           selectedTicket._id,
-                          e.target.value as UiPaymentStatus
+                          e.target.value as UiPaymentStatus,
                         )
                       }
                       disabled={toUiStatus(selectedTicket.status) === "paid"}
@@ -643,11 +678,11 @@ export default function ManagingIncomeExpenses() {
                 </div>
               </div>
 
-              <div className="payments-modal-footer">
+              <div className="paychi-modal-footer">
                 {toUiStatus(selectedTicket.status) === "paid" && (
                   <button
                     type="button"
-                    className="payments-done-button"
+                    className="paychi-done-btn"
                     onClick={() => setSelectedTicket(null)}
                   >
                     Xong
