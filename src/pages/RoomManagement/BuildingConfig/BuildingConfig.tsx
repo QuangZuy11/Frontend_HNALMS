@@ -77,6 +77,14 @@ const BuildingConfig = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   
+  // --- [MỚI] STATE CHO MODAL XÁC NHẬN XÓA TÙY CHỈNH ---
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    action: 'DELETE_FLOOR' | 'DELETE_TYPE' | null;
+    targetId: string | null;
+    message: string;
+  }>({ isOpen: false, action: null, targetId: null, message: '' });
+
   const [viewingHistoryType, setViewingHistoryType] = useState<RoomType | null>(null);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -96,6 +104,15 @@ const BuildingConfig = () => {
   });
 
   const [imageSlots, setImageSlots] = useState<Array<{ file?: File, preview?: string, url?: string } | null>>(Array(7).fill(null));
+
+  useEffect(() => {
+    toastr.options = {
+      closeButton: true,
+      progressBar: true,
+      positionClass: "toast-top-right",
+      timeOut: 3000,
+    };
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -127,6 +144,7 @@ const BuildingConfig = () => {
       setRoomTypes(typeRes.data.data || typeRes.data || []);
     } catch (error) {
       console.error("Lỗi tải dữ liệu:", error);
+      toastr.error("Lỗi khi tải dữ liệu từ máy chủ.");
     } finally {
       setLoading(false);
     }
@@ -191,23 +209,57 @@ const BuildingConfig = () => {
       const payload = { name: floorName, description: floorDesc };
       if (editingFloor) {
         await axios.put(`${API_BASE_URL}/floors/${editingFloor._id}`, payload);
+        toastr.success("Cập nhật tầng thành công!");
       } else {
         await axios.post(`${API_BASE_URL}/floors`, payload);
+        toastr.success("Thêm tầng mới thành công!");
       }
       setShowFloorModal(false);
       fetchData();
-    } catch (error) {
-      alert("Lỗi cập nhật tầng.");
+    } catch (error: any) {
+      toastr.error(error.response?.data?.message || "Lỗi khi lưu thông tin tầng.");
     }
   };
 
-  const handleDeleteFloor = async (id: string) => {
-    if (!window.confirm("Xóa tầng này?")) return;
+  // --- [MỚI] MỞ HỘP THOẠI XÁC NHẬN XÓA TẦNG ---
+  const handleOpenDeleteFloorConfirm = (id: string, name: string) => {
+    setConfirmModal({
+      isOpen: true,
+      action: 'DELETE_FLOOR',
+      targetId: id,
+      message: `Bạn có chắc chắn muốn xóa "${name}" không? Thao tác này không thể hoàn tác.`
+    });
+  };
+
+  // --- [MỚI] MỞ HỘP THOẠI XÁC NHẬN XÓA LOẠI PHÒNG ---
+  const handleOpenDeleteTypeConfirm = (id: string, name: string) => {
+    setConfirmModal({
+      isOpen: true,
+      action: 'DELETE_TYPE',
+      targetId: id,
+      message: `Bạn có chắc chắn muốn xóa loại phòng "${name}" không? Thao tác này không thể hoàn tác.`
+    });
+  };
+
+  // --- [MỚI] THỰC THI HÀNH ĐỘNG SAU KHI XÁC NHẬN ---
+  const executeConfirmAction = async () => {
+    if (!confirmModal.targetId) return;
+
+    setLoading(true);
     try {
-      await axios.delete(`${API_BASE_URL}/floors/${id}`);
+      if (confirmModal.action === 'DELETE_FLOOR') {
+        await axios.delete(`${API_BASE_URL}/floors/${confirmModal.targetId}`);
+        toastr.success("Đã xóa tầng thành công!");
+      } else if (confirmModal.action === 'DELETE_TYPE') {
+        await axios.delete(`${API_BASE_URL}/roomtypes/${confirmModal.targetId}`);
+        toastr.success("Đã xóa loại phòng thành công!");
+      }
       fetchData();
-    } catch (error) {
-      alert("Lỗi xóa tầng.");
+    } catch (error: any) {
+      toastr.error(error.response?.data?.message || "Lỗi khi thực hiện thao tác xóa.");
+    } finally {
+      setLoading(false);
+      setConfirmModal({ isOpen: false, action: null, targetId: null, message: '' });
     }
   };
 
@@ -327,16 +379,6 @@ const BuildingConfig = () => {
     }
   };
 
-  const handleDeleteType = async (id: string) => {
-    if (!window.confirm("Xóa loại phòng này?")) return;
-    try {
-      await axios.delete(`${API_BASE_URL}/roomtypes/${id}`);
-      fetchData();
-    } catch (error) {
-      alert("Lỗi xóa loại phòng.");
-    }
-  };
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -425,7 +467,8 @@ const BuildingConfig = () => {
                 </div>
                 <div className="floor-actions">
                   <button className="btn-action edit" onClick={() => handleOpenFloorModal(floor)}>Sửa</button>
-                  <button className="btn-action delete" onClick={() => handleDeleteFloor(floor._id)}>Xóa</button>
+                  {/* Dùng Modal Custom thay cho window.confirm */}
+                  <button className="btn-action delete" onClick={() => handleOpenDeleteFloorConfirm(floor._id, floor.name)}>Xóa</button>
                 </div>
               </div>
             ))}
@@ -477,7 +520,8 @@ const BuildingConfig = () => {
                         <button className="btn-icon-sm edit" onClick={() => handleOpenTypeModal(type)} title="Sửa">
                           <Edit size={16} />
                         </button>
-                        <button className="btn-icon-sm delete" onClick={() => handleDeleteType(type._id)} title="Xóa">
+                        {/* Dùng Modal Custom thay cho window.confirm */}
+                        <button className="btn-icon-sm delete" onClick={() => handleOpenDeleteTypeConfirm(type._id, type.typeName)} title="Xóa">
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -490,6 +534,7 @@ const BuildingConfig = () => {
         </section>
       </div>
 
+      {/* --- CÁC MODAL HIỆN TẠI GIỮ NGUYÊN --- */}
       {showFloorModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -526,7 +571,6 @@ const BuildingConfig = () => {
         </div>
       )}
 
-      {/* MODAL THÊM / SỬA LOẠI PHÒNG */}
       {showTypeModal && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '800px', width: '90%' }}>
@@ -633,7 +677,6 @@ const BuildingConfig = () => {
                               alt={label}
                               style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                             />
-                            {/* [ĐÃ FIX LỖI UI] Chỉnh padding, display và màu nền chuẩn xác cho nút X */}
                             <button 
                               type="button" 
                               onClick={(e) => handleRemoveSlot(index, e)} 
@@ -681,7 +724,6 @@ const BuildingConfig = () => {
         </div>
       )}
 
-      {/* [ĐÃ SỬA] MODAL CHI TIẾT ĐƯỢC THIẾT KẾ LẠI, RỘNG 800PX */}
       {showDetailModal && viewingType && (
         <div className="modal-overlay" style={{ zIndex: 1000 }}>
           <div className="modal-content" style={{ maxWidth: '800px', width: '90%' }}>
@@ -825,6 +867,39 @@ const BuildingConfig = () => {
           <button className="lightbox-nav-btn next" onClick={nextImage}><ChevronRight size={48} /></button>
         </div>
       )}
+
+      {/* --- [MỚI] MODAL HỘP THOẠI XÁC NHẬN XÓA (THAY CHO WINDOW.CONFIRM) --- */}
+      {confirmModal.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+              <div style={{ background: '#fee2e2', padding: '12px', borderRadius: '50%' }}>
+                <Trash2 size={32} color="#ef4444" />
+              </div>
+            </div>
+            <h3 style={{ marginTop: 0, color: '#1e293b', fontSize: '18px' }}>Xác nhận xóa</h3>
+            <p style={{ color: '#475569', margin: '16px 0 24px 0', lineHeight: '1.5' }}>
+              {confirmModal.message}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+              <button 
+                className="btn-secondary" 
+                onClick={() => setConfirmModal({ isOpen: false, action: null, targetId: null, message: '' })}
+              >
+                Hủy bỏ
+              </button>
+              <button 
+                style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 24px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+                onClick={executeConfirmAction}
+                disabled={loading}
+              >
+                {loading ? 'Đang xử lý...' : 'Xóa dữ liệu'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
