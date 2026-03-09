@@ -24,10 +24,10 @@ export default function ReceiptsList() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 11;
   const [selectedTicket, setSelectedTicket] = useState<ReceiptTicket | null>(
-    null
+    null,
   );
   const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "unpaid">(
-    "all"
+    "all",
   );
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
@@ -76,9 +76,8 @@ export default function ReceiptsList() {
         params.status = statusFilter === "paid" ? "Paid" : "Unpaid";
       }
 
-      const response: ApiResponse = await cashFlowService.getReceiptTickets(
-        params
-      );
+      const response: ApiResponse =
+        await cashFlowService.getReceiptTickets(params);
 
       if (response.success && Array.isArray(response.data)) {
         setTickets(response.data);
@@ -95,9 +94,8 @@ export default function ReceiptsList() {
         (err as { response?: { data?: { message?: string } } }).response?.data
           ?.message
       ) {
-        msg = (
-          err as { response?: { data?: { message?: string } } }
-        ).response!.data!.message as string;
+        msg = (err as { response?: { data?: { message?: string } } }).response!
+          .data!.message as string;
       }
       setError(msg);
     } finally {
@@ -124,21 +122,19 @@ export default function ReceiptsList() {
     });
   };
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(tickets.length / pageSize) || 1
-  );
+  const totalPages = Math.max(1, Math.ceil(tickets.length / pageSize) || 1);
 
   const safePage = Math.min(currentPage, totalPages);
   const startIndex = (safePage - 1) * pageSize;
-  const paginatedTickets = tickets.slice(
-    startIndex,
-    startIndex + pageSize
-  );
+  const paginatedTickets = tickets.slice(startIndex, startIndex + pageSize);
 
   const toUiStatus = (status?: string): UiPaymentStatus => {
     const s = (status || "").toLowerCase();
-    if (s === "paid" || s.includes("đã thanh toán") || s.includes("da thanh toan"))
+    if (
+      s === "paid" ||
+      s.includes("đã thanh toán") ||
+      s.includes("da thanh toan")
+    )
       return "paid";
     return "unpaid";
   };
@@ -153,19 +149,19 @@ export default function ReceiptsList() {
 
   const handleChangeStatus = async (
     ticketId: string,
-    uiStatus: UiPaymentStatus
+    uiStatus: UiPaymentStatus,
   ) => {
     // optimistic update
     setTickets((prev) =>
       prev.map((t) =>
-        t._id === ticketId ? { ...t, status: toApiStatus(uiStatus) } : t
-      )
+        t._id === ticketId ? { ...t, status: toApiStatus(uiStatus) } : t,
+      ),
     );
 
     try {
       const res = await cashFlowService.updatePaymentTicketStatus(
         ticketId,
-        toApiStatus(uiStatus)
+        toApiStatus(uiStatus),
       );
 
       if (res?.success && res?.data?._id) {
@@ -173,22 +169,22 @@ export default function ReceiptsList() {
           prev.map((t) =>
             t._id === ticketId
               ? {
-                ...t,
-                status: res.data.status,
-                accountantPaidAt: res.data.accountantPaidAt,
-              }
-              : t
-          )
+                  ...t,
+                  status: res.data.status,
+                  accountantPaidAt: res.data.accountantPaidAt,
+                }
+              : t,
+          ),
         );
 
         setSelectedTicket((prev) =>
           prev && prev._id === ticketId
             ? {
-              ...prev,
-              status: res.data.status,
-              accountantPaidAt: res.data.accountantPaidAt,
-            }
-            : prev
+                ...prev,
+                status: res.data.status,
+                accountantPaidAt: res.data.accountantPaidAt,
+              }
+            : prev,
         );
       }
     } catch (err) {
@@ -382,18 +378,22 @@ export default function ReceiptsList() {
                 {paginatedTickets.map((t, index) => (
                   <tr key={t._id}>
                     <td>{startIndex + index + 1}</td>
-                    <td><span className="payments-code-badge">{t.paymentVoucher || "—"}</span></td>
+                    <td>
+                      <span className="payments-code-badge">
+                        {t.paymentVoucher || "—"}
+                      </span>
+                    </td>
                     <td>{t.title}</td>
                     <td>{formatCurrency(t.amount)}</td>
-                  <td>
-                    <span
-                      className={`receipts-status-badge ${
-                        toUiStatus(t.status) === "paid" ? "paid" : "unpaid"
-                      }`}
-                    >
-                      {statusLabel(t.status)}
-                    </span>
-                  </td>
+                    <td>
+                      <span
+                        className={`receipts-status-badge ${
+                          toUiStatus(t.status) === "paid" ? "paid" : "unpaid"
+                        }`}
+                      >
+                        {statusLabel(t.status)}
+                      </span>
+                    </td>
                     <td>{formatDate(t.createdAt || t.transactionDate)}</td>
                     <td>
                       <div className="receipts-actions">
@@ -420,74 +420,93 @@ export default function ReceiptsList() {
             onClick={() => setSelectedTicket(null)}
           >
             <div
-              className="receipts-modal"
+              className="receipts-modal receipts-modal--detail"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="receipts-modal-header">
-                <h3>Chi tiết phiếu thu</h3>
+              <div className="receipts-modal-header receipts-modal-header--detail">
+                <div>
+                  <h3>Chi tiết phiếu thu</h3>
+                  <p className="receipts-modal-subtitle">
+                    {selectedTicket.title}
+                  </p>
+                </div>
                 <button
                   type="button"
-                  className="receipts-modal-close"
+                  className="receipts-modal-close receipts-modal-close--detail"
                   onClick={() => setSelectedTicket(null)}
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="receipts-modal-body">
-                <div className="receipts-detail-row">
-                  <span className="receipts-detail-label">Mã phiếu</span>
-                  <span className="receipts-detail-value">
-                    {selectedTicket.paymentVoucher || "-"}
-                  </span>
+              <div className="receipts-modal-body receipts-detail-content">
+                <div className="receipts-section-divider">
+                  Thông tin phiếu thu
                 </div>
-                <div className="receipts-detail-row">
-                  <span className="receipts-detail-label">Tiêu đề</span>
-                  <span className="receipts-detail-value">
-                    {selectedTicket.title}
-                  </span>
-                </div>
-                <div className="receipts-detail-row">
-                  <span className="receipts-detail-label">Số tiền</span>
-                  <span className="receipts-detail-value">
-                    {formatCurrency(selectedTicket.amount)} VNĐ
-                  </span>
-                </div>
-                {toUiStatus(selectedTicket.status) === "paid" && (
+                <div className="receipts-section-block">
                   <div className="receipts-detail-row">
-                    <span className="receipts-detail-label">
-                      Ngày kế toán thanh toán
-                    </span>
+                    <span className="receipts-detail-label">Mã phiếu:</span>
                     <span className="receipts-detail-value">
-                      {formatDate(selectedTicket.accountantPaidAt)}
+                      {selectedTicket.paymentVoucher || "-"}
                     </span>
                   </div>
-                )}
-                <div className="receipts-detail-row">
-                  <span className="receipts-detail-label">Ngày tạo</span>
-                  <span className="receipts-detail-value">
-                    {formatDate(
-                      selectedTicket.createdAt || selectedTicket.transactionDate
-                    )}
-                  </span>
+                  <div className="receipts-detail-row">
+                    <span className="receipts-detail-label">Tiêu đề:</span>
+                    <span className="receipts-detail-value">
+                      {selectedTicket.title}
+                    </span>
+                  </div>
+                  <div className="receipts-detail-row">
+                    <span className="receipts-detail-label">Số tiền:</span>
+                    <span className="receipts-detail-value">
+                      {formatCurrency(selectedTicket.amount)} VNĐ
+                    </span>
+                  </div>
                 </div>
-                <div className="receipts-detail-row receipts-detail-row--column">
-                  <span className="receipts-detail-label">Trạng thái</span>
-                  <div className="receipts-detail-value receipts-detail-status">
-                    <select
-                      className="receipts-status-select receipts-status-select--compact"
-                      value={toUiStatus(selectedTicket.status)}
-                      onChange={(e) =>
-                        handleChangeStatus(
-                          selectedTicket._id,
-                          e.target.value as UiPaymentStatus
-                        )
-                      }
-                      disabled={toUiStatus(selectedTicket.status) === "paid"}
-                    >
-                      <option value="unpaid">Chưa thanh toán</option>
-                      <option value="paid">Đã thanh toán</option>
-                    </select>
+
+                <div className="receipts-section-divider">Thời gian</div>
+                <div className="receipts-section-block">
+                  <div className="receipts-detail-row">
+                    <span className="receipts-detail-label">Ngày tạo:</span>
+                    <span className="receipts-detail-value">
+                      {formatDate(
+                        selectedTicket.createdAt ||
+                          selectedTicket.transactionDate,
+                      )}
+                    </span>
+                  </div>
+                  {toUiStatus(selectedTicket.status) === "paid" && (
+                    <div className="receipts-detail-row">
+                      <span className="receipts-detail-label">
+                        Ngày thanh toán:
+                      </span>
+                      <span className="receipts-detail-value">
+                        {formatDate(selectedTicket.accountantPaidAt)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="receipts-section-divider">Trạng thái</div>
+                <div className="receipts-section-block">
+                  <div className="receipts-detail-row">
+                    <span className="receipts-detail-label">Trạng thái:</span>
+                    <div className="receipts-detail-value receipts-detail-status">
+                      <select
+                        className="receipts-status-select receipts-status-select--compact"
+                        value={toUiStatus(selectedTicket.status)}
+                        onChange={(e) =>
+                          handleChangeStatus(
+                            selectedTicket._id,
+                            e.target.value as UiPaymentStatus,
+                          )
+                        }
+                        disabled={toUiStatus(selectedTicket.status) === "paid"}
+                      >
+                        <option value="unpaid">Chưa thanh toán</option>
+                        <option value="paid">Đã thanh toán</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -501,11 +520,11 @@ export default function ReceiptsList() {
               className="receipts-modal"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="receipts-modal-header">
+              <div className="receipts-modal-header receipts-modal-header--detail">
                 <h3>Tạo phiếu thu</h3>
                 <button
                   type="button"
-                  className="receipts-modal-close"
+                  className="receipts-modal-close receipts-modal-close--detail"
                   onClick={closeCreateModal}
                 >
                   ✕
@@ -695,4 +714,3 @@ export default function ReceiptsList() {
     </div>
   );
 }
-

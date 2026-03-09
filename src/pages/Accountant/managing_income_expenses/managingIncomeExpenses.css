@@ -606,6 +606,145 @@
   align-items: center;
 }
 
+/* ── Detail modal – TenantAccountDetail style ── */
+.paychi-modal--detail {
+  width: min(580px, 95vw);
+  max-height: 88vh;
+  border: 1px solid #dbe4f0;
+  display: flex;
+  flex-direction: column;
+}
+
+.paychi-modal-header--detail {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e5ecf5;
+  background: linear-gradient(180deg, #f7faff 0%, #f1f6ff 100%);
+}
+
+.paychi-modal-header--detail h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1a237e;
+}
+
+.paychi-modal-subtitle {
+  font-size: 0.9375rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.paychi-modal-close--detail {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 18px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.16s ease;
+}
+
+.paychi-modal-close--detail:hover {
+  background: rgba(148, 163, 184, 0.16);
+  color: #0f172a;
+}
+
+.paychi-detail-content {
+  padding: 1rem 1.1rem 1.1rem;
+  background: #fbfdff;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.paychi-section-divider {
+  width: 100%;
+  padding: 0.58rem 0.82rem;
+  background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+  color: #1f3a8a;
+  font-size: 0.93rem;
+  font-weight: 700;
+  border: 1px solid #dbe4f0;
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+  letter-spacing: 0.08px;
+  box-sizing: border-box;
+}
+
+.paychi-section-block {
+  width: 100%;
+  margin-top: -1px;
+  padding: 0.2rem 0.82rem 0.28rem;
+  background: #ffffff;
+  border: 1px solid #dbe4f0;
+  border-radius: 0 0 10px 10px;
+  box-sizing: border-box;
+}
+
+.paychi-section-block .paychi-detail-row {
+  border-bottom: none;
+  padding: 0.34rem 0;
+}
+
+.paychi-section-block .paychi-detail-row + .paychi-detail-row {
+  border-top: 1px dashed #edf2f7;
+}
+
+.paychi-detail-actions {
+  margin-top: 0.25rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ── Create modal – TenantAccountDetail style header ── */
+.payments-modal-header--detail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e5ecf5;
+  background: linear-gradient(180deg, #f7faff 0%, #f1f6ff 100%);
+}
+
+.payments-modal-header--detail h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1a237e;
+}
+
+.payments-modal-close--detail {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 18px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.16s ease;
+}
+
+.payments-modal-close--detail:hover {
+  background: rgba(148, 163, 184, 0.16);
+  color: #0f172a;
+}
+
 .paychi-status-select {
   height: 34px;
   padding: 0 10px;

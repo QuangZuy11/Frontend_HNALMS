@@ -417,6 +417,102 @@
   align-items: center;
 }
 
+/* ══════════════════════════════════════════════════════════
+   Detail modal – TenantAccountDetail style
+   ══════════════════════════════════════════════════════════ */
+.receipts-modal--detail {
+  width: min(580px, 95vw);
+  max-height: 88vh;
+  border: 1px solid #dbe4f0;
+  display: flex;
+  flex-direction: column;
+}
+
+.receipts-modal-header--detail {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e5ecf5;
+  background: linear-gradient(180deg, #f7faff 0%, #f1f6ff 100%);
+}
+
+.receipts-modal-header--detail h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1a237e;
+}
+
+.receipts-modal-subtitle {
+  font-size: 0.9375rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.receipts-modal-close--detail {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 18px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.16s ease;
+}
+
+.receipts-modal-close--detail:hover {
+  background: rgba(148, 163, 184, 0.16);
+  color: #0f172a;
+}
+
+.receipts-detail-content {
+  padding: 1rem 1.1rem 1.1rem;
+  background: #fbfdff;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.receipts-section-divider {
+  width: 100%;
+  padding: 0.58rem 0.82rem;
+  background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+  color: #1f3a8a;
+  font-size: 0.93rem;
+  font-weight: 700;
+  border: 1px solid #dbe4f0;
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+  letter-spacing: 0.08px;
+  box-sizing: border-box;
+}
+
+.receipts-section-block {
+  width: 100%;
+  margin-top: -1px;
+  padding: 0.2rem 0.82rem 0.28rem;
+  background: #ffffff;
+  border: 1px solid #dbe4f0;
+  border-radius: 0 0 10px 10px;
+  box-sizing: border-box;
+}
+
+.receipts-section-block .receipts-detail-row {
+  border-bottom: none;
+  padding: 0.34rem 0;
+}
+
+.receipts-section-block .receipts-detail-row + .receipts-detail-row {
+  border-top: 1px dashed #edf2f7;
+}
+
 @media (max-width: 1200px) {
   .receipts-page {
     padding: 14px 16px;

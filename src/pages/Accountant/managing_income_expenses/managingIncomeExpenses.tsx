@@ -450,11 +450,11 @@ export default function ManagingIncomeExpenses() {
               className="payments-modal"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="payments-modal-header">
+              <div className="payments-modal-header payments-modal-header--detail">
                 <h3>Tạo phiếu chi</h3>
                 <button
                   type="button"
-                  className="payments-modal-close"
+                  className="payments-modal-close payments-modal-close--detail"
                   onClick={closeCreateModal}
                 >
                   ✕
@@ -607,87 +607,108 @@ export default function ManagingIncomeExpenses() {
             className="paychi-modal-overlay"
             onClick={() => setSelectedTicket(null)}
           >
-            <div className="paychi-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="paychi-modal-header">
-                <h3>Chi tiết phiếu chi</h3>
+            <div
+              className="paychi-modal paychi-modal--detail"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="paychi-modal-header paychi-modal-header--detail">
+                <div>
+                  <h3>Chi tiết phiếu chi</h3>
+                  <p className="paychi-modal-subtitle">
+                    {selectedTicket.title}
+                  </p>
+                </div>
                 <button
                   type="button"
-                  className="paychi-modal-close"
+                  className="paychi-modal-close paychi-modal-close--detail"
                   onClick={() => setSelectedTicket(null)}
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="paychi-modal-body">
-                <div className="paychi-detail-row">
-                  <span className="paychi-detail-label">Mã phiếu</span>
-                  <span className="paychi-detail-value">
-                    {selectedTicket.paymentVoucher || "-"}
-                  </span>
+              <div className="paychi-modal-body paychi-detail-content">
+                <div className="paychi-section-divider">
+                  Thông tin phiếu chi
                 </div>
-                <div className="paychi-detail-row">
-                  <span className="paychi-detail-label">Tiêu đề</span>
-                  <span className="paychi-detail-value">
-                    {selectedTicket.title}
-                  </span>
-                </div>
-                <div className="paychi-detail-row">
-                  <span className="paychi-detail-label">Số tiền</span>
-                  <span className="paychi-detail-value">
-                    {formatCurrency(selectedTicket.amount)} VNĐ
-                  </span>
-                </div>
-                <div className="paychi-detail-row">
-                  <span className="paychi-detail-label">Ngày tạo</span>
-                  <span className="paychi-detail-value">
-                    {formatDate(
-                      selectedTicket.createdAt ||
-                        selectedTicket.transactionDate,
-                    )}
-                  </span>
-                </div>
-                {toUiStatus(selectedTicket.status) === "paid" && (
+                <div className="paychi-section-block">
                   <div className="paychi-detail-row">
-                    <span className="paychi-detail-label">
-                      Ngày kế toán thanh toán
-                    </span>
+                    <span className="paychi-detail-label">Mã phiếu:</span>
                     <span className="paychi-detail-value">
-                      {formatDate(selectedTicket.accountantPaidAt)}
+                      {selectedTicket.paymentVoucher || "-"}
                     </span>
                   </div>
-                )}
-                <div className="paychi-detail-row paychi-detail-row--column">
-                  <span className="paychi-detail-label">Trạng thái</span>
-                  <div className="paychi-detail-value paychi-detail-status">
-                    <select
-                      className="paychi-status-select"
-                      value={toUiStatus(selectedTicket.status)}
-                      onChange={(e) =>
-                        handleChangeStatus(
-                          selectedTicket._id,
-                          e.target.value as UiPaymentStatus,
-                        )
-                      }
-                      disabled={toUiStatus(selectedTicket.status) === "paid"}
-                    >
-                      <option value="unpaid">Chưa thanh toán</option>
-                      <option value="paid">Đã thanh toán</option>
-                    </select>
+                  <div className="paychi-detail-row">
+                    <span className="paychi-detail-label">Tiêu đề:</span>
+                    <span className="paychi-detail-value">
+                      {selectedTicket.title}
+                    </span>
+                  </div>
+                  <div className="paychi-detail-row">
+                    <span className="paychi-detail-label">Số tiền:</span>
+                    <span className="paychi-detail-value">
+                      {formatCurrency(selectedTicket.amount)} VNĐ
+                    </span>
                   </div>
                 </div>
-              </div>
 
-              <div className="paychi-modal-footer">
-                {toUiStatus(selectedTicket.status) === "paid" && (
-                  <button
-                    type="button"
-                    className="paychi-done-btn"
-                    onClick={() => setSelectedTicket(null)}
-                  >
-                    Xong
-                  </button>
-                )}
+                <div className="paychi-section-divider">Thời gian</div>
+                <div className="paychi-section-block">
+                  <div className="paychi-detail-row">
+                    <span className="paychi-detail-label">Ngày tạo:</span>
+                    <span className="paychi-detail-value">
+                      {formatDate(
+                        selectedTicket.createdAt ||
+                          selectedTicket.transactionDate,
+                      )}
+                    </span>
+                  </div>
+                  {toUiStatus(selectedTicket.status) === "paid" && (
+                    <div className="paychi-detail-row">
+                      <span className="paychi-detail-label">
+                        Ngày thanh toán:
+                      </span>
+                      <span className="paychi-detail-value">
+                        {formatDate(selectedTicket.accountantPaidAt)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="paychi-section-divider">Trạng thái</div>
+                <div className="paychi-section-block">
+                  <div className="paychi-detail-row">
+                    <span className="paychi-detail-label">Trạng thái:</span>
+                    <div className="paychi-detail-value paychi-detail-status">
+                      <select
+                        className="paychi-status-select"
+                        value={toUiStatus(selectedTicket.status)}
+                        onChange={(e) =>
+                          handleChangeStatus(
+                            selectedTicket._id,
+                            e.target.value as UiPaymentStatus,
+                          )
+                        }
+                        disabled={toUiStatus(selectedTicket.status) === "paid"}
+                      >
+                        <option value="unpaid">Chưa thanh toán</option>
+                        <option value="paid">Đã thanh toán</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="paychi-detail-actions">
+                  {toUiStatus(selectedTicket.status) === "paid" && (
+                    <button
+                      type="button"
+                      className="paychi-done-btn"
+                      onClick={() => setSelectedTicket(null)}
+                    >
+                      Xong
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
