@@ -294,7 +294,7 @@ const BuildingConfig = () => {
       setTypeForm({
         typeName: "",
         currentPrice: 0,
-        personMax: 1,
+        personMax: 0,
         description: "",
       });
       setImageSlots(Array(7).fill(null));

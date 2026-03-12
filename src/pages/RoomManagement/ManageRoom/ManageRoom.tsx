@@ -677,7 +677,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                             <th style={{ width: "150px" }}>Tên phòng</th>
                             <th style={{ width: "150px" }}>Loại phòng</th>
                             <th style={{ width: "120px" }}>Giá niêm yết</th>
-                            <th style={{ width: "120px" }}>Trạng thái</th>
+                            {/* <th style={{ width: "120px" }}>Trạng thái</th> */}
                             <th>Mô tả</th>
                             <th
                               style={{
@@ -966,7 +966,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                   </select>
                 </div>
               </div>
-              <div className="form-group">
+              {/* <div className="form-group">
                 <label>Trạng thái</label>
                 <select
                   value={formData.status}
@@ -978,7 +978,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                   <option value="Occupied">Đang thuê</option>
                   <option value="Deposited">Đã cọc</option>
                 </select>
-              </div>
+              </div> */}
 
               {isEditing && (
                 <div
