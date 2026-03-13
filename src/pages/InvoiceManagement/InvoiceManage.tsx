@@ -71,6 +71,11 @@ const InvoiceManager = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [services, setServices] = useState<any[]>([]);
 
+  const getRoomName = (room: Invoice['roomId']) => {
+    if (!room) return 'N/A';
+    return typeof room === 'object' ? room.name || 'N/A' : room;
+  };
+
   const [dualReadingForm, setDualReadingForm] = useState({
     elecOld: 0, elecNew: 0,
     waterOld: 0, waterNew: 0
@@ -381,8 +386,8 @@ const InvoiceManager = () => {
         let valB = b[sortConfig.key!];
 
         if (sortConfig.key === 'roomId') {
-          valA = typeof a.roomId === 'object' ? a.roomId.name : a.roomId;
-          valB = typeof b.roomId === 'object' ? b.roomId.name : b.roomId;
+          valA = getRoomName(a.roomId);
+          valB = getRoomName(b.roomId);
         }
 
         if (sortConfig.key === 'dueDate') {
@@ -608,7 +613,7 @@ const InvoiceManager = () => {
                     />
                   </td>
                   <td className="text-code">{inv.invoiceCode}</td>
-                  <td style={{ fontWeight: 600 }}>{typeof inv.roomId === 'object' ? inv.roomId.name : inv.roomId}</td>
+                  <td style={{ fontWeight: 600 }}>{getRoomName(inv.roomId)}</td>
                   <td>{inv.title}</td>
                   <td className="text-price">{formatCurrency(inv.totalAmount)}</td>
                   <td>{formatDate(inv.dueDate)}</td>
@@ -691,7 +696,7 @@ const InvoiceManager = () => {
         <div className="modal-overlay">
           <div className="modal-content" style={{ width: '600px' }}>
             <div className="modal-header">
-              <h3>Sửa chỉ số - {typeof selectedInvoice.roomId === 'object' ? selectedInvoice.roomId.name : 'Phòng'}</h3>
+              <h3>Sửa chỉ số - {getRoomName(selectedInvoice.roomId)}</h3>
               <button onClick={() => setShowReadingModal(false)} className="btn-icon"><X size={20}/></button>
             </div>
             <form onSubmit={handleSaveReading}>
@@ -801,7 +806,7 @@ const InvoiceManager = () => {
               <div className="detail-row">
                 <span className="detail-label">Phòng:</span>
                 <span className="detail-value" style={{ fontWeight: 'bold' }}>
-                  {typeof selectedInvoice.roomId === 'object' ? selectedInvoice.roomId.name : selectedInvoice.roomId}
+                  {getRoomName(selectedInvoice.roomId)}
                 </span>
               </div>
               <div className="detail-row">

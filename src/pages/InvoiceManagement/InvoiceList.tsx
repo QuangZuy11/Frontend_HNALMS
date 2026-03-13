@@ -176,6 +176,10 @@ const InvoiceList = () => {
   };
 
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('vi-VN');
+  const getRoomName = (room: Invoice['roomId']) => {
+    if (!room) return 'N/A';
+    return typeof room === 'object' ? room.name || 'N/A' : room;
+  };
 
   const requestSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -398,7 +402,7 @@ const InvoiceList = () => {
                     />
                   </td>
                   <td className="text-code">{inv.invoiceCode}</td>
-                  <td style={{ fontWeight: 600 }}>{typeof inv.roomId === 'object' ? inv.roomId.name : inv.roomId}</td>
+                  <td style={{ fontWeight: 600 }}>{getRoomName(inv.roomId)}</td>
                   <td>{inv.title}</td>
                   <td className="text-price" style={{ color: isUnpaid ? '#ef4444' : '#334155' }}>
                     {formatCurrency(inv.totalAmount)}
@@ -417,7 +421,7 @@ const InvoiceList = () => {
                             isOpen: true,
                             action: 'PAY_SINGLE',
                             targetId: inv._id,
-                            message: `Xác nhận khách thuê phòng ${typeof inv.roomId === 'object' ? inv.roomId.name : ''} đã thanh toán hóa đơn này?`
+                            message: `Xác nhận khách thuê phòng ${getRoomName(inv.roomId)} đã thanh toán hóa đơn này?`
                           })}
                         >
                           <CheckCircle size={18} color="#10b981" />
@@ -488,7 +492,7 @@ const InvoiceList = () => {
               <div className="detail-row">
                 <span className="detail-label">Phòng:</span>
                 <span className="detail-value" style={{ fontWeight: 'bold' }}>
-                  {typeof selectedInvoice.roomId === 'object' ? selectedInvoice.roomId.name : selectedInvoice.roomId}
+                  {getRoomName(selectedInvoice.roomId)}
                 </span>
               </div>
               <div className="detail-row">
