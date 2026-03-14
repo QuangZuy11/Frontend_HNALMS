@@ -1,8 +1,4 @@
-﻿/* ========================================================
-   Phiếu Chi — Match Receipt Style
-   ======================================================== */
-
-.payments-page {
+.receipts-page {
   height: calc(100vh - 70px);
   padding: 16px 20px;
   box-sizing: border-box;
@@ -11,7 +7,7 @@
   overflow: auto;
 }
 
-.payments-card {
+.receipts-card {
   background: #ffffff;
   border-radius: 12px;
   padding: 20px 22px 16px;
@@ -22,32 +18,32 @@
   overflow: hidden;
 }
 
-.payments-header {
+.receipts-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
 }
 
-.payments-header h1 {
+.receipts-header h1 {
   font-size: 20px;
   font-weight: 600;
   margin: 0;
 }
 
-.payments-header .subtitle {
+.receipts-header .subtitle {
   margin: 4px 0 0;
   color: #64748b;
   font-size: 13px;
 }
 
-.payments-header-actions {
+.receipts-header-actions {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.payments-create-btn {
+.receipts-create-btn {
   border: none;
   border-radius: 8px;
   background: #2563eb;
@@ -66,24 +62,24 @@
   cursor: pointer;
 }
 
-.payments-create-btn:hover {
+.receipts-create-btn:hover {
   background: #1d4ed8;
 }
 
-.payments-filter-wrapper {
+.receipts-filter-wrapper {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.payments-filter-label {
+.receipts-filter-label {
   font-size: 14px;
   color: #64748b;
   white-space: nowrap;
 }
 
-.payments-filter-select,
-.payments-filter-input {
+.receipts-filter-select,
+.receipts-filter-input {
   padding: 6px 10px;
   border-radius: 8px;
   border: 1px solid #d1d5db;
@@ -92,19 +88,19 @@
   min-width: 200px;
 }
 
-.payments-filter-input {
+.receipts-filter-input {
   cursor: text;
 }
 
-.payments-filter-select:focus,
-.payments-filter-input:focus {
+.receipts-filter-select:focus,
+.receipts-filter-input:focus {
   outline: none;
   border-color: #3579c6;
   box-shadow: 0 0 0 2px rgba(53, 121, 198, 0.15);
 }
 
-.payments-btn-primary,
-.payments-btn-secondary {
+.receipts-btn-primary,
+.receipts-btn-secondary {
   border-radius: 8px;
   border: none;
   padding: 8px 14px;
@@ -112,119 +108,98 @@
   cursor: pointer;
 }
 
-.payments-btn-primary {
+.receipts-btn-primary {
   background-color: #2563eb;
   color: #ffffff;
 }
 
-.payments-btn-primary:disabled,
-.payments-btn-secondary:disabled {
+.receipts-btn-primary:disabled,
+.receipts-btn-secondary:disabled {
   opacity: 0.6;
   cursor: default;
 }
 
-.payments-btn-secondary {
+.receipts-btn-secondary {
   background-color: #e2e8f0;
   color: #0f172a;
 }
 
-.payments-error,
-.payments-empty {
+.receipts-error,
+.receipts-empty {
   margin-top: 16px;
   padding: 12px 14px;
   border-radius: 8px;
   font-size: 13px;
 }
 
-.payments-error {
+.receipts-error {
   background-color: #fef2f2;
   color: #b91c1c;
 }
 
-.payments-empty {
+.receipts-empty {
   background-color: #f1f5f9;
   color: #475569;
 }
 
-.payments-table-wrap {
+.receipts-table-wrap {
   flex: 1;
   overflow: visible;
 }
 
-.payments-table {
+.receipts-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
 }
 
-.payments-table thead tr {
+.receipts-table thead tr {
   background-color: #f8fafc;
 }
 
-.payments-table th,
-.payments-table td {
+.receipts-table th,
+.receipts-table td {
   padding: 14px 12px;
   text-align: left;
   border-bottom: 1px solid #e2e8f0;
   vertical-align: middle;
 }
 
-.payments-table th {
+.receipts-table th {
   font-weight: 600;
   color: #475569;
 }
 
-.payments-table tbody tr:hover {
+.receipts-table tbody tr:hover {
   background-color: #f9fafb;
 }
 
-.payments-code-badge {
-  font-family: "Courier New", monospace;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #1e40af;
-  background: #eff6ff;
-  padding: 3px 8px;
-  border-radius: 5px;
-  white-space: nowrap;
-  display: inline-block;
-  border: 1px solid #dbeafe;
-}
-
-.payments-amount {
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.payments-status-badge {
+.receipts-status-badge {
   display: inline-flex;
   padding: 2px 8px;
   border-radius: 999px;
+  background-color: #e0f2fe;
+  color: #0369a1;
   font-size: 11px;
 }
 
-.payments-status-badge.paid {
-  background-color: #dcfce7;
-  color: #166534;
-}
-
-.payments-status-badge.pending {
+.receipts-status-badge.unpaid {
   background-color: #e0f2fe;
   color: #0369a1;
 }
 
-.payments-status-badge.cancelled {
-  background-color: #fee2e2;
-  color: #b91c1c;
+.receipts-status-badge.paid {
+  background-color: #dcfce7;
+  color: #166534;
 }
 
-.payments-actions {
+.receipts-actions {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.payments-icon-btn {
+.receipts-icon-btn {
   border: none;
   background: transparent;
   padding: 4px;
@@ -236,12 +211,12 @@
   justify-content: center;
 }
 
-.payments-icon-btn:hover {
+.receipts-icon-btn:hover {
   background: #f1f5f9;
   color: #0f172a;
 }
 
-.payments-status-select {
+.receipts-status-select {
   border: 1px solid #d1d5db;
   background: #ffffff;
   border-radius: 8px;
@@ -250,23 +225,22 @@
   color: #0f172a;
 }
 
-.payments-status-select--compact {
+.receipts-status-select--compact {
   width: 170px;
 }
 
-.payments-status-filter {
+.receipts-status-filter {
   min-width: 120px;
   width: 120px;
 }
 
-.payments-status-select:focus {
+.receipts-status-select:focus {
   outline: none;
   border-color: #3579c6;
   box-shadow: 0 0 0 2px rgba(53, 121, 198, 0.15);
 }
 
-.payments-modal-overlay,
-.paychi-modal-overlay {
+.receipts-modal-overlay {
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.45);
@@ -275,21 +249,20 @@
   justify-content: center;
   padding: 16px;
   z-index: 2000;
-  animation: payments-fade-in 0.18s ease-out;
+  animation: receipts-fade-in 0.18s ease-out;
 }
 
-.payments-modal,
-.paychi-modal {
+.receipts-modal {
   width: min(520px, 100%);
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 18px 48px rgba(15, 23, 42, 0.25);
   overflow: hidden;
   transform-origin: center top;
-  animation: payments-modal-in 0.2s ease-out;
+  animation: receipts-modal-in 0.2s ease-out;
 }
 
-@keyframes payments-fade-in {
+@keyframes receipts-fade-in {
   from {
     opacity: 0;
   }
@@ -299,7 +272,7 @@
   }
 }
 
-@keyframes payments-modal-in {
+@keyframes receipts-modal-in {
   from {
     opacity: 0;
     transform: translateY(-6px) scale(0.96);
@@ -311,8 +284,7 @@
   }
 }
 
-.payments-modal-header,
-.paychi-modal-header {
+.receipts-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -320,16 +292,14 @@
   border-bottom: 1px solid #e2e8f0;
 }
 
-.payments-modal-header h3,
-.paychi-modal-header h3 {
+.receipts-modal-header h3 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
   color: #0f172a;
 }
 
-.payments-modal-close,
-.paychi-modal-close {
+.receipts-modal-close {
   border: none;
   background: transparent;
   cursor: pointer;
@@ -338,23 +308,20 @@
   color: #475569;
 }
 
-.payments-modal-close:hover,
-.paychi-modal-close:hover {
+.receipts-modal-close:hover {
   color: #0f172a;
 }
 
-.payments-modal-body,
-.paychi-modal-body {
+.receipts-modal-body {
   padding: 12px 16px 16px;
 }
 
-.payments-modal-footer,
-.paychi-modal-footer {
+.receipts-modal-footer {
   padding: 0 16px 12px;
   text-align: right;
 }
 
-.payments-pagination {
+.receipts-pagination {
   margin-top: 12px;
   display: flex;
   align-items: center;
@@ -362,18 +329,18 @@
   gap: 10px;
 }
 
-.payments-pagination-info {
+.receipts-pagination-info {
   font-size: 14px;
   color: #64748b;
 }
 
-.payments-pagination-controls {
+.receipts-pagination-controls {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.payments-page-nav {
+.receipts-page-nav {
   width: 34px;
   height: 34px;
   border-radius: 999px;
@@ -386,16 +353,16 @@
   color: #64748b;
 }
 
-.payments-page-nav:disabled {
+.receipts-page-nav:disabled {
   opacity: 0.6;
   cursor: default;
 }
 
-.payments-page-nav:not(:disabled):hover {
+.receipts-page-nav:not(:disabled):hover {
   background-color: #f1f5f9;
 }
 
-.payments-page-number {
+.receipts-page-number {
   width: 34px;
   height: 34px;
   border-radius: 999px;
@@ -409,49 +376,51 @@
   color: #0f172a;
 }
 
-.payments-page-number.active {
+.receipts-page-number.active {
   background: #2563eb;
   border-color: #2563eb;
   color: #ffffff;
 }
 
-.paychi-detail-row {
+.receipts-detail-row {
   display: flex;
   gap: 12px;
   padding: 10px 0;
   border-bottom: 1px dashed #e2e8f0;
 }
 
-.paychi-detail-row--column {
+.receipts-detail-row--column {
   align-items: flex-start;
 }
 
-.paychi-detail-row:last-child {
+.receipts-detail-row:last-child {
   border-bottom: none;
 }
 
-.paychi-detail-label {
+.receipts-detail-label {
   width: 110px;
   min-width: 110px;
   color: #64748b;
   font-size: 13px;
 }
 
-.paychi-detail-value {
+.receipts-detail-value {
   color: #0f172a;
   font-size: 13px;
   word-break: break-word;
 }
 
-.paychi-detail-status {
+.receipts-detail-status {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
 }
 
-.payments-modal--detail,
-.paychi-modal--detail {
+/* ══════════════════════════════════════════════════════════
+   Detail modal – TenantAccountDetail style
+   ══════════════════════════════════════════════════════════ */
+.receipts-modal--detail {
   width: min(580px, 95vw);
   max-height: 88vh;
   border: 1px solid #dbe4f0;
@@ -459,8 +428,7 @@
   flex-direction: column;
 }
 
-.payments-modal-header--detail,
-.paychi-modal-header--detail {
+.receipts-modal-header--detail {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -469,22 +437,20 @@
   background: linear-gradient(180deg, #f7faff 0%, #f1f6ff 100%);
 }
 
-.payments-modal-header--detail h3,
-.paychi-modal-header--detail h3 {
+.receipts-modal-header--detail h3 {
   margin: 0 0 0.25rem 0;
   font-size: 1.2rem;
   font-weight: 700;
   color: #1a237e;
 }
 
-.paychi-modal-subtitle {
+.receipts-modal-subtitle {
   font-size: 0.9375rem;
   color: #6b7280;
   margin: 0;
 }
 
-.payments-modal-close--detail,
-.paychi-modal-close--detail {
+.receipts-modal-close--detail {
   width: 34px;
   height: 34px;
   border-radius: 8px;
@@ -499,13 +465,12 @@
   transition: all 0.16s ease;
 }
 
-.payments-modal-close--detail:hover,
-.paychi-modal-close--detail:hover {
+.receipts-modal-close--detail:hover {
   background: rgba(148, 163, 184, 0.16);
   color: #0f172a;
 }
 
-.paychi-detail-content {
+.receipts-detail-content {
   padding: 1rem 1.1rem 1.1rem;
   background: #fbfdff;
   overflow-y: auto;
@@ -515,7 +480,7 @@
   gap: 0.75rem;
 }
 
-.paychi-section-divider {
+.receipts-section-divider {
   width: 100%;
   padding: 0.58rem 0.82rem;
   background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
@@ -529,7 +494,7 @@
   box-sizing: border-box;
 }
 
-.paychi-section-block {
+.receipts-section-block {
   width: 100%;
   margin-top: -1px;
   padding: 0.2rem 0.82rem 0.28rem;
@@ -539,239 +504,168 @@
   box-sizing: border-box;
 }
 
-.paychi-section-block .paychi-detail-row {
+.receipts-section-block .receipts-detail-row {
   border-bottom: none;
   padding: 0.34rem 0;
 }
 
-.paychi-section-block .paychi-detail-row + .paychi-detail-row {
+.receipts-section-block .receipts-detail-row + .receipts-detail-row {
   border-top: 1px dashed #edf2f7;
 }
 
-.paychi-status-select {
-  height: 34px;
-  padding: 0 10px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  font-size: 13px;
-  color: #0f172a;
-  background: #ffffff;
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.15s;
-}
-
-.paychi-status-select:disabled {
-  opacity: 0.6;
-  cursor: default;
-  background: #f8fafc;
-}
-
-.paychi-done-btn {
-  height: 36px;
-  padding: 0 18px;
-  border-radius: 8px;
-  border: none;
-  background: #16a34a;
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.paychi-done-btn:hover {
-  background: #15803d;
-}
-
-.payments-form-group {
-  margin-bottom: 14px;
-}
-
-.payments-form-group label {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 5px;
-}
-
-.payments-form-input {
-  width: 100%;
-  height: 38px;
-  padding: 0 12px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  font-size: 13.5px;
-  color: #0f172a;
-  background: #ffffff;
-  outline: none;
-  box-sizing: border-box;
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
-}
-
-.payments-form-error {
-  display: block;
-  margin-top: 6px;
-  font-size: 12px;
-  color: #b91c1c;
-}
-
 @media (max-width: 1200px) {
-  .payments-page {
+  .receipts-page {
     padding: 14px 16px;
   }
 
-  .payments-card {
+  .receipts-card {
     padding: 16px;
   }
 
-  .payments-header {
+  .receipts-header {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
   }
 
-  .payments-header-actions {
+  .receipts-header-actions {
     display: grid;
     grid-template-columns: auto repeat(3, minmax(160px, 1fr));
     gap: 10px;
     align-items: end;
   }
 
-  .payments-create-btn {
+  .receipts-create-btn {
     align-self: end;
   }
 
-  .payments-filter-wrapper {
+  .receipts-filter-wrapper {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
   }
 
-  .payments-filter-label {
+  .receipts-filter-label {
     font-size: 12px;
   }
 
-  .payments-filter-select,
-  .payments-filter-input,
-  .payments-status-filter {
+  .receipts-filter-select,
+  .receipts-filter-input,
+  .receipts-status-filter {
     width: 100%;
     min-width: 0;
   }
 
-  .payments-table {
+  .receipts-table {
     table-layout: fixed;
     font-size: 12.5px;
   }
 
-  .payments-table th,
-  .payments-table td {
+  .receipts-table th,
+  .receipts-table td {
     padding: 11px 8px;
   }
 
-  .payments-table td:nth-child(3) {
+  .receipts-table td:nth-child(3) {
     line-height: 1.35;
     word-break: break-word;
   }
 }
 
 @media (max-width: 992px) {
-  .payments-header-actions {
+  .receipts-header-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .payments-create-btn {
+  .receipts-create-btn {
     grid-column: 1 / -1;
     justify-self: start;
     width: auto;
   }
 
-  .payments-table {
+  .receipts-table {
     font-size: 12px;
   }
 
-  .payments-table th,
-  .payments-table td {
+  .receipts-table th,
+  .receipts-table td {
     padding: 10px 6px;
   }
 
-  .payments-status-select--compact {
+  .receipts-status-select--compact {
     width: 148px;
   }
 }
 
 @media (max-width: 768px) {
-  .payments-page {
+  .receipts-page {
     padding: 12px;
   }
 
-  .payments-card {
+  .receipts-card {
     padding: 12px;
     border-radius: 10px;
   }
 
-  .payments-header h1 {
+  .receipts-header h1 {
     font-size: 18px;
   }
 
-  .payments-header .subtitle {
+  .receipts-header .subtitle {
     font-size: 12px;
     line-height: 1.45;
   }
 
-  .payments-header-actions {
+  .receipts-header-actions {
     grid-template-columns: 1fr;
     gap: 8px;
   }
 
-  .payments-create-btn {
+  .receipts-create-btn {
     width: auto;
     justify-self: start;
     align-self: start;
   }
 
-  .payments-filter-input,
-  .payments-filter-select {
+  .receipts-filter-input,
+  .receipts-filter-select {
     font-size: 12px;
     padding: 6px 8px;
   }
 
-  .payments-table th:nth-child(1),
-  .payments-table td:nth-child(1),
-  .payments-table th:nth-child(6),
-  .payments-table td:nth-child(6) {
+  .receipts-table th:nth-child(1),
+  .receipts-table td:nth-child(1),
+  .receipts-table th:nth-child(6),
+  .receipts-table td:nth-child(6) {
     display: none;
   }
 
-  .payments-pagination {
+  .receipts-pagination {
     flex-wrap: wrap;
     gap: 8px;
   }
 
-  .payments-pagination-info {
+  .receipts-pagination-info {
     font-size: 13px;
   }
 }
 
 @media (max-width: 480px) {
-  .payments-create-btn {
+  .receipts-create-btn {
     width: auto;
     min-width: 112px;
   }
 
-  .payments-table {
+  .receipts-table {
     font-size: 11.5px;
   }
 
-  .payments-table th,
-  .payments-table td {
+  .receipts-table th,
+  .receipts-table td {
     padding: 9px 5px;
   }
 
-  .payments-status-badge {
+  .receipts-status-badge {
     font-size: 10px;
     padding: 2px 6px;
   }

@@ -65,6 +65,7 @@ import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
 import ManagingIncomeExpenses from "./pages/Accountant/managing_income_expenses/managingIncomeExpenses";
 import ReceiptsList from "./pages/Accountant/managing_income_expenses/receiptsList";
 import InvoiceList from "./pages/InvoiceManagement/InvoiceList";
+import OwnerPaymentsList from "./pages/Owner/OwnerPaymentsList";
 
 // Pages - Profile (All authenticated roles)
 import ViewProfile from "./pages/Auth/Profile/ViewProfile";
@@ -231,6 +232,10 @@ function LayoutWrapper() {
           <Route path="devices" element={<ManageDevice />} />
           <Route path="room-devices" element={<RoomDeviceManagement />} />
           <Route path="services" element={<ManageService />} />
+          <Route
+            path="transactions/payments"
+            element={<OwnerPaymentsList />}
+          />
           <Route path="contracts" element={<ContractList readOnly />} />
           <Route path="contracts/list" element={<ContractList readOnly />} />
           <Route path="contracts/:id" element={<ContractDetail />} />
