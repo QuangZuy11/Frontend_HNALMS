@@ -17,9 +17,9 @@ export const cashFlowService = {
   async createManualPaymentTicket(payload: {
     title: string;
     amount: number;
-    status: 'Paid' | 'Unpaid';
+    status: "Pending" | "Paid" | "Cancelled";
   }) {
-    const response = await api.post('/financial-tickets/payments', payload);
+    const response = await api.post("/financial-tickets/payments", payload);
     return response.data;
   },
 
@@ -34,6 +34,17 @@ export const cashFlowService = {
     roomSearch?: string;
   }) {
     const response = await api.get("/financial-tickets/payments", {
+      params,
+    });
+    return response.data;
+  },
+
+  async getOwnerPaymentTickets(params?: {
+    from?: string;
+    to?: string;
+    keyword?: string;
+  }) {
+    const response = await api.get("/financial-tickets/payments/owner", {
       params,
     });
     return response.data;
@@ -81,7 +92,10 @@ export const cashFlowService = {
    * Cập nhật trạng thái phiếu chi (Payment)
    * Backend: PATCH /financial-tickets/:id/status
    */
-  async updatePaymentTicketStatus(id: string, status: "Paid" | "Unpaid") {
+  async updatePaymentTicketStatus(
+    id: string,
+    status: "Pending" | "Paid" | "Cancelled" | "Unpaid",
+  ) {
     const response = await api.patch(`/financial-tickets/${id}/status`, {
       status,
     });

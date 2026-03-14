@@ -23,16 +23,16 @@ interface FinancialTicket {
   room?: Room | null;
 }
 
-type UiPaymentStatus = "paid" | "unpaid";
+type UiPaymentStatus = "pending" | "paid" | "cancelled";
 
 export default function ManagingIncomeExpenses() {
   const [tickets, setTickets] = useState<FinancialTicket[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   // roomSearch removed (màn này không cần tìm kiếm theo phòng)
-  const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "unpaid">(
-    "all",
-  );
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "pending" | "paid" | "cancelled"
+  >("all");
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -48,11 +48,11 @@ export default function ManagingIncomeExpenses() {
   const [createForm, setCreateForm] = useState<{
     title: string;
     amount: string;
-    status: "Unpaid" | "Paid";
+    status: "Pending" | "Paid" | "Cancelled";
   }>({
     title: "",
     amount: "",
-    status: "Unpaid",
+    status: "Pending",
   });
   const [createErrors, setCreateErrors] = useState<{
     title: string;
@@ -130,7 +130,7 @@ export default function ManagingIncomeExpenses() {
     setCreateForm({
       title: "",
       amount: "",
-      status: "Unpaid",
+      status: "Pending",
     });
     setCreateErrors({ title: "", amount: "" });
     setAutoVoucherCode("");
@@ -231,22 +231,24 @@ export default function ManagingIncomeExpenses() {
 
   const toUiStatus = (status?: string): UiPaymentStatus => {
     const s = (status || "").toLowerCase();
-    if (
-      s === "paid" ||
-      s.includes("đã thanh toán") ||
-      s.includes("da thanh toan")
-    )
+    if (s === "paid" || s.includes("đã thanh toán") || s.includes("da thanh toan")) {
       return "paid";
-    return "unpaid";
+    }
+    if (s === "cancelled" || s.includes("đã hủy") || s.includes("da huy")) {
+      return "cancelled";
+    }
+    return "pending";
   };
 
   const statusLabel = (status?: string) => {
     const ui = toUiStatus(status);
-    return ui === "paid" ? "Đã thanh toán" : "Chưa thanh toán";
+    if (ui === "paid") return "Đã thanh toán";
+    if (ui === "cancelled") return "Đã hủy";
+    return "Chờ duyệt";
   };
 
-  const toApiStatus = (ui: UiPaymentStatus): "Paid" | "Unpaid" =>
-    ui === "paid" ? "Paid" : "Unpaid";
+  const toApiStatus = (ui: UiPaymentStatus): "Pending" | "Paid" | "Cancelled" =>
+    ui === "paid" ? "Paid" : ui === "cancelled" ? "Cancelled" : "Pending";
 
   const handleChangeStatus = async (
     ticketId: string,
@@ -299,7 +301,9 @@ export default function ManagingIncomeExpenses() {
   const filteredTickets = tickets.filter((t) => {
     if (statusFilter === "all") return true;
     const ui = toUiStatus(t.status);
-    return statusFilter === "paid" ? ui === "paid" : ui === "unpaid";
+    if (statusFilter === "paid") return ui === "paid";
+    if (statusFilter === "cancelled") return ui === "cancelled";
+    return ui === "pending";
   });
 
   const totalPages = Math.max(
@@ -368,13 +372,16 @@ export default function ManagingIncomeExpenses() {
                 className="payments-filter-select payments-status-filter"
                 value={statusFilter}
                 onChange={(e) => {
-                  setStatusFilter(e.target.value as "all" | "paid" | "unpaid");
+                  setStatusFilter(
+                    e.target.value as "all" | "pending" | "paid" | "cancelled",
+                  );
                   setCurrentPage(1);
                 }}
               >
                 <option value="all">Tất cả</option>
-                <option value="unpaid">Chưa thanh toán</option>
+                <option value="pending">Chờ duyệt</option>
                 <option value="paid">Đã thanh toán</option>
+                <option value="cancelled">Đã hủy</option>
               </select>
             </div>
           </div>
@@ -423,9 +430,7 @@ export default function ManagingIncomeExpenses() {
                     </td>
                     <td>
                       <span
-                        className={`payments-status-badge ${
-                          toUiStatus(t.status) === "paid" ? "paid" : "unpaid"
-                        }`}
+                        className={`payments-status-badge ${toUiStatus(t.status)}`}
                       >
                         {statusLabel(t.status)}
                       </span>
@@ -553,12 +558,16 @@ export default function ManagingIncomeExpenses() {
                     onChange={(e) =>
                       setCreateForm((prev) => ({
                         ...prev,
-                        status: e.target.value as "Unpaid" | "Paid",
+                        status: e.target.value as
+                          | "Pending"
+                          | "Paid"
+                          | "Cancelled",
                       }))
                     }
                   >
-                    <option value="Unpaid">Chưa thanh toán</option>
+                    <option value="Pending">Chờ duyệt</option>
                     <option value="Paid">Đã thanh toán</option>
+                    <option value="Cancelled">Đã hủy</option>
                   </select>
                 </div>
 
@@ -598,7 +607,9 @@ export default function ManagingIncomeExpenses() {
                     creating ||
                     autoVoucherLoading ||
                     !!autoVoucherError ||
-                    !autoVoucherCode
+                    !autoVoucherCode ||
+                    !createForm.title.trim() ||
+                    !createForm.amount.trim()
                   }
                 >
                   {creating ? "Đang tạo..." : "Tạo phiếu"}
@@ -697,15 +708,17 @@ export default function ManagingIncomeExpenses() {
                         }
                         disabled={toUiStatus(selectedTicket.status) === "paid"}
                       >
-                        <option value="unpaid">Chưa thanh toán</option>
+                        <option value="pending">Chờ duyệt</option>
                         <option value="paid">Đã thanh toán</option>
+                        <option value="cancelled">Đã hủy</option>
                       </select>
                     </div>
                   </div>
                 </div>
 
                 <div className="paychi-detail-actions">
-                  {toUiStatus(selectedTicket.status) === "paid" && (
+                  {(toUiStatus(selectedTicket.status) === "paid" ||
+                    toUiStatus(selectedTicket.status) === "cancelled") && (
                     <button
                       type="button"
                       className="paychi-done-btn"
