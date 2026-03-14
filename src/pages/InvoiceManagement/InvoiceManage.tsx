@@ -77,10 +77,10 @@ const InvoiceManager = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [services, setServices] = useState<any[]>([]);
 
-  const getRoomName = (room: Invoice['roomId']) => {
-    if (!room) return 'N/A';
-    return typeof room === 'object' ? room.name || 'N/A' : room;
-  };
+  // const getRoomName = (room: Invoice['roomId']) => {
+  //   if (!room) return 'N/A';
+  //   return typeof room === 'object' ? room.name || 'N/A' : room;
+  // };
 
   const [dualReadingForm, setDualReadingForm] = useState({
     elecOld: 0, elecNew: 0,
