@@ -73,7 +73,7 @@ export const requestService = {
     },
     paymentType?: 'REVENUE' | 'EXPENSE'
   ) => {
-    const body: any = { status };
+    const body: Record<string, unknown> = { status };
     if (status === 'Done') {
       if (cost !== undefined) body.cost = cost;
       if (notes !== undefined) body.notes = notes;
@@ -102,9 +102,11 @@ export const requestService = {
   },
 };
 
-// Transfer request API services (Manager)
+// Transfer request API services (Manager only)
 export const transferRequestService = {
-  // Lấy danh sách yêu cầu chuyển phòng (Manager)
+  // ===== MANAGER ENDPOINTS =====
+
+  // [MANAGER] Lấy danh sách tất cả yêu cầu chuyển phòng
   getAllTransferRequests: async (filters: {
     status?: string;
     search?: string;
@@ -120,21 +122,27 @@ export const transferRequestService = {
     return response.data;
   },
 
-  // Lấy chi tiết yêu cầu chuyển phòng
+  // [MANAGER] Lấy chi tiết yêu cầu chuyển phòng
   getTransferRequestById: async (requestId: string) => {
     const response = await api.get(`/requests/transfer/${requestId}`);
     return response.data;
   },
 
-  // Duyệt yêu cầu chuyển phòng
+  // [MANAGER] Duyệt yêu cầu chuyển phòng
   approveTransferRequest: async (requestId: string, managerNote?: string) => {
     const response = await api.patch(`/requests/transfer/${requestId}/approve`, { managerNote });
     return response.data;
   },
 
-  // Từ chối yêu cầu chuyển phòng
+  // [MANAGER] Từ chối yêu cầu chuyển phòng
   rejectTransferRequest: async (requestId: string, rejectReason: string) => {
     const response = await api.patch(`/requests/transfer/${requestId}/reject`, { rejectReason });
+    return response.data;
+  },
+
+  // [MANAGER] Hoàn tất chuyển phòng (Bàn giao phòng)
+  completeTransferRequest: async (requestId: string) => {
+    const response = await api.patch(`/requests/transfer/${requestId}/complete`);
     return response.data;
   },
 };
