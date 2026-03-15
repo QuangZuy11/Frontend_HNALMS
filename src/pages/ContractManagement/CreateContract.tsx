@@ -14,6 +14,7 @@ import {
   Modal,
   Backdrop,
   Chip,
+  MenuItem,
 } from "@mui/material";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -294,6 +295,7 @@ interface ContractFormValues {
     contactRef: string;
   };
   coResidents: CoResident[];
+  prepayMonths: number | string;
 }
 
 const CreateContract = () => {
@@ -350,6 +352,7 @@ const CreateContract = () => {
       roomId: preFilledRoomId || "",
       startDate: new Date().toISOString().split("T")[0],
       duration: 12,
+      prepayMonths: 2,
       tenantInfo: {
         fullName: "",
         dob: "",
@@ -756,8 +759,16 @@ const CreateContract = () => {
 
     setSubmitting(true);
     try {
+      let rentPaidUntil = null;
+      if (data.prepayMonths) {
+        const start = new Date(data.startDate);
+        const monthsToAdd = data.prepayMonths === "all" ? Number(data.duration) : Number(data.prepayMonths);
+        rentPaidUntil = new Date(start.getFullYear(), start.getMonth() + 1 + monthsToAdd, 0).toISOString();
+      }
+
       const payload = {
         ...data,
+        rentPaidUntil,
         contractDetails: {
           startDate: data.startDate,
           duration: Number(data.duration),
@@ -1467,6 +1478,30 @@ const CreateContract = () => {
                     )}
                   />
                   .
+                  <br />
+                  - Trả trước tiền phòng:
+                  <Controller
+                    name="prepayMonths"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        select
+                        variant="standard"
+                        sx={{
+                          width: 150,
+                          mx: 1,
+                          verticalAlign: "baseline",
+                          "& .MuiInput-root": { pb: 0, position: "relative", top: "-2px" },
+                          "& .MuiFormHelperText-root": { mt: 0 },
+                        }}
+                        {...field}
+                      >
+                        <MenuItem value={2}>2 tháng</MenuItem>
+                        <MenuItem value={4}>4 tháng</MenuItem>
+                        <MenuItem value="all">Tất cả (Hết hợp đồng)</MenuItem>
+                      </TextField>
+                    )}
+                  />
                   <br />
                   - Giá thuê phòng là:
                   <TextField
