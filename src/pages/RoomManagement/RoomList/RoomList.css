@@ -6,10 +6,10 @@
 }
 
 .room-list-page .container {
-  max-width: 1920px;
-  margin: 0 auto;
-  padding: 0 0.5rem;
-  width: 99%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0 1rem;
+  width: 100%;
 }
 
 /* Two column layout */

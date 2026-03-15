@@ -42,6 +42,7 @@ const MENU_ITEMS = [
             { title: "Danh sách thiết bị", path: "/owner/devices", icon: <Cpu size={16} /> },
             { title: "Thiết bị theo loại phòng", path: "/owner/room-devices", icon: <Layers size={16} /> },
             { title: "Danh sách dịch vụ", path: "/owner/services", icon: <Star size={16} /> },
+            { title: "Danh sách phiếu chi", path: "/owner/transactions/payments", icon: <FileText size={16} /> },
         ]
     },
     {

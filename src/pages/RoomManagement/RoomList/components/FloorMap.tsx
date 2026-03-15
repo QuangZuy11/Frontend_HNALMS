@@ -14,6 +14,7 @@ interface Room {
     currentPrice?: number;
   };
   price?: number;
+  contractStartDate?: string;
   contractEndDate?: string;
   [key: string]: any;
 }
@@ -25,6 +26,7 @@ interface FloorMapProps {
   compact?: boolean;
   onRoomSelect?: (room: Room) => void;
   legendType?: "default" | "deposit" | "guest" | "none";
+  showDateYear?: boolean;
 }
 
 // Soft & Eye-Friendly Color Palette - Easy to distinguish
@@ -56,6 +58,42 @@ const extractTypeNumber = (typeName: string): number => {
   return match ? parseInt(match[1], 10) : 0;
 };
 
+// Format room label: "Phòng 101" => "P.101"
+const formatRoomLabel = (name: string): string =>
+  name.replace(/^Phòng\s*/i, "P.");
+
+// Format contract date label: DD/MM/YY–DD/MM/YY (showYear=true) or DD/MM–DD/MM (showYear=false)
+const getContractDateLabel = (startDate?: string, endDate?: string, showYear = true): string | null => {
+  if (!startDate || !endDate) return null;
+
+  const startDt = new Date(startDate);
+  const endDt = new Date(endDate);
+
+  const startDd = startDt.getDate().toString().padStart(2, "0");
+  const startMm = (startDt.getMonth() + 1).toString().padStart(2, "0");
+  const endDd = endDt.getDate().toString().padStart(2, "0");
+  const endMm = (endDt.getMonth() + 1).toString().padStart(2, "0");
+
+  const startNoYear = `${startDd}/${startMm}`;
+  const endNoYear = `${endDd}/${endMm}`;
+
+  const startYy = startDt.getFullYear().toString().slice(-2);
+  const endYy = endDt.getFullYear().toString().slice(-2);
+
+  // Vì Tầng 1/5 đủ rộng, luôn hiển thị cả năm (kể cả khi trùng DD/MM)
+  if (startNoYear === endNoYear) {
+    return `${startNoYear}/${startYy}–${endNoYear}/${endYy}`;
+  }
+
+  // Nếu chữ đủ rộng (showYear = true)
+  if (showYear) {
+    return `${startNoYear}/${startYy}–${endNoYear}/${endYy}`;
+  }
+
+  // Mặc định: hiện DD/MM–DD/MM
+  return `${startNoYear}–${endNoYear}`;
+};
+
 export default function FloorMap({
   rooms,
   highlightedRooms,
@@ -63,6 +101,7 @@ export default function FloorMap({
   compact = false,
   onRoomSelect,
   legendType = "default",
+  showDateYear = true,
 }: FloorMapProps) {
   const navigate = useNavigate();
 
@@ -307,10 +346,15 @@ export default function FloorMap({
                         !
                       </span>
                     )}
-                    <span className="room-node-name">{room.name}</span>
-                    {getExpiryLabel(room.contractEndDate) && (
+                    <span className="room-node-name">{formatRoomLabel(room.name)}</span>
+                    {!room.contractStartDate && getExpiryLabel(room.contractEndDate) && (
                       <span className="room-expiry-label">
                         {getExpiryLabel(room.contractEndDate)}
+                      </span>
+                    )}
+                    {room.contractStartDate && getContractDateLabel(room.contractStartDate, room.contractEndDate, showDateYear) && (
+                      <span className="room-contract-dates">
+                        {getContractDateLabel(room.contractStartDate, room.contractEndDate, showDateYear)}
                       </span>
                     )}
                   </div>

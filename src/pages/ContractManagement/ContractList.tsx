@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { Container, Typography, Paper, Box, Tabs, Tab } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FileText, CheckCircle, Home, Clock } from "lucide-react";
+import { FileText, Home, Clock, Building } from "lucide-react";
 
 // Floor Maps
 import FloorMap from "../RoomManagement/RoomList/components/FloorMap";
@@ -96,133 +95,119 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
     (r: any) => r.status === "Deposited",
   ).length;
 
+  const floors = ["Tầng 1", "Tầng 2", "Tầng 3", "Tầng 4", "Tầng 5"];
+
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Paper elevation={3} sx={{ p: 3, bgcolor: "#f8f9fa" }}>
-        <div className="contract-list-header">
-          <div>
-            <Typography
-              variant="h5"
-              color="primary"
-              sx={{ fontWeight: "bold" }}
-            >
-              Quản lý Hợp đồng
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#64748b", mt: 0.3 }}>
-              Xem và quản lý hợp đồng theo sơ đồ tầng
-            </Typography>
-          </div>
-          {!readOnly && (
-            <div className="stats-summary">
-              <div className="stat-item">
-                <FileText size={16} className="stat-icon icon-primary" />
-                <div className="stat-text">
-                  <span className="stat-value">{activeContracts}</span>
-                  <span className="stat-label">Hợp đồng</span>
-                </div>
-              </div>
-              <div className="stat-divider"></div>
-              <div className="stat-item">
-                <Home size={16} className="stat-icon icon-accent" />
-                <div className="stat-text">
-                  <span className="stat-value">{availableRooms}</span>
-                  <span className="stat-label">Phòng trống</span>
-                </div>
-              </div>
-              <div className="stat-divider"></div>
-              <div className="stat-item">
-                <Clock size={16} className="stat-icon icon-warning" />
-                <div className="stat-text">
-                  <span className="stat-value">{depositedRooms}</span>
-                  <span className="stat-label">Đã cọc</span>
-                </div>
+    <div className="contract-container">
+      <div className="contract-list-header">
+        <div>
+          <h2 className="contract-page-title">Quản lý Hợp đồng</h2>
+          <p className="contract-page-subtitle">
+            Xem và quản lý hợp đồng theo sơ đồ tầng
+          </p>
+        </div>
+        {!readOnly && (
+          <div className="stats-summary">
+            <div className="stat-item">
+              <FileText size={16} className="stat-icon icon-primary" />
+              <div className="stat-text">
+                <span className="stat-value">{activeContracts}</span>
+                <span className="stat-label">Hợp đồng</span>
               </div>
             </div>
-          )}
-        </div>
+            <div className="stat-divider"></div>
+            <div className="stat-item">
+              <Home size={16} className="stat-icon icon-accent" />
+              <div className="stat-text">
+                <span className="stat-value">{availableRooms}</span>
+                <span className="stat-label">Phòng trống</span>
+              </div>
+            </div>
+            <div className="stat-divider"></div>
+            <div className="stat-item">
+              <Clock size={16} className="stat-icon icon-warning" />
+              <div className="stat-text">
+                <span className="stat-value">{depositedRooms}</span>
+                <span className="stat-label">Đã cọc</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
-        {/* Floor Tabs */}
-        <Tabs
-          value={activeFloorTab}
-          onChange={(_, v) => setActiveFloorTab(v)}
-          sx={{ mb: 2 }}
-          variant="scrollable"
-        >
-          <Tab label="Tầng 1" />
-          <Tab label="Tầng 2" />
-          <Tab label="Tầng 3" />
-          <Tab label="Tầng 4" />
-          <Tab label="Tầng 5" />
-        </Tabs>
+      {/* Floor Filter Pills */}
+      <div className="contract-floor-pills">
+        {floors.map((floor, idx) => (
+          <button
+            key={idx}
+            className={`floor-pill${activeFloorTab === idx ? " active" : ""}`}
+            onClick={() => setActiveFloorTab(idx)}
+          >
+            <Building size={14} />
+            {floor}
+          </button>
+        ))}
+      </div>
 
-        {/* Floor Map Content */}
-        <Box
-          className="contract-floor-map"
-          sx={{
-            border: "1px solid #ddd",
-            borderRadius: 2,
-            overflow: "hidden",
-            minHeight: "400px",
-          }}
-        >
-          {activeFloorTab === 0 && (
-            <FloorMap
-              rooms={rooms.filter(
-                (r: any) =>
-                  r.floorId?.name === "1" ||
-                  r.floorId?.name === "Tầng 1" ||
-                  r.name.startsWith("1"),
-              )}
-              onRoomSelect={handleRoomSelect}
-            />
-          )}
-          {activeFloorTab === 1 && (
-            <FloorMapLevel2
-              rooms={rooms.filter(
-                (r: any) =>
-                  r.floorId?.name === "2" ||
-                  r.floorId?.name === "Tầng 2" ||
-                  r.name.startsWith("2"),
-              )}
-              onRoomSelect={handleRoomSelect}
-            />
-          )}
-          {activeFloorTab === 2 && (
-            <FloorMapLevel3
-              rooms={rooms.filter(
-                (r: any) =>
-                  r.floorId?.name === "3" ||
-                  r.floorId?.name === "Tầng 3" ||
-                  r.name.startsWith("3"),
-              )}
-              onRoomSelect={handleRoomSelect}
-            />
-          )}
-          {activeFloorTab === 3 && (
-            <FloorMapLevel4
-              rooms={rooms.filter(
-                (r: any) =>
-                  r.floorId?.name === "4" ||
-                  r.floorId?.name === "Tầng 4" ||
-                  r.name.startsWith("4"),
-              )}
-              onRoomSelect={handleRoomSelect}
-            />
-          )}
-          {activeFloorTab === 4 && (
-            <FloorMapLevel5
-              rooms={rooms.filter(
-                (r: any) =>
-                  r.floorId?.name === "5" ||
-                  r.floorId?.name === "Tầng 5" ||
-                  r.name.startsWith("5"),
-              )}
-              onRoomSelect={handleRoomSelect}
-            />
-          )}
-        </Box>
-      </Paper>
-    </Container>
+      {/* Floor Map Content */}
+      <div className="contract-floor-map">
+        {activeFloorTab === 0 && (
+          <FloorMap
+            rooms={rooms.filter(
+              (r: any) =>
+                r.floorId?.name === "1" ||
+                r.floorId?.name === "Tầng 1" ||
+                r.name.startsWith("1"),
+            )}
+            onRoomSelect={handleRoomSelect}
+          />
+        )}
+        {activeFloorTab === 1 && (
+          <FloorMapLevel2
+            rooms={rooms.filter(
+              (r: any) =>
+                r.floorId?.name === "2" ||
+                r.floorId?.name === "Tầng 2" ||
+                r.name.startsWith("2"),
+            )}
+            onRoomSelect={handleRoomSelect}
+          />
+        )}
+        {activeFloorTab === 2 && (
+          <FloorMapLevel3
+            rooms={rooms.filter(
+              (r: any) =>
+                r.floorId?.name === "3" ||
+                r.floorId?.name === "Tầng 3" ||
+                r.name.startsWith("3"),
+            )}
+            onRoomSelect={handleRoomSelect}
+          />
+        )}
+        {activeFloorTab === 3 && (
+          <FloorMapLevel4
+            rooms={rooms.filter(
+              (r: any) =>
+                r.floorId?.name === "4" ||
+                r.floorId?.name === "Tầng 4" ||
+                r.name.startsWith("4"),
+            )}
+            onRoomSelect={handleRoomSelect}
+          />
+        )}
+        {activeFloorTab === 4 && (
+          <FloorMapLevel5
+            rooms={rooms.filter(
+              (r: any) =>
+                r.floorId?.name === "5" ||
+                r.floorId?.name === "Tầng 5" ||
+                r.name.startsWith("5"),
+            )}
+            onRoomSelect={handleRoomSelect}
+          />
+        )}
+      </div>
+    </div>
   );
 };
 

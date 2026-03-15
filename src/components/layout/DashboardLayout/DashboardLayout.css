@@ -11,12 +11,15 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-width: 0;
   transition: margin-left 0.3s ease;
 }
 
 .dashboard-layout-main {
   flex: 1;
+  min-width: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   background-color: #f8fafc;
   border-top-left-radius: 16px;
   padding: 5px 24px;

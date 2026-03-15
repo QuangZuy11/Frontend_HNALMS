@@ -260,8 +260,8 @@ export default function ViewProfile() {
       setChangePasswordError("Vui lòng nhập đầy đủ các trường.");
       return;
     }
-    if (newPassword.length < 8) {
-      setChangePasswordError("Mật khẩu mới phải có ít nhất 8 ký tự.");
+    if (newPassword.length < 6) {
+      setChangePasswordError("Mật khẩu mới phải có ít nhất 6 ký tự.");
       return;
     }
     if (newPassword !== confirmPassword) {

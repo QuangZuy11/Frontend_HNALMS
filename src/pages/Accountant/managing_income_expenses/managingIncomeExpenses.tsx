@@ -23,22 +23,22 @@ interface FinancialTicket {
   room?: Room | null;
 }
 
-type UiPaymentStatus = "paid" | "unpaid";
+type UiPaymentStatus = "pending" | "paid" | "cancelled";
 
 export default function ManagingIncomeExpenses() {
   const [tickets, setTickets] = useState<FinancialTicket[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   // roomSearch removed (màn này không cần tìm kiếm theo phòng)
-  const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "unpaid">(
-    "all"
-  );
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "pending" | "paid" | "cancelled"
+  >("all");
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 11;
   const [selectedTicket, setSelectedTicket] = useState<FinancialTicket | null>(
-    null
+    null,
   );
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [creating, setCreating] = useState<boolean>(false);
@@ -48,11 +48,11 @@ export default function ManagingIncomeExpenses() {
   const [createForm, setCreateForm] = useState<{
     title: string;
     amount: string;
-    status: "Unpaid" | "Paid";
+    status: "Pending" | "Paid" | "Cancelled";
   }>({
     title: "",
     amount: "",
-    status: "Unpaid",
+    status: "Pending",
   });
   const [createErrors, setCreateErrors] = useState<{
     title: string;
@@ -65,12 +65,14 @@ export default function ManagingIncomeExpenses() {
 
   // Khoá scroll trang này
   useEffect(() => {
-    const main = document.querySelector('.dashboard-layout-main') as HTMLElement;
-    if (main) main.style.overflowY = 'hidden';
-    document.body.style.overflow = 'hidden';
+    const main = document.querySelector(
+      ".dashboard-layout-main",
+    ) as HTMLElement;
+    if (main) main.style.overflowY = "hidden";
+    document.body.style.overflow = "hidden";
     return () => {
-      if (main) main.style.overflowY = '';
-      document.body.style.overflow = '';
+      if (main) main.style.overflowY = "";
+      document.body.style.overflow = "";
     };
   }, []);
 
@@ -111,9 +113,8 @@ export default function ManagingIncomeExpenses() {
         (err as { response?: { data?: { message?: string } } }).response?.data
           ?.message
       ) {
-        msg = (
-          err as { response?: { data?: { message?: string } } }
-        ).response!.data!.message as string;
+        msg = (err as { response?: { data?: { message?: string } } }).response!
+          .data!.message as string;
       }
       setError(msg);
     } finally {
@@ -129,7 +130,7 @@ export default function ManagingIncomeExpenses() {
     setCreateForm({
       title: "",
       amount: "",
-      status: "Unpaid",
+      status: "Pending",
     });
     setCreateErrors({ title: "", amount: "" });
     setAutoVoucherCode("");
@@ -230,47 +231,63 @@ export default function ManagingIncomeExpenses() {
 
   const toUiStatus = (status?: string): UiPaymentStatus => {
     const s = (status || "").toLowerCase();
-    if (s === "paid" || s.includes("đã thanh toán") || s.includes("da thanh toan"))
+    if (s === "paid" || s.includes("đã thanh toán") || s.includes("da thanh toan")) {
       return "paid";
-    return "unpaid";
+    }
+    if (s === "cancelled" || s.includes("đã hủy") || s.includes("da huy")) {
+      return "cancelled";
+    }
+    return "pending";
   };
 
   const statusLabel = (status?: string) => {
     const ui = toUiStatus(status);
-    return ui === "paid" ? "Đã thanh toán" : "Chưa thanh toán";
+    if (ui === "paid") return "Đã thanh toán";
+    if (ui === "cancelled") return "Đã hủy";
+    return "Chờ duyệt";
   };
 
-  const toApiStatus = (ui: UiPaymentStatus): "Paid" | "Unpaid" =>
-    ui === "paid" ? "Paid" : "Unpaid";
+  const toApiStatus = (ui: UiPaymentStatus): "Pending" | "Paid" | "Cancelled" =>
+    ui === "paid" ? "Paid" : ui === "cancelled" ? "Cancelled" : "Pending";
 
   const handleChangeStatus = async (
     ticketId: string,
-    uiStatus: UiPaymentStatus
+    uiStatus: UiPaymentStatus,
   ) => {
     // optimistic update
     setTickets((prev) =>
-      prev.map((t) => (t._id === ticketId ? { ...t, status: toApiStatus(uiStatus) } : t))
+      prev.map((t) =>
+        t._id === ticketId ? { ...t, status: toApiStatus(uiStatus) } : t,
+      ),
     );
 
     try {
       const res = await cashFlowService.updatePaymentTicketStatus(
         ticketId,
-        toApiStatus(uiStatus)
+        toApiStatus(uiStatus),
       );
 
       if (res?.success && res?.data?._id) {
         setTickets((prev) =>
           prev.map((t) =>
             t._id === ticketId
-              ? { ...t, status: res.data.status, accountantPaidAt: res.data.accountantPaidAt }
-              : t
-          )
+              ? {
+                  ...t,
+                  status: res.data.status,
+                  accountantPaidAt: res.data.accountantPaidAt,
+                }
+              : t,
+          ),
         );
 
         setSelectedTicket((prev) =>
           prev && prev._id === ticketId
-            ? { ...prev, status: res.data.status, accountantPaidAt: res.data.accountantPaidAt }
-            : prev
+            ? {
+                ...prev,
+                status: res.data.status,
+                accountantPaidAt: res.data.accountantPaidAt,
+              }
+            : prev,
         );
       }
     } catch (err) {
@@ -284,79 +301,89 @@ export default function ManagingIncomeExpenses() {
   const filteredTickets = tickets.filter((t) => {
     if (statusFilter === "all") return true;
     const ui = toUiStatus(t.status);
-    return statusFilter === "paid" ? ui === "paid" : ui === "unpaid";
+    if (statusFilter === "paid") return ui === "paid";
+    if (statusFilter === "cancelled") return ui === "cancelled";
+    return ui === "pending";
   });
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredTickets.length / pageSize) || 1
+    Math.ceil(filteredTickets.length / pageSize) || 1,
   );
 
   const safePage = Math.min(currentPage, totalPages);
   const startIndex = (safePage - 1) * pageSize;
   const paginatedTickets = filteredTickets.slice(
     startIndex,
-    startIndex + pageSize
+    startIndex + pageSize,
   );
 
   return (
     <div className="payments-page">
       <div className="payments-card">
-        <div className="payments-card-header">
+        <div className="payments-header">
           <div>
-            <h2>Danh sách phiếu chi</h2>
-            <p className="payments-card-subtitle">Các phiếu chi phát sinh từ sửa chữa miễn phí và các nghiệp vụ khác</p>
+            <h1>Danh sách phiếu chi</h1>
           </div>
-          <button
-            type="button"
-            className="payments-create-btn"
-            onClick={openCreateModal}
-          >
-            + Tạo phiếu chi
-          </button>
-        </div>
-        <div className="payments-toolbar">
-          <div className="payments-filter-group">
-            <label htmlFor="from-date">Từ ngày</label>
-            <input
-              id="from-date"
-              type="date"
-              className="payments-filter-input"
-              value={fromDate}
-              onChange={(e) => {
-                setFromDate(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-          </div>
-          <div className="payments-filter-group">
-            <label htmlFor="to-date">Đến ngày</label>
-            <input
-              id="to-date"
-              type="date"
-              className="payments-filter-input"
-              value={toDate}
-              onChange={(e) => {
-                setToDate(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-          </div>
-          <div className="payments-filter-group">
-            <label htmlFor="status-filter">Trạng thái</label>
-            <select
-              id="status-filter"
-              className="payments-filter-select payments-status-filter"
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value as "all" | "paid" | "unpaid");
-                setCurrentPage(1);
-              }}
+          <div className="payments-header-actions">
+            <button
+              type="button"
+              className="payments-create-btn"
+              onClick={openCreateModal}
             >
-              <option value="all">Tất cả</option>
-              <option value="unpaid">Chưa thanh toán</option>
-              <option value="paid">Đã thanh toán</option>
-            </select>
+              Tạo phiếu chi
+            </button>
+            <div className="payments-filter-wrapper">
+              <label htmlFor="from-date" className="payments-filter-label">
+                Từ ngày:
+              </label>
+              <input
+                id="from-date"
+                type="date"
+                className="payments-filter-input"
+                value={fromDate}
+                onChange={(e) => {
+                  setFromDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+            <div className="payments-filter-wrapper">
+              <label htmlFor="to-date" className="payments-filter-label">
+                Đến ngày:
+              </label>
+              <input
+                id="to-date"
+                type="date"
+                className="payments-filter-input"
+                value={toDate}
+                onChange={(e) => {
+                  setToDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+            <div className="payments-filter-wrapper">
+              <label htmlFor="status-filter" className="payments-filter-label">
+                Trạng thái:
+              </label>
+              <select
+                id="status-filter"
+                className="payments-filter-select payments-status-filter"
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(
+                    e.target.value as "all" | "pending" | "paid" | "cancelled",
+                  );
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="all">Tất cả</option>
+                <option value="pending">Chờ duyệt</option>
+                <option value="paid">Đã thanh toán</option>
+                <option value="cancelled">Đã hủy</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -390,20 +417,25 @@ export default function ManagingIncomeExpenses() {
                 {paginatedTickets.map((t, index) => (
                   <tr key={t._id}>
                     <td>{startIndex + index + 1}</td>
-                    <td><span className="payments-code-badge">{t.paymentVoucher || "—"}</span></td>
+                    <td>
+                      <span className="payments-code-badge">
+                        {t.paymentVoucher || "—"}
+                      </span>
+                    </td>
                     <td>{t.title}</td>
-                    <td><span className="payments-amount">{formatCurrency(t.amount)}</span></td>
+                    <td>
+                      <span className="payments-amount">
+                        {formatCurrency(t.amount)}
+                      </span>
+                    </td>
                     <td>
                       <span
-                        className={`status-badge ${toUiStatus(t.status) === "paid" ? "paid" : "unpaid"
-                          }`}
+                        className={`payments-status-badge ${toUiStatus(t.status)}`}
                       >
                         {statusLabel(t.status)}
                       </span>
                     </td>
-                    <td>
-                      {formatDate(t.createdAt || t.transactionDate)}
-                    </td>
+                    <td>{formatDate(t.createdAt || t.transactionDate)}</td>
                     <td>
                       <div className="payments-actions">
                         <button
@@ -425,12 +457,15 @@ export default function ManagingIncomeExpenses() {
 
         {showCreateModal && (
           <div className="payments-modal-overlay" onClick={closeCreateModal}>
-            <div className="payments-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="payments-modal-header">
+            <div
+              className="payments-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="payments-modal-header payments-modal-header--detail">
                 <h3>Tạo phiếu chi</h3>
                 <button
                   type="button"
-                  className="payments-modal-close"
+                  className="payments-modal-close payments-modal-close--detail"
                   onClick={closeCreateModal}
                 >
                   ✕
@@ -459,7 +494,9 @@ export default function ManagingIncomeExpenses() {
                     className="payments-form-input"
                   />
                   {autoVoucherError && (
-                    <span className="payments-form-error">{autoVoucherError}</span>
+                    <span className="payments-form-error">
+                      {autoVoucherError}
+                    </span>
                   )}
                 </div>
 
@@ -469,7 +506,10 @@ export default function ManagingIncomeExpenses() {
                     type="text"
                     value={createForm.title}
                     onChange={(e) => {
-                      setCreateForm((prev) => ({ ...prev, title: e.target.value }));
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }));
                       if (createErrors.title) {
                         setCreateErrors((prev) => ({ ...prev, title: "" }));
                       }
@@ -478,7 +518,9 @@ export default function ManagingIncomeExpenses() {
                     placeholder="Nhập tiêu đề phiếu chi"
                   />
                   {createErrors.title && (
-                    <span className="payments-form-error">{createErrors.title}</span>
+                    <span className="payments-form-error">
+                      {createErrors.title}
+                    </span>
                   )}
                 </div>
 
@@ -490,7 +532,10 @@ export default function ManagingIncomeExpenses() {
                     step="1000"
                     value={createForm.amount}
                     onChange={(e) => {
-                      setCreateForm((prev) => ({ ...prev, amount: e.target.value }));
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        amount: e.target.value,
+                      }));
                       if (createErrors.amount) {
                         setCreateErrors((prev) => ({ ...prev, amount: "" }));
                       }
@@ -499,7 +544,9 @@ export default function ManagingIncomeExpenses() {
                     placeholder="Nhập số tiền"
                   />
                   {createErrors.amount && (
-                    <span className="payments-form-error">{createErrors.amount}</span>
+                    <span className="payments-form-error">
+                      {createErrors.amount}
+                    </span>
                   )}
                 </div>
 
@@ -511,12 +558,16 @@ export default function ManagingIncomeExpenses() {
                     onChange={(e) =>
                       setCreateForm((prev) => ({
                         ...prev,
-                        status: e.target.value as "Unpaid" | "Paid",
+                        status: e.target.value as
+                          | "Pending"
+                          | "Paid"
+                          | "Cancelled",
                       }))
                     }
                   >
-                    <option value="Unpaid">Chưa thanh toán</option>
+                    <option value="Pending">Chờ duyệt</option>
                     <option value="Paid">Đã thanh toán</option>
+                    <option value="Cancelled">Đã hủy</option>
                   </select>
                 </div>
 
@@ -542,7 +593,7 @@ export default function ManagingIncomeExpenses() {
               >
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className="payments-btn-secondary"
                   onClick={closeCreateModal}
                   disabled={creating}
                 >
@@ -550,13 +601,15 @@ export default function ManagingIncomeExpenses() {
                 </button>
                 <button
                   type="button"
-                  className="btn-primary"
+                  className="payments-btn-primary"
                   onClick={handleCreateTicket}
                   disabled={
                     creating ||
                     autoVoucherLoading ||
                     !!autoVoucherError ||
-                    !autoVoucherCode
+                    !autoVoucherCode ||
+                    !createForm.title.trim() ||
+                    !createForm.amount.trim()
                   }
                 >
                   {creating ? "Đang tạo..." : "Tạo phiếu"}
@@ -568,92 +621,113 @@ export default function ManagingIncomeExpenses() {
 
         {selectedTicket && (
           <div
-            className="payments-modal-overlay"
+            className="paychi-modal-overlay"
             onClick={() => setSelectedTicket(null)}
           >
             <div
-              className="payments-modal"
+              className="paychi-modal paychi-modal--detail"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="payments-modal-header">
-                <h3>Chi tiết phiếu chi</h3>
+              <div className="paychi-modal-header paychi-modal-header--detail">
+                <div>
+                  <h3>Chi tiết phiếu chi</h3>
+                  <p className="paychi-modal-subtitle">
+                    {selectedTicket.title}
+                  </p>
+                </div>
                 <button
                   type="button"
-                  className="payments-modal-close"
+                  className="paychi-modal-close paychi-modal-close--detail"
                   onClick={() => setSelectedTicket(null)}
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="payments-modal-body">
-                <div className="payments-detail-row">
-                  <span className="payments-detail-label">Mã phiếu</span>
-                  <span className="payments-detail-value">
-                    {selectedTicket.paymentVoucher || "-"}
-                  </span>
+              <div className="paychi-modal-body paychi-detail-content">
+                <div className="paychi-section-divider">
+                  Thông tin phiếu chi
                 </div>
-                <div className="payments-detail-row">
-                  <span className="payments-detail-label">Tiêu đề</span>
-                  <span className="payments-detail-value">
-                    {selectedTicket.title}
-                  </span>
-                </div>
-                <div className="payments-detail-row">
-                  <span className="payments-detail-label">Số tiền</span>
-                  <span className="payments-detail-value">
-                    {formatCurrency(selectedTicket.amount)} VNĐ
-                  </span>
-                </div>
-                <div className="payments-detail-row">
-                  <span className="payments-detail-label">Ngày tạo</span>
-                  <span className="payments-detail-value">
-                    {formatDate(
-                      selectedTicket.createdAt || selectedTicket.transactionDate
-                    )}
-                  </span>
-                </div>
-                {toUiStatus(selectedTicket.status) === "paid" && (
-                  <div className="payments-detail-row">
-                    <span className="payments-detail-label">
-                      Ngày kế toán thanh toán
-                    </span>
-                    <span className="payments-detail-value">
-                      {formatDate(selectedTicket.accountantPaidAt)}
+                <div className="paychi-section-block">
+                  <div className="paychi-detail-row">
+                    <span className="paychi-detail-label">Mã phiếu:</span>
+                    <span className="paychi-detail-value">
+                      {selectedTicket.paymentVoucher || "-"}
                     </span>
                   </div>
-                )}
-                <div className="payments-detail-row payments-detail-row--column">
-                  <span className="payments-detail-label">Trạng thái</span>
-                  <div className="payments-detail-value payments-detail-status">
-                    <select
-                      className="payments-status-select payments-status-select--compact"
-                      value={toUiStatus(selectedTicket.status)}
-                      onChange={(e) =>
-                        handleChangeStatus(
-                          selectedTicket._id,
-                          e.target.value as UiPaymentStatus
-                        )
-                      }
-                      disabled={toUiStatus(selectedTicket.status) === "paid"}
-                    >
-                      <option value="unpaid">Chưa thanh toán</option>
-                      <option value="paid">Đã thanh toán</option>
-                    </select>
+                  <div className="paychi-detail-row">
+                    <span className="paychi-detail-label">Tiêu đề:</span>
+                    <span className="paychi-detail-value">
+                      {selectedTicket.title}
+                    </span>
+                  </div>
+                  <div className="paychi-detail-row">
+                    <span className="paychi-detail-label">Số tiền:</span>
+                    <span className="paychi-detail-value">
+                      {formatCurrency(selectedTicket.amount)} VNĐ
+                    </span>
                   </div>
                 </div>
-              </div>
 
-              <div className="payments-modal-footer">
-                {toUiStatus(selectedTicket.status) === "paid" && (
-                  <button
-                    type="button"
-                    className="payments-done-button"
-                    onClick={() => setSelectedTicket(null)}
-                  >
-                    Xong
-                  </button>
-                )}
+                <div className="paychi-section-divider">Thời gian</div>
+                <div className="paychi-section-block">
+                  <div className="paychi-detail-row">
+                    <span className="paychi-detail-label">Ngày tạo:</span>
+                    <span className="paychi-detail-value">
+                      {formatDate(
+                        selectedTicket.createdAt ||
+                          selectedTicket.transactionDate,
+                      )}
+                    </span>
+                  </div>
+                  {toUiStatus(selectedTicket.status) === "paid" && (
+                    <div className="paychi-detail-row">
+                      <span className="paychi-detail-label">
+                        Ngày thanh toán:
+                      </span>
+                      <span className="paychi-detail-value">
+                        {formatDate(selectedTicket.accountantPaidAt)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="paychi-section-divider">Trạng thái</div>
+                <div className="paychi-section-block">
+                  <div className="paychi-detail-row">
+                    <span className="paychi-detail-label">Trạng thái:</span>
+                    <div className="paychi-detail-value paychi-detail-status">
+                      <select
+                        className="paychi-status-select"
+                        value={toUiStatus(selectedTicket.status)}
+                        onChange={(e) =>
+                          handleChangeStatus(
+                            selectedTicket._id,
+                            e.target.value as UiPaymentStatus,
+                          )
+                        }
+                        disabled={toUiStatus(selectedTicket.status) === "paid"}
+                      >
+                        <option value="pending">Chờ duyệt</option>
+                        <option value="paid">Đã thanh toán</option>
+                        <option value="cancelled">Đã hủy</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="paychi-detail-actions">
+                  {(toUiStatus(selectedTicket.status) === "paid" ||
+                    toUiStatus(selectedTicket.status) === "cancelled") && (
+                    <button
+                      type="button"
+                      className="paychi-done-btn"
+                      onClick={() => setSelectedTicket(null)}
+                    >
+                      Xong
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

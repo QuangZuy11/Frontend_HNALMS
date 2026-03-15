@@ -30,7 +30,13 @@ import CloseIcon from "@mui/icons-material/Close";
 const API_URL = "http://localhost:9999/api";
 
 // Self-contained Deposit Modal that fetches data on-demand
-function DepositModal({ open, onClose, depositId, roomId, serifFont }: {
+function DepositModal({
+  open,
+  onClose,
+  depositId,
+  roomId,
+  serifFont,
+}: {
   open: boolean;
   onClose: () => void;
   depositId?: any;
@@ -52,18 +58,23 @@ function DepositModal({ open, onClose, depositId, roomId, serifFont }: {
 
     // Otherwise, fetch from API using the string ID or roomId
     setLoading(true);
-    axios.get(`${API_URL}/deposits`)
+    axios
+      .get(`${API_URL}/deposits`)
       .then((res) => {
         if (res.data.success) {
           let found = null;
           if (depositId) {
-            const id = typeof depositId === "string" ? depositId : depositId._id || depositId;
+            const id =
+              typeof depositId === "string"
+                ? depositId
+                : depositId._id || depositId;
             found = res.data.data.find((d: any) => d._id === id);
           } else if (roomId) {
             // Find active "Held" deposit for this room
-            found = res.data.data.find((d: any) =>
-              (d.room === roomId || d.room?._id === roomId) &&
-              d.status === "Held"
+            found = res.data.data.find(
+              (d: any) =>
+                (d.room === roomId || d.room?._id === roomId) &&
+                d.status === "Held",
             );
           }
           setDeposit(found || null);
@@ -75,18 +86,25 @@ function DepositModal({ open, onClose, depositId, roomId, serifFont }: {
 
   const statusLabel = (status: string) => {
     switch (status) {
-      case "Held": return "Đang giữ";
-      case "Refunded": return "Đã hoàn";
-      case "Forfeited": return "Đã phạt";
-      default: return status;
+      case "Held":
+        return "Đang giữ";
+      case "Refunded":
+        return "Đã hoàn";
+      case "Forfeited":
+        return "Đã phạt";
+      default:
+        return status;
     }
   };
 
   const statusColor = (status: string) => {
     switch (status) {
-      case "Held": return "primary";
-      case "Refunded": return "success";
-      default: return "error";
+      case "Held":
+        return "primary";
+      case "Refunded":
+        return "success";
+      default:
+        return "error";
     }
   };
 
@@ -113,8 +131,21 @@ function DepositModal({ open, onClose, depositId, roomId, serifFont }: {
           fontFamily: serifFont,
         }}
       >
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-          <Typography sx={{ fontWeight: "bold", fontSize: "1.2rem", fontFamily: serifFont }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: "bold",
+              fontSize: "1.2rem",
+              fontFamily: serifFont,
+            }}
+          >
             Thông tin đặt cọc
           </Typography>
           <IconButton size="small" onClick={onClose}>
@@ -127,27 +158,66 @@ function DepositModal({ open, onClose, depositId, roomId, serifFont }: {
             <CircularProgress size={28} />
           </Box>
         ) : deposit ? (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, fontFamily: serifFont }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 1.5,
+              fontFamily: serifFont,
+            }}
+          >
             <Box sx={{ display: "flex", gap: 1 }}>
-              <Typography sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}>Người cọc:</Typography>
-              <Typography sx={{ fontWeight: 600, fontFamily: serifFont }}>{deposit.name || "—"}</Typography>
+              <Typography
+                sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}
+              >
+                Người cọc:
+              </Typography>
+              <Typography sx={{ fontWeight: 600, fontFamily: serifFont }}>
+                {deposit.name || "—"}
+              </Typography>
             </Box>
             <Box sx={{ display: "flex", gap: 1 }}>
-              <Typography sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}>Số điện thoại:</Typography>
-              <Typography sx={{ fontFamily: serifFont }}>{deposit.phone || "—"}</Typography>
+              <Typography
+                sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}
+              >
+                Số điện thoại:
+              </Typography>
+              <Typography sx={{ fontFamily: serifFont }}>
+                {deposit.phone || "—"}
+              </Typography>
             </Box>
             <Box sx={{ display: "flex", gap: 1 }}>
-              <Typography sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}>Email:</Typography>
-              <Typography sx={{ fontFamily: serifFont }}>{deposit.email || "—"}</Typography>
+              <Typography
+                sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}
+              >
+                Email:
+              </Typography>
+              <Typography sx={{ fontFamily: serifFont }}>
+                {deposit.email || "—"}
+              </Typography>
             </Box>
             <Box sx={{ display: "flex", gap: 1 }}>
-              <Typography sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}>Số tiền cọc:</Typography>
-              <Typography sx={{ fontWeight: 600, color: "#d32f2f", fontFamily: serifFont }}>
+              <Typography
+                sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}
+              >
+                Số tiền cọc:
+              </Typography>
+              <Typography
+                sx={{
+                  fontWeight: 600,
+                  color: "#d32f2f",
+                  fontFamily: serifFont,
+                }}
+              >
                 {(deposit.amount || 0).toLocaleString("vi-VN")} VNĐ
               </Typography>
             </Box>
             <Box sx={{ display: "flex", gap: 1 }}>
-              <Typography sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}>Trạng thái:</Typography>
+              <Typography
+                sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}
+              >
+                Trạng thái:
+              </Typography>
               <Chip
                 label={statusLabel(deposit.status)}
                 color={statusColor(deposit.status) as any}
@@ -156,13 +226,20 @@ function DepositModal({ open, onClose, depositId, roomId, serifFont }: {
               />
             </Box>
             <Box sx={{ display: "flex", gap: 1 }}>
-              <Typography sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}>Ngày cọc:</Typography>
+              <Typography
+                sx={{ color: "#666", minWidth: 120, fontFamily: serifFont }}
+              >
+                Ngày cọc:
+              </Typography>
               <Typography sx={{ fontFamily: serifFont }}>
                 {deposit.createdAt
                   ? new Date(deposit.createdAt).toLocaleDateString("vi-VN", {
-                    day: "2-digit", month: "2-digit", year: "numeric",
-                    hour: "2-digit", minute: "2-digit",
-                  })
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
                   : "—"}
               </Typography>
             </Box>
@@ -257,6 +334,7 @@ const CreateContract = () => {
   const [ocrLoading, setOcrLoading] = useState(false);
   const ocrFileInputRef = useRef<HTMLInputElement>(null);
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const {
     control,
@@ -603,7 +681,7 @@ const CreateContract = () => {
       console.error("OCR Error:", err);
       alert(
         "Lỗi khi kết nối tới FPT.AI: " +
-        (err.response?.data?.errorMessage || err.message),
+          (err.response?.data?.errorMessage || err.message),
       );
     } finally {
       setOcrLoading(false);
@@ -676,6 +754,7 @@ const CreateContract = () => {
       return;
     }
 
+    setSubmitting(true);
     try {
       const payload = {
         ...data,
@@ -711,6 +790,8 @@ const CreateContract = () => {
       alert(
         "Lỗi tạo hợp đồng: " + (err.response?.data?.message || err.message),
       );
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -1182,8 +1263,8 @@ const CreateContract = () => {
                                     } catch (err) {
                                       alert(
                                         "Lỗi khi kết nối tới FPT.AI: " +
-                                        (err.response?.data?.errorMessage ||
-                                          err.message),
+                                          (err.response?.data?.errorMessage ||
+                                            err.message),
                                       );
                                     }
                                     // Reset file input
@@ -1285,17 +1366,17 @@ const CreateContract = () => {
                     </Button>
                     {coResidentFields.length + 1 >=
                       (selectedRoom?.roomTypeId?.personMax || 1) && (
-                        <Typography
-                          sx={{
-                            fontStyle: "italic",
-                            fontFamily: '"Times New Roman", serif',
-                            fontSize: "0.9rem",
-                            color: "#999",
-                          }}
-                        >
-                          (Đã đạt giới hạn số người cho loại phòng này)
-                        </Typography>
-                      )}
+                      <Typography
+                        sx={{
+                          fontStyle: "italic",
+                          fontFamily: '"Times New Roman", serif',
+                          fontSize: "0.9rem",
+                          color: "#999",
+                        }}
+                      >
+                        (Đã đạt giới hạn số người cho loại phòng này)
+                      </Typography>
+                    )}
                   </Box>
                 </Box>
 
@@ -1414,8 +1495,8 @@ const CreateContract = () => {
                     InputProps={{ readOnly: true }}
                     value={Number(
                       selectedRoom?.roomTypeId?.currentPrice ||
-                      selectedRoom?.price ||
-                      0,
+                        selectedRoom?.price ||
+                        0,
                     ).toLocaleString()}
                   />
                   VNĐ/tháng. (Giá này cố định theo loại phòng).
@@ -1447,8 +1528,8 @@ const CreateContract = () => {
                         InputProps={{ readOnly: true }}
                         value={Number(
                           selectedRoom?.roomTypeId?.currentPrice ||
-                          selectedRoom?.price ||
-                          0,
+                            selectedRoom?.price ||
+                            0,
                         ).toLocaleString()}
                       />
                       VNĐ (Tương đương 01 tháng tiền phòng).
@@ -2076,9 +2157,16 @@ const CreateContract = () => {
               variant="contained"
               color="primary"
               size="large"
-              disabled={selectedRoom?.status !== "Deposited"}
+              disabled={selectedRoom?.status !== "Deposited" || submitting}
             >
-              Xác nhận & Tạo Hợp Đồng
+              {submitting ? (
+                <>
+                  <CircularProgress size={20} sx={{ color: "#fff", mr: 1 }} />
+                  Đang tạo hợp đồng...
+                </>
+              ) : (
+                "Xác nhận & Tạo Hợp Đồng"
+              )}
             </Button>
           </Box>
         </Container>

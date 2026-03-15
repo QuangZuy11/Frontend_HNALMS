@@ -14,6 +14,7 @@ interface Room {
     currentPrice?: number;
   };
   price?: number;
+  contractStartDate?: string;
   contractEndDate?: string;
   [key: string]: any;
 }
@@ -91,6 +92,37 @@ const getExpiryLabel = (contractEndDate?: string): string | null => {
 const extractTypeNumber = (typeName: string): number => {
   const match = typeName.match(/(\d+)/);
   return match ? parseInt(match[1], 10) : 0;
+};
+
+// Format room label: "Phòng 301" => "P.301"
+const formatRoomLabel = (name: string): string =>
+  name.replace(/^Phòng\s*/i, "P.");
+
+// Format contract date label: DD/MM/YY <br/> DD/MM/YY
+const getContractDateLabel = (startDate?: string, endDate?: string): React.ReactNode => {
+  if (!startDate || !endDate) return null;
+
+  const startDt = new Date(startDate);
+  const endDt = new Date(endDate);
+
+  const startDd = startDt.getDate().toString().padStart(2, "0");
+  const startMm = (startDt.getMonth() + 1).toString().padStart(2, "0");
+  const endDd = endDt.getDate().toString().padStart(2, "0");
+  const endMm = (endDt.getMonth() + 1).toString().padStart(2, "0");
+
+  const startNoYear = `${startDd}/${startMm}`;
+  const endNoYear = `${endDd}/${endMm}`;
+
+  const startYy = startDt.getFullYear().toString().slice(-2);
+  const endYy = endDt.getFullYear().toString().slice(-2);
+
+  return (
+    <>
+      {startNoYear}/{startYy}
+      <br />
+      đến {endNoYear}/{endYy}
+    </>
+  );
 };
 
 export default function FloorMapLevel3({
@@ -406,11 +438,16 @@ export default function FloorMapLevel3({
                                 </span>
                               )}
                               <span className="room-node-name">
-                                {room.name}
+                                {formatRoomLabel(room.name)}
                               </span>
-                              {getExpiryLabel(room.contractEndDate) && (
+                              {!room.contractStartDate && getExpiryLabel(room.contractEndDate) && (
                                 <span className="room-expiry-label">
                                   {getExpiryLabel(room.contractEndDate)}
+                                </span>
+                              )}
+                              {room.contractStartDate && getContractDateLabel(room.contractStartDate, room.contractEndDate) && (
+                                <span className="room-contract-dates">
+                                  {getContractDateLabel(room.contractStartDate, room.contractEndDate)}
                                 </span>
                               )}
                             </div>
@@ -518,10 +555,15 @@ export default function FloorMapLevel3({
                           !
                         </span>
                       )}
-                      <span className="room-node-name">{room.name}</span>
-                      {getExpiryLabel(room.contractEndDate) && (
+                      <span className="room-node-name">{formatRoomLabel(room.name)}</span>
+                      {!room.contractStartDate && getExpiryLabel(room.contractEndDate) && (
                         <span className="room-expiry-label">
                           {getExpiryLabel(room.contractEndDate)}
+                        </span>
+                      )}
+                      {room.contractStartDate && getContractDateLabel(room.contractStartDate, room.contractEndDate) && (
+                        <span className="room-contract-dates">
+                          {getContractDateLabel(room.contractStartDate, room.contractEndDate)}
                         </span>
                       )}
                     </div>
