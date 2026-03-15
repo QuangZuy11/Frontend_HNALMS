@@ -6,6 +6,7 @@ import {
   Users,
   Zap,
   AlertCircle,
+  Truck,
   Plus,
   Edit,
   Trash2,
@@ -29,15 +30,23 @@ const iconMap = {
   Users: Users,
   Zap: Zap,
   AlertCircle: AlertCircle,
+  Truck: Truck,
 };
 
-const iconOptions = ["Clock", "Home", "Shield", "Users", "Zap", "AlertCircle"];
+const iconOptions = [
+  "Clock",
+  "Home",
+  "Shield",
+  "Users",
+  "Zap",
+  "AlertCircle",
+  "Truck",
+];
 
 const BuildingRulesPublic = () => {
   // Kiểm tra quyền admin/manager
   const { user } = useAuth();
-  const isAdminOrManager =
-    user && (user.role === "owner");
+  const isAdminOrManager = user && user.role === "owner";
 
   // State quản lý dữ liệu nội quy
   const [rulesData, setRulesData] = useState(null);
