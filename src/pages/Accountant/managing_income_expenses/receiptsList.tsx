@@ -492,20 +492,15 @@ export default function ReceiptsList() {
                   <div className="receipts-detail-row">
                     <span className="receipts-detail-label">Trạng thái:</span>
                     <div className="receipts-detail-value receipts-detail-status">
-                      <select
-                        className="receipts-status-select receipts-status-select--compact"
-                        value={toUiStatus(selectedTicket.status)}
-                        onChange={(e) =>
-                          handleChangeStatus(
-                            selectedTicket._id,
-                            e.target.value as UiPaymentStatus,
-                          )
-                        }
-                        disabled={toUiStatus(selectedTicket.status) === "paid"}
+                      <span
+                        className={`receipts-status-badge ${
+                          toUiStatus(selectedTicket.status) === "paid"
+                            ? "paid"
+                            : "unpaid"
+                        }`}
                       >
-                        <option value="unpaid">Chưa thanh toán</option>
-                        <option value="paid">Đã thanh toán</option>
-                      </select>
+                        {statusLabel(selectedTicket.status)}
+                      </span>
                     </div>
                   </div>
                 </div>
