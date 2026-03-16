@@ -17,7 +17,6 @@ export const cashFlowService = {
   async createManualPaymentTicket(payload: {
     title: string;
     amount: number;
-    status: "Pending" | "Paid" | "Cancelled";
   }) {
     const response = await api.post("/financial-tickets/payments", payload);
     return response.data;

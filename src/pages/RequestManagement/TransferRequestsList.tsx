@@ -28,6 +28,15 @@ interface Tenant {
   phoneNumber?: string;
 }
 
+interface Proration {
+  oldRoomPrice: number;
+  newRoomPrice: number;
+  daysRemainingInMonth: number;
+  oldRoomRefund: number;
+  newRoomCharge: number;
+  difference: number;
+}
+
 interface TransferRequest {
   _id: string;
   tenantId?: Tenant | null;
@@ -35,25 +44,32 @@ interface TransferRequest {
   targetRoomId?: Room | null;
   reason?: string;
   note?: string;
-  status: 'Pending' | 'Approved' | 'Rejected';
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Completed' | 'Cancelled';
   managerNote?: string;
   rejectReason?: string;
+  completedAt?: string;
+  prorationNote?: string;
+  proration?: Proration;
   createdAt: string;
   transferDate?: string | null;
 }
 
-type StatusFilter = 'ALL' | 'Pending' | 'Approved' | 'Rejected';
+type StatusFilter = 'ALL' | 'Pending' | 'Approved' | 'Rejected' | 'Completed' | 'Cancelled';
 
 const STATUS_LABELS: Record<string, string> = {
   Pending: 'Chờ duyệt',
   Approved: 'Đã duyệt',
   Rejected: 'Từ chối',
+  Completed: 'Đã hoàn tất',
+  Cancelled: 'Đã hủy',
 };
 
 const STATUS_BADGE_CLASS: Record<string, string> = {
   Pending: 'status-pending',
   Approved: 'status-approved',
   Rejected: 'status-rejected',
+  Completed: 'status-completed',
+  Cancelled: 'status-cancelled',
 };
 
 export default function TransferRequestsList() {
@@ -87,6 +103,11 @@ export default function TransferRequestsList() {
   const [rejectReason, setRejectReason] = useState('');
   const [rejectReasonError, setRejectReasonError] = useState('');
   const [rejectLoading, setRejectLoading] = useState(false);
+
+  // Complete modal
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [completingRequest, setCompletingRequest] = useState<TransferRequest | null>(null);
+  const [completeLoading, setCompleteLoading] = useState(false);
 
   const tableRef = useRef<HTMLDivElement | null>(null);
 
@@ -210,6 +231,29 @@ export default function TransferRequestsList() {
     }
   };
 
+  // ---- Complete ----
+  const openCompleteModal = (req: TransferRequest) => {
+    setCompletingRequest(req);
+    setShowCompleteModal(true);
+  };
+
+  const handleComplete = async () => {
+    if (!completingRequest) return;
+    try {
+      setCompleteLoading(true);
+      await transferRequestService.completeTransferRequest(completingRequest._id);
+      setShowCompleteModal(false);
+      setCompletingRequest(null);
+      fetchRequests();
+      if (selectedRequest?._id === completingRequest._id) setSelectedRequest(null);
+    } catch (err: unknown) {
+      const anyErr = err as { response?: { data?: { message?: string } } };
+      alert(anyErr?.response?.data?.message || 'Hoàn tất chuyển phòng thất bại');
+    } finally {
+      setCompleteLoading(false);
+    }
+  };
+
   // ---- Pagination ----
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -278,6 +322,8 @@ export default function TransferRequestsList() {
               <option value="Pending">Chờ duyệt</option>
               <option value="Approved">Đã duyệt</option>
               <option value="Rejected">Từ chối</option>
+              <option value="Completed">Đã hoàn tất</option>
+              <option value="Cancelled">Đã hủy</option>
             </select>
           </div>
           <div className="tr-search-group">
@@ -362,6 +408,15 @@ export default function TransferRequestsList() {
                               <X size={15} />
                             </button>
                           </>
+                        )}
+                        {req.status === 'Approved' && (
+                          <button
+                            className="btn-complete"
+                            title="Hoàn tất chuyển phòng"
+                            onClick={() => openCompleteModal(req)}
+                          >
+                            ✓
+                          </button>
                         )}
                       </div>
                     </td>
@@ -457,6 +512,12 @@ export default function TransferRequestsList() {
                   <span className="detail-value" style={{ color: '#b91c1c' }}>{selectedRequest.rejectReason}</span>
                 </div>
               )}
+              {selectedRequest.prorationNote && (
+                <div className="detail-row">
+                  <span className="detail-label">Xử lý chênh lệch:</span>
+                  <span className="detail-value">{selectedRequest.prorationNote}</span>
+                </div>
+              )}
               {selectedRequest.status === 'Pending' && (
                 <div className="detail-actions">
                   <button
@@ -470,6 +531,16 @@ export default function TransferRequestsList() {
                     onClick={() => { setSelectedRequest(null); openRejectModal(selectedRequest); }}
                   >
                     <X size={15} /> Từ chối
+                  </button>
+                </div>
+              )}
+              {selectedRequest.status === 'Approved' && (
+                <div className="detail-actions">
+                  <button
+                    className="btn-complete-full"
+                    onClick={() => { setSelectedRequest(null); openCompleteModal(selectedRequest); }}
+                  >
+                    ✓ Hoàn tất chuyển phòng
                   </button>
                 </div>
               )}
@@ -543,6 +614,46 @@ export default function TransferRequestsList() {
                 </button>
                 <button className="btn-submit btn-reject-submit" onClick={handleReject} disabled={rejectLoading}>
                   {rejectLoading ? 'Đang xử lý...' : 'Xác nhận từ chối'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---- Complete Modal ---- */}
+      {showCompleteModal && completingRequest && (
+        <div className="tr-modal-overlay" onClick={() => setShowCompleteModal(false)}>
+          <div className="tr-modal tr-modal--sm" onClick={(e) => e.stopPropagation()}>
+            <div className="tr-modal-header">
+              <h2>Hoàn tất chuyển phòng</h2>
+              <button className="modal-close-btn" onClick={() => setShowCompleteModal(false)}>×</button>
+            </div>
+            <div className="tr-modal-body">
+              <p style={{ marginBottom: 12, color: '#374151' }}>
+                Xác nhận hoàn tất chuyển phòng cho cư dân <strong>{completingRequest.tenantId?.fullname}</strong> từ phòng{' '}
+                <strong>{getRoomDisplay(completingRequest.currentRoomId)}</strong> sang phòng{' '}
+                <strong>{getRoomDisplay(completingRequest.targetRoomId)}</strong>?
+              </p>
+              {completingRequest.proration && (
+                <div style={{ backgroundColor: '#f3f4f6', padding: '12px', borderRadius: '6px', marginBottom: '12px' }}>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: '500' }}>Thông tin chênh lệch tiền:</p>
+                  <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: '1.6' }}>
+                    <div>Phòng cũ: {formatCurrency(completingRequest.proration.oldRoomPrice)}</div>
+                    <div>Phòng mới: {formatCurrency(completingRequest.proration.newRoomPrice)}</div>
+                    <div>Ngày chuyển: {completingRequest.transferDate ? formatDate(completingRequest.transferDate) : '-'}</div>
+                    <div style={{ marginTop: '8px', fontWeight: '500', color: '#1f2937' }}>
+                      Chênh lệch: {formatCurrency(completingRequest.proration.difference)}
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="complete-form-actions">
+                <button className="btn-cancel" onClick={() => setShowCompleteModal(false)} disabled={completeLoading}>
+                  Hủy
+                </button>
+                <button className="btn-submit btn-complete-submit" onClick={handleComplete} disabled={completeLoading}>
+                  {completeLoading ? 'Đang xử lý...' : 'Xác nhận hoàn tất'}
                 </button>
               </div>
             </div>

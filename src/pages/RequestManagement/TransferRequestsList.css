@@ -249,6 +249,16 @@
   color: #b91c1c;
 }
 
+.status-badge.status-completed {
+  background-color: #dbeafe;
+  color: #0c4a6e;
+}
+
+.status-badge.status-cancelled {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
 /* Action buttons */
 .action-buttons {
   display: flex;
@@ -314,6 +324,24 @@
 
 .btn-reject:hover {
   background-color: #fee2e2;
+}
+
+.btn-complete {
+  padding: 5px 8px;
+  border: none;
+  background-color: transparent;
+  color: #0c4a6e;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.btn-complete:hover {
+  background-color: #dbeafe;
 }
 
 /* Modal */
@@ -467,6 +495,25 @@
   background-color: #fee2e2;
 }
 
+.btn-complete-full {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: none;
+  background-color: #0c4a6e;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-complete-full:hover {
+  background-color: #082f49;
+}
+
 /* Form inside modals */
 .complete-form-group {
   margin-bottom: 16px;
@@ -568,6 +615,14 @@
 
 .btn-reject-submit:hover:not(:disabled) {
   background-color: #b91c1c;
+}
+
+.btn-complete-submit {
+  background-color: #0c4a6e;
+}
+
+.btn-complete-submit:hover:not(:disabled) {
+  background-color: #082f49;
 }
 
 /* Pagination */

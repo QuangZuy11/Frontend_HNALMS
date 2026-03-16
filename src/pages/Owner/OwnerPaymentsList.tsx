@@ -112,6 +112,7 @@ export default function OwnerPaymentsList() {
     return "pending";
   };
 
+
   const statusLabel = (status?: string) => {
     const ui = toUiStatus(status);
     if (ui === "paid") return "Đã thanh toán";
@@ -126,6 +127,57 @@ export default function OwnerPaymentsList() {
     if (statusFilter === "cancelled") return ui === "cancelled";
     return ui === "pending";
   });
+
+  const toApiStatus = (
+    ui: UiPaymentStatus,
+  ): "Pending" | "Paid" | "Cancelled" =>
+    ui === "paid" ? "Paid" : ui === "cancelled" ? "Cancelled" : "Pending";
+
+  const handleChangeStatus = async (
+    ticketId: string,
+    uiStatus: UiPaymentStatus,
+  ) => {
+    setTickets((prev) =>
+      prev.map((t) =>
+        t._id === ticketId ? { ...t, status: toApiStatus(uiStatus) } : t,
+      ),
+    );
+
+    try {
+      const res = await cashFlowService.updatePaymentTicketStatus(
+        ticketId,
+        toApiStatus(uiStatus),
+      );
+
+      if (res?.success && res?.data?._id) {
+        setTickets((prev) =>
+          prev.map((t) =>
+            t._id === ticketId
+              ? {
+                  ...t,
+                  status: res.data.status,
+                  accountantPaidAt: res.data.accountantPaidAt,
+                }
+              : t,
+          ),
+        );
+
+        setSelectedTicket((prev) =>
+          prev && prev._id === ticketId
+            ? {
+                ...prev,
+                status: res.data.status,
+                accountantPaidAt: res.data.accountantPaidAt,
+              }
+            : prev,
+        );
+      }
+    } catch (err) {
+      console.error("Lỗi khi cập nhật trạng thái phiếu chi:", err);
+      setError("Không thể cập nhật trạng thái phiếu chi");
+      fetchTickets();
+    }
+  };
 
   const totalPages = Math.max(
     1,
@@ -351,13 +403,36 @@ export default function OwnerPaymentsList() {
                 </div>
 
                 <div className="paychi-detail-actions">
-                  <button
-                    type="button"
-                    className="paychi-done-btn"
-                    onClick={() => setSelectedTicket(null)}
-                  >
-                    Xong
-                  </button>
+                  {toUiStatus(selectedTicket.status) === "pending" ? (
+                    <>
+                      <button
+                        type="button"
+                        className="paychi-done-btn"
+                        onClick={() =>
+                          handleChangeStatus(selectedTicket._id, "paid")
+                        }
+                      >
+                        Duyệt
+                      </button>
+                      <button
+                        type="button"
+                        className="paychi-cancel-btn"
+                        onClick={() =>
+                          handleChangeStatus(selectedTicket._id, "cancelled")
+                        }
+                      >
+                        Từ chối
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="paychi-done-btn"
+                      onClick={() => setSelectedTicket(null)}
+                    >
+                      Xong
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

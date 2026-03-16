@@ -48,11 +48,9 @@ export default function ManagingIncomeExpenses() {
   const [createForm, setCreateForm] = useState<{
     title: string;
     amount: string;
-    status: "Pending" | "Paid" | "Cancelled";
   }>({
     title: "",
     amount: "",
-    status: "Pending",
   });
   const [createErrors, setCreateErrors] = useState<{
     title: string;
@@ -130,7 +128,6 @@ export default function ManagingIncomeExpenses() {
     setCreateForm({
       title: "",
       amount: "",
-      status: "Pending",
     });
     setCreateErrors({ title: "", amount: "" });
     setAutoVoucherCode("");
@@ -198,7 +195,6 @@ export default function ManagingIncomeExpenses() {
       const response = await cashFlowService.createManualPaymentTicket({
         title: createForm.title.trim(),
         amount: Number(createForm.amount),
-        status: createForm.status,
       });
 
       if (response?.success && response?.data?._id) {
@@ -245,57 +241,6 @@ export default function ManagingIncomeExpenses() {
     if (ui === "paid") return "Đã thanh toán";
     if (ui === "cancelled") return "Đã hủy";
     return "Chờ duyệt";
-  };
-
-  const toApiStatus = (ui: UiPaymentStatus): "Pending" | "Paid" | "Cancelled" =>
-    ui === "paid" ? "Paid" : ui === "cancelled" ? "Cancelled" : "Pending";
-
-  const handleChangeStatus = async (
-    ticketId: string,
-    uiStatus: UiPaymentStatus,
-  ) => {
-    // optimistic update
-    setTickets((prev) =>
-      prev.map((t) =>
-        t._id === ticketId ? { ...t, status: toApiStatus(uiStatus) } : t,
-      ),
-    );
-
-    try {
-      const res = await cashFlowService.updatePaymentTicketStatus(
-        ticketId,
-        toApiStatus(uiStatus),
-      );
-
-      if (res?.success && res?.data?._id) {
-        setTickets((prev) =>
-          prev.map((t) =>
-            t._id === ticketId
-              ? {
-                  ...t,
-                  status: res.data.status,
-                  accountantPaidAt: res.data.accountantPaidAt,
-                }
-              : t,
-          ),
-        );
-
-        setSelectedTicket((prev) =>
-          prev && prev._id === ticketId
-            ? {
-                ...prev,
-                status: res.data.status,
-                accountantPaidAt: res.data.accountantPaidAt,
-              }
-            : prev,
-        );
-      }
-    } catch (err) {
-      console.error("Lỗi khi cập nhật trạng thái phiếu chi:", err);
-      setError("Không thể cập nhật trạng thái phiếu chi");
-      // revert by refetch
-      fetchTickets();
-    }
   };
 
   const filteredTickets = tickets.filter((t) => {
@@ -550,26 +495,6 @@ export default function ManagingIncomeExpenses() {
                   )}
                 </div>
 
-                <div className="payments-form-group">
-                  <label>Trạng thái *</label>
-                  <select
-                    className="payments-form-input"
-                    value={createForm.status}
-                    onChange={(e) =>
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        status: e.target.value as
-                          | "Pending"
-                          | "Paid"
-                          | "Cancelled",
-                      }))
-                    }
-                  >
-                    <option value="Pending">Chờ duyệt</option>
-                    <option value="Paid">Đã thanh toán</option>
-                    <option value="Cancelled">Đã hủy</option>
-                  </select>
-                </div>
 
                 <div className="payments-form-group">
                   <label>Ngày tạo</label>
@@ -697,36 +622,23 @@ export default function ManagingIncomeExpenses() {
                   <div className="paychi-detail-row">
                     <span className="paychi-detail-label">Trạng thái:</span>
                     <div className="paychi-detail-value paychi-detail-status">
-                      <select
-                        className="paychi-status-select"
-                        value={toUiStatus(selectedTicket.status)}
-                        onChange={(e) =>
-                          handleChangeStatus(
-                            selectedTicket._id,
-                            e.target.value as UiPaymentStatus,
-                          )
-                        }
-                        disabled={toUiStatus(selectedTicket.status) === "paid"}
+                      <span
+                        className={`payments-status-badge ${toUiStatus(selectedTicket.status)}`}
                       >
-                        <option value="pending">Chờ duyệt</option>
-                        <option value="paid">Đã thanh toán</option>
-                        <option value="cancelled">Đã hủy</option>
-                      </select>
+                        {statusLabel(selectedTicket.status)}
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="paychi-detail-actions">
-                  {(toUiStatus(selectedTicket.status) === "paid" ||
-                    toUiStatus(selectedTicket.status) === "cancelled") && (
-                    <button
-                      type="button"
-                      className="paychi-done-btn"
-                      onClick={() => setSelectedTicket(null)}
-                    >
-                      Xong
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className="paychi-done-btn"
+                    onClick={() => setSelectedTicket(null)}
+                  >
+                    Xong
+                  </button>
                 </div>
               </div>
             </div>
