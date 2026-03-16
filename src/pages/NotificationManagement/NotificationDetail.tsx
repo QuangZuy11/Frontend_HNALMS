@@ -1,2 +1,0 @@
-// Notification detail
-export { }

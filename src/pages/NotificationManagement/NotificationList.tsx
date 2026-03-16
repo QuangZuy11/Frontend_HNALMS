@@ -1,2 +1,0 @@
-// Notification list
-export { }

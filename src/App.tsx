@@ -83,6 +83,9 @@ import TenantAccountList from "./pages/AccountManagement/Tenant/TenantAccountLis
 import TenantAccountDetail from "./pages/AccountManagement/Tenant/TenantAccountDetail";
 import Header from "./components/layout/Header/Header";
 
+// Pages - Notification Management (Owner)
+import NotificationList from "./pages/NotificationManagement/Owner/NotificationList";
+
 // Pages - Contract Management
 import CreateContract from "./pages/ContractManagement/CreateContract";
 import ContractList from "./pages/ContractManagement/ContractList";
@@ -232,6 +235,7 @@ function LayoutWrapper() {
           <Route path="devices" element={<ManageDevice />} />
           <Route path="room-devices" element={<RoomDeviceManagement />} />
           <Route path="services" element={<ManageService />} />
+          <Route path="notifications" element={<NotificationList />} />
           <Route
             path="transactions/payments"
             element={<OwnerPaymentsList />}
