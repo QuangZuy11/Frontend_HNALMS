@@ -12,7 +12,8 @@ import {
   Wifi,
   Sparkles,
   ArrowUpDown,
-  MessageCircle,
+  Clock,
+  Phone,
 } from "lucide-react";
 import { roomService } from "../../../services/roomService";
 import { serviceService } from "../../../services/serviceService";
@@ -24,7 +25,7 @@ export default function RoomDetail() {
   const navigate = useNavigate();
   const [room, setRoom] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [services, setServices] = useState<any[]>([]);
 
@@ -50,7 +51,7 @@ export default function RoomDetail() {
   const fetchRoomDetail = async () => {
     try {
       setLoading(true);
-      const response = await roomService.getRoomById(id as string);
+      const response = await roomService.getRoomById(id);
 
       // Backend returns { data } format
       if (response.data) {
@@ -226,13 +227,12 @@ export default function RoomDetail() {
                     </div>
                   </div>
                   <span
-                    className={`overlay-status ${
-                      room.status === "Available" || room.status === "Trống"
+                    className={`overlay-status ${room.status === "Available" || room.status === "Trống"
                         ? "available"
                         : room.status === "Deposited"
                           ? "deposited"
                           : "occupied"
-                    }`}
+                      }`}
                   >
                     {room.status === "Available" || room.status === "Trống"
                       ? "Còn trống"
@@ -271,12 +271,11 @@ export default function RoomDetail() {
               {/* Thumbnails */}
               {room.images.length > 1 && (
                 <div className="thumbnails-container">
-                  {room.images.map((image: string, index: number) => (
+                  {room.images.map((image, index) => (
                     <div
                       key={index}
-                      className={`thumbnail-wrapper ${
-                        index === currentImageIndex ? "active" : ""
-                      }`}
+                      className={`thumbnail-wrapper ${index === currentImageIndex ? "active" : ""
+                        }`}
                       onClick={() => setCurrentImageIndex(index)}
                     >
                       <img
@@ -303,13 +302,12 @@ export default function RoomDetail() {
                   </div>
                 </div>
                 <span
-                  className={`overlay-status ${
-                    room.status === "Available" || room.status === "Trống"
+                  className={`overlay-status ${room.status === "Available" || room.status === "Trống"
                       ? "available"
                       : room.status === "Deposited"
                         ? "deposited"
                         : "occupied"
-                  }`}
+                    }`}
                 >
                   {room.status === "Available" || room.status === "Trống"
                     ? "Còn trống"
@@ -467,24 +465,27 @@ export default function RoomDetail() {
                       : "Phòng Đã Có Chủ"}
                 </button>
 
-                <button className="contact-button" onClick={() => navigate('/manager/chat')}>
-                  <MessageCircle className="button-icon" size={18} style={{ marginRight: '8px' }} />
-                  Nhắn tin với Quản lý
-                </button>
               </div>
 
-              {/* Help Card */}
+              {/* Info Card */}
               <div className="help-card">
-                <h4 className="help-title">Cần Hỗ Trợ Khác?</h4>
+                <h4 className="help-title">Thông Tin Hữu Ích</h4>
                 <p className="help-description">
-                  Bạn có thể gửi yêu cầu hỗ trợ qua hệ thống để được xử lý nhanh nhất.
+                  Giờ làm việc của Ban Quản Lý
                 </p>
+                <div className="help-info-row">
+                  <Phone className="button-icon" />
+                  SĐT: 0869 048 066
+                </div>
+                <div className="help-info-row">
+                  <Clock className="button-icon" />
+                  Hỗ trợ 24/7
+                </div>
                 <button
-                  onClick={() => navigate('/requests')}
                   className="help-button"
-                  style={{ justifyContent: 'center' }}
+                  onClick={() => navigate("/rooms")}
                 >
-                  Gửi Yêu Cầu Hỗ Trợ
+                  Xem Phòng Khác
                 </button>
               </div>
             </div>
