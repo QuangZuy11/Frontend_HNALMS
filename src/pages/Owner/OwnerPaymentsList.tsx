@@ -13,9 +13,10 @@ interface OwnerPaymentTicket {
   createdAt?: string;
   paymentVoucher?: string | null;
   accountantPaidAt?: string;
+  rejectionReason?: string | null;
 }
 
-type UiPaymentStatus = "pending" | "paid" | "cancelled";
+type UiPaymentStatus = "pending" | "approved" | "paid" | "rejected";
 
 export default function OwnerPaymentsList() {
   const [tickets, setTickets] = useState<OwnerPaymentTicket[]>([]);
@@ -26,8 +27,11 @@ export default function OwnerPaymentsList() {
   const [selectedTicket, setSelectedTicket] = useState<OwnerPaymentTicket | null>(
     null,
   );
+  const [showRejectModal, setShowRejectModal] = useState<boolean>(false);
+  const [rejectReason, setRejectReason] = useState<string>("");
+  const [rejectError, setRejectError] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "pending" | "paid" | "cancelled"
+    "all" | "pending" | "approved" | "paid" | "rejected"
   >("all");
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
@@ -106,8 +110,11 @@ export default function OwnerPaymentsList() {
     ) {
       return "paid";
     }
-    if (s === "cancelled" || s.includes("đã hủy") || s.includes("da huy")) {
-      return "cancelled";
+    if (s === "approved" || s.includes("đã duyệt") || s.includes("da duyet")) {
+      return "approved";
+    }
+    if (s === "rejected" || s.includes("từ chối") || s.includes("tu choi")) {
+      return "rejected";
     }
     return "pending";
   };
@@ -116,7 +123,8 @@ export default function OwnerPaymentsList() {
   const statusLabel = (status?: string) => {
     const ui = toUiStatus(status);
     if (ui === "paid") return "Đã thanh toán";
-    if (ui === "cancelled") return "Đã hủy";
+    if (ui === "approved") return "Đã duyệt";
+    if (ui === "rejected") return "Từ chối";
     return "Chờ duyệt";
   };
 
@@ -124,18 +132,26 @@ export default function OwnerPaymentsList() {
     if (statusFilter === "all") return true;
     const ui = toUiStatus(t.status);
     if (statusFilter === "paid") return ui === "paid";
-    if (statusFilter === "cancelled") return ui === "cancelled";
+    if (statusFilter === "rejected") return ui === "rejected";
+    if (statusFilter === "approved") return ui === "approved";
     return ui === "pending";
   });
 
   const toApiStatus = (
     ui: UiPaymentStatus,
-  ): "Pending" | "Paid" | "Cancelled" =>
-    ui === "paid" ? "Paid" : ui === "cancelled" ? "Cancelled" : "Pending";
+  ): "Pending" | "Approved" | "Paid" | "Rejected" =>
+    ui === "paid"
+      ? "Paid"
+      : ui === "rejected"
+        ? "Rejected"
+        : ui === "approved"
+          ? "Approved"
+          : "Pending";
 
   const handleChangeStatus = async (
     ticketId: string,
     uiStatus: UiPaymentStatus,
+    reason?: string,
   ) => {
     setTickets((prev) =>
       prev.map((t) =>
@@ -147,6 +163,8 @@ export default function OwnerPaymentsList() {
       const res = await cashFlowService.updatePaymentTicketStatus(
         ticketId,
         toApiStatus(uiStatus),
+        undefined,
+        reason,
       );
 
       if (res?.success && res?.data?._id) {
@@ -157,6 +175,7 @@ export default function OwnerPaymentsList() {
                   ...t,
                   status: res.data.status,
                   accountantPaidAt: res.data.accountantPaidAt,
+                  rejectionReason: res.data.rejectionReason ?? null,
                 }
               : t,
           ),
@@ -168,6 +187,7 @@ export default function OwnerPaymentsList() {
                 ...prev,
                 status: res.data.status,
                 accountantPaidAt: res.data.accountantPaidAt,
+                rejectionReason: res.data.rejectionReason ?? null,
               }
             : prev,
         );
@@ -177,6 +197,32 @@ export default function OwnerPaymentsList() {
       setError("Không thể cập nhật trạng thái phiếu chi");
       fetchTickets();
     }
+  };
+
+  const handleOpenRejectModal = (ticket: OwnerPaymentTicket) => {
+    setSelectedTicket(ticket);
+    setRejectReason("");
+    setRejectError("");
+    setShowRejectModal(true);
+  };
+
+  const handleCloseRejectModal = () => {
+    setShowRejectModal(false);
+    setRejectReason("");
+    setRejectError("");
+  };
+
+  const handleConfirmReject = async () => {
+    if (!selectedTicket) return;
+
+    if (!rejectReason.trim()) {
+      setRejectError("Vui lòng nhập lý do từ chối");
+      return;
+    }
+
+    setRejectError("");
+    setShowRejectModal(false);
+    await handleChangeStatus(selectedTicket._id, "rejected", rejectReason.trim());
   };
 
   const totalPages = Math.max(
@@ -239,15 +285,21 @@ export default function OwnerPaymentsList() {
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(
-                    e.target.value as "all" | "pending" | "paid" | "cancelled",
+                    e.target.value as
+                      | "all"
+                      | "pending"
+                      | "approved"
+                      | "paid"
+                      | "rejected",
                   );
                   setCurrentPage(1);
                 }}
               >
                 <option value="all">Tất cả</option>
                 <option value="pending">Chờ duyệt</option>
+                <option value="approved">Đã duyệt</option>
                 <option value="paid">Đã thanh toán</option>
-                <option value="cancelled">Đã hủy</option>
+                <option value="rejected">Từ chối</option>
               </select>
             </div>
           </div>
@@ -400,6 +452,15 @@ export default function OwnerPaymentsList() {
                       {statusLabel(selectedTicket.status)}
                     </span>
                   </div>
+                  {toUiStatus(selectedTicket.status) === "rejected" &&
+                    selectedTicket.rejectionReason && (
+                    <div className="paychi-detail-row">
+                      <span className="paychi-detail-label">Lý do từ chối:</span>
+                      <span className="paychi-detail-value">
+                        {selectedTicket.rejectionReason}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="paychi-detail-actions">
@@ -409,7 +470,7 @@ export default function OwnerPaymentsList() {
                         type="button"
                         className="paychi-done-btn"
                         onClick={() =>
-                          handleChangeStatus(selectedTicket._id, "paid")
+                          handleChangeStatus(selectedTicket._id, "approved")
                         }
                       >
                         Duyệt
@@ -417,9 +478,7 @@ export default function OwnerPaymentsList() {
                       <button
                         type="button"
                         className="paychi-cancel-btn"
-                        onClick={() =>
-                          handleChangeStatus(selectedTicket._id, "cancelled")
-                        }
+                        onClick={() => handleOpenRejectModal(selectedTicket)}
                       >
                         Từ chối
                       </button>
@@ -434,6 +493,71 @@ export default function OwnerPaymentsList() {
                     </button>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showRejectModal && selectedTicket && (
+          <div className="payments-modal-overlay" onClick={handleCloseRejectModal}>
+            <div
+              className="payments-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="payments-modal-header payments-modal-header--detail">
+                <h3>Lý do từ chối phiếu chi</h3>
+                <button
+                  type="button"
+                  className="payments-modal-close payments-modal-close--detail"
+                  onClick={handleCloseRejectModal}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="payments-modal-body">
+                <div className="payments-form-group">
+                  <label>Lý do từ chối *</label>
+                  <textarea
+                    value={rejectReason}
+                    onChange={(e) => {
+                      setRejectReason(e.target.value);
+                      if (rejectError) setRejectError("");
+                    }}
+                    className="payments-form-input"
+                    placeholder="Nhập lý do từ chối"
+                    rows={3}
+                  />
+                  {rejectError && (
+                    <span className="payments-form-error">{rejectError}</span>
+                  )}
+                </div>
+              </div>
+
+              <div
+                className="payments-modal-footer"
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 8,
+                  alignItems: "center",
+                }}
+              >
+                <button
+                  type="button"
+                  className="payments-btn-secondary"
+                  onClick={handleCloseRejectModal}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  className="payments-btn-primary"
+                  onClick={handleConfirmReject}
+                  disabled={!rejectReason.trim()}
+                >
+                  Xác nhận
+                </button>
               </div>
             </div>
           </div>

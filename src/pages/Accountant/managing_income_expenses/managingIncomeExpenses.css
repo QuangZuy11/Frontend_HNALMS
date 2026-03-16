@@ -213,9 +213,14 @@
   color: #0369a1;
 }
 
-.payments-status-badge.cancelled {
+.payments-status-badge.rejected {
   background-color: #fee2e2;
   color: #b91c1c;
+}
+
+.payments-status-badge.approved {
+  background-color: #dcfce7;
+  color: #166534;
 }
 
 .payments-actions {
