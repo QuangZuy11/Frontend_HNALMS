@@ -20,10 +20,11 @@ interface FinancialTicket {
   createdAt?: string;
   accountantPaidAt?: string;
   paymentVoucher?: string | null;
+  rejectionReason?: string | null;
   room?: Room | null;
 }
 
-type UiPaymentStatus = "pending" | "paid" | "cancelled";
+type UiPaymentStatus = "pending" | "approved" | "paid" | "rejected";
 
 export default function ManagingIncomeExpenses() {
   const [tickets, setTickets] = useState<FinancialTicket[]>([]);
@@ -31,7 +32,7 @@ export default function ManagingIncomeExpenses() {
   const [error, setError] = useState<string | null>(null);
   // roomSearch removed (màn này không cần tìm kiếm theo phòng)
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "pending" | "paid" | "cancelled"
+    "all" | "pending" | "approved" | "paid" | "rejected"
   >("all");
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
@@ -136,6 +137,7 @@ export default function ManagingIncomeExpenses() {
     setFormError("");
   };
 
+
   const openCreateModal = async () => {
     setShowCreateModal(true);
     resetCreateForm();
@@ -210,6 +212,32 @@ export default function ManagingIncomeExpenses() {
     }
   };
 
+  const handleConfirmPaid = async (ticket: FinancialTicket) => {
+    try {
+      setCreating(true);
+      const res = await cashFlowService.updatePaymentTicketStatus(
+        ticket._id,
+        "Paid",
+        ticket.paymentVoucher || undefined,
+      );
+
+      if (res?.success && res?.data?._id) {
+        setTickets((prev) =>
+          prev.map((t) => (t._id === res.data._id ? res.data : t)),
+        );
+        setSelectedTicket((prev) => (prev?._id === res.data._id ? res.data : prev));
+      }
+    } catch (err) {
+      console.error("Lỗi khi xác nhận đã thanh toán:", err);
+      setError("Không thể cập nhật trạng thái phiếu chi");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const getRejectionReason = (ticket: FinancialTicket) =>
+    ticket.rejectionReason ? ticket.rejectionReason : "";
+
   const formatCurrency = (value: number | undefined) => {
     if (typeof value !== "number") return "0";
     return value.toLocaleString("vi-VN");
@@ -230,8 +258,11 @@ export default function ManagingIncomeExpenses() {
     if (s === "paid" || s.includes("đã thanh toán") || s.includes("da thanh toan")) {
       return "paid";
     }
-    if (s === "cancelled" || s.includes("đã hủy") || s.includes("da huy")) {
-      return "cancelled";
+    if (s === "approved" || s.includes("đã duyệt") || s.includes("da duyet")) {
+      return "approved";
+    }
+    if (s === "rejected" || s.includes("từ chối") || s.includes("tu choi")) {
+      return "rejected";
     }
     return "pending";
   };
@@ -239,7 +270,8 @@ export default function ManagingIncomeExpenses() {
   const statusLabel = (status?: string) => {
     const ui = toUiStatus(status);
     if (ui === "paid") return "Đã thanh toán";
-    if (ui === "cancelled") return "Đã hủy";
+    if (ui === "approved") return "Đã duyệt";
+    if (ui === "rejected") return "Từ chối";
     return "Chờ duyệt";
   };
 
@@ -247,7 +279,8 @@ export default function ManagingIncomeExpenses() {
     if (statusFilter === "all") return true;
     const ui = toUiStatus(t.status);
     if (statusFilter === "paid") return ui === "paid";
-    if (statusFilter === "cancelled") return ui === "cancelled";
+    if (statusFilter === "rejected") return ui === "rejected";
+    if (statusFilter === "approved") return ui === "approved";
     return ui === "pending";
   });
 
@@ -318,15 +351,21 @@ export default function ManagingIncomeExpenses() {
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(
-                    e.target.value as "all" | "pending" | "paid" | "cancelled",
+                    e.target.value as
+                      | "all"
+                      | "pending"
+                      | "approved"
+                      | "paid"
+                      | "rejected",
                   );
                   setCurrentPage(1);
                 }}
               >
                 <option value="all">Tất cả</option>
                 <option value="pending">Chờ duyệt</option>
+                <option value="approved">Đã duyệt</option>
                 <option value="paid">Đã thanh toán</option>
-                <option value="cancelled">Đã hủy</option>
+                <option value="rejected">Từ chối</option>
               </select>
             </div>
           </div>
@@ -629,21 +668,42 @@ export default function ManagingIncomeExpenses() {
                       </span>
                     </div>
                   </div>
+                  {toUiStatus(selectedTicket.status) === "rejected" &&
+                    getRejectionReason(selectedTicket) && (
+                    <div className="paychi-detail-row">
+                      <span className="paychi-detail-label">Lý do từ chối:</span>
+                      <span className="paychi-detail-value">
+                        {getRejectionReason(selectedTicket)}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="paychi-detail-actions">
-                  <button
-                    type="button"
-                    className="paychi-done-btn"
-                    onClick={() => setSelectedTicket(null)}
-                  >
-                    Xong
-                  </button>
+                  {toUiStatus(selectedTicket.status) === "approved" ? (
+                    <button
+                      type="button"
+                      className="paychi-done-btn"
+                      onClick={() => handleConfirmPaid(selectedTicket)}
+                      disabled={creating}
+                    >
+                      {creating ? "Đang lưu..." : "Đã thanh toán"}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="paychi-done-btn"
+                      onClick={() => setSelectedTicket(null)}
+                    >
+                      Xong
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         )}
+
       </div>
 
       {/* Thanh phân trang đặt ngoài bảng, giống màn phiếu thu/hóa đơn */}

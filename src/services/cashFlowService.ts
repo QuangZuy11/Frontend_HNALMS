@@ -93,10 +93,14 @@ export const cashFlowService = {
    */
   async updatePaymentTicketStatus(
     id: string,
-    status: "Pending" | "Paid" | "Cancelled" | "Unpaid",
+    status: "Pending" | "Approved" | "Paid" | "Rejected" | "Unpaid",
+    paymentVoucher?: string,
+    rejectionReason?: string,
   ) {
     const response = await api.patch(`/financial-tickets/${id}/status`, {
       status,
+      paymentVoucher,
+      rejectionReason,
     });
     return response.data;
   },
