@@ -31,15 +31,6 @@ export interface User {
   phoneNumber?: string;
 }
 
-export interface Proration {
-  oldRoomPrice: number;
-  newRoomPrice: number;
-  daysRemainingInMonth: number;
-  oldRoomRefund: number;
-  newRoomCharge: number;
-  difference: number;
-}
-
 export interface TransferRequest {
   _id: string;
   requestCode?: string;
@@ -54,8 +45,6 @@ export interface TransferRequest {
   managerNote?: string;
   rejectReason?: string;
   completedAt?: string | null;
-  prorationNote?: string;
-  proration?: Proration;
   createdAt: string;
   updatedAt?: string;
 }

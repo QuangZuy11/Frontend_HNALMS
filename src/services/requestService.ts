@@ -104,6 +104,11 @@ export const requestService = {
 
 // Transfer request API services (Manager only)
 export const transferRequestService = {
+  
+  // Payload khi hoàn tất chuyển phòng
+  // transferDate được backend dùng để cập nhật endDate hợp đồng cũ
+  // và làm mốc tạo hợp đồng mới.
+  
   // ===== MANAGER ENDPOINTS =====
 
   // [MANAGER] Lấy danh sách tất cả yêu cầu chuyển phòng
@@ -141,8 +146,13 @@ export const transferRequestService = {
   },
 
   // [MANAGER] Hoàn tất chuyển phòng (Bàn giao phòng)
-  completeTransferRequest: async (requestId: string) => {
-    const response = await api.patch(`/requests/transfer/${requestId}/complete`);
+  completeTransferRequest: async (
+    requestId: string,
+    payload?: {
+      transferDate?: string;
+    }
+  ) => {
+    const response = await api.patch(`/requests/transfer/${requestId}/complete`, payload ?? {});
     return response.data;
   },
 };
