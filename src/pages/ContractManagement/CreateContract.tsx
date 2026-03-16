@@ -14,7 +14,6 @@ import {
   Modal,
   Backdrop,
   Chip,
-  MenuItem,
 } from "@mui/material";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -26,6 +25,8 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { vi } from "date-fns/locale/vi";
 import { format as formatDate } from "date-fns";
 import CloseIcon from "@mui/icons-material/Close";
+import toastr from "toastr";
+import "toastr/build/toastr.min.css";
 
 // Mock API URL - Replace with actual
 const API_URL = "http://localhost:9999/api";
@@ -676,13 +677,13 @@ const CreateContract = () => {
             setValue("tenantInfo.dob", formattedDob, { shouldValidate: true });
           }
         }
-        alert("Đã nhận diện và điền tự động dữ liệu CCCD thành công!");
+        toastr.success("Đã nhận diện và điền tự động dữ liệu CCCD thành công!");
       } else {
-        alert("Không thể nhận diện CCCD. Vui lòng thử lại với ảnh rõ nét hơn.");
+        toastr.warning("Không thể nhận diện CCCD. Vui lòng thử lại với ảnh rõ nét hơn.");
       }
     } catch (err: any) {
       console.error("OCR Error:", err);
-      alert(
+      toastr.error(
         "Lỗi khi kết nối tới FPT.AI: " +
           (err.response?.data?.errorMessage || err.message),
       );
@@ -791,14 +792,12 @@ const CreateContract = () => {
       const res = await axios.post(`${API_URL}/contracts/create`, payload);
       if (res.data.success) {
         sessionStorage.removeItem("contractFormDraft");
-        alert(
-          `Đã tạo hợp đồng thành công.\nĐã gửi tài khoản và mật khẩu đến email đăng ký: ${data.tenantInfo?.email || "của khách hàng"}.`,
-        );
+        toastr.success(res.data.message);
         // Redirect
         navigate("/manager/contracts");
       }
     } catch (err: any) {
-      alert(
+      toastr.error(
         "Lỗi tạo hợp đồng: " + (err.response?.data?.message || err.message),
       );
     } finally {
@@ -809,8 +808,9 @@ const CreateContract = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-          {/* CONTRACT DETAILS */}
+        <fieldset disabled={submitting} style={{ border: "none", margin: 0, padding: 0 }}>
+          <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+            {/* CONTRACT DETAILS */}
           <Box>
             {/* Contract Configuration Removed - Merged into Document */}
 
@@ -1263,25 +1263,26 @@ const CreateContract = () => {
                                             data.id,
                                             { shouldValidate: true },
                                           );
-                                        alert(
+                                        toastr.success(
                                           "Đã nhận diện và điền tự động dữ liệu CCCD thành công!",
                                         );
                                       } else {
-                                        alert(
+                                        toastr.warning(
                                           "Không thể nhận diện CCCD. Vui lòng thử lại với ảnh rõ nét hơn.",
                                         );
                                       }
-                                    } catch (err) {
-                                      alert(
+                                    } catch (err: any) {
+                                      toastr.error(
                                         "Lỗi khi kết nối tới FPT.AI: " +
                                           (err.response?.data?.errorMessage ||
                                             err.message),
                                       );
                                     }
                                     // Reset file input
-                                    document.getElementById(
+                                    const fileInput = document.getElementById(
                                       `coResident-ocr-input-${index}`,
-                                    ).value = "";
+                                    ) as HTMLInputElement;
+                                    if (fileInput) fileInput.value = "";
                                   }}
                                 />
                                 <label
@@ -1480,28 +1481,42 @@ const CreateContract = () => {
                   .
                   <br />
                   - Trả trước tiền phòng:
-                  <Controller
-                    name="prepayMonths"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        select
-                        variant="standard"
-                        sx={{
-                          width: 150,
-                          mx: 1,
-                          verticalAlign: "baseline",
-                          "& .MuiInput-root": { pb: 0, position: "relative", top: "-2px" },
-                          "& .MuiFormHelperText-root": { mt: 0 },
-                        }}
-                        {...field}
-                      >
-                        <MenuItem value={2}>2 tháng</MenuItem>
-                        <MenuItem value={4}>4 tháng</MenuItem>
-                        <MenuItem value="all">Tất cả (Hết hợp đồng)</MenuItem>
-                      </TextField>
-                    )}
+                  <TextField
+                    variant="standard"
+                    type="number"
+                    sx={{
+                      width: 80,
+                      mx: 1,
+                      verticalAlign: "baseline",
+                      "& .MuiInput-root": {
+                        pb: 0,
+                        position: "relative",
+                        top: "-2px",
+                      },
+                      "& .MuiFormHelperText-root": { mt: 0, width: 250 },
+                    }}
+                    inputProps={{
+                      style: {
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "1rem",
+                        padding: "0 0 2px 0",
+                      },
+                      min: 1,
+                      max: Number(watch("duration")) || 12,
+                    }}
+                    {...register("prepayMonths", {
+                      valueAsNumber: true,
+                      validate: (value) => 
+                        !value || Number(value) <= (Number(watch("duration")) || 12) || "Không vượt quá thời hạn thuê"
+                    })}
+                    error={!!errors.prepayMonths}
+                    helperText={errors.prepayMonths?.message as string}
                   />
+                  tháng. <br/>
+                  <Typography component="span" sx={{ fontStyle: "italic", fontSize: "0.9rem", color: "#666", ml: 2, display: "inline-block", mt: 0.5 }}>
+                    *Lưu ý: Thời hạn tính tiền phòng đã trả sẽ bắt đầu từ ngày đầu tiên của tháng tiếp theo (nếu tạo hợp đồng vào ngày lẻ trong tháng).
+                  </Typography>
                   <br />
                   - Giá thuê phòng là:
                   <TextField
@@ -2205,6 +2220,7 @@ const CreateContract = () => {
             </Button>
           </Box>
         </Container>
+        </fieldset>
       </form>
 
       {/* Deposit Detail Modal */}

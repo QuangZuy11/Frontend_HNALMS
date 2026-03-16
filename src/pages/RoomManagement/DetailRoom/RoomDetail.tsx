@@ -12,8 +12,8 @@ import {
   Wifi,
   Sparkles,
   ArrowUpDown,
+  Clock,
   Phone,
-  MessageCircle,
 } from "lucide-react";
 import { roomService } from "../../../services/roomService";
 import { serviceService } from "../../../services/serviceService";
@@ -228,17 +228,17 @@ export default function RoomDetail() {
                   </div>
                   <span
                     className={`overlay-status ${room.status === "Available" || room.status === "Trống"
-                      ? "available"
-                      : room.status === "Deposited"
-                        ? "deposited"
-                        : "occupied"
+                        ? "available"
+                        : room.status === "Deposited"
+                          ? "deposited"
+                          : "occupied"
                       }`}
                   >
                     {room.status === "Available" || room.status === "Trống"
                       ? "Còn trống"
                       : room.status === "Deposited"
                         ? "Đã đặt cọc"
-                        : "Đã thuê"}
+                        : "Đang thuê"}
                   </span>
                 </div>
 
@@ -303,10 +303,10 @@ export default function RoomDetail() {
                 </div>
                 <span
                   className={`overlay-status ${room.status === "Available" || room.status === "Trống"
-                    ? "available"
-                    : room.status === "Deposited"
-                      ? "deposited"
-                      : "occupied"
+                      ? "available"
+                      : room.status === "Deposited"
+                        ? "deposited"
+                        : "occupied"
                     }`}
                 >
                   {room.status === "Available" || room.status === "Trống"
@@ -402,7 +402,12 @@ export default function RoomDetail() {
                           <div className="service-info">
                             <div className="service-name">{svc.name}</div>
                             <div className="service-description">
-                              {svc.currentPrice ? (svc.currentPrice >= 1000 ? `${svc.currentPrice / 1000}k` : svc.currentPrice) : "0"}/ 1 người
+                              {svc.currentPrice
+                                ? svc.currentPrice >= 1000
+                                  ? `${svc.currentPrice / 1000}k`
+                                  : svc.currentPrice
+                                : "0"}
+                              / 1 người
                             </div>
                           </div>
                         </div>
@@ -460,28 +465,28 @@ export default function RoomDetail() {
                       : "Phòng Đã Có Chủ"}
                 </button>
 
-                <button className="contact-button">Gọi Tư Vấn</button>
               </div>
 
-              {/* Help Card */}
+              {/* Info Card */}
               <div className="help-card">
-                <h4 className="help-title">Cần Hỗ Trợ?</h4>
+                <h4 className="help-title">Thông Tin Hữu Ích</h4>
                 <p className="help-description">
-                  Liên hệ với quản lý để được tư vấn chi tiết về phòng.
+                  Giờ làm việc của Ban Quản Lý
                 </p>
-                <a href="tel:+842812345678" className="help-button">
+                <div className="help-info-row">
                   <Phone className="button-icon" />
-                  Gọi: (028) 1234 5678
-                </a>
-                <a
-                  href="https://zalo.me/0812345678"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  SĐT: 0869 048 066
+                </div>
+                <div className="help-info-row">
+                  <Clock className="button-icon" />
+                  Hỗ trợ 24/7
+                </div>
+                <button
                   className="help-button"
+                  onClick={() => navigate("/rooms")}
                 >
-                  <MessageCircle className="button-icon" />
-                  Chat Zalo
-                </a>
+                  Xem Phòng Khác
+                </button>
               </div>
             </div>
           </div>

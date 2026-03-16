@@ -266,8 +266,14 @@ function LayoutWrapper() {
           <Route path="residents/:id" element={<TenantAccountDetail />} />
           <Route path="services" element={<ManageService />} />
           <Route path="requests/repairs" element={<RepairRequestsList />} />
-          <Route path="requests/maintenance" element={<MaintenanceRequestsList />} />
-          <Route path="requests/complaints" element={<ComplaintRequestList />} />
+          <Route
+            path="requests/maintenance"
+            element={<MaintenanceRequestsList />}
+          />
+          <Route
+            path="requests/complaints"
+            element={<ComplaintRequestList />}
+          />
           <Route path="requests/transfers" element={<TransferRequestsList />} />
           <Route path="profile" element={<ManagerProfile />} />
           <Route path="contracts" element={<ContractList />} />
@@ -295,10 +301,7 @@ function LayoutWrapper() {
           {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
           <Route path="invoices" element={<InvoiceList />} />
           {/* Phiếu thu / chi */}
-          <Route
-            path="transactions/receipts"
-            element={<ReceiptsList />}
-          />
+          <Route path="transactions/receipts" element={<ReceiptsList />} />
           <Route
             path="transactions/payments"
             element={<ManagingIncomeExpenses />}
