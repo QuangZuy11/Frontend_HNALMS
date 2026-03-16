@@ -677,7 +677,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                             <th style={{ width: "150px" }}>Tên phòng</th>
                             <th style={{ width: "150px" }}>Loại phòng</th>
                             <th style={{ width: "120px" }}>Giá niêm yết</th>
-                            {/* <th style={{ width: "120px" }}>Trạng thái</th> */}
+                            <th style={{ width: "120px" }}>Trạng thái</th>
                             <th>Mô tả</th>
                             <th
                               style={{
@@ -1093,9 +1093,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                         <span className="text-price">
                           {getRoomTypeDetail(viewingRoom.roomTypeId)
                             ? formatCurrency(
-                                getRoomTypeDetail(viewingRoom.roomTypeId)!
-                                  .currentPrice,
-                              )
+                              getRoomTypeDetail(viewingRoom.roomTypeId)!
+                                .currentPrice,
+                            )
                             : "---"}
                         </span>
                       </div>
