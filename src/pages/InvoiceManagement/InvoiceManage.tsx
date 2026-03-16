@@ -49,7 +49,7 @@ const InvoiceManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const [filterStatus, setFilterStatus] = useState<string>('All');
-  const [filterType, setFilterType] = useState<string>('All'); // Khôi phục bộ lọc loại HĐ
+  const [filterType, setFilterType] = useState<string>('All'); 
 
   const [sortConfig, setSortConfig] = useState<{ key: string | null, direction: 'asc' | 'desc' }>({ 
     key: null, 
@@ -76,11 +76,6 @@ const InvoiceManager = () => {
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [services, setServices] = useState<any[]>([]);
-
-  // const getRoomName = (room: Invoice['roomId']) => {
-  //   if (!room) return 'N/A';
-  //   return typeof room === 'object' ? room.name || 'N/A' : room;
-  // };
 
   const [dualReadingForm, setDualReadingForm] = useState({
     elecOld: 0, elecNew: 0,
@@ -122,7 +117,6 @@ const InvoiceManager = () => {
     }
   };
 
-  // LẤY VÀ GỘP CẢ 2 LOẠI HÓA ĐƠN TỪ 2 API KHÁC NHAU
   const fetchInvoices = async () => {
     setLoading(true);
     try {
@@ -136,7 +130,6 @@ const InvoiceManager = () => {
 
       const combined = [...periodicData, ...incurredData];
       
-      // Sắp xếp mới nhất lên đầu
       combined.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
       setInvoices(combined);
@@ -232,14 +225,29 @@ const InvoiceManager = () => {
     }
   };
 
+  // ==============================================================
+  // [ĐÃ SỬA]: LẤY PHÒNG ĐANG THUÊ + CÁC PHÒNG CÓ HÓA ĐƠN NHÁP
+  // ==============================================================
   const handleOpenBulkReading = async () => {
     try {
+      // 1. Trích xuất ID phòng từ các Hóa đơn Nháp hiện tại
+      // Phục vụ vớt các phòng đã trả/chuyển đi nhưng vẫn cần nhập số trong tháng
+      const draftRoomIds = invoices
+        .filter(inv => inv.status === 'Draft' && inv.type === 'Periodic')
+        .map(inv => getRoomIdStr(inv))
+        .filter(id => id !== ''); // Lọc bỏ các ID rỗng
+
+      // 2. Fetch danh sách tất cả các phòng từ API
       const roomsRes = await axios.get(`${API_BASE_URL}/rooms`);
       const allRooms = roomsRes.data.data || [];
-      const activeRooms = allRooms.filter((r: any) => r.status === 'Occupied');
+
+      // 3. Điều kiện lọc: Phòng đang Occupied HOẶC có ID nằm trong danh sách Hóa đơn Nháp
+      const activeRooms = allRooms.filter((r: any) => 
+        r.status === 'Occupied' || draftRoomIds.includes(r._id)
+      );
 
       if (activeRooms.length === 0) {
-        toastr.warning("Không có phòng nào đang thuê để ghi điện nước!");
+        toastr.warning("Không có phòng nào cần ghi điện nước lúc này! (Gợi ý: Hãy bấm 'Tạo HĐ Định kỳ' trước)");
         return;
       }
 
@@ -395,7 +403,6 @@ const InvoiceManager = () => {
       const endpoint = invoice.type === 'Periodic' ? 'periodic' : 'incurred';
       const res = await axios.get(`${API_BASE_URL}/invoices/${endpoint}/${invoice._id}`);
       
-      // Inject lại type vì API có thể không trả về
       setSelectedInvoice({ ...res.data.data, type: invoice.type });
       setShowDetailModal(true);
     } catch (error) {
