@@ -791,9 +791,7 @@ const CreateContract = () => {
       const res = await axios.post(`${API_URL}/contracts/create`, payload);
       if (res.data.success) {
         sessionStorage.removeItem("contractFormDraft");
-        alert(
-          `Đã tạo hợp đồng thành công.\nĐã gửi tài khoản và mật khẩu đến email đăng ký: ${data.tenantInfo?.email || "của khách hàng"}.`,
-        );
+        alert(res.data.message);
         // Redirect
         navigate("/manager/contracts");
       }
