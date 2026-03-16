@@ -16,10 +16,6 @@ export default function NotificationList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Counts
-  const [draftCount, setDraftCount] = useState(0);
-  const [sentCount, setSentCount] = useState(0);
-
   // Filters & State
   const [activeTab, setActiveTab] = useState<TabType>('ALL');
   const [page, setPage] = useState(1);
@@ -59,12 +55,6 @@ export default function NotificationList() {
 
       if (res.success) {
         setNotifications(res.data.notifications || []);
-
-        // Update summary counts if available
-        if (res.data.summary) {
-          setDraftCount(res.data.summary.draft_count);
-          setSentCount(res.data.summary.sent_count);
-        }
 
         // Update pagination
         setTotalPages(res.data.pagination.total_pages);
@@ -157,21 +147,18 @@ export default function NotificationList() {
             onClick={() => { setActiveTab('ALL'); setPage(1); }}
           >
             Tất cả
-            <span className="notification-badge">{draftCount + sentCount}</span>
           </button>
           <button
             className={`notification-tab ${activeTab === 'DRAFT' ? 'active' : ''}`}
             onClick={() => { setActiveTab('DRAFT'); setPage(1); }}
           >
             Bản nháp
-            <span className="notification-badge">{draftCount}</span>
           </button>
           <button
             className={`notification-tab ${activeTab === 'SENT' ? 'active' : ''}`}
             onClick={() => { setActiveTab('SENT'); setPage(1); }}
           >
             Đã gửi
-            <span className="notification-badge">{sentCount}</span>
           </button>
         </div>
 
