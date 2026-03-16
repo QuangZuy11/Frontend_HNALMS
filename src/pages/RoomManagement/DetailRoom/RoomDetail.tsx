@@ -12,7 +12,6 @@ import {
   Wifi,
   Sparkles,
   ArrowUpDown,
-  Phone,
   MessageCircle,
 } from "lucide-react";
 import { roomService } from "../../../services/roomService";
@@ -25,7 +24,7 @@ export default function RoomDetail() {
   const navigate = useNavigate();
   const [room, setRoom] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [services, setServices] = useState<any[]>([]);
 
@@ -51,7 +50,7 @@ export default function RoomDetail() {
   const fetchRoomDetail = async () => {
     try {
       setLoading(true);
-      const response = await roomService.getRoomById(id);
+      const response = await roomService.getRoomById(id as string);
 
       // Backend returns { data } format
       if (response.data) {
@@ -227,18 +226,19 @@ export default function RoomDetail() {
                     </div>
                   </div>
                   <span
-                    className={`overlay-status ${room.status === "Available" || room.status === "Trống"
-                      ? "available"
-                      : room.status === "Deposited"
-                        ? "deposited"
-                        : "occupied"
-                      }`}
+                    className={`overlay-status ${
+                      room.status === "Available" || room.status === "Trống"
+                        ? "available"
+                        : room.status === "Deposited"
+                          ? "deposited"
+                          : "occupied"
+                    }`}
                   >
                     {room.status === "Available" || room.status === "Trống"
                       ? "Còn trống"
                       : room.status === "Deposited"
                         ? "Đã đặt cọc"
-                        : "Đã thuê"}
+                        : "Đang thuê"}
                   </span>
                 </div>
 
@@ -271,11 +271,12 @@ export default function RoomDetail() {
               {/* Thumbnails */}
               {room.images.length > 1 && (
                 <div className="thumbnails-container">
-                  {room.images.map((image, index) => (
+                  {room.images.map((image: string, index: number) => (
                     <div
                       key={index}
-                      className={`thumbnail-wrapper ${index === currentImageIndex ? "active" : ""
-                        }`}
+                      className={`thumbnail-wrapper ${
+                        index === currentImageIndex ? "active" : ""
+                      }`}
                       onClick={() => setCurrentImageIndex(index)}
                     >
                       <img
@@ -302,12 +303,13 @@ export default function RoomDetail() {
                   </div>
                 </div>
                 <span
-                  className={`overlay-status ${room.status === "Available" || room.status === "Trống"
-                    ? "available"
-                    : room.status === "Deposited"
-                      ? "deposited"
-                      : "occupied"
-                    }`}
+                  className={`overlay-status ${
+                    room.status === "Available" || room.status === "Trống"
+                      ? "available"
+                      : room.status === "Deposited"
+                        ? "deposited"
+                        : "occupied"
+                  }`}
                 >
                   {room.status === "Available" || room.status === "Trống"
                     ? "Còn trống"
@@ -402,7 +404,12 @@ export default function RoomDetail() {
                           <div className="service-info">
                             <div className="service-name">{svc.name}</div>
                             <div className="service-description">
-                              {svc.currentPrice ? (svc.currentPrice >= 1000 ? `${svc.currentPrice / 1000}k` : svc.currentPrice) : "0"}/ 1 người
+                              {svc.currentPrice
+                                ? svc.currentPrice >= 1000
+                                  ? `${svc.currentPrice / 1000}k`
+                                  : svc.currentPrice
+                                : "0"}
+                              / 1 người
                             </div>
                           </div>
                         </div>
@@ -460,28 +467,25 @@ export default function RoomDetail() {
                       : "Phòng Đã Có Chủ"}
                 </button>
 
-                <button className="contact-button">Gọi Tư Vấn</button>
+                <button className="contact-button" onClick={() => navigate('/manager/chat')}>
+                  <MessageCircle className="button-icon" size={18} style={{ marginRight: '8px' }} />
+                  Nhắn tin với Quản lý
+                </button>
               </div>
 
               {/* Help Card */}
               <div className="help-card">
-                <h4 className="help-title">Cần Hỗ Trợ?</h4>
+                <h4 className="help-title">Cần Hỗ Trợ Khác?</h4>
                 <p className="help-description">
-                  Liên hệ với quản lý để được tư vấn chi tiết về phòng.
+                  Bạn có thể gửi yêu cầu hỗ trợ qua hệ thống để được xử lý nhanh nhất.
                 </p>
-                <a href="tel:+842812345678" className="help-button">
-                  <Phone className="button-icon" />
-                  Gọi: (028) 1234 5678
-                </a>
-                <a
-                  href="https://zalo.me/0812345678"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => navigate('/requests')}
                   className="help-button"
+                  style={{ justifyContent: 'center' }}
                 >
-                  <MessageCircle className="button-icon" />
-                  Chat Zalo
-                </a>
+                  Gửi Yêu Cầu Hỗ Trợ
+                </button>
               </div>
             </div>
           </div>

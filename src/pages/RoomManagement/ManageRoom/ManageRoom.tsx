@@ -801,15 +801,15 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       ) : (
         <div className="floor-map-view">
           <div className="room-floor-pills">
-            {["Tầng 1", "Tầng 2", "Tầng 3", "Tầng 4", "Tầng 5"].map(
+            {floors.map(
               (floor, idx) => (
                 <button
-                  key={idx}
+                  key={floor._id || idx}
                   className={`floor-pill${activeMapFloor === idx ? " active" : ""}`}
                   onClick={() => setActiveMapFloor(idx)}
                 >
                   <BuildingIcon size={14} />
-                  {floor}
+                  {floor.name}
                 </button>
               ),
             )}
@@ -824,71 +824,70 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
               background: "#fff",
             }}
           >
-            {activeMapFloor === 0 && (
-              <FloorMap
-                rooms={mappedRoomsForMap.filter(
-                  (r) =>
-                    r.floorLabel === "1" ||
-                    r.floorLabel === "Tầng 1" ||
-                    r.name.startsWith("1"),
-                )}
-                onRoomSelect={(room) =>
-                  readOnly ? handleViewDetail(room) : handleOpenEdit(room)
-                }
-              />
-            )}
-            {activeMapFloor === 1 && (
-              <FloorMapLevel2
-                rooms={mappedRoomsForMap.filter(
-                  (r) =>
-                    r.floorLabel === "2" ||
-                    r.floorLabel === "Tầng 2" ||
-                    r.name.startsWith("2"),
-                )}
-                onRoomSelect={(room) =>
-                  readOnly ? handleViewDetail(room) : handleOpenEdit(room)
-                }
-              />
-            )}
-            {activeMapFloor === 2 && (
-              <FloorMapLevel3
-                rooms={mappedRoomsForMap.filter(
-                  (r) =>
-                    r.floorLabel === "3" ||
-                    r.floorLabel === "Tầng 3" ||
-                    r.name.startsWith("3"),
-                )}
-                onRoomSelect={(room) =>
-                  readOnly ? handleViewDetail(room) : handleOpenEdit(room)
-                }
-              />
-            )}
-            {activeMapFloor === 3 && (
-              <FloorMapLevel4
-                rooms={mappedRoomsForMap.filter(
-                  (r) =>
-                    r.floorLabel === "4" ||
-                    r.floorLabel === "Tầng 4" ||
-                    r.name.startsWith("4"),
-                )}
-                onRoomSelect={(room) =>
-                  readOnly ? handleViewDetail(room) : handleOpenEdit(room)
-                }
-              />
-            )}
-            {activeMapFloor === 4 && (
-              <FloorMapLevel5
-                rooms={mappedRoomsForMap.filter(
-                  (r) =>
-                    r.floorLabel === "5" ||
-                    r.floorLabel === "Tầng 5" ||
-                    r.name.startsWith("5"),
-                )}
-                onRoomSelect={(room) =>
-                  readOnly ? handleViewDetail(room) : handleOpenEdit(room)
-                }
-              />
-            )}
+            {floors.map((floor, idx) => {
+              if (activeMapFloor !== idx) return null;
+
+              const floorRooms = mappedRoomsForMap.filter((r) => {
+                const fId = typeof r.floorId === "object" ? r.floorId?._id : r.floorId;
+                return fId === floor._id;
+              });
+
+              const floorNameLower = floor.name.toLowerCase();
+
+              if (floorNameLower.includes("2")) {
+                return (
+                  <FloorMapLevel2
+                    key={floor._id}
+                    rooms={floorRooms}
+                    onRoomSelect={(room) =>
+                      readOnly ? handleViewDetail(room as any) : handleOpenEdit(room as any)
+                    }
+                  />
+                );
+              } else if (floorNameLower.includes("3")) {
+                return (
+                  <FloorMapLevel3
+                    key={floor._id}
+                    rooms={floorRooms}
+                    onRoomSelect={(room) =>
+                      readOnly ? handleViewDetail(room as any) : handleOpenEdit(room as any)
+                    }
+                  />
+                );
+              } else if (floorNameLower.includes("4")) {
+                return (
+                  <FloorMapLevel4
+                    key={floor._id}
+                    rooms={floorRooms}
+                    onRoomSelect={(room) =>
+                      readOnly ? handleViewDetail(room as any) : handleOpenEdit(room as any)
+                    }
+                  />
+                );
+              } else if (floorNameLower.includes("5")) {
+                return (
+                  <FloorMapLevel5
+                    key={floor._id}
+                    rooms={floorRooms}
+                    onRoomSelect={(room) =>
+                      readOnly ? handleViewDetail(room as any) : handleOpenEdit(room as any)
+                    }
+                  />
+                );
+              }
+
+              // Generic fallback (Level 1 or newly added floors)
+              return (
+                <FloorMap
+                  key={floor._id}
+                  floorName={floor.name}
+                  rooms={floorRooms}
+                  onRoomSelect={(room) =>
+                    readOnly ? handleViewDetail(room as any) : handleOpenEdit(room as any)
+                  }
+                />
+              );
+            })}
           </div>
         </div>
       )}

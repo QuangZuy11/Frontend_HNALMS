@@ -17,15 +17,17 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
   const navigate = useNavigate();
   const [rooms, setRooms] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
+  const [floors, setFloors] = useState<any[]>([]);
   const [activeFloorTab, setActiveFloorTab] = useState(0);
 
   useEffect(() => {
-    // Fetch rooms and contracts in parallel
+    // Fetch rooms, contracts, and floors in parallel
     Promise.all([
       axios.get(`${API_URL}/rooms`),
       axios.get(`${API_URL}/contracts`),
+      axios.get(`${API_URL}/floors`),
     ])
-      .then(([roomsRes, contractsRes]) => {
+      .then(([roomsRes, contractsRes, floorsRes]) => {
         const rawRooms = roomsRes.data.data || [];
         const mappedRooms = rawRooms.map((room: any) => {
           let priceNum = 0;
@@ -56,6 +58,9 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
         if (contractsRes.data.success) {
           setContracts(contractsRes.data.data || []);
         }
+
+        const rawFloors = floorsRes.data.data || floorsRes.data || [];
+        setFloors(rawFloors);
       })
       .catch((err) => console.error("Error fetching data:", err));
   }, []);
@@ -94,8 +99,6 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
   const depositedRooms = rooms.filter(
     (r: any) => r.status === "Deposited",
   ).length;
-
-  const floors = ["Tầng 1", "Tầng 2", "Tầng 3", "Tầng 4", "Tầng 5"];
 
   return (
     <div className="contract-container">
@@ -139,73 +142,41 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
       <div className="contract-floor-pills">
         {floors.map((floor, idx) => (
           <button
-            key={idx}
+            key={floor._id || idx}
             className={`floor-pill${activeFloorTab === idx ? " active" : ""}`}
             onClick={() => setActiveFloorTab(idx)}
           >
             <Building size={14} />
-            {floor}
+            {floor.name}
           </button>
         ))}
       </div>
 
       {/* Floor Map Content */}
       <div className="contract-floor-map">
-        {activeFloorTab === 0 && (
-          <FloorMap
-            rooms={rooms.filter(
-              (r: any) =>
-                r.floorId?.name === "1" ||
-                r.floorId?.name === "Tầng 1" ||
-                r.name.startsWith("1"),
-            )}
-            onRoomSelect={handleRoomSelect}
-          />
-        )}
-        {activeFloorTab === 1 && (
-          <FloorMapLevel2
-            rooms={rooms.filter(
-              (r: any) =>
-                r.floorId?.name === "2" ||
-                r.floorId?.name === "Tầng 2" ||
-                r.name.startsWith("2"),
-            )}
-            onRoomSelect={handleRoomSelect}
-          />
-        )}
-        {activeFloorTab === 2 && (
-          <FloorMapLevel3
-            rooms={rooms.filter(
-              (r: any) =>
-                r.floorId?.name === "3" ||
-                r.floorId?.name === "Tầng 3" ||
-                r.name.startsWith("3"),
-            )}
-            onRoomSelect={handleRoomSelect}
-          />
-        )}
-        {activeFloorTab === 3 && (
-          <FloorMapLevel4
-            rooms={rooms.filter(
-              (r: any) =>
-                r.floorId?.name === "4" ||
-                r.floorId?.name === "Tầng 4" ||
-                r.name.startsWith("4"),
-            )}
-            onRoomSelect={handleRoomSelect}
-          />
-        )}
-        {activeFloorTab === 4 && (
-          <FloorMapLevel5
-            rooms={rooms.filter(
-              (r: any) =>
-                r.floorId?.name === "5" ||
-                r.floorId?.name === "Tầng 5" ||
-                r.name.startsWith("5"),
-            )}
-            onRoomSelect={handleRoomSelect}
-          />
-        )}
+        {floors.map((floor, idx) => {
+          if (activeFloorTab !== idx) return null;
+
+          const floorRooms = rooms.filter((r: any) => {
+            const fId = typeof r.floorId === "object" ? r.floorId?._id : r.floorId;
+            return fId === floor._id;
+          });
+
+          const floorNameLower = floor.name.toLowerCase();
+
+          if (floorNameLower.includes("2")) {
+             return <FloorMapLevel2 key={floor._id} rooms={floorRooms} onRoomSelect={handleRoomSelect} />;
+          } else if (floorNameLower.includes("3")) {
+             return <FloorMapLevel3 key={floor._id} rooms={floorRooms} onRoomSelect={handleRoomSelect} />;
+          } else if (floorNameLower.includes("4")) {
+             return <FloorMapLevel4 key={floor._id} rooms={floorRooms} onRoomSelect={handleRoomSelect} />;
+          } else if (floorNameLower.includes("5")) {
+             return <FloorMapLevel5 key={floor._id} rooms={floorRooms} onRoomSelect={handleRoomSelect} />;
+          }
+
+          // Use default generic component for Level 1 and any newly added unknown floors
+          return <FloorMap key={floor._id} rooms={floorRooms} floorName={floor.name} onRoomSelect={handleRoomSelect} />;
+        })}
       </div>
     </div>
   );
