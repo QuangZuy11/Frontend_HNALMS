@@ -1478,28 +1478,42 @@ const CreateContract = () => {
                   .
                   <br />
                   - Trả trước tiền phòng:
-                  <Controller
-                    name="prepayMonths"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        select
-                        variant="standard"
-                        sx={{
-                          width: 150,
-                          mx: 1,
-                          verticalAlign: "baseline",
-                          "& .MuiInput-root": { pb: 0, position: "relative", top: "-2px" },
-                          "& .MuiFormHelperText-root": { mt: 0 },
-                        }}
-                        {...field}
-                      >
-                        <MenuItem value={2}>2 tháng</MenuItem>
-                        <MenuItem value={4}>4 tháng</MenuItem>
-                        <MenuItem value="all">Tất cả (Hết hợp đồng)</MenuItem>
-                      </TextField>
-                    )}
+                  <TextField
+                    variant="standard"
+                    type="number"
+                    sx={{
+                      width: 80,
+                      mx: 1,
+                      verticalAlign: "baseline",
+                      "& .MuiInput-root": {
+                        pb: 0,
+                        position: "relative",
+                        top: "-2px",
+                      },
+                      "& .MuiFormHelperText-root": { mt: 0, width: 250 },
+                    }}
+                    inputProps={{
+                      style: {
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "1rem",
+                        padding: "0 0 2px 0",
+                      },
+                      min: 1,
+                      max: watch("duration") || 12,
+                    }}
+                    {...register("prepayMonths", {
+                      valueAsNumber: true,
+                      validate: (value) => 
+                        !value || value <= (watch("duration") || 12) || "Không vượt quá thời hạn thuê"
+                    })}
+                    error={!!errors.prepayMonths}
+                    helperText={errors.prepayMonths?.message as string}
                   />
+                  tháng. <br/>
+                  <Typography component="span" sx={{ fontStyle: "italic", fontSize: "0.9rem", color: "#666", ml: 2, display: "inline-block", mt: 0.5 }}>
+                    *Lưu ý: Thời hạn tính tiền phòng đã trả sẽ bắt đầu từ ngày đầu tiên của tháng tiếp theo (nếu tạo hợp đồng vào ngày lẻ trong tháng).
+                  </Typography>
                   <br />
                   - Giá thuê phòng là:
                   <TextField
