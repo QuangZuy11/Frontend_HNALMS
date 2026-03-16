@@ -86,6 +86,9 @@ import Header from "./components/layout/Header/Header";
 // Pages - Notification Management (Owner)
 import NotificationList from "./pages/NotificationManagement/Owner/NotificationList";
 
+// Pages - Notification Management (Manager)
+import ManagerNotificationList from "./pages/NotificationManagement/Manager/ManagerNotificationList";
+
 // Pages - Contract Management
 import CreateContract from "./pages/ContractManagement/CreateContract";
 import ContractList from "./pages/ContractManagement/ContractList";
@@ -275,6 +278,7 @@ function LayoutWrapper() {
             element={<ComplaintRequestList />}
           />
           <Route path="requests/transfers" element={<TransferRequestsList />} />
+          <Route path="notifications" element={<ManagerNotificationList />} />
           <Route path="profile" element={<ManagerProfile />} />
           <Route path="contracts" element={<ContractList />} />
           <Route path="contracts/create" element={<CreateContract />} />

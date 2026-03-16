@@ -1,15 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, ChevronDown, Settings, LogOut, User } from 'lucide-react';
 import { useAuth } from '../../../../context/AuthContext';
+import { notificationService } from '../../../../services/notificationService';
+import type { Notification } from '../../../../types/notification.types';
 import './HeaderDashboard.css';
 
 const HeaderDashboard = () => {
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [markingAll, setMarkingAll] = useState(false);
+
+    const notifRef = useRef<HTMLDivElement>(null);
+    const userRef = useRef<HTMLDivElement>(null);
 
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+
+    const role = user?.role?.toLowerCase();
+    // Only Manager and Accountant receive notifications from Owner
+    const canReceiveNotifications = role === 'manager' || role === 'accountant';
 
     // Get user display info
     const displayName = user?.fullname || user?.name || user?.email || 'Người dùng';
@@ -23,7 +35,6 @@ const HeaderDashboard = () => {
 
     // Get profile path based on role
     const getProfilePath = () => {
-        const role = user?.role?.toLowerCase();
         switch (role) {
             case 'admin': return '/admin/profile';
             case 'owner': return '/owner/profile';
@@ -31,6 +42,106 @@ const HeaderDashboard = () => {
             case 'accountant': return '/accountant/profile';
             default: return '/profile';
         }
+    };
+
+    // Get notification page path based on role
+    const getNotificationPath = () => {
+        switch (role) {
+            case 'owner': return '/owner/notifications';
+            case 'manager': return '/manager/notifications';
+            case 'accountant': return '/accountant/notifications';
+            default: return '/';
+        }
+    };
+
+    // Fetch unread count
+    useEffect(() => {
+        if (!canReceiveNotifications) return;
+        fetchUnreadCount();
+        // Poll every 30 seconds
+        const interval = setInterval(fetchUnreadCount, 30000);
+        return () => clearInterval(interval);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [canReceiveNotifications]);
+
+    // Close dropdowns when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+                setShowNotifications(false);
+            }
+            if (userRef.current && !userRef.current.contains(e.target as Node)) {
+                setShowUserMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const fetchUnreadCount = async () => {
+        try {
+            const res = await notificationService.getUnreadCount();
+            if (res.success) {
+                setUnreadCount(res.data.unread_count);
+            }
+        } catch {
+            // Silently fail - badge just won't update
+        }
+    };
+
+    const fetchRecentNotifications = async () => {
+        try {
+            const res = await notificationService.getMyNotifications({ page: 1, limit: 5 });
+            if (res.success) {
+                setNotifications(res.data.notifications || []);
+            }
+        } catch {
+            // Silently fail
+        }
+    };
+
+    const handleToggleNotifications = () => {
+        const willShow = !showNotifications;
+        setShowNotifications(willShow);
+        setShowUserMenu(false);
+        if (willShow) {
+            fetchRecentNotifications();
+        }
+    };
+
+    const handleMarkAllRead = async () => {
+        try {
+            setMarkingAll(true);
+            await notificationService.markAllAsRead();
+            setUnreadCount(0);
+            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+        } catch {
+            // Silently fail
+        } finally {
+            setMarkingAll(false);
+        }
+    };
+
+    const handleNotificationClick = async (notif: Notification) => {
+        // Mark as read if unread
+        if (!notif.is_read) {
+            try {
+                await notificationService.markAsRead(notif._id);
+                setUnreadCount(prev => Math.max(0, prev - 1));
+                setNotifications(prev =>
+                    prev.map(n => n._id === notif._id ? { ...n, is_read: true } : n)
+                );
+            } catch {
+                // Continue navigation even if mark-read fails
+            }
+        }
+        setShowNotifications(false);
+        navigate(getNotificationPath());
+    };
+
+    const handleViewAll = () => {
+        setShowNotifications(false);
+        navigate(getNotificationPath());
     };
 
     // Handle navigation to profile
@@ -46,14 +157,21 @@ const HeaderDashboard = () => {
         navigate('/homepage');
     };
 
-    // Mock notifications
-    const notifications = [
-        { id: 1, title: "Yêu cầu sửa chữa mới", time: "5 phút trước", unread: true },
-        { id: 2, title: "Hợp đồng sắp hết hạn", time: "1 giờ trước", unread: true },
-        { id: 3, title: "Thanh toán thành công", time: "2 giờ trước", unread: false },
-    ];
+    // Format relative time
+    const formatRelativeTime = (dateStr: string) => {
+        const now = new Date();
+        const date = new Date(dateStr);
+        const diffMs = now.getTime() - date.getTime();
+        const diffMin = Math.floor(diffMs / 60000);
+        const diffHour = Math.floor(diffMs / 3600000);
+        const diffDay = Math.floor(diffMs / 86400000);
 
-    const unreadCount = notifications.filter(n => n.unread).length;
+        if (diffMin < 1) return 'Vừa xong';
+        if (diffMin < 60) return `${diffMin} phút trước`;
+        if (diffHour < 24) return `${diffHour} giờ trước`;
+        if (diffDay < 7) return `${diffDay} ngày trước`;
+        return date.toLocaleDateString('vi-VN');
+    };
 
     return (
         <header className="manager-header">
@@ -63,10 +181,10 @@ const HeaderDashboard = () => {
             {/* Right: User + Notifications */}
             <div className="header-right">
                 {/* User Profile */}
-                <div className="user-profile-wrapper">
+                <div className="user-profile-wrapper" ref={userRef}>
                     <div
                         className="user-profile"
-                        onClick={() => setShowUserMenu(!showUserMenu)}
+                        onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifications(false); }}
                     >
                         <div className="user-avatar">
                             {initials}
@@ -98,37 +216,57 @@ const HeaderDashboard = () => {
                 <div className="header-divider"></div>
 
                 {/* Notifications */}
-                <div className="notification-wrapper">
+                <div className="notification-wrapper" ref={notifRef}>
                     <button
                         className="header-icon-btn"
-                        onClick={() => setShowNotifications(!showNotifications)}
+                        onClick={handleToggleNotifications}
                     >
                         <span className="bell-icon-wrapper">
                             <Bell />
                         </span>
-                        {unreadCount > 0 && (
-                            <span className="notification-badge">{unreadCount}</span>
+                        {canReceiveNotifications && unreadCount > 0 && (
+                            <span className="header-notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
                         )}
                     </button>
 
                     {showNotifications && (
                         <div className="notification-dropdown">
-                            <div className="notification-header">
+                            <div className="notif-dropdown-header">
                                 <h4>Thông báo</h4>
-                                <span className="mark-read">Đánh dấu đã đọc</span>
+                                {canReceiveNotifications && unreadCount > 0 && (
+                                    <span
+                                        className="mark-read"
+                                        onClick={handleMarkAllRead}
+                                        style={{ opacity: markingAll ? 0.5 : 1, pointerEvents: markingAll ? 'none' : 'auto' }}
+                                    >
+                                        {markingAll ? 'Đang xử lý...' : 'Đánh dấu đã đọc'}
+                                    </span>
+                                )}
                             </div>
                             <div className="notification-list">
-                                {notifications.map(notif => (
-                                    <div key={notif.id} className={`notification-item ${notif.unread ? 'unread' : ''}`}>
-                                        <div className="notif-dot"></div>
-                                        <div className="notif-content">
-                                            <p className="notif-title">{notif.title}</p>
-                                            <span className="notif-time">{notif.time}</span>
-                                        </div>
+                                {notifications.length === 0 ? (
+                                    <div className="notif-empty">
+                                        <p>Không có thông báo nào</p>
                                     </div>
-                                ))}
+                                ) : (
+                                    notifications.map(notif => (
+                                        <div
+                                            key={notif._id}
+                                            className={`notification-item ${!notif.is_read ? 'unread' : ''}`}
+                                            onClick={() => handleNotificationClick(notif)}
+                                        >
+                                            <div className="notif-dot"></div>
+                                            <div className="notif-content">
+                                                <p className="notif-title">{notif.title}</p>
+                                                <span className="notif-time">{formatRelativeTime(notif.createdAt)}</span>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
                             </div>
-                            <button className="view-all-btn">Xem tất cả</button>
+                            <button className="view-all-btn" onClick={handleViewAll}>
+                                Xem tất cả
+                            </button>
                         </div>
                     )}
                 </div>
