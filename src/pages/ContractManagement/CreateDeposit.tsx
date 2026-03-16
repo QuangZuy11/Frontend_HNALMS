@@ -10,6 +10,8 @@ import {
   Shield,
 } from "lucide-react";
 import { roomService } from "../../services/roomService";
+import toastr from "toastr";
+import "toastr/build/toastr.min.css";
 import "./CreateDeposit.css";
 
 interface FormErrors {
@@ -61,6 +63,12 @@ export default function CreateDeposit() {
   const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
+    toastr.options = {
+      closeButton: true,
+      progressBar: true,
+      positionClass: "toast-top-right",
+      timeOut: 3000,
+    };
     window.scrollTo(0, 0);
   }, []);
 
@@ -117,7 +125,7 @@ export default function CreateDeposit() {
     e.preventDefault();
     if (!validate()) return;
     if (!paymentConfirmed || !room) {
-      alert("Vui lòng xác nhận đã nhận tiền cọc");
+      toastr.warning("Vui lòng xác nhận đã nhận tiền cọc");
       return;
     }
 
@@ -139,9 +147,10 @@ export default function CreateDeposit() {
       );
 
       if (response.data.success) {
+        toastr.success("Tạo cọc thành công!");
         setBookingStep("success");
       } else {
-        alert(
+        toastr.error(
           "Có lỗi xảy ra khi tạo cọc: " +
             (response.data.message || "Unknown error"),
         );
@@ -150,7 +159,7 @@ export default function CreateDeposit() {
       console.error("Error creating deposit:", err);
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       const axiosError = err as { response?: { data?: { message?: string } } };
-      alert(
+      toastr.error(
         "Có lỗi xảy ra: " +
           (axiosError.response?.data?.message || errorMessage),
       );
@@ -221,6 +230,7 @@ export default function CreateDeposit() {
                 </p>
 
                 <form className="deposit-form" onSubmit={handleSubmit}>
+                  <fieldset disabled={isSubmitting} style={{ border: "none", margin: 0, padding: 0 }}>
                   <div className="form-group">
                     <label className="form-label">Họ Tên Đầy Đủ *</label>
                     <input
@@ -304,6 +314,7 @@ export default function CreateDeposit() {
                       </>
                     )}
                   </button>
+                  </fieldset>
                 </form>
               </div>
             )}
