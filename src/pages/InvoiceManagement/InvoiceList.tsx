@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import {
-  Search, FileText, X, CheckCircle, DollarSign
+  Search, FileText, X, CheckCircle, DollarSign, Wrench
 } from 'lucide-react';
 
 import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
@@ -27,13 +27,18 @@ interface InvoiceItem {
 interface Invoice {
   _id: string;
   invoiceCode: string;
-  roomId: { _id: string; name: string } | string | any;
+  contractId?: any; 
+  roomId?: any;     
   title: string;
-  type: 'Periodic' | 'Incurred';
+  type: 'Periodic' | 'Incurred'; // Để FE phân biệt định kỳ hay phát sinh
   totalAmount: number;
   status: 'Draft' | 'Unpaid' | 'Paid';
   dueDate: string;
   items?: InvoiceItem[];
+  // Dành riêng cho hóa đơn phát sinh
+  deviceName?: string;
+  repairDescription?: string;
+  createdAt?: string;
 }
 
 const ITEMS_PER_PAGE = 15;
@@ -61,6 +66,7 @@ const InvoiceList = () => {
     isOpen: boolean;
     action: 'PAY_SINGLE' | 'PAY_BULK' | null;
     targetId?: string;
+    targetType?: string; // Cần biết type để gọi đúng API thanh toán
     message: string;
   }>({ isOpen: false, action: null, message: '' });
 
@@ -74,14 +80,33 @@ const InvoiceList = () => {
     setSelectedInvoiceIds([]);
   }, [searchTerm, filterStatus, filterType, sortConfig]);
 
+  // Helper bóc tách thông tin Phòng
+  const getRoomName = (inv: any) => {
+    if (inv?.roomId && typeof inv.roomId === 'object') return inv.roomId.name;
+    if (inv?.roomId) return inv.roomId;
+    if (inv?.contractId?.roomId && typeof inv.contractId.roomId === 'object') return inv.contractId.roomId.name;
+    return 'Không xác định';
+  };
+
+  // LẤY VÀ GỘP CẢ 2 LOẠI HÓA ĐƠN TỪ 2 API KHÁC NHAU
   const fetchInvoices = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE_URL}/invoices`);
-      const allData = res.data.data || [];
+      const [periodicRes, incurredRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/invoices/periodic`).catch(() => ({ data: { data: [] } })),
+        axios.get(`${API_BASE_URL}/invoices/incurred`).catch(() => ({ data: { data: [] } }))
+      ]);
+
+      const periodicData = (periodicRes.data.data || []).map((inv: any) => ({ ...inv, type: 'Periodic' }));
+      const incurredData = (incurredRes.data.data || []).map((inv: any) => ({ ...inv, type: 'Incurred' }));
+
+      const combined = [...periodicData, ...incurredData];
+      
+      // Sắp xếp mới nhất lên đầu
+      combined.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
       // LỌC BỎ HOÀN TOÀN BẢN NHÁP (Draft) ĐỐI VỚI KẾ TOÁN
-      const validInvoices = allData.filter((inv: Invoice) => inv.status !== 'Draft');
+      const validInvoices = combined.filter((inv: Invoice) => inv.status !== 'Draft');
 
       setInvoices(validInvoices);
       setSelectedInvoiceIds([]);
@@ -92,9 +117,10 @@ const InvoiceList = () => {
     }
   };
 
-  const handlePaymentSingle = async (id: string) => {
+  const handlePaymentSingle = async (id: string, type: string) => {
     try {
-      await axios.put(`${API_BASE_URL}/invoices/${id}/pay`);
+      const endpoint = type === 'Periodic' ? 'periodic' : 'incurred';
+      await axios.put(`${API_BASE_URL}/invoices/${endpoint}/${id}/pay`);
       toastr.success("Xác nhận thanh toán thành công!");
       fetchInvoices();
     } catch (error: any) {
@@ -117,7 +143,9 @@ const InvoiceList = () => {
 
       setLoading(true);
       for (const id of idsToPay) {
-        await axios.put(`${API_BASE_URL}/invoices/${id}/pay`);
+        const inv = invoices.find(i => i._id === id);
+        const endpoint = inv?.type === 'Periodic' ? 'periodic' : 'incurred';
+        await axios.put(`${API_BASE_URL}/invoices/${endpoint}/${id}/pay`);
       }
 
       toastr.success(`Đã xác nhận thanh toán thành công ${idsToPay.length} hóa đơn!`);
@@ -152,18 +180,21 @@ const InvoiceList = () => {
   };
 
   const executeConfirmAction = async () => {
-    if (confirmModal.action === 'PAY_SINGLE' && confirmModal.targetId) {
-      await handlePaymentSingle(confirmModal.targetId);
+    if (confirmModal.action === 'PAY_SINGLE' && confirmModal.targetId && confirmModal.targetType) {
+      await handlePaymentSingle(confirmModal.targetId, confirmModal.targetType);
     } else if (confirmModal.action === 'PAY_BULK') {
       await handlePaymentBulk();
     }
-    setConfirmModal({ isOpen: false, action: null, message: '' });
+    setConfirmModal({ isOpen: false, action: null, message: '', targetId: undefined, targetType: undefined });
   };
 
-  const handleViewDetail = async (id: string) => {
+  const handleViewDetail = async (invoice: Invoice) => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/invoices/${id}`);
-      setSelectedInvoice(res.data.data);
+      const endpoint = invoice.type === 'Periodic' ? 'periodic' : 'incurred';
+      const res = await axios.get(`${API_BASE_URL}/invoices/${endpoint}/${invoice._id}`);
+      
+      // Gán lại type để component biết render giao diện nào
+      setSelectedInvoice({ ...res.data.data, type: invoice.type });
       setShowDetailModal(true);
     } catch (error) {
       toastr.error("Không thể lấy chi tiết hóa đơn");
@@ -176,10 +207,6 @@ const InvoiceList = () => {
   };
 
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('vi-VN');
-  const getRoomName = (room: Invoice['roomId']) => {
-    if (!room) return 'N/A';
-    return typeof room === 'object' ? room.name || 'N/A' : room;
-  };
 
   const requestSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -196,6 +223,7 @@ const InvoiceList = () => {
         inv.title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchStatus = filterStatus === 'All' || inv.status === filterStatus;
       const matchType = filterType === 'All' || inv.type === filterType;
+      
       return matchSearch && matchStatus && matchType;
     });
 
@@ -205,8 +233,8 @@ const InvoiceList = () => {
         let valB = b[sortConfig.key!];
 
         if (sortConfig.key === 'roomId') {
-          valA = typeof a.roomId === 'object' ? a.roomId.name : a.roomId;
-          valB = typeof b.roomId === 'object' ? b.roomId.name : b.roomId;
+          valA = getRoomName(a);
+          valB = getRoomName(b);
         }
 
         if (sortConfig.key === 'dueDate') {
@@ -285,6 +313,13 @@ const InvoiceList = () => {
         {text}
       </span>
     );
+  };
+
+  const renderTypeBadge = (type: string) => {
+    if (type === 'Periodic') {
+      return <span style={{ color: '#0284c7', fontSize: '13px', fontWeight: 600, background: '#e0f2fe', padding: '2px 8px', borderRadius: '4px' }}>Định kỳ</span>;
+    }
+    return <span style={{ color: '#d97706', fontSize: '13px', fontWeight: 600, background: '#fef3c7', padding: '2px 8px', borderRadius: '4px' }}>Phát sinh</span>;
   };
 
   const renderSortableHeader = (label: string, key: string) => {
@@ -380,6 +415,7 @@ const InvoiceList = () => {
               </th>
               {renderSortableHeader("Mã HĐ", "invoiceCode")}
               {renderSortableHeader("Phòng", "roomId")}
+              <th>Phân loại</th>
               {renderSortableHeader("Tiêu đề", "title")}
               {renderSortableHeader("Tổng tiền", "totalAmount")}
               {renderSortableHeader("Hạn chót", "dueDate")}
@@ -402,7 +438,8 @@ const InvoiceList = () => {
                     />
                   </td>
                   <td className="text-code">{inv.invoiceCode}</td>
-                  <td style={{ fontWeight: 600 }}>{getRoomName(inv.roomId)}</td>
+                  <td style={{ fontWeight: 600 }}>{getRoomName(inv)}</td>
+                  <td>{renderTypeBadge(inv.type)}</td>
                   <td>{inv.title}</td>
                   <td className="text-price" style={{ color: isUnpaid ? '#ef4444' : '#334155' }}>
                     {formatCurrency(inv.totalAmount)}
@@ -421,14 +458,15 @@ const InvoiceList = () => {
                             isOpen: true,
                             action: 'PAY_SINGLE',
                             targetId: inv._id,
-                            message: `Xác nhận khách thuê phòng ${getRoomName(inv.roomId)} đã thanh toán hóa đơn này?`
+                            targetType: inv.type, // Truyền type vào để định tuyến API
+                            message: `Xác nhận khách thuê phòng ${getRoomName(inv)} đã thanh toán hóa đơn này?`
                           })}
                         >
                           <CheckCircle size={18} color="#10b981" />
                         </button>
                       )}
 
-                      <button className="btn-icon" title="Xem chi tiết" onClick={() => handleViewDetail(inv._id)}>
+                      <button className="btn-icon" title="Xem chi tiết" onClick={() => handleViewDetail(inv)}>
                         <FileText size={18} color="#475569" />
                       </button>
                     </div>
@@ -439,7 +477,7 @@ const InvoiceList = () => {
 
             {paginatedInvoices.length === 0 && (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
+                <td colSpan={9} style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
                   Không tìm thấy hóa đơn nào khớp với kết quả lọc.
                 </td>
               </tr>
@@ -480,7 +518,7 @@ const InvoiceList = () => {
           <div className="modal-content" style={{ width: '700px' }}>
             <div className="modal-header">
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <FileText size={20} /> Chi tiết Hóa đơn (Kế toán)
+                <FileText size={20} /> Chi tiết Hóa đơn {selectedInvoice.type === 'Periodic' ? 'Định kỳ' : 'Phát sinh'}
               </h3>
               <button onClick={() => setShowDetailModal(false)} className="btn-icon"><X size={20} /></button>
             </div>
@@ -492,7 +530,7 @@ const InvoiceList = () => {
               <div className="detail-row">
                 <span className="detail-label">Phòng:</span>
                 <span className="detail-value" style={{ fontWeight: 'bold' }}>
-                  {getRoomName(selectedInvoice.roomId)}
+                  {getRoomName(selectedInvoice)}
                 </span>
               </div>
               <div className="detail-row">
@@ -512,7 +550,8 @@ const InvoiceList = () => {
                 </span>
               </div>
 
-              {selectedInvoice.items && selectedInvoice.items.length > 0 && (
+              {/* NẾU LÀ HÓA ĐƠN ĐỊNH KỲ -> HIỂN THỊ BẢNG ITEMS */}
+              {selectedInvoice.type === 'Periodic' && selectedInvoice.items && selectedInvoice.items.length > 0 && (
                 <div style={{ marginTop: '20px', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
                   <table className="invoice-table" style={{ margin: 0, width: '100%', fontSize: '14px' }}>
                     <thead style={{ background: '#f8fafc' }}>
@@ -549,6 +588,22 @@ const InvoiceList = () => {
                 </div>
               )}
 
+              {/* NẾU LÀ HÓA ĐƠN PHÁT SINH -> HIỂN THỊ CHI TIẾT LỖI HỎNG HÓC */}
+              {selectedInvoice.type === 'Incurred' && (
+                <div style={{ marginTop: '20px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', background: '#f8fafc' }}>
+                  <h4 style={{ margin: '0 0 12px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Wrench size={16} color="#d97706" /> Nguồn gốc phát sinh (Sửa chữa)
+                  </h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '8px', fontSize: '14px' }}>
+                    <span style={{ color: '#64748b' }}>Thiết bị lỗi:</span>
+                    <span style={{ fontWeight: 600, color: '#1e293b' }}>{selectedInvoice.deviceName || "Không xác định"}</span>
+                    
+                    <span style={{ color: '#64748b' }}>Mô tả từ khách:</span>
+                    <span style={{ color: '#334155', fontStyle: 'italic' }}>"{selectedInvoice.repairDescription || "Không có mô tả"}"</span>
+                  </div>
+                </div>
+              )}
+
               <div className="detail-row" style={{ borderBottom: 'none', marginTop: 12, background: selectedInvoice.status === 'Paid' ? '#f0fdf4' : '#fef2f2', padding: 16, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'nowrap', border: `1px solid ${selectedInvoice.status === 'Paid' ? '#bbf7d0' : '#fecaca'}` }}>
                 <span className="detail-label" style={{ fontSize: 16, fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', width: 'auto', marginRight: '20px' }}>
                   TỔNG CẦN THU:
@@ -570,7 +625,8 @@ const InvoiceList = () => {
                       isOpen: true,
                       action: 'PAY_SINGLE',
                       targetId: selectedInvoice._id,
-                      message: 'Xác nhận hóa đơn này đã được thanh toán?'
+                      targetType: selectedInvoice.type,
+                      message: 'Xác nhận khách thuê đã thanh toán hóa đơn này?'
                     });
                   }}
                 >
@@ -597,7 +653,7 @@ const InvoiceList = () => {
             <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
               <button
                 className="btn btn-outline"
-                onClick={() => setConfirmModal({ isOpen: false, action: null, message: '' })}
+                onClick={() => setConfirmModal({ isOpen: false, action: null, message: '', targetId: undefined, targetType: undefined })}
               >
                 Hủy bỏ
               </button>
