@@ -34,7 +34,7 @@ export default function About() {
     {
       icon: Wifi,
       title: "Internet Tốc Độ Cao",
-      description: "Trang bị Wifi riên cho từng phòng",
+      description: "Trang bị Wifi riêng cho từng phòng",
     },
     {
       icon: Shield,
@@ -44,7 +44,7 @@ export default function About() {
     {
       icon: MapPin,
       title: "Vị Trí ",
-      description: "Cách Trường ĐH FPT 3km",
+      description: "Căn hộ cách Trường ĐH FPT 3km",
     },
   ];
 

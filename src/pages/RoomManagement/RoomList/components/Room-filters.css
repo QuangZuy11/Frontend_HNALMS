@@ -98,6 +98,13 @@
   border-radius: 0 0 1rem 1rem;
 }
 
+/* Status filters: compact, side-by-side */
+.rf-card-content.rf-checkbox-group.rf-single-col {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
 /* Interactive Item Base */
 .rf-checkbox-item {
   display: flex;
