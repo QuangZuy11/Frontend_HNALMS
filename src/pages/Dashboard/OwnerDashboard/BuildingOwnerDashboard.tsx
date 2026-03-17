@@ -27,6 +27,9 @@ interface DashboardStats {
   activeContracts: number;
   expiringContracts: number;
   monthlyRevenue: number;
+  collectedRevenue: number;
+  uncollectedRevenue: number;
+  depositsWithoutContract: number;
   occupancyRate: number;
 }
 
@@ -41,29 +44,118 @@ export default function BuildingOwnerDashboard() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/rooms");
-      const rooms = response.data.data || [];
 
-      const occupiedRooms = rooms.filter(
-        (r: any) => r.status === "Đã thuê",
-      ).length;
-      const vacantRooms = rooms.filter((r: any) => r.status === "Trống").length;
-      const maintenanceRooms = rooms.filter(
-        (r: any) => r.status === "Đang bảo trì",
-      ).length;
+      // Fetch rooms, contracts, deposits and requests in parallel
+      const [
+        roomsRes,
+        contractsRes,
+        depositsRes,
+        invoicesRes,
+      ] = await Promise.all([
+        api.get("/rooms"),
+        api.get("/contracts"),
+        api.get("/deposits"),
+        api.get("/invoices/periodic").catch(() => ({ data: { data: [] } })),
+      ]);
+
+      const rooms = roomsRes.data.data || [];
+      const contracts = contractsRes.data.data || [];
+      const deposits = depositsRes.data.data || [];
+      const invoices = invoicesRes.data.data || [];
+
+      // Room stats based on status field
       const totalRooms = rooms.length;
+      const occupiedRooms = rooms.filter(
+        (r: any) => r.status === "Occupied",
+      ).length;
+      const vacantRooms = rooms.filter(
+        (r: any) => r.status === "Available" || r.status === "Deposited",
+      ).length;
+      const maintenanceRooms = rooms.filter(
+        (r: any) => r.status === "Maintenance",
+      ).length;
+
+      // Contract stats from real data
+      const activeContracts = contracts.filter((c: any) => c.status === "active");
+
+      // Expiring contracts: active contracts with endDate within next 30 days
+      const now = new Date();
+      const thirtyDaysLater = new Date();
+      thirtyDaysLater.setDate(now.getDate() + 30);
+
+      const expiringContracts = activeContracts.filter((c: any) => {
+        const endDate = new Date(c.endDate);
+        return endDate >= now && endDate <= thirtyDaysLater;
+      }).length;
+
+      // Total tenants: count tenant + co-residents from active contracts
+      const totalTenants = activeContracts.reduce(
+        (sum: number, c: any) => sum + 1 + (c.coResidents ? c.coResidents.length : 0),
+        0
+      );
+
+      // Monthly Revenue: Sum up the rent part of active contracts
+      const monthlyRevenue = activeContracts.reduce((sum: number, c: any) => {
+        const rentAmount = c.roomPrice || (c.room && c.room.price) || 0;
+        return sum + rentAmount;
+      }, 0);
+
+      // Thu tiền phòng dự kiến/tháng is monthlyRevenue.
+      // We need to calculate how much of the EXPECTED rent has been collected vs uncollected.
+      // If invoices are available, we sum paid invoices for 'collected' and unpaid for 'uncollected'.
+      // Otherwise, we default to 0.
+      let collectedRevenue = 0;
+      let uncollectedRevenue = 0;
+
+      // Lấy hóa đơn của tháng hiện tại
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+
+      const currentMonthInvoices = invoices.filter((inv: any) => {
+        if (!inv.createdAt && !inv.issueDate) return false;
+        const date = new Date(inv.createdAt || inv.issueDate);
+        return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+      });
+
+      if (currentMonthInvoices.length > 0) {
+        collectedRevenue = currentMonthInvoices
+          .filter((inv: any) => inv.status === "Paid" || inv.status === "Đã thanh toán" || inv.status === "Paid")
+          .reduce((sum: number, inv: any) => sum + (inv.totalAmount || inv.amount || 0), 0);
+
+        uncollectedRevenue = currentMonthInvoices
+          .filter((inv: any) => inv.status === "Draft" || inv.status === "Unpaid" || inv.status === "Chưa thanh toán" || inv.status === "Pending")
+          .reduce((sum: number, inv: any) => sum + (inv.totalAmount || inv.amount || 0), 0);
+      } else {
+        // Fallback: Nếu đầu tháng chưa sinh hóa đơn nào cho tháng này
+        // thì toàn bộ tiền phòng dự kiến tháng sẽ coi là "chưa thu".
+        uncollectedRevenue = monthlyRevenue;
+      }
+
+      // Deposits without contract
+      const contractDepositIds = new Set(
+        contracts
+          .filter((c: any) => c.depositId)
+          .map((c: any) =>
+            typeof c.depositId === "object" ? c.depositId._id : c.depositId,
+          ),
+      );
+      const depositsWithoutContract = deposits.filter(
+        (d: any) => d.status === "Held" && !contractDepositIds.has(d._id),
+      ).length;
 
       setStats({
         totalRooms,
         occupiedRooms,
         vacantRooms,
         maintenanceRooms,
-        totalTenants: occupiedRooms * 2,
-        activeContracts: occupiedRooms,
-        expiringContracts: Math.floor(occupiedRooms * 0.15),
-        monthlyRevenue: occupiedRooms * 5500000,
-        occupancyRate:
-          totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0,
+        totalTenants,
+        activeContracts: activeContracts.length,
+        expiringContracts,
+        depositsWithoutContract,
+        monthlyRevenue,
+        collectedRevenue,
+        uncollectedRevenue,
+        occupancyRate: totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0,
       });
     } catch (error) {
       console.error("Error loading dashboard data:", error);
@@ -75,7 +167,10 @@ export default function BuildingOwnerDashboard() {
         totalTenants: 0,
         activeContracts: 0,
         expiringContracts: 0,
+        depositsWithoutContract: 0,
         monthlyRevenue: 0,
+        collectedRevenue: 0,
+        uncollectedRevenue: 0,
         occupancyRate: 0,
       });
     } finally {
@@ -95,6 +190,7 @@ export default function BuildingOwnerDashboard() {
     { title: "Đã Thuê", value: stats?.occupiedRooms || 0, icon: CheckCircle2 },
     { title: "Phòng Trống", value: stats?.vacantRooms || 0, icon: DoorOpen },
     { title: "Tỷ Lệ Lấp Đầy", value: `${stats?.occupancyRate || 0}%`, icon: Percent },
+    { title: "Tổng Cọc", value: stats?.depositsWithoutContract || 0, icon: Wallet },
   ];
 
   const quickActions = [
@@ -102,8 +198,6 @@ export default function BuildingOwnerDashboard() {
     { title: "Cấu Hình Tòa Nhà", href: "/owner/building-config", icon: Building2 },
     { title: "Quản Lý Tài Khoản", href: "/owner/accounts", icon: Users },
     { title: "Nội Quy Tòa Nhà", href: "/owner/rules", icon: FileText },
-    { title: "Yêu Cầu", href: "/owner/requests", icon: MessageSquare },
-    { title: "Cài Đặt", href: "/owner/profile", icon: Settings },
   ];
 
   const roomStatusData = [
@@ -235,32 +329,60 @@ export default function BuildingOwnerDashboard() {
               </div>
             </div>
             <div className="chart-legend">
-              {roomStatusData.map((item) => (
-                <div key={item.label} className="legend-row">
-                  <span className="legend-dot" style={{ backgroundColor: item.color }}></span>
-                  <span className="legend-text">{item.label}</span>
-                  <span className="legend-num">{item.value}</span>
-                </div>
-              ))}
+              {roomStatusData.map((item) => {
+                const pct = totalForChart > 0 ? Math.round((item.value / totalForChart) * 100) : 0;
+                return (
+                  <div key={item.label} className="legend-row">
+                    <span className="legend-dot" style={{ backgroundColor: item.color }}></span>
+                    <span className="legend-text">{item.label}</span>
+                    <span className="legend-num">{item.value} ({pct}%)</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* Financial Overview */}
+        {/* Financial Overview - Swapped to middle */}
         <div className="bento-card">
           <div className="bento-header">
-            <h3>Tài Chính & Hợp Đồng</h3>
+            <h3>Tổng Quan Tài Chính</h3>
           </div>
           <div className="finance-content">
             <div className="revenue-block">
               <Wallet className="revenue-icon" />
               <div className="revenue-info">
                 <span className="revenue-value">{formatCurrency(stats?.monthlyRevenue || 0)}</span>
-                <span className="revenue-label">Doanh thu tháng</span>
+                <span className="revenue-label">Thu tiền phòng dự kiến/tháng</span>
               </div>
             </div>
 
             <div className="finance-stats">
+              <div className="finance-stat">
+                <CheckCircle2 className="stat-icon" style={{ color: '#10b981' }} />
+                <div className="stat-info">
+                  <span className="stat-num" style={{ color: '#10b981' }}>{formatCurrency(stats?.collectedRevenue || 0)}</span>
+                  <span className="stat-label">Đã thu</span>
+                </div>
+              </div>
+              <div className="finance-stat">
+                <AlertTriangle className="stat-icon" style={{ color: '#f59e0b' }} />
+                <div className="stat-info">
+                  <span className="stat-num" style={{ color: '#f59e0b' }}>{formatCurrency(stats?.uncollectedRevenue || 0)}</span>
+                  <span className="stat-label">Chưa thu</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Contracts & Tenants - Swapped to last */}
+        <div className="bento-card">
+          <div className="bento-header">
+            <h3>Hợp Đồng & Cư Dân</h3>
+          </div>
+          <div className="finance-content">
+            <div className="finance-stats full-width">
               <div className="finance-stat">
                 <FileText className="stat-icon" />
                 <div className="stat-info">
@@ -283,10 +405,10 @@ export default function BuildingOwnerDashboard() {
                 </div>
               </div>
               <div className="finance-stat">
-                <Wrench className="stat-icon" />
+                <AlertTriangle className="stat-icon" />
                 <div className="stat-info">
                   <span className="stat-num">{stats?.maintenanceRooms || 0}</span>
-                  <span className="stat-label">Phòng bảo trì</span>
+                  <span className="stat-label">Phòng đang bảo trì</span>
                 </div>
               </div>
             </div>
@@ -294,26 +416,7 @@ export default function BuildingOwnerDashboard() {
         </div>
       </section>
 
-      {/* Alerts */}
-      {alerts.length > 0 && (
-        <section className="alerts-section">
-          <h3>Cảnh Báo & Thông Báo</h3>
-          <div className="alerts-list">
-            {alerts.map((alert, index) => {
-              const Icon = alert.icon;
-              return (
-                <div key={index} className={`alert-item alert-${alert.type}`}>
-                  <Icon className="alert-icon" />
-                  <div className="alert-content">
-                    <span className="alert-title">{alert.title}</span>
-                    <span className="alert-message">{alert.message}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
+
     </div>
   );
 }

@@ -84,7 +84,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const [contracts, setContracts] = useState<any[]>([]);
 
   // View Mode
-  const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const [viewMode, setViewMode] = useState<"list" | "map">("map");
   const [activeMapFloor, setActiveMapFloor] = useState(0);
 
   // Ref cho input file ẩn

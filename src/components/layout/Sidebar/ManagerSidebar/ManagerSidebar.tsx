@@ -7,18 +7,20 @@ import {
   FileText,
   Receipt,
   Wallet,
-  Zap,
   MessageSquare,
   Bell,
   ChevronDown,
   ChevronRight,
   DoorOpen,
-  AlertTriangle
+  Wrench,
+  HardHat,
+  AlertTriangle,
+  ArrowRightLeft,
+  LogOut,
 } from 'lucide-react';
 import './ManagerSidebar.css';
 import logo from '../../../../assets/images/Logo.png';
 
-// Định nghĩa cấu trúc menu
 const MENU_ITEMS = [
   {
     title: "Tổng Quan",
@@ -56,12 +58,6 @@ const MENU_ITEMS = [
     path: "/manager/invoices",
     subItems: []
   },
-  // {
-  //   title: "Chỉ Số Điện & Nước",
-  //   icon: <Zap size={20} />,
-  //   path: "/manager/utilities",
-  //   subItems: []
-  // },
   {
     title: "Dịch Vụ",
     icon: <ShoppingBag size={20} />,
@@ -73,11 +69,11 @@ const MENU_ITEMS = [
     icon: <MessageSquare size={20} />,
     path: "/manager/requests",
     subItems: [
-      { title: "Yêu cầu sửa chữa", path: "/manager/requests/repairs" },
-      { title: "Yêu cầu bảo trì", path: "/manager/requests/maintenance" },
-      { title: "Danh sách khiếu nại", path: "/manager/requests/complaints" },
-      { title: "Yêu cầu chuyển phòng", path: "/manager/requests/transfers" },
-      { title: "Yêu cầu trả phòng", path: "/manager/requests/checkouts" },
+      { title: "Yêu cầu sửa chữa", path: "/manager/requests/repairs", icon: <Wrench size={16} /> },
+      { title: "Yêu cầu bảo trì", path: "/manager/requests/maintenance", icon: <HardHat size={16} /> },
+      { title: "Danh sách khiếu nại", path: "/manager/requests/complaints", icon: <AlertTriangle size={16} /> },
+      { title: "Yêu cầu chuyển phòng", path: "/manager/requests/transfers", icon: <ArrowRightLeft size={16} /> },
+      { title: "Yêu cầu trả phòng", path: "/manager/requests/checkouts", icon: <LogOut size={16} /> },
     ]
   },
   {
@@ -99,74 +95,66 @@ const ManagerSidebar = () => {
   const [expandedMenus, setExpandedMenus] = useState<{ [key: number]: boolean }>({});
   const location = useLocation();
 
-  // Xử lý đóng mở menu con
-  const toggleMenu = (index: number) => {
+  const toggleMenu = (index: number, currentExpanded: boolean) => {
     setExpandedMenus((prev) => ({
       ...prev,
-      [index]: !prev[index]
+      [index]: !currentExpanded
     }));
   };
 
   return (
-    <aside className="sidebar-container">
+    <aside className="mgr-sb-container">
       {/* Logo */}
-      <div className="sidebar-logo">
-        <img src={logo} alt="Hoàng Nam Apartment" className="brand-logo" />
+      <div className="mgr-sb-logo">
+        <img src={logo} alt="Hoàng Nam Apartment" className="mgr-sb-brand-logo" />
       </div>
 
       {/* Menu Items (Scrollable) */}
-      <div className="sidebar-nav-scroll">
-        <nav className="sidebar-nav">
+      <div className="mgr-sb-nav-scroll">
+        <nav className="mgr-sb-nav">
           {MENU_ITEMS.map((item, index) => {
             const hasSubItems = item.subItems && item.subItems.length > 0;
-
-            // Kiểm tra submenu con có đang active không
-            const hasActiveSubItem = hasSubItems && item.subItems.some(
-              sub => location.pathname === sub.path
-            );
-
-            // Item KHÔNG có submenu: chỉ active khi exact match
-            // Item CÓ submenu: chỉ expanded khi có submenu con active
-            const isActiveParent = !hasSubItems && location.pathname === item.path;
-
-            // Mở rộng menu khi có submenu con active hoặc user đã click mở
-            const isExpanded = expandedMenus[index] || hasActiveSubItem;
+            const isActiveParent = hasSubItems
+              ? location.pathname === item.path || location.pathname.startsWith(item.path + '/')
+              : location.pathname === item.path;
+            const isExpanded = expandedMenus[index] ?? isActiveParent;
 
             return (
-              <div key={index} className="menu-group">
+              <div key={index} className="mgr-sb-group">
                 {/* Parent Item */}
                 <div
-                  onClick={() => hasSubItems ? toggleMenu(index) : null}
-                  className={`menu-item ${isActiveParent && !hasSubItems ? 'active' : ''} ${hasSubItems && isExpanded ? 'expanded' : ''}`}
+                  onClick={() => hasSubItems ? toggleMenu(index, isExpanded) : null}
+                  className={`mgr-sb-item ${isActiveParent && !hasSubItems ? 'active' : ''} ${hasSubItems && isExpanded ? 'expanded' : ''}`}
                 >
                   {hasSubItems ? (
-                    <div className="menu-link-content">
-                      <span className="menu-icon">{item.icon}</span>
-                      <span className="menu-title">{item.title}</span>
-                      <span className="menu-arrow">
+                    <div className="mgr-sb-link-content">
+                      <span className="mgr-sb-icon">{item.icon}</span>
+                      <span className="mgr-sb-title">{item.title}</span>
+                      <span className="mgr-sb-arrow">
                         {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                       </span>
                     </div>
                   ) : (
-                    <Link to={item.path} className="menu-link-content">
-                      <span className="menu-icon">{item.icon}</span>
-                      <span className="menu-title">{item.title}</span>
+                    <Link to={item.path} className="mgr-sb-link-content">
+                      <span className="mgr-sb-icon">{item.icon}</span>
+                      <span className="mgr-sb-title">{item.title}</span>
                     </Link>
                   )}
                 </div>
 
                 {/* Sub Items (Dropdown) */}
                 {hasSubItems && isExpanded && (
-                  <div className="submenu-container">
+                  <div className="mgr-sb-submenu">
                     {item.subItems.map((sub, subIndex) => {
                       const isActiveSub = location.pathname === sub.path;
                       return (
                         <Link
                           key={subIndex}
                           to={sub.path}
-                          className={`submenu-item ${isActiveSub ? 'sub-active' : ''}`}
+                          className={`mgr-sb-sub-item ${isActiveSub ? 'sub-active' : ''}`}
                         >
-                          <span className="dot">•</span> {sub.title}
+                          <span className="mgr-sb-sub-icon">{sub.icon}</span>
+                          {sub.title}
                         </Link>
                       );
                     })}
