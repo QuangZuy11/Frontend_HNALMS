@@ -37,7 +37,7 @@ export default function ViolationList() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'Draft' | 'Unpaid' | 'Paid'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'Unpaid' | 'Paid'>('ALL');
   const [roomSearch, setRoomSearch] = useState<string>('');
   const [tenantSearch, setTenantSearch] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -339,7 +339,6 @@ export default function ViolationList() {
   };
 
   const getStatusLabel = (status: string) => {
-    if (status === 'Draft') return 'Bản nháp';
     if (status === 'Unpaid') return 'Chờ thanh toán';
     if (status === 'Paid') return 'Đã thanh toán';
     return status;
@@ -418,10 +417,9 @@ export default function ViolationList() {
               id="status-filter"
               className="violation-filter-select"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'Draft' | 'Unpaid' | 'Paid')}
+              onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'Unpaid' | 'Paid')}
             >
               <option value="ALL">Tất cả</option>
-              <option value="Draft">Bản nháp</option>
               <option value="Unpaid">Chờ thanh toán</option>
               <option value="Paid">Đã thanh toán</option>
             </select>
@@ -814,7 +812,7 @@ export default function ViolationList() {
                       id="totalAmount"
                       name="totalAmount"
                       className={`form-input ${formErrors.totalAmount ? 'input-error' : ''}`}
-                      placeholder="Nhập số tiền bồi thường"
+                      placeholder="Nhập số tiền"
                       value={formData.totalAmount}
                       onChange={handleInputChange}
                       min="0"
