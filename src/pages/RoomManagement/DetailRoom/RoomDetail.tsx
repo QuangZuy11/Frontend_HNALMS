@@ -469,10 +469,7 @@ export default function RoomDetail() {
 
               {/* Info Card */}
               <div className="help-card">
-                <h4 className="help-title">Thông Tin Hữu Ích</h4>
-                <p className="help-description">
-                  Giờ làm việc của Ban Quản Lý
-                </p>
+                <h4 className="help-title">Thông Tin Ban quản Lý</h4>
                 <div className="help-info-row">
                   <Phone className="button-icon" />
                   SĐT: 0869 048 066
