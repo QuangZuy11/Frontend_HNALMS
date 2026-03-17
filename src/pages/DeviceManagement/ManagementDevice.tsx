@@ -3,7 +3,7 @@ import axios from 'axios';
 import {
   Plus, Search, Edit, Trash2,
   FileSpreadsheet, Upload, Download,
-  X, Laptop, Wrench
+  X, Laptop, Wrench, AlertCircle
 } from 'lucide-react';
 import toastr from 'toastr';
 import 'toastr/build/toastr.min.css';
@@ -34,6 +34,14 @@ const ManagerDevice = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
+
+  // [MỚI] State cho Modal Xác nhận xóa
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    action: 'DELETE' | null;
+    targetDevice: Device | null;
+    message: string;
+  }>({ isOpen: false, action: null, targetDevice: null, message: '' });
 
   // Form Data
   const [formData, setFormData] = useState<Partial<Device>>({
@@ -70,16 +78,31 @@ const ManagerDevice = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa thiết bị này?")) {
+  // [SỬA] Đổi từ window.confirm sang mở Modal
+  const handleDelete = (device: Device) => {
+    setConfirmModal({
+      isOpen: true,
+      action: 'DELETE',
+      targetDevice: device,
+      message: `Bạn có chắc chắn muốn xóa thiết bị "${device.name}"? Hành động này không thể hoàn tác.`
+    });
+  };
+
+  // [MỚI] Thực thi xóa khi bấm Đồng ý
+  const executeConfirmAction = async () => {
+    if (!confirmModal.targetDevice) return;
+    
+    if (confirmModal.action === 'DELETE') {
       try {
-        await axios.delete(`${API_BASE_URL}/devices/${id}`);
+        await axios.delete(`${API_BASE_URL}/devices/${confirmModal.targetDevice._id}`);
         toastr.success("Xóa thiết bị thành công!");
         fetchDevices();
       } catch (error) {
         toastr.error("Lỗi khi xóa thiết bị");
       }
     }
+
+    setConfirmModal({ isOpen: false, action: null, targetDevice: null, message: '' });
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -220,7 +243,8 @@ const ManagerDevice = () => {
               <th style={{width: '15%'}}>Danh mục</th>
               <th style={{width: '10%'}}>Đơn vị</th>
               <th style={{width: '15%'}}>Giá niêm yết</th>
-              <th>Thao tác</th>
+              {/* [ĐÃ SỬA] Căn giữa tiêu đề */}
+              <th style={{ textAlign: 'center', width: '15%' }}>Thao tác</th> 
             </tr>
           </thead>
           <tbody>
@@ -242,12 +266,14 @@ const ManagerDevice = () => {
                   </td>
                   <td>{device.unit}</td>
                   <td className="text-price">{formatCurrency(device.price)}</td>
-                  <td>
-                    <div className="action-buttons">
+                  
+                  {/* [ĐÃ SỬA] Căn giữa nội dung cột và các nút bấm */}
+                  <td style={{ textAlign: 'center' }}>
+                    <div className="action-buttons" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                       <button className="btn-icon" onClick={() => handleOpenEdit(device)} title="Sửa">
                         <Edit size={18} />
                       </button>
-                      <button className="btn-icon delete" onClick={() => handleDelete(device._id)} title="Xóa">
+                      <button className="btn-icon delete" onClick={() => handleDelete(device)} title="Xóa">
                         <Trash2 size={18} />
                       </button>
                     </div>
@@ -366,6 +392,52 @@ const ManagerDevice = () => {
                 disabled={!selectedFile || loading}
               >
                 {loading ? 'Đang xử lý...' : 'Tiến hành Import'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL XÁC NHẬN (CONFIRM MODAL) --- */}
+      {confirmModal.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+              <div style={{ 
+                background: '#fee2e2', 
+                padding: '12px', 
+                borderRadius: '50%' 
+              }}>
+                <AlertCircle size={32} color="#ef4444" />
+              </div>
+            </div>
+            <h3 style={{ marginTop: 0, color: '#1e293b', fontSize: '18px' }}>Xác nhận thao tác</h3>
+            <p style={{ color: '#475569', margin: '16px 0 24px 0', lineHeight: '1.5' }}>
+              {confirmModal.message}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => setConfirmModal({ isOpen: false, action: null, targetDevice: null, message: '' })}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                style={{
+                  padding: '8px 24px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  border: 'none',
+                  background: '#ef4444',
+                  color: 'white',
+                }}
+                onClick={executeConfirmAction}
+                disabled={loading}
+              >
+                {loading ? 'Đang xử lý...' : 'Đồng ý xóa'}
               </button>
             </div>
           </div>

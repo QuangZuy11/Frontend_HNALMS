@@ -97,6 +97,14 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const [showModal, setShowModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
+  // [MỚI] State cho Modal Xác nhận
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    action: 'TOGGLE_ACTIVE' | 'DELETE' | null;
+    targetRoom: Room | null;
+    message: string;
+  }>({ isOpen: false, action: null, targetRoom: null, message: '' });
+
   const [isEditing, setIsEditing] = useState(false);
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
   const [viewingRoom, setViewingRoom] = useState<Room | null>(null);
@@ -143,7 +151,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   };
 
   useEffect(() => {
-    // [MỚI] Cấu hình toastr khi component mount
     toastr.options = {
       closeButton: true,
       progressBar: true,
@@ -166,7 +173,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     return floors.find((f) => f._id === idOrObj)?.name || "---";
   };
 
-  // Get active contract for a room
   const getContractForRoom = (roomId: string) => {
     return (
       contracts.find(
@@ -180,7 +186,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     return new Date(dateStr).toLocaleDateString("vi-VN");
   };
 
-  // Prepare rooms for map view with parsed prices to avoid NaNk
   const mappedRoomsForMap = useMemo(() => {
     return rooms.map((room: any) => {
       let priceNum = 0;
@@ -227,17 +232,11 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
 
   const formatCurrency = (amount: any) => {
     let value = 0;
-
-    // Kiểm tra nếu dữ liệu là object Decimal128 của MongoDB
     if (amount && typeof amount === "object" && amount.$numberDecimal) {
       value = parseFloat(amount.$numberDecimal);
-    }
-    // Nếu là số hoặc chuỗi số bình thường
-    else {
+    } else {
       value = Number(amount);
     }
-
-    // Nếu vẫn không phải số thì trả về 0đ
     if (isNaN(value)) return "0 ₫";
 
     return new Intl.NumberFormat("vi-VN", {
@@ -266,20 +265,12 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
             <Banknote size={12} /> Đã cọc
           </span>
         );
-      case "Deposited":
-        return (
-          <span className="status-badge deposited">
-            <AlertCircle size={12} /> Đã Cọc
-          </span>
-        );
       default:
         return <span>{status}</span>;
     }
   };
 
   // --- HANDLERS EXCEL ---
-
-  // 1. Tải mẫu Excel
   const handleDownloadTemplate = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/excel/template`, {
@@ -298,17 +289,14 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     }
   };
 
-  // 2. Kích hoạt input file
   const triggerFileInput = () => {
     fileInputRef.current?.click();
   };
 
-  // 3. Upload file Excel
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Reset value để cho phép chọn lại file cũ
     e.target.value = "";
 
     const formData = new FormData();
@@ -320,7 +308,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         headers: { "Content-Type": "multipart/form-data" },
       });
       toastr.success(res.data.message || "Nhập file thành công!");
-      fetchData(); // Load lại dữ liệu sau khi nhập
+      fetchData();
     } catch (error: any) {
       console.error(error);
       const msg = error.response?.data?.message || "Lỗi khi nhập file.";
@@ -385,7 +373,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     setViewingRoom(room);
     setShowDetailModal(true);
     setRoomBookServices([]);
-    // If room has an active contract, fetch its detail (with bookServices)
     const contract = getContractForRoom(room._id);
     if (contract) {
       try {
@@ -404,20 +391,55 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     }
   };
 
-  const handleToggleActive = async (room: Room) => {
+  // [SỬA] Đổi từ window.confirm sang setConfirmModal
+  const handleToggleActive = (room: Room) => {
     const action = room.isActive ? "vô hiệu hóa" : "kích hoạt";
-    if (!window.confirm(`Bạn có chắc muốn ${action} phòng ${room.name} không?`))
-      return;
+    setConfirmModal({
+      isOpen: true,
+      action: 'TOGGLE_ACTIVE',
+      targetRoom: room,
+      message: `Bạn có chắc muốn ${action} phòng ${room.name} không?`
+    });
+  };
 
-    try {
-      await axios.put(`${API_BASE_URL}/rooms/${room._id}`, {
-        isActive: !room.isActive,
-      });
-      toastr.success(`Đã ${action} phòng ${room.name} thành công!`);
-      fetchData();
-    } catch (error: any) {
-      toastr.error("Lỗi cập nhật trạng thái: " + error.message);
+  // [SỬA] Đổi từ window.confirm sang setConfirmModal
+  const handleDelete = (room: Room) => {
+    setConfirmModal({
+      isOpen: true,
+      action: 'DELETE',
+      targetRoom: room,
+      message: `Bạn có chắc chắn muốn xóa phòng ${room.name}? Hành động này không thể hoàn tác.`
+    });
+  };
+
+  // [MỚI] Hàm xử lý chung khi người dùng bấm "Đồng ý" trên Modal Xác nhận
+  const executeConfirmAction = async () => {
+    if (!confirmModal.targetRoom) return;
+    const room = confirmModal.targetRoom;
+
+    if (confirmModal.action === 'TOGGLE_ACTIVE') {
+      try {
+        const actionText = room.isActive ? "vô hiệu hóa" : "kích hoạt";
+        await axios.put(`${API_BASE_URL}/rooms/${room._id}`, {
+          isActive: !room.isActive,
+        });
+        toastr.success(`Đã ${actionText} phòng ${room.name} thành công!`);
+        fetchData();
+      } catch (error: any) {
+        toastr.error("Lỗi cập nhật trạng thái: " + error.message);
+      }
+    } else if (confirmModal.action === 'DELETE') {
+      try {
+        await axios.delete(`${API_BASE_URL}/rooms/${room._id}`);
+        toastr.success("Xóa phòng thành công!");
+        fetchData();
+      } catch (e: any) {
+        toastr.error("Lỗi xóa phòng: " + (e.response?.data?.message || e.message));
+      }
     }
+
+    // Đóng modal sau khi xử lý xong
+    setConfirmModal({ isOpen: false, action: null, targetRoom: null, message: '' });
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -436,20 +458,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       toastr.error(
         "Lỗi lưu dữ liệu: " + (error.response?.data?.message || error.message),
       );
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa phòng này?")) {
-      try {
-        await axios.delete(`${API_BASE_URL}/rooms/${id}`);
-        toastr.success("Xóa phòng thành công!");
-        fetchData();
-      } catch (e: any) {
-        toastr.error(
-          "Lỗi xóa phòng: " + (e.response?.data?.message || e.message),
-        );
-      }
     }
   };
 
@@ -494,7 +502,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         </div>
       </div>
 
-      {/* THANH CÔNG CỤ (TOOLBAR) - Ẩn khi readOnly */}
       {!readOnly && (
         <div
           className="toolbar-actions"
@@ -507,7 +514,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
             marginBottom: "1rem",
           }}
         >
-          {/* VIEW TOGGLE */}
           <div
             style={{
               display: "flex",
@@ -577,7 +583,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         </div>
       )}
 
-      {/* VIEW TOGGLE KHI READONLY CHỈ CÓ NÚT TOGGLE */}
       {readOnly && (
         <div
           style={{
@@ -681,11 +686,12 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                             <th>Mô tả</th>
                             <th
                               style={{
-                                width: readOnly ? "80px" : "140px",
+                                width: readOnly ? "100px" : "140px", 
                                 textAlign: "center",
+                                whiteSpace: "nowrap", 
                               }}
                             >
-                              Thao tác
+                              THAO TÁC
                             </th>
                           </tr>
                         </thead>
@@ -774,7 +780,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                                     {!readOnly && (
                                       <button
                                         className="btn-icon-sm delete"
-                                        onClick={() => handleDelete(room._id)}
+                                        onClick={() => handleDelete(room)}
                                         title="Xóa"
                                       >
                                         <Trash2 size={16} />
@@ -876,7 +882,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                 );
               }
 
-              // Generic fallback (Level 1 or newly added floors)
               return (
                 <FloorMap
                   key={floor._id}
@@ -888,6 +893,53 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                 />
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL XÁC NHẬN (CONFIRM MODAL) --- */}
+      {confirmModal.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+              <div style={{ 
+                background: confirmModal.action === 'DELETE' ? '#fee2e2' : '#fef3c7', 
+                padding: '12px', 
+                borderRadius: '50%' 
+              }}>
+                <AlertCircle 
+                  size={32} 
+                  color={confirmModal.action === 'DELETE' ? '#ef4444' : '#d97706'} 
+                />
+              </div>
+            </div>
+            <h3 style={{ marginTop: 0, color: '#1e293b', fontSize: '18px' }}>Xác nhận thao tác</h3>
+            <p style={{ color: '#475569', margin: '16px 0 24px 0', lineHeight: '1.5' }}>
+              {confirmModal.message}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+              <button
+                className="btn-secondary"
+                onClick={() => setConfirmModal({ isOpen: false, action: null, targetRoom: null, message: '' })}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                style={{
+                  padding: '8px 24px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  border: 'none',
+                  background: confirmModal.action === 'DELETE' ? '#ef4444' : '#3b82f6',
+                  color: 'white',
+                }}
+                onClick={executeConfirmAction}
+                disabled={loading}
+              >
+                {loading ? 'Đang xử lý...' : 'Đồng ý'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -965,19 +1017,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                   </select>
                 </div>
               </div>
-              {/* <div className="form-group">
-                <label>Trạng thái</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) =>
-                    setFormData({ ...formData, status: e.target.value as any })
-                  }
-                >
-                  <option value="Available">Trống</option>
-                  <option value="Occupied">Đang thuê</option>
-                  <option value="Deposited">Đã cọc</option>
-                </select>
-              </div> */}
 
               {isEditing && (
                 <div
