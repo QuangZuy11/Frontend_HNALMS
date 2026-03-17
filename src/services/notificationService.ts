@@ -10,6 +10,10 @@ export interface NotificationListFilters {
   limit?: number;
   status?: 'draft' | 'sent' | 'archived';
   is_read?: 'true' | 'false';
+  search?: string;
+  fromDate?: string;
+  toDate?: string;
+  outbound?: 'true' | 'false';
 }
 
 export const notificationService = {

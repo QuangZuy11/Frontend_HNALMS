@@ -22,6 +22,11 @@ export default function NotificationList() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const limit = 10;
+  
+  // Search & Date Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -34,7 +39,7 @@ export default function NotificationList() {
   useEffect(() => {
     fetchNotifications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, activeTab]);
+  }, [page, activeTab, searchTerm, fromDate, toDate]);
 
   const fetchNotifications = async () => {
     try {
@@ -51,6 +56,9 @@ export default function NotificationList() {
         page,
         limit,
         status: statusFilter,
+        search: searchTerm || undefined,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
       });
 
       if (res.success) {
@@ -137,6 +145,38 @@ export default function NotificationList() {
               <Plus size={18} />
               <span>Tạo thông báo</span>
             </button>
+          </div>
+        </div>
+
+        {/* Filters Section */}
+        <div className="notification-filters" style={{ padding: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
+          <div className="filter-group" style={{ flex: 1, minWidth: '200px' }}>
+            <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Tìm kiếm tiêu đề</label>
+            <input 
+              type="text" 
+              placeholder="Nhập tiêu đề..." 
+              value={searchTerm}
+              onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+            />
+          </div>
+          <div className="filter-group">
+            <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Từ ngày</label>
+            <input 
+              type="date" 
+              value={fromDate}
+              onChange={(e) => { setFromDate(e.target.value); setPage(1); }}
+              style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+            />
+          </div>
+          <div className="filter-group">
+            <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Đến ngày</label>
+            <input 
+              type="date" 
+              value={toDate}
+              onChange={(e) => { setToDate(e.target.value); setPage(1); }}
+              style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+            />
           </div>
         </div>
 
