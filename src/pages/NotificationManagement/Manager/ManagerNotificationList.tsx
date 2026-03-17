@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Plus, Eye, Edit2, Trash2, Send, AlertTriangle, CheckCheck, List, BellRing, CheckCircle, X } from 'lucide-react';
-import { createPortal } from 'react-dom';
+import { Plus, Eye, Edit2, Trash2, Send, AlertTriangle, X } from 'lucide-react';
 import { notificationService } from '../../../services/notificationService';
 import type { Notification } from '../../../types/notification.types';
 import '../NotificationManagement.css';
 
-// Reuse Modals from Owner package (generic usage)
-import CreateManagerNotification from '../Owner/CreateManagerNotification';
+// Modals for notification management
+import CreateTenantNotification from '../Owner/CreateTenantNotification';
 import NotificationDetail from '../Owner/NotificationDetail';
 import DisableNotification from '../Owner/DisableNotification';
 
-type TabType = 'INBOX' | 'DRAFT' | 'SENT';
+type TabType = 'ALL' | 'DRAFT' | 'SENT';
 
 export default function ManagerNotificationList() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -18,8 +17,7 @@ export default function ManagerNotificationList() {
   const [error, setError] = useState<string | null>(null);
 
   // Filters & State
-  const [activeTab, setActiveTab] = useState<TabType>('INBOX');
-  const [filterRead, setFilterRead] = useState<'ALL' | 'UNREAD' | 'READ'>('ALL'); // only for INBOX
+  const [activeTab, setActiveTab] = useState<TabType>('ALL');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [fromDate, setFromDate] = useState('');
@@ -32,9 +30,8 @@ export default function ManagerNotificationList() {
 
   // Detail modal
   const [viewNotification, setViewNotification] = useState<Notification | null>(null);
-  const [markingAll, setMarkingAll] = useState(false);
 
-  // Modals state for Outbound
+  // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editNotification, setEditNotification] = useState<Notification | null>(null);
   const [deleteNotification, setDeleteNotification] = useState<Notification | null>(null);
@@ -44,28 +41,20 @@ export default function ManagerNotificationList() {
   useEffect(() => {
     fetchNotifications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, activeTab, filterRead, searchTerm, fromDate, toDate]);
+  }, [page, activeTab, searchTerm, fromDate, toDate]);
 
   const fetchNotifications = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const isOutbound = activeTab === 'DRAFT' || activeTab === 'SENT';
-      const statusFilter = activeTab === 'DRAFT' ? 'draft' : activeTab === 'SENT' ? 'sent' : undefined;
-
-      let isReadFilter: 'true' | 'false' | undefined = undefined;
-      // Only apply read filter to INBOX
-      if (activeTab === 'INBOX') {
-        isReadFilter = filterRead === 'UNREAD' ? 'false' : filterRead === 'READ' ? 'true' : undefined;
-      }
+      const statusFilter = activeTab === 'ALL' ? undefined : activeTab === 'DRAFT' ? 'draft' : 'sent';
 
       const res = await notificationService.getMyNotifications({
         page,
         limit,
         status: statusFilter,
-        is_read: isReadFilter,
-        outbound: isOutbound ? 'true' : 'false',
+        outbound: 'true', // Always fetch Manager's created notifications
         search: searchTerm || undefined,
         fromDate: fromDate || undefined,
         toDate: toDate || undefined,
@@ -91,40 +80,6 @@ export default function ManagerNotificationList() {
       d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
-  // INBOX actions
-  const handleMarkAsRead = async (notif: Notification) => {
-    if (notif.is_read) return;
-    try {
-      await notificationService.markAsRead(notif._id);
-      setNotifications(prev =>
-        prev.map(n => n._id === notif._id ? { ...n, is_read: true } : n)
-      );
-    } catch (err: any) {
-      console.error('Error marking as read:', err);
-    }
-  };
-
-  const handleMarkAllRead = async () => {
-    try {
-      setMarkingAll(true);
-      await notificationService.markAllAsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-    } catch (err: any) {
-      console.error('Error marking all as read:', err);
-    } finally {
-      setMarkingAll(false);
-    }
-  };
-
-  const handleViewDetail = (notif: Notification) => {
-    setViewNotification(notif);
-    // Auto mark as read when viewing inbox notifications
-    if (activeTab === 'INBOX' && !notif.is_read) {
-      handleMarkAsRead(notif);
-    }
-  };
-
-  // OUTBOUND actions
   const handleCreateSuccess = () => {
     setIsCreateModalOpen(false);
     setEditNotification(null);
@@ -172,27 +127,15 @@ export default function ManagerNotificationList() {
         <div className="notification-header">
           <div className="notification-header-title">
             <h2>Quản lý Thông báo</h2>
-            <p className="subtitle">Xem thông báo từ Owner và gửi thông báo, nội quy cho Tenant</p>
           </div>
           <div className="notification-actions">
-            {activeTab === 'INBOX' ? (
-              <button
-                className="btn btn-secondary"
-                onClick={handleMarkAllRead}
-                disabled={markingAll}
-              >
-                <CheckCheck size={18} />
-                {markingAll ? 'Đang xử lý...' : 'Đánh dấu tất cả đã đọc'}
-              </button>
-            ) : (
-              <button
-                className="btn-create"
-                onClick={() => setIsCreateModalOpen(true)}
-              >
-                <Plus size={18} />
-                <span>Tạo thông báo</span>
-              </button>
-            )}
+            <button
+              className="btn-create"
+              onClick={() => setIsCreateModalOpen(true)}
+            >
+              <Plus size={18} />
+              <span>Tạo thông báo</span>
+            </button>
           </div>
         </div>
 
@@ -231,10 +174,10 @@ export default function ManagerNotificationList() {
         {/* Tabs for Manager mode */}
         <div className="notification-tabs">
           <button
-            className={`notification-tab ${activeTab === 'INBOX' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('INBOX'); setPage(1); }}
+            className={`notification-tab ${activeTab === 'ALL' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('ALL'); setPage(1); }}
           >
-            Hộp thư đến
+            Tất cả
           </button>
           <button
             className={`notification-tab ${activeTab === 'DRAFT' ? 'active' : ''}`}
@@ -250,33 +193,6 @@ export default function ManagerNotificationList() {
           </button>
         </div>
 
-        {/* Read Filters (Only for INBOX) */}
-        {activeTab === 'INBOX' && (
-          <div className="notification-tabs" style={{ borderBottom: 'none', paddingBottom: '0', paddingTop: '10px' }}>
-            <button
-              className={`notification-tab ${filterRead === 'ALL' ? 'active' : ''}`}
-              onClick={() => { setFilterRead('ALL'); setPage(1); }}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', padding: '6px 12px' }}
-            >
-              <List size={14} /> Tất cả inbox
-            </button>
-            <button
-              className={`notification-tab ${filterRead === 'UNREAD' ? 'active' : ''}`}
-              onClick={() => { setFilterRead('UNREAD'); setPage(1); }}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', padding: '6px 12px' }}
-            >
-              <BellRing size={14} /> Chưa đọc
-            </button>
-            <button
-              className={`notification-tab ${filterRead === 'READ' ? 'active' : ''}`}
-              onClick={() => { setFilterRead('READ'); setPage(1); }}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', padding: '6px 12px' }}
-            >
-              <CheckCircle size={14} /> Đã đọc
-            </button>
-          </div>
-        )}
-
         {error && (
           <div className="notification-alert alert-error">
             <p>{error}</p>
@@ -289,9 +205,9 @@ export default function ManagerNotificationList() {
             <thead>
               <tr>
                 <th style={{ width: '60px' }}>STT</th>
-                <th>{activeTab === 'INBOX' ? 'Tiêu đề' : 'Thông báo'}</th>
+                <th>Thông báo</th>
                 <th style={{ width: '120px' }}>Trạng thái</th>
-                <th style={{ width: '140px' }}>{activeTab === 'INBOX' ? 'Ngày nhận' : 'Ngày tạo'}</th>
+                <th style={{ width: '140px' }}>Ngày tạo</th>
                 <th style={{ width: '140px' }}>Thao tác</th>
               </tr>
             </thead>
@@ -306,105 +222,74 @@ export default function ManagerNotificationList() {
                 <tr>
                   <td colSpan={5}>
                     <div className="notification-empty">
-                      {activeTab !== 'INBOX' && (
-                        <div className="notification-empty-icon">
-                          <Send size={48} />
-                        </div>
-                      )}
+                      <div className="notification-empty-icon">
+                        <Send size={48} />
+                      </div>
                       <h3>Không có thông báo</h3>
                       <p>Hiện tại chưa có thông báo nào trong mục này.</p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                notifications.map((item, index) => {
-                  const isUnread = activeTab === 'INBOX' && !item.is_read;
-                  return (
-                    <tr key={item._id} className={isUnread ? 'unread-row' : ''}>
-                      <td>{(page - 1) * limit + index + 1}</td>
-                      <td>
-                        {activeTab === 'INBOX' ? (
-                          <div
-                            className="notification-title"
-                            title={item.title}
-                            style={{ fontWeight: isUnread ? 600 : 400 }}
-                          >
-                            {item.title}
-                          </div>
-                        ) : (
-                          <div className="notification-content-preview">
-                            <div className="notification-title" title={item.title}>
-                              {item.title}
-                            </div>
-                            <div className="notification-preview-text" title={item.content}>
-                              {item.content.length > 70 ? item.content.substring(0, 70) + '...' : item.content}
-                            </div>
-                          </div>
-                        )}
-                      </td>
-                      <td>
-                        {activeTab === 'INBOX' ? (
-                          <span className={`status-badge ${item.is_read ? 'status-sent' : 'status-draft'}`}>
-                            {item.is_read ? 'Đã đọc' : 'Chưa đọc'}
-                          </span>
-                        ) : (
-                          <span className={`status-badge status-${item.status}`}>
-                            {item.status === 'draft' ? 'Bản nháp' :
-                              item.status === 'sent' ? 'Đã gửi' : 'Đã lưu trữ'}
-                          </span>
-                        )}
-                      </td>
-                      <td>{formatDateTime(item.createdAt)}</td>
-                      <td>
-                        <div className="action-buttons" style={{ display: 'flex', gap: '8px' }}>
-                          {activeTab === 'INBOX' && !item.is_read && (
+                notifications.map((item, index) => (
+                  <tr key={item._id}>
+                    <td>{(page - 1) * limit + index + 1}</td>
+                    <td>
+                      <div className="notification-content-preview">
+                        <div className="notification-title" title={item.title}>
+                          {item.title}
+                        </div>
+                        <div className="notification-preview-text" title={item.content}>
+                          {item.content.length > 70 ? item.content.substring(0, 70) + '...' : item.content}
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`status-badge status-${item.status}`}>
+                        {item.status === 'draft' ? 'Bản nháp' :
+                          item.status === 'sent' ? 'Đã gửi' : 'Đã lưu trữ'}
+                      </span>
+                    </td>
+                    <td>{formatDateTime(item.createdAt)}</td>
+                    <td>
+                      <div className="action-buttons" style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          className="btn-action view"
+                          onClick={() => setViewNotification(item)}
+                          title="Xem chi tiết"
+                        >
+                          <Eye size={16} />
+                        </button>
+
+                        {item.status === 'draft' && (
+                          <>
+                            <button
+                              className="btn-action publish"
+                              onClick={() => setPublishNotification(item)}
+                              title="Phát hành"
+                            >
+                              <Send size={16} />
+                            </button>
                             <button
                               className="btn-action edit"
-                              onClick={() => handleMarkAsRead(item)}
-                              title="Đánh dấu đã đọc"
+                              onClick={() => setEditNotification(item)}
+                              title="Sửa bản nháp"
                             >
-                              <CheckCheck size={16} />
+                              <Edit2 size={16} />
                             </button>
-                          )}
-                          <button
-                            className="btn-action view"
-                            onClick={() => handleViewDetail(item)}
-                            title="Xem chi tiết"
-                          >
-                            <Eye size={16} />
-                          </button>
-
-                          {/* Action only for OUTBOUND DRAFT */}
-                          {activeTab === 'DRAFT' && item.status === 'draft' && (
-                            <>
-                              <button
-                                className="btn-action publish"
-                                onClick={() => setPublishNotification(item)}
-                                title="Phát hành"
-                              >
-                                <Send size={16} />
-                              </button>
-                              <button
-                                className="btn-action edit"
-                                onClick={() => setEditNotification(item)}
-                                title="Sửa bản nháp"
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                              <button
-                                className="btn-action delete"
-                                onClick={() => setDeleteNotification(item)}
-                                title="Xóa bản nháp"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })
+                            <button
+                              className="btn-action delete"
+                              onClick={() => setDeleteNotification(item)}
+                              title="Xóa bản nháp"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
@@ -463,7 +348,7 @@ export default function ManagerNotificationList() {
 
       {/* Modals for Outbound operations */}
       {(isCreateModalOpen || editNotification) && (
-        <CreateManagerNotification
+        <CreateTenantNotification
           isOpen={true}
           onClose={() => {
             setIsCreateModalOpen(false);
@@ -474,48 +359,13 @@ export default function ManagerNotificationList() {
         />
       )}
 
-      {viewNotification && activeTab !== 'INBOX' && (
+      {viewNotification && (
         <NotificationDetail
           isOpen={true}
           onClose={() => setViewNotification(null)}
           notification={viewNotification}
           onPublish={handlePublishSuccess}
         />
-      )}
-
-      {/* Modal for viewing INBOX messages (just read-only view) */}
-      {viewNotification && activeTab === 'INBOX' && createPortal(
-        <div className="notification-modal-overlay" onClick={() => setViewNotification(null)}>
-          <div className="notification-modal modal-lg" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Chi tiết thông báo</h2>
-              <button className="btn-close" onClick={() => setViewNotification(null)}>×</button>
-            </div>
-            <div className="modal-body">
-              <div className="detail-header">
-                <h2 className="detail-title">{viewNotification.title}</h2>
-                <div className="detail-meta">
-                  <div className="meta-item">
-                    <span>Ngày gửi: {formatDateTime(viewNotification.createdAt)}</span>
-                  </div>
-                  <span className={`status-badge ${viewNotification.is_read ? 'status-sent' : 'status-draft'}`}>
-                    {viewNotification.is_read ? 'Đã đọc' : 'Chưa đọc'}
-                  </span>
-                </div>
-              </div>
-              <div
-                className="detail-content"
-                dangerouslySetInnerHTML={{ __html: viewNotification.content }}
-              />
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={() => setViewNotification(null)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <X size={18} /> Đóng
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
       )}
 
       {deleteNotification && (

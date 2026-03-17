@@ -2,7 +2,7 @@
 
 export interface NotificationRecipient {
   recipient_id: string;
-  recipient_role: 'manager' | 'accountant';
+  recipient_role: 'manager' | 'accountant' | 'tenant';
   is_read: boolean;
   read_at: Date | null;
 }
@@ -11,7 +11,7 @@ export interface Notification {
   _id: string;
   title: string;
   content: string;
-  type: 'staff' | 'system';
+  type: 'staff' | 'system' | 'tenant';
   status: 'draft' | 'sent' | 'archived';
   created_by: string;
   recipients: NotificationRecipient[];
