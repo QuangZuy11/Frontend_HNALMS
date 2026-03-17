@@ -61,7 +61,9 @@ export default function ManagerNotificationList() {
       });
 
       if (res.success) {
-        setNotifications(res.data.notifications || []);
+        // Manager gửi thông báo cho tenant: chỉ hiển thị type là 'tenant'
+        const filtered = (res.data.notifications || []).filter(n => n.type === 'tenant');
+        setNotifications(filtered);
         setTotalPages(res.data.pagination.total_pages);
         setTotalItems(res.data.pagination.total_count);
       }

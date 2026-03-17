@@ -72,7 +72,14 @@ const HeaderNotification = ({ role }: HeaderNotificationProps) => {
             const params: any = { page: 1, limit: 10 };
             if (tab === 'UNREAD') params.is_read = 'false';
             const res = await notificationService.getMyNotifications(params);
-            if (res.success) setNotifications(res.data.notifications || []);
+            if (res.success) {
+                let notifs = res.data.notifications || [];
+                // Owner chỉ hiển thị thông báo type là 'system'
+                if (role === 'owner') {
+                    notifs = notifs.filter(n => n.type === 'system');
+                }
+                setNotifications(notifs);
+            }
         } catch { /* silent */ }
     };
 
@@ -81,7 +88,12 @@ const HeaderNotification = ({ role }: HeaderNotificationProps) => {
             setAllLoading(true);
             const res = await notificationService.getMyNotifications({ page: pg, limit: 10 });
             if (res.success) {
-                setAllNotifications(res.data.notifications || []);
+                let notifs = res.data.notifications || [];
+                // Owner chỉ hiển thị thông báo type là 'system'
+                if (role === 'owner') {
+                    notifs = notifs.filter(n => n.type === 'system');
+                }
+                setAllNotifications(notifs);
                 setAllTotalPages(res.data.pagination.total_pages);
                 setAllPage(pg);
             }
