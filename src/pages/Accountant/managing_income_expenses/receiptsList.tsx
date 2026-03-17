@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { Eye } from "lucide-react";
 import { cashFlowService } from "../../../services/cashFlowService";
 import "./receiptsList.css";
-import { Eye } from "lucide-react";
 
 interface ReceiptTicket {
   _id: string;
@@ -400,7 +400,7 @@ export default function ReceiptsList() {
                   <div className="receipts-detail-row">
                     <span className="receipts-detail-label">Mã phiếu:</span>
                     <span className="receipts-detail-value">
-                      {selectedTicket.paymentVoucher || "-"}
+                      {selectedTicket.invoiceCode || "-"}
                     </span>
                   </div>
                   <div className="receipts-detail-row">

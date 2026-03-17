@@ -68,7 +68,6 @@ export const requestService = {
     financial?: {
       financialTitle: string;
       financialAmount: number;
-      financialType?: 'Payment' | 'Receipt' | string;
       paymentVoucher?: string;
     },
     paymentType?: 'REVENUE' | 'EXPENSE'
@@ -86,9 +85,6 @@ export const requestService = {
       if (financial) {
         body.financialTitle = financial.financialTitle;
         body.financialAmount = financial.financialAmount;
-        if (financial.financialType) {
-          body.financialType = financial.financialType;
-        }
         if (financial.paymentVoucher) {
           body.paymentVoucher = financial.paymentVoucher;
         }

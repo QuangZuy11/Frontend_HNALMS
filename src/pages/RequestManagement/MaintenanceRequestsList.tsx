@@ -274,7 +274,6 @@ export default function MaintenanceRequestsList() {
         {
           financialTitle: paymentForm.financialTitle.trim(),
           financialAmount: amountNumber,
-          financialType: 'Payment',
           paymentVoucher: autoPaymentVoucher,
         },
         'EXPENSE',
