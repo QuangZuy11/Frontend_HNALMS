@@ -30,12 +30,11 @@ interface Invoice {
   contractId?: any; 
   roomId?: any;     
   title: string;
-  type: 'Periodic' | 'Incurred'; // Đã thêm lại type để FE tự phân biệt
+  type: 'Periodic' | 'Incurred'; 
   totalAmount: number;
   status: 'Draft' | 'Unpaid' | 'Paid';
   dueDate: string;
   items?: InvoiceItem[]; 
-  // Dành riêng cho hóa đơn phát sinh
   deviceName?: string;
   repairDescription?: string;
   createdAt?: string;
@@ -49,7 +48,7 @@ const InvoiceManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const [filterStatus, setFilterStatus] = useState<string>('All');
-  const [filterType, setFilterType] = useState<string>('All'); // Khôi phục bộ lọc loại HĐ
+  const [filterType, setFilterType] = useState<string>('All'); 
 
   const [sortConfig, setSortConfig] = useState<{ key: string | null, direction: 'asc' | 'desc' }>({ 
     key: null, 
@@ -63,8 +62,10 @@ const InvoiceManager = () => {
   const [showDetailModal, setShowDetailModal] = useState(false); 
   const [showBulkReadingModal, setShowBulkReadingModal] = useState(false);
   
-  const [bulkData, setBulkData] = useState<Record<string, { eOld: number, eNew: number, wOld: number, wNew: number }>>({});
+  // [CẬP NHẬT] Thêm eReset và wReset vào BulkData
+  const [bulkData, setBulkData] = useState<Record<string, { eOld: number, eNew: number, wOld: number, wNew: number, eReset: boolean, wReset: boolean }>>({});
   const [occupiedRooms, setOccupiedRooms] = useState<any[]>([]);
+  const [completedRooms, setCompletedRooms] = useState<Record<string, boolean>>({});
 
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -77,17 +78,15 @@ const InvoiceManager = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [services, setServices] = useState<any[]>([]);
 
-  // const getRoomName = (room: Invoice['roomId']) => {
-  //   if (!room) return 'N/A';
-  //   return typeof room === 'object' ? room.name || 'N/A' : room;
-  // };
+  // [CẬP NHẬT] Thêm trạng thái Reset cho Modal nhập đơn lẻ
+  const [isElecReset, setIsElecReset] = useState(false);
+  const [isWaterReset, setIsWaterReset] = useState(false);
 
   const [dualReadingForm, setDualReadingForm] = useState({
     elecOld: 0, elecNew: 0,
     waterOld: 0, waterNew: 0
   });
 
-  // Helper bóc tách thông tin Phòng
   const getRoomName = (inv: any) => {
     if (inv?.roomId && typeof inv.roomId === 'object') return inv.roomId.name;
     if (inv?.roomId) return inv.roomId;
@@ -122,7 +121,6 @@ const InvoiceManager = () => {
     }
   };
 
-  // LẤY VÀ GỘP CẢ 2 LOẠI HÓA ĐƠN TỪ 2 API KHÁC NHAU
   const fetchInvoices = async () => {
     setLoading(true);
     try {
@@ -136,7 +134,6 @@ const InvoiceManager = () => {
 
       const combined = [...periodicData, ...incurredData];
       
-      // Sắp xếp mới nhất lên đầu
       combined.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
       setInvoices(combined);
@@ -162,6 +159,8 @@ const InvoiceManager = () => {
     const rId = getRoomIdStr(invoice); 
     
     setDualReadingForm({ elecOld: 0, elecNew: 0, waterOld: 0, waterNew: 0 });
+    setIsElecReset(false);
+    setIsWaterReset(false);
     setShowReadingModal(true);
 
     const elecService = services.find(s => ['điện', 'dien'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
@@ -174,7 +173,7 @@ const InvoiceManager = () => {
       try {
         const resE = await axios.get(`${API_BASE_URL}/meter-readings/latest?roomId=${rId}&utilityId=${elecService._id}`);
         if (resE.data?.data) {
-          eOld = resE.data.data.oldIndex;
+          eOld = resE.data.data.newIndex;
           eCurrent = resE.data.data.newIndex; 
         }
       } catch (error) {}
@@ -184,7 +183,7 @@ const InvoiceManager = () => {
       try {
         const resW = await axios.get(`${API_BASE_URL}/meter-readings/latest?roomId=${rId}&utilityId=${waterService._id}`);
         if (resW.data?.data) {
-          wOld = resW.data.data.oldIndex;
+          wOld = resW.data.data.newIndex;
           wCurrent = resW.data.data.newIndex; 
         }
       } catch (error) {}
@@ -207,16 +206,20 @@ const InvoiceManager = () => {
 
       const apiCalls = [];
 
-      if (elecService && dualReadingForm.elecNew >= dualReadingForm.elecOld) {
-        apiCalls.push({ roomId: rId, utilityId: elecService._id, oldIndex: dualReadingForm.elecOld, newIndex: dualReadingForm.elecNew });
+      // Tính toán tiêu thụ nháp trên Frontend để kiểm tra điều kiện
+      const eUsage = isElecReset ? (100000 - dualReadingForm.elecOld + dualReadingForm.elecNew) : (dualReadingForm.elecNew - dualReadingForm.elecOld);
+      const wUsage = isWaterReset ? (100000 - dualReadingForm.waterOld + dualReadingForm.waterNew) : (dualReadingForm.waterNew - dualReadingForm.waterOld);
+
+      if (elecService && eUsage > 0) {
+        apiCalls.push({ roomId: rId, utilityId: elecService._id, oldIndex: dualReadingForm.elecOld, newIndex: dualReadingForm.elecNew, isReset: isElecReset, maxIndex: 100000 });
       }
 
-      if (waterService && dualReadingForm.waterNew >= dualReadingForm.waterOld) {
-        apiCalls.push({ roomId: rId, utilityId: waterService._id, oldIndex: dualReadingForm.waterOld, newIndex: dualReadingForm.waterNew });
+      if (waterService && wUsage > 0) {
+        apiCalls.push({ roomId: rId, utilityId: waterService._id, oldIndex: dualReadingForm.waterOld, newIndex: dualReadingForm.waterNew, isReset: isWaterReset, maxIndex: 100000 });
       }
 
       if (apiCalls.length === 0) {
-        toastr.warning("Vui lòng nhập chỉ số mới lớn hơn hoặc bằng chỉ số cũ!");
+        toastr.warning("Không có chỉ số hợp lệ nào được nhập!");
         return;
       }
 
@@ -234,12 +237,20 @@ const InvoiceManager = () => {
 
   const handleOpenBulkReading = async () => {
     try {
+      const draftRoomIds = invoices
+        .filter(inv => inv.status === 'Draft' && inv.type === 'Periodic')
+        .map(inv => getRoomIdStr(inv))
+        .filter(id => id !== ''); 
+
       const roomsRes = await axios.get(`${API_BASE_URL}/rooms`);
       const allRooms = roomsRes.data.data || [];
-      const activeRooms = allRooms.filter((r: any) => r.status === 'Occupied');
+
+      const activeRooms = allRooms.filter((r: any) => 
+        r.status === 'Occupied' || draftRoomIds.includes(r._id)
+      );
 
       if (activeRooms.length === 0) {
-        toastr.warning("Không có phòng nào đang thuê để ghi điện nước!");
+        toastr.warning("Không có phòng nào cần ghi điện nước lúc này! (Gợi ý: Hãy bấm 'Tạo HĐ Định kỳ' trước)");
         return;
       }
 
@@ -247,38 +258,58 @@ const InvoiceManager = () => {
       
       const initialData: any = {};
       activeRooms.forEach((r: any) => {
-        initialData[r._id] = { eOld: 0, eNew: 0, wOld: 0, wNew: 0 };
+        initialData[r._id] = { eOld: 0, eNew: 0, wOld: 0, wNew: 0, eReset: false, wReset: false };
       });
-      setBulkData(initialData);
-      setShowBulkReadingModal(true);
-
+      
       const elecService = services.find(s => ['điện', 'dien'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
       const waterService = services.find(s => ['nước', 'nuoc'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
 
       const updatedData = { ...initialData };
+      const newCompletedStatus: Record<string, boolean> = {}; 
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
 
       await Promise.all(activeRooms.map(async (room: any) => {
+        let eDone = false;
+        let wDone = false;
+
         if (elecService) {
           try {
             const res = await axios.get(`${API_BASE_URL}/meter-readings/latest?roomId=${room._id}&utilityId=${elecService._id}`);
-            if (res.data?.data?.newIndex) {
+            if (res.data?.data) {
               updatedData[room._id].eOld = res.data.data.newIndex;
               updatedData[room._id].eNew = res.data.data.newIndex; 
+              
+              const createdDate = new Date(res.data.data.createdAt);
+              if (createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear) {
+                eDone = true;
+              }
             }
           } catch (e) {}
         }
         if (waterService) {
           try {
             const res = await axios.get(`${API_BASE_URL}/meter-readings/latest?roomId=${room._id}&utilityId=${waterService._id}`);
-            if (res.data?.data?.newIndex) {
+            if (res.data?.data) {
               updatedData[room._id].wOld = res.data.data.newIndex;
               updatedData[room._id].wNew = res.data.data.newIndex;
+
+              const createdDate = new Date(res.data.data.createdAt);
+              if (createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear) {
+                wDone = true;
+              }
             }
           } catch (e) {}
+        }
+        
+        if (eDone && wDone) {
+          newCompletedStatus[room._id] = true;
         }
       }));
 
       setBulkData({...updatedData});
+      setCompletedRooms(newCompletedStatus); 
+      setShowBulkReadingModal(true);
     } catch (error) {
       toastr.error("Không thể lấy dữ liệu phòng");
     }
@@ -291,17 +322,24 @@ const InvoiceManager = () => {
     const apiCalls = [];
 
     Object.keys(bulkData).forEach(roomId => {
+      if (completedRooms[roomId]) return; 
+
       const data = bulkData[roomId];
-      if (elecService && data.eNew >= data.eOld) {
-        apiCalls.push({ roomId, utilityId: elecService._id, oldIndex: data.eOld, newIndex: data.eNew });
+      
+      const eUsage = data.eReset ? (100000 - data.eOld + data.eNew) : (data.eNew - data.eOld);
+      if (elecService && eUsage > 0) {
+        apiCalls.push({ roomId, utilityId: elecService._id, oldIndex: data.eOld, newIndex: data.eNew, isReset: data.eReset, maxIndex: 100000 });
       }
-      if (waterService && data.wNew >= data.wOld) {
-        apiCalls.push({ roomId, utilityId: waterService._id, oldIndex: data.wOld, newIndex: data.wNew });
+
+      const wUsage = data.wReset ? (100000 - data.wOld + data.wNew) : (data.wNew - data.wOld);
+      if (waterService && wUsage > 0) {
+        apiCalls.push({ roomId, utilityId: waterService._id, oldIndex: data.wOld, newIndex: data.wNew, isReset: data.wReset, maxIndex: 100000 });
       }
     });
 
     if (apiCalls.length === 0) {
-      toastr.warning("Chưa có chỉ số mới nào được cập nhật hợp lệ.");
+      toastr.warning("Không có chỉ số thay đổi nào hợp lệ được ghi nhận.");
+      setShowBulkReadingModal(false);
       return;
     }
 
@@ -395,7 +433,6 @@ const InvoiceManager = () => {
       const endpoint = invoice.type === 'Periodic' ? 'periodic' : 'incurred';
       const res = await axios.get(`${API_BASE_URL}/invoices/${endpoint}/${invoice._id}`);
       
-      // Inject lại type vì API có thể không trả về
       setSelectedInvoice({ ...res.data.data, type: invoice.type });
       setShowDetailModal(true);
     } catch (error) {
@@ -679,7 +716,6 @@ const InvoiceManager = () => {
                   
                   <td>
                     <div style={{ display: 'flex', gap: 8 }}>
-                      {/* Chỉ hiện nút Sửa điện nước nếu là Hóa đơn Định kỳ */}
                       {isDraft && inv.type === 'Periodic' && (
                          <button className="btn-icon" title="Sửa Điện/Nước" onClick={() => handleOpenReading(inv)}>
                            <Edit3 size={18} color="#0284c7" />
@@ -748,7 +784,7 @@ const InvoiceManager = () => {
         </div>
       )}
 
-      {/* MODAL 1: NHẬP SỐ ĐIỆN NƯỚC */}
+      {/* MODAL 1: NHẬP SỐ ĐIỆN NƯỚC ĐƠN LẺ */}
       {showReadingModal && selectedInvoice && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ width: '600px' }}>
@@ -769,22 +805,20 @@ const InvoiceManager = () => {
                           (Giá: {formatCurrency(elecServiceInfo.currentPrice || elecServiceInfo.price || 0)} / kWh)
                         </span>
                       </h4>
+                      <label style={{ fontSize: '13px', color: '#dc2626', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={isElecReset} onChange={(e) => setIsElecReset(e.target.checked)} style={{ margin: 0, cursor: 'pointer' }} />
+                        Đồng hồ quay vòng (Reset)
+                      </label>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                       <div className="form-group" style={{ marginBottom: 0 }}>
                         <label>Chỉ số tháng cũ</label>
-                        <input 
-                          type="number" 
-                          disabled 
-                          value={dualReadingForm.elecOld} 
-                          style={{ background: '#f1f5f9', cursor: 'not-allowed' }}
-                        />
+                        <input type="number" disabled value={dualReadingForm.elecOld} style={{ background: '#f1f5f9', cursor: 'not-allowed' }} />
                       </div>
                       <div className="form-group" style={{ marginBottom: 0 }}>
                         <label>Chỉ số tháng này</label>
-                        <input 
-                          type="number" 
-                          min={dualReadingForm.elecOld} 
+                        <input type="number" 
+                          min={isElecReset ? 0 : dualReadingForm.elecOld} 
                           required 
                           value={dualReadingForm.elecNew} 
                           onChange={e => setDualReadingForm({...dualReadingForm, elecNew: Number(e.target.value)})} 
@@ -792,7 +826,7 @@ const InvoiceManager = () => {
                       </div>
                     </div>
                     <div style={{ marginTop: '8px', fontSize: '14px', fontWeight: 600, color: '#b45309' }}>
-                      Sử dụng: {Math.max(0, dualReadingForm.elecNew - dualReadingForm.elecOld)} kWh
+                      Sử dụng: {Math.max(0, isElecReset ? (100000 - dualReadingForm.elecOld + dualReadingForm.elecNew) : (dualReadingForm.elecNew - dualReadingForm.elecOld))} kWh
                     </div>
                   </div>
                 )}
@@ -807,22 +841,20 @@ const InvoiceManager = () => {
                           (Giá: {formatCurrency(waterServiceInfo.currentPrice || waterServiceInfo.price || 0)} / Khối)
                         </span>
                       </h4>
+                      <label style={{ fontSize: '13px', color: '#dc2626', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={isWaterReset} onChange={(e) => setIsWaterReset(e.target.checked)} style={{ margin: 0, cursor: 'pointer' }} />
+                        Đồng hồ quay vòng (Reset)
+                      </label>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                       <div className="form-group" style={{ marginBottom: 0 }}>
                         <label>Chỉ số tháng cũ</label>
-                        <input 
-                          type="number" 
-                          disabled 
-                          value={dualReadingForm.waterOld} 
-                          style={{ background: '#f1f5f9', cursor: 'not-allowed' }}
-                        />
+                        <input type="number" disabled value={dualReadingForm.waterOld} style={{ background: '#f1f5f9', cursor: 'not-allowed' }} />
                       </div>
                       <div className="form-group" style={{ marginBottom: 0 }}>
                         <label>Chỉ số tháng này</label>
-                        <input 
-                          type="number" 
-                          min={dualReadingForm.waterOld} 
+                        <input type="number" 
+                          min={isWaterReset ? 0 : dualReadingForm.waterOld} 
                           required 
                           value={dualReadingForm.waterNew} 
                           onChange={e => setDualReadingForm({...dualReadingForm, waterNew: Number(e.target.value)})} 
@@ -830,7 +862,7 @@ const InvoiceManager = () => {
                       </div>
                     </div>
                     <div style={{ marginTop: '8px', fontSize: '14px', fontWeight: 600, color: '#0369a1' }}>
-                      Sử dụng: {Math.max(0, dualReadingForm.waterNew - dualReadingForm.waterOld)} Khối
+                      Sử dụng: {Math.max(0, isWaterReset ? (100000 - dualReadingForm.waterOld + dualReadingForm.waterNew) : (dualReadingForm.waterNew - dualReadingForm.waterOld))} Khối
                     </div>
                   </div>
                 )}
@@ -845,7 +877,7 @@ const InvoiceManager = () => {
         </div>
       )}
 
-      {/* MODAL 2: CHI TIẾT HÓA ĐƠN (HỖ TRỢ HIỂN THỊ 2 LOẠI) */}
+      {/* MODAL 2: CHI TIẾT HÓA ĐƠN */}
       {showDetailModal && selectedInvoice && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ width: '650px' }}>
@@ -883,7 +915,6 @@ const InvoiceManager = () => {
                 </span>
               </div>
 
-              {/* NẾU LÀ HÓA ĐƠN ĐỊNH KỲ -> HIỂN THỊ BẢNG ITEMS */}
               {selectedInvoice.type === 'Periodic' && selectedInvoice.items && selectedInvoice.items.length > 0 && (
                 <div style={{ marginTop: '20px', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
                   <table className="invoice-table" style={{ margin: 0, width: '100%', fontSize: '14px' }}>
@@ -921,7 +952,6 @@ const InvoiceManager = () => {
                 </div>
               )}
 
-              {/* NẾU LÀ HÓA ĐƠN PHÁT SINH -> HIỂN THỊ CHI TIẾT LỖI HỎNG HÓC */}
               {selectedInvoice.type === 'Incurred' && (
                 <div style={{ marginTop: '20px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', background: '#f8fafc' }}>
                   <h4 style={{ margin: '0 0 12px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -990,7 +1020,7 @@ const InvoiceManager = () => {
             </div>
             <div className="modal-body" style={{ padding: '0' }}>
               <div style={{ padding: '16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '14px' }}>
-                * Vui lòng nhập <b>chỉ số mới</b> cho các phòng. Hệ thống đã tự động lấy chỉ số cũ của tháng trước. Chỉ những phòng có số mới lớn hơn số cũ mới được lưu.
+                * Hệ thống tự động bỏ qua nếu số mới không thay đổi. Nếu đồng hồ bị quay vòng (nhảy về 0), hãy tick vào ô <b>"Reset"</b>.
               </div>
               <table className="invoice-table" style={{ margin: 0 }}>
                 <thead>
@@ -1003,27 +1033,54 @@ const InvoiceManager = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {occupiedRooms.map(room => (
-                    <tr key={room._id}>
-                      <td style={{ fontWeight: 'bold', color: '#0f172a' }}>{room.name}</td>
-                      <td>
-                        <input type="number" disabled value={bulkData[room._id]?.eOld || 0} style={{ width: '80px', padding: '6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 4, cursor: 'not-allowed' }} />
-                      </td>
-                      <td>
-                        <input type="number" min={bulkData[room._id]?.eOld || 0} value={bulkData[room._id]?.eNew || 0} 
-                          onChange={(e) => setBulkData({ ...bulkData, [room._id]: { ...bulkData[room._id], eNew: Number(e.target.value) } })}
-                          style={{ width: '100px', padding: '6px', border: '1px solid #3b82f6', borderRadius: 4 }} />
-                      </td>
-                      <td>
-                        <input type="number" disabled value={bulkData[room._id]?.wOld || 0} style={{ width: '80px', padding: '6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 4, cursor: 'not-allowed' }} />
-                      </td>
-                      <td>
-                        <input type="number" min={bulkData[room._id]?.wOld || 0} value={bulkData[room._id]?.wNew || 0} 
-                          onChange={(e) => setBulkData({ ...bulkData, [room._id]: { ...bulkData[room._id], wNew: Number(e.target.value) } })}
-                          style={{ width: '100px', padding: '6px', border: '1px solid #0ea5e9', borderRadius: 4 }} />
-                      </td>
-                    </tr>
-                  ))}
+                  {occupiedRooms.map(room => {
+                    const isDone = completedRooms[room._id]; // Kiểm tra xem phòng này đã chốt chưa
+
+                    return (
+                      <tr key={room._id} style={{ opacity: isDone ? 0.6 : 1, background: isDone ? '#f8fafc' : 'white' }}>
+                        <td style={{ fontWeight: 'bold', color: '#0f172a', verticalAlign: 'top', paddingTop: '16px' }}>
+                          {room.name}
+                          {isDone && <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 'normal', marginTop: '4px' }}>✓ Đã chốt</div>}
+                        </td>
+                        <td style={{ verticalAlign: 'top', paddingTop: '16px' }}>
+                          <input type="number" disabled value={bulkData[room._id]?.eOld || 0} style={{ width: '80px', padding: '6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 4, cursor: 'not-allowed' }} />
+                        </td>
+                        <td style={{ verticalAlign: 'top', paddingTop: '16px' }}>
+                          <input type="number" 
+                            disabled={isDone} 
+                            min={bulkData[room._id]?.eReset ? 0 : (bulkData[room._id]?.eOld || 0)} 
+                            value={bulkData[room._id]?.eNew || 0} 
+                            onChange={(e) => setBulkData({ ...bulkData, [room._id]: { ...bulkData[room._id], eNew: Number(e.target.value) } })}
+                            style={{ width: '100px', padding: '6px', border: '1px solid #3b82f6', borderRadius: 4, cursor: isDone ? 'not-allowed' : 'text' }} 
+                          />
+                          {!isDone && (
+                            <label style={{ fontSize: '11px', color: '#dc2626', cursor: 'pointer', display: 'flex', alignItems: 'center', marginTop: '8px' }}>
+                              <input type="checkbox" checked={bulkData[room._id]?.eReset} onChange={e => setBulkData({...bulkData, [room._id]: {...bulkData[room._id], eReset: e.target.checked}})} style={{ width: '13px', height: '13px', margin: 0, marginRight: '6px' }} />
+                              Reset
+                            </label>
+                          )}
+                        </td>
+                        <td style={{ verticalAlign: 'top', paddingTop: '16px' }}>
+                          <input type="number" disabled value={bulkData[room._id]?.wOld || 0} style={{ width: '80px', padding: '6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 4, cursor: 'not-allowed' }} />
+                        </td>
+                        <td style={{ verticalAlign: 'top', paddingTop: '16px' }}>
+                          <input type="number" 
+                            disabled={isDone} 
+                            min={bulkData[room._id]?.wReset ? 0 : (bulkData[room._id]?.wOld || 0)} 
+                            value={bulkData[room._id]?.wNew || 0} 
+                            onChange={(e) => setBulkData({ ...bulkData, [room._id]: { ...bulkData[room._id], wNew: Number(e.target.value) } })}
+                            style={{ width: '100px', padding: '6px', border: '1px solid #0ea5e9', borderRadius: 4, cursor: isDone ? 'not-allowed' : 'text' }} 
+                          />
+                          {!isDone && (
+                            <label style={{ fontSize: '11px', color: '#dc2626', cursor: 'pointer', display: 'flex', alignItems: 'center', marginTop: '8px' }}>
+                              <input type="checkbox" checked={bulkData[room._id]?.wReset} onChange={e => setBulkData({...bulkData, [room._id]: {...bulkData[room._id], wReset: e.target.checked}})} style={{ width: '13px', height: '13px', margin: 0, marginRight: '6px' }} />
+                              Reset
+                            </label>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

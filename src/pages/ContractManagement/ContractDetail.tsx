@@ -279,6 +279,27 @@ const ContractDetail = () => {
     (s: any) => getServiceCategory(s.name) === "quantity_based",
   );
 
+  const calculatePrepayMonths = () => {
+    if (!contract.startDate || !contract.rentPaidUntil) return 0;
+    const start = new Date(contract.startDate);
+    const paidUntil = new Date(contract.rentPaidUntil);
+    let months = (paidUntil.getFullYear() - start.getFullYear()) * 12;
+    months -= start.getMonth();
+    months += paidUntil.getMonth();
+    // The rentPaidUntil logic goes to end of month. If rentPaidUntil is end of Jan, and start is mid Dec,
+    // differences in month is 1. If start is Dec 1 and paidUntil is Jan 31, diff is 1.
+    // The formulation used in Creation is exactly: start.getMonth() + 1 + prepayMonths
+    // So prepayMonths = paidUntil.getMonth() - start.getMonth() - 1 + (years * 12)
+    // Wait, let's reverse exactly: 
+    // paidUntil = new Date(start.getFullYear(), start.getMonth() + 1 + prepayMonths, 0)
+    // paidUntil.getMonth() = (start.getMonth() + 1 + prepayMonths - 1) % 12
+    // It's simpler to just do: (paidUntil.getFullYear() - start.getFullYear()) * 12 + paidUntil.getMonth() - start.getMonth()
+    let prepay = (paidUntil.getFullYear() - start.getFullYear()) * 12 + paidUntil.getMonth() - start.getMonth();
+    return prepay;
+  };
+
+  const prepayMonths = calculatePrepayMonths();
+
   const serifFont = '"Times New Roman", Times, serif';
 
   return (
@@ -590,6 +611,12 @@ const ContractDetail = () => {
             <br />- Thời hạn thuê: <strong>{contract.duration}</strong> tháng,
             bắt đầu từ ngày <strong>{formatDateVN(contract.startDate)}</strong>{" "}
             đến ngày <strong>{formatDateVN(contract.endDate)}</strong>.
+            {prepayMonths > 0 && (
+              <>
+                <br />- Trả trước tiền phòng: <strong>{prepayMonths}</strong> tháng
+                (Đến hết ngày <strong>{formatDateVN(contract.rentPaidUntil)}</strong>).
+              </>
+            )}
             <br />- Giá thuê phòng là:{" "}
             <strong style={{ color: "#d32f2f" }}>
               {roomPrice.toLocaleString()}

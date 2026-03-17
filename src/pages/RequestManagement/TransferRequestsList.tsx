@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, Check, X } from 'lucide-react';
 import { transferRequestService } from '../../services/requestService';
+import api from '../../services/api';
 import './TransferRequestsList.css';
 
 interface RoomType {
@@ -28,15 +30,6 @@ interface Tenant {
   phoneNumber?: string;
 }
 
-interface Proration {
-  oldRoomPrice: number;
-  newRoomPrice: number;
-  daysRemainingInMonth: number;
-  oldRoomRefund: number;
-  newRoomCharge: number;
-  difference: number;
-}
-
 interface TransferRequest {
   _id: string;
   tenantId?: Tenant | null;
@@ -48,10 +41,36 @@ interface TransferRequest {
   managerNote?: string;
   rejectReason?: string;
   completedAt?: string;
-  prorationNote?: string;
-  proration?: Proration;
   createdAt: string;
   transferDate?: string | null;
+}
+
+interface Contract {
+  _id?: string;
+  status?: string;
+  tenantId?: { _id?: string; phoneNumber?: string; email?: string } | string;
+  roomId?: { _id?: string } | string;
+  depositId?: { _id?: string } | string;
+  duration?: number;
+  tenantInfo?: Record<string, unknown>;
+  coResidents?: unknown[];
+  bookServices?: Array<{
+    serviceId?: { _id?: string; name?: string; currentPrice?: number; type?: string } | string;
+    name?: string;
+    currentPrice?: number;
+    type?: string;
+    category?: string;
+    quantity?: number;
+  }>;
+}
+
+interface BookService {
+  serviceId?: { _id?: string; name?: string; currentPrice?: number; type?: string } | string;
+  name?: string;
+  currentPrice?: number;
+  type?: string;
+  category?: string;
+  quantity?: number;
 }
 
 type StatusFilter = 'ALL' | 'Pending' | 'Approved' | 'Rejected' | 'Completed' | 'Cancelled';
@@ -73,6 +92,7 @@ const STATUS_BADGE_CLASS: Record<string, string> = {
 };
 
 export default function TransferRequestsList() {
+  const navigate = useNavigate();
   const [requests, setRequests] = useState<TransferRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -241,11 +261,89 @@ export default function TransferRequestsList() {
     if (!completingRequest) return;
     try {
       setCompleteLoading(true);
-      await transferRequestService.completeTransferRequest(completingRequest._id);
+
+      // Tìm hợp đồng cũ (đang active) TRƯỚC khi gọi complete
+      let oldDepositId: string | undefined;
+      let oldContract: Contract | undefined;
+      try {
+        const contractsRes = await api.get('/contracts');
+        if (contractsRes.data.success && Array.isArray(contractsRes.data.data)) {
+          const tenantId = completingRequest.tenantId?._id;
+          const currentRoomId = completingRequest.currentRoomId?._id;
+          oldContract = (contractsRes.data.data as Contract[]).find((c: Contract) => {
+            const cTenantId = typeof c.tenantId === 'object' ? c.tenantId?._id : c.tenantId;
+            const cRoomId = typeof c.roomId === 'object' ? c.roomId?._id : c.roomId;
+            return (
+              c.status === 'active' &&
+              (cTenantId === tenantId) &&
+              (cRoomId === currentRoomId)
+            );
+          });
+        }
+      } catch (fetchErr) {
+        console.error('Không thể lấy dữ liệu hợp đồng cũ:', fetchErr);
+      }
+
+      // Gọi complete sau khi đã lấy dữ liệu hợp đồng cũ
+      await transferRequestService.completeTransferRequest(completingRequest._id, {
+        transferDate: completingRequest.transferDate ?? undefined,
+      });
       setShowCompleteModal(false);
       setCompletingRequest(null);
-      fetchRequests();
       if (selectedRequest?._id === completingRequest._id) setSelectedRequest(null);
+
+      // Lưu dữ liệu hợp đồng cũ vào sessionStorage để pre-fill form hợp đồng mới
+      if (oldContract) {
+        oldDepositId = typeof oldContract.depositId === 'object'
+          ? oldContract.depositId?._id
+          : oldContract.depositId;
+
+        const tenantIdObj = typeof oldContract.tenantId === 'object' ? oldContract.tenantId : undefined;
+        const tenantInfoObj = (oldContract.tenantInfo as Record<string, unknown>) || {};
+        const draft = {
+          formValues: {
+            roomId: completingRequest.targetRoomId?._id || '',
+            startDate: new Date().toISOString().split('T')[0],
+            duration: oldContract.duration || 12,
+            prepayMonths: 2,
+            tenantInfo: {
+              fullName: tenantInfoObj.fullName || tenantInfoObj.fullname || '',
+              phone: tenantInfoObj.phone || tenantIdObj?.phoneNumber || '',
+              email: tenantInfoObj.email || tenantIdObj?.email || '',
+              address: tenantInfoObj.address || '',
+              dob: tenantInfoObj.dob || '',
+              cccd: tenantInfoObj.cccd || '',
+              gender: tenantInfoObj.gender || 'Male',
+              contactRef: tenantInfoObj.contactRef || '',
+            },
+            coResidents: oldContract.coResidents || [],
+            roomSharer: (oldContract.coResidents?.length || 0) > 0,
+          },
+          selectedServices: (oldContract.bookServices || []).map((s: BookService) => {
+            const serviceIdObj = typeof s.serviceId === 'object' ? s.serviceId : undefined;
+            return {
+              serviceId: serviceIdObj?._id || s.serviceId || '',
+              name: serviceIdObj?.name || s.name || '',
+              price: serviceIdObj?.currentPrice || s.currentPrice || 0,
+              type: serviceIdObj?.type || s.type || '',
+              category: s.category || 'fixed_monthly',
+              quantity: s.quantity || 1,
+            };
+          }),
+          vehicleQuantities: {},
+          contractImages: [],
+        };
+        sessionStorage.setItem('contractFormDraft', JSON.stringify(draft));
+      }
+
+      // Chuyển đến trang tạo hợp đồng mới với phòng mới và tiền cọc được chuyển sang
+      navigate('/manager/contracts/create', {
+        state: {
+          roomId: completingRequest.targetRoomId?._id,
+          depositId: oldDepositId,
+          fromTransfer: true,
+        },
+      });
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { message?: string } } };
       alert(anyErr?.response?.data?.message || 'Hoàn tất chuyển phòng thất bại');
@@ -512,12 +610,6 @@ export default function TransferRequestsList() {
                   <span className="detail-value" style={{ color: '#b91c1c' }}>{selectedRequest.rejectReason}</span>
                 </div>
               )}
-              {selectedRequest.prorationNote && (
-                <div className="detail-row">
-                  <span className="detail-label">Xử lý chênh lệch:</span>
-                  <span className="detail-value">{selectedRequest.prorationNote}</span>
-                </div>
-              )}
               {selectedRequest.status === 'Pending' && (
                 <div className="detail-actions">
                   <button
@@ -635,19 +727,15 @@ export default function TransferRequestsList() {
                 <strong>{getRoomDisplay(completingRequest.currentRoomId)}</strong> sang phòng{' '}
                 <strong>{getRoomDisplay(completingRequest.targetRoomId)}</strong>?
               </p>
-              {completingRequest.proration && (
-                <div style={{ backgroundColor: '#f3f4f6', padding: '12px', borderRadius: '6px', marginBottom: '12px' }}>
-                  <p style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: '500' }}>Thông tin chênh lệch tiền:</p>
-                  <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: '1.6' }}>
-                    <div>Phòng cũ: {formatCurrency(completingRequest.proration.oldRoomPrice)}</div>
-                    <div>Phòng mới: {formatCurrency(completingRequest.proration.newRoomPrice)}</div>
-                    <div>Ngày chuyển: {completingRequest.transferDate ? formatDate(completingRequest.transferDate) : '-'}</div>
-                    <div style={{ marginTop: '8px', fontWeight: '500', color: '#1f2937' }}>
-                      Chênh lệch: {formatCurrency(completingRequest.proration.difference)}
-                    </div>
-                  </div>
+              <div style={{ backgroundColor: '#f3f4f6', padding: '12px', borderRadius: '6px', marginBottom: '12px' }}>
+                <p style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: '500' }}>Xử lý sau khi hoàn tất:</p>
+                <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: '1.6' }}>
+                  <div>Ngày chuyển phòng: {completingRequest.transferDate ? formatDate(completingRequest.transferDate) : '-'}</div>
+                  <div>Hợp đồng hiện tại: cập nhật trạng thái thành "Đã thanh lý" và set endDate theo ngày chuyển phòng</div>
+                  <div>Hợp đồng mới: tạo mới từ dữ liệu hợp đồng cũ</div>
+                  <div>Tiền cọc: chuyển sang hợp đồng mới</div>
                 </div>
-              )}
+              </div>
               <div className="complete-form-actions">
                 <button className="btn-cancel" onClick={() => setShowCompleteModal(false)} disabled={completeLoading}>
                   Hủy

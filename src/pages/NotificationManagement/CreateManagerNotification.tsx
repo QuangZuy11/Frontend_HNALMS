@@ -1,2 +1,0 @@
-// Create manager notification
-export { }

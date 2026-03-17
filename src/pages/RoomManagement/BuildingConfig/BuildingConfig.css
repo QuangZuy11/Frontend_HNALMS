@@ -194,6 +194,7 @@
     cursor: pointer;
     color: var(--text-secondary);
     transition: all 0.2s;
+    padding: 0;
 }
 
 .btn-icon:hover {

@@ -23,7 +23,6 @@ import {
 import './OwnerSidebar.css';
 import logo from '../../../../assets/images/Logo.png';
 
-// Định nghĩa cấu trúc menu cho Chủ sở hữu
 const MENU_ITEMS = [
     {
         title: "Tổng quan",
@@ -83,7 +82,6 @@ const OwnerSidebar = () => {
     const [expandedMenus, setExpandedMenus] = useState<{ [key: number]: boolean }>({});
     const location = useLocation();
 
-    // Xử lý đóng mở menu con
     const toggleMenu = (index: number, currentExpanded: boolean) => {
         setExpandedMenus((prev) => ({
             ...prev,
@@ -92,60 +90,57 @@ const OwnerSidebar = () => {
     };
 
     return (
-        <aside className="sidebar-container">
+        <aside className="owr-sb-container">
             {/* Logo */}
-            <div className="sidebar-logo">
-                <img src={logo} alt="Hoàng Nam Apartment" className="brand-logo" />
+            <div className="owr-sb-logo">
+                <img src={logo} alt="Hoàng Nam Apartment" className="owr-sb-brand-logo" />
             </div>
 
             {/* Menu Items (Scrollable) */}
-            <div className="sidebar-nav-scroll">
-                <nav className="sidebar-nav">
+            <div className="owr-sb-nav-scroll">
+                <nav className="owr-sb-nav">
                     {MENU_ITEMS.map((item, index) => {
                         const hasSubItems = item.subItems && item.subItems.length > 0;
-                        // Fix: items không có subItems chỉ match exact path, tránh highlight sai
                         const isActiveParent = hasSubItems
                             ? location.pathname === item.path || location.pathname.startsWith(item.path + '/')
                             : location.pathname === item.path;
-                        // Dùng ?? để khi user đã toggle thủ công thì giá trị đó được ưu tiên
-                        // thay vì bị isActiveParent ghi đè → cho phép đóng dropdown khi đang ở sub-route
                         const isExpanded = expandedMenus[index] ?? isActiveParent;
 
                         return (
-                            <div key={index} className="menu-group">
+                            <div key={index} className="owr-sb-group">
                                 {/* Parent Item */}
                                 <div
                                     onClick={() => hasSubItems ? toggleMenu(index, isExpanded) : null}
-                                    className={`menu-item ${isActiveParent && !hasSubItems ? 'active' : ''} ${hasSubItems && isExpanded ? 'expanded' : ''}`}
+                                    className={`owr-sb-item ${isActiveParent && !hasSubItems ? 'active' : ''} ${hasSubItems && isExpanded ? 'expanded' : ''}`}
                                 >
                                     {hasSubItems ? (
-                                        <div className="menu-link-content">
-                                            <span className="menu-icon">{item.icon}</span>
-                                            <span className="menu-title">{item.title}</span>
-                                            <span className="menu-arrow">
+                                        <div className="owr-sb-link-content">
+                                            <span className="owr-sb-icon">{item.icon}</span>
+                                            <span className="owr-sb-title">{item.title}</span>
+                                            <span className="owr-sb-arrow">
                                                 {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                                             </span>
                                         </div>
                                     ) : (
-                                        <Link to={item.path} className="menu-link-content">
-                                            <span className="menu-icon">{item.icon}</span>
-                                            <span className="menu-title">{item.title}</span>
+                                        <Link to={item.path} className="owr-sb-link-content">
+                                            <span className="owr-sb-icon">{item.icon}</span>
+                                            <span className="owr-sb-title">{item.title}</span>
                                         </Link>
                                     )}
                                 </div>
 
                                 {/* Sub Items (Dropdown) */}
                                 {hasSubItems && isExpanded && (
-                                    <div className="submenu-container">
+                                    <div className="owr-sb-submenu">
                                         {item.subItems.map((sub, subIndex) => {
                                             const isActiveSub = location.pathname === sub.path;
                                             return (
                                                 <Link
                                                     key={subIndex}
                                                     to={sub.path}
-                                                    className={`submenu-item ${isActiveSub ? 'sub-active' : ''}`}
+                                                    className={`owr-sb-sub-item ${isActiveSub ? 'sub-active' : ''}`}
                                                 >
-                                                    <span className="submenu-icon">{sub.icon}</span>
+                                                    <span className="owr-sb-sub-icon">{sub.icon}</span>
                                                     {sub.title}
                                                 </Link>
                                             );

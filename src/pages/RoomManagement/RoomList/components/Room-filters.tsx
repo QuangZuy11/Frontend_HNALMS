@@ -387,7 +387,7 @@ export default function RoomFilters({
         <CardHeader className="rf-filter-header">
           <CardTitle className="rf-filter-title">TÌNH TRẠNG</CardTitle>
         </CardHeader>
-        <CardContent className="rf-checkbox-group">
+        <CardContent className="rf-checkbox-group rf-single-col">
           <div className="rf-checkbox-item">
             <Radio
               id="status-available"
@@ -397,6 +397,17 @@ export default function RoomFilters({
             />
             <Label htmlFor="status-available" className="rf-checkbox-label">
               Phòng trống
+            </Label>
+          </div>
+          <div className="rf-checkbox-item">
+            <Radio
+              id="status-almost-available"
+              name="statusGroup"
+              checked={selectedStatus.includes("AlmostAvailable")}
+              onCheckedChange={() => handleStatusToggle("AlmostAvailable")}
+            />
+            <Label htmlFor="status-almost-available" className="rf-checkbox-label">
+              Phòng sắp trống
             </Label>
           </div>
         </CardContent>

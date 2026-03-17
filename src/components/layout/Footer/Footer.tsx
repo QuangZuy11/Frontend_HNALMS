@@ -49,7 +49,7 @@ export default function Footer() {
                 <strong>Hotline:</strong> (+84) 869048066
               </li>
               <li className="footer-contact-item">
-                <strong>Email:</strong> info@hoangnam.vn
+                <strong>Email:</strong> toanhahoangnam@gmail.com
               </li>
               <li className="footer-contact-item">
                 <strong>Địa Chỉ:</strong> Thạch Hoà, Thạch Thất, Hà Nội
@@ -78,20 +78,18 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#" className="footer-link">
-                  Instagram
-                </a>
+               
               </li>
             </ul>
           </div>
         </div>
 
-        {/* Divider */}
+        {/* Divider
         <div className="footer-bottom">
           <p className="footer-copyright">
             © 2024 Hoàng Nam Building Management. Tất cả các quyền được bảo lưu.
           </p>
-        </div>
+        </div> */}
       </div>
     </footer>
   );

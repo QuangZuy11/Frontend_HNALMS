@@ -84,6 +84,12 @@ import TenantAccountList from "./pages/AccountManagement/Tenant/TenantAccountLis
 import TenantAccountDetail from "./pages/AccountManagement/Tenant/TenantAccountDetail";
 import Header from "./components/layout/Header/Header";
 
+// Pages - Notification Management (Owner)
+import NotificationList from "./pages/NotificationManagement/Owner/NotificationList";
+
+// Pages - Notification Management (Manager)
+import ManagerNotificationList from "./pages/NotificationManagement/Manager/ManagerNotificationList";
+
 // Pages - Contract Management
 import CreateContract from "./pages/ContractManagement/CreateContract";
 import ContractList from "./pages/ContractManagement/ContractList";
@@ -233,6 +239,7 @@ function LayoutWrapper() {
           <Route path="devices" element={<ManageDevice />} />
           <Route path="room-devices" element={<RoomDeviceManagement />} />
           <Route path="services" element={<ManageService />} />
+          <Route path="notifications" element={<NotificationList />} />
           <Route
             path="transactions/payments"
             element={<OwnerPaymentsList />}
@@ -263,9 +270,16 @@ function LayoutWrapper() {
           <Route path="residents/:id" element={<TenantAccountDetail />} />
           <Route path="services" element={<ManageService />} />
           <Route path="requests/repairs" element={<RepairRequestsList />} />
-          <Route path="requests/maintenance" element={<MaintenanceRequestsList />} />
-          <Route path="requests/complaints" element={<ComplaintRequestList />} />
+          <Route
+            path="requests/maintenance"
+            element={<MaintenanceRequestsList />}
+          />
+          <Route
+            path="requests/complaints"
+            element={<ComplaintRequestList />}
+          />
           <Route path="requests/transfers" element={<TransferRequestsList />} />
+          <Route path="notifications" element={<ManagerNotificationList />} />
           <Route path="profile" element={<ManagerProfile />} />
           <Route path="contracts" element={<ContractList />} />
           <Route path="contracts/create" element={<CreateContract />} />
@@ -293,10 +307,7 @@ function LayoutWrapper() {
           {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
           <Route path="invoices" element={<InvoiceList />} />
           {/* Phiếu thu / chi */}
-          <Route
-            path="transactions/receipts"
-            element={<ReceiptsList />}
-          />
+          <Route path="transactions/receipts" element={<ReceiptsList />} />
           <Route
             path="transactions/payments"
             element={<ManagingIncomeExpenses />}
