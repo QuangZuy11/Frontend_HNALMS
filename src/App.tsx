@@ -59,6 +59,7 @@ import MaintenanceRequestsList from "./pages/RequestManagement/MaintenanceReques
 import ManagerInvoice from "./pages/InvoiceManagement/InvoiceManage";
 import ComplaintRequestList from "./pages/RequestManagement/ComplaintRequestlist";
 import TransferRequestsList from "./pages/RequestManagement/TransferRequestsList";
+import ViolationList from "./pages/ViolateManagement/ViolationList";
 
 // Pages - Accountant Dashboard
 import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
@@ -274,6 +275,7 @@ function LayoutWrapper() {
           <Route path="deposits/floor-map" element={<DepositFloorMap />} />
           <Route path="deposits/create/:id" element={<CreateDeposit />} />
           <Route path="invoices" element={<ManagerInvoice />} />
+          <Route path="violations" element={<ViolationList />} />
           {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
         </Route>
 

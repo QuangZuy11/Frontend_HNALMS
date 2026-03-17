@@ -13,6 +13,8 @@ interface ReceiptTicket {
   createdAt?: string;
   paymentVoucher?: string | null;
   accountantPaidAt?: string;
+  sourceType?: 'violation' | 'repair' | 'manual';
+  invoiceIncurredId?: string | null;
 }
 
 type UiPaymentStatus = "paid" | "unpaid";
@@ -144,55 +146,6 @@ export default function ReceiptsList() {
     return ui === "paid" ? "Đã thanh toán" : "Chưa thanh toán";
   };
 
-  const toApiStatus = (ui: UiPaymentStatus): "Paid" | "Unpaid" =>
-    ui === "paid" ? "Paid" : "Unpaid";
-
-  const handleChangeStatus = async (
-    ticketId: string,
-    uiStatus: UiPaymentStatus,
-  ) => {
-    // optimistic update
-    setTickets((prev) =>
-      prev.map((t) =>
-        t._id === ticketId ? { ...t, status: toApiStatus(uiStatus) } : t,
-      ),
-    );
-
-    try {
-      const res = await cashFlowService.updatePaymentTicketStatus(
-        ticketId,
-        toApiStatus(uiStatus),
-      );
-
-      if (res?.success && res?.data?._id) {
-        setTickets((prev) =>
-          prev.map((t) =>
-            t._id === ticketId
-              ? {
-                  ...t,
-                  status: res.data.status,
-                  accountantPaidAt: res.data.accountantPaidAt,
-                }
-              : t,
-          ),
-        );
-
-        setSelectedTicket((prev) =>
-          prev && prev._id === ticketId
-            ? {
-                ...prev,
-                status: res.data.status,
-                accountantPaidAt: res.data.accountantPaidAt,
-              }
-            : prev,
-        );
-      }
-    } catch (err) {
-      console.error("Lỗi khi cập nhật trạng thái phiếu thu:", err);
-      // reload lại dữ liệu nếu lỗi
-      fetchTickets();
-    }
-  };
 
   const resetCreateForm = () => {
     setCreateForm({

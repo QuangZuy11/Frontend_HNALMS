@@ -12,7 +12,8 @@ import {
   Bell,
   ChevronDown,
   ChevronRight,
-  DoorOpen
+  DoorOpen,
+  AlertTriangle
 } from 'lucide-react';
 import './ManagerSidebar.css';
 import logo from '../../../../assets/images/Logo.png';
@@ -83,6 +84,12 @@ const MENU_ITEMS = [
     title: "Gửi Thông Báo",
     icon: <Bell size={20} />,
     path: "/manager/notifications",
+    subItems: []
+  },
+  {
+    title: "Xử Lý Vi Phạm",
+    icon: <AlertTriangle size={20} />,
+    path: "/manager/violations",
     subItems: []
   },
 
