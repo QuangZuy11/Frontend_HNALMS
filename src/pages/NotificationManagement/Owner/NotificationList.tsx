@@ -174,7 +174,7 @@ export default function NotificationList() {
             <thead>
               <tr>
                 <th style={{ width: '60px' }}>STT</th>
-                <th style={{ width: '220px' }}>Tiêu đề</th>
+                <th>Thông báo</th>
                 <th style={{ width: '120px' }}>Trạng thái</th>
                 <th style={{ width: '140px' }}>Ngày tạo</th>
                 <th style={{ width: '140px' }}>Thao tác</th>
@@ -204,8 +204,13 @@ export default function NotificationList() {
                   <tr key={item._id}>
                     <td>{(page - 1) * limit + index + 1}</td>
                     <td>
-                      <div className="notification-title" title={item.title}>
-                        {item.title}
+                      <div className="notification-content-preview">
+                        <div className="notification-title" title={item.title}>
+                          {item.title}
+                        </div>
+                        <div className="notification-preview-text" title={item.content}>
+                          {item.content.length > 70 ? item.content.substring(0, 70) + '...' : item.content}
+                        </div>
                       </div>
                     </td>
                     <td>

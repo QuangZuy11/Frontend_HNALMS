@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Eye, CheckCheck } from 'lucide-react';
+import { Eye, CheckCheck, List, BellRing, CheckCircle, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { notificationService } from '../../../services/notificationService';
 import type { Notification } from '../../../types/notification.types';
@@ -55,14 +55,11 @@ export default function ManagerNotificationList() {
     }
   };
 
-  const formatDate = (dateStr: string) => {
+  const formatDateTime = (dateStr: string) => {
     if (!dateStr) return '-';
     const d = new Date(dateStr);
-    return d.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
+    return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ' +
+           d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   const handleMarkAsRead = async (notif: Notification) => {
@@ -128,20 +125,23 @@ export default function ManagerNotificationList() {
           <button
             className={`notification-tab ${filterRead === 'ALL' ? 'active' : ''}`}
             onClick={() => { setFilterRead('ALL'); setPage(1); }}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            Tất cả
+            <List size={16} /> Tất cả
           </button>
           <button
             className={`notification-tab ${filterRead === 'UNREAD' ? 'active' : ''}`}
             onClick={() => { setFilterRead('UNREAD'); setPage(1); }}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            Chưa đọc
+            <BellRing size={16} /> Chưa đọc
           </button>
           <button
             className={`notification-tab ${filterRead === 'READ' ? 'active' : ''}`}
             onClick={() => { setFilterRead('READ'); setPage(1); }}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            Đã đọc
+            <CheckCircle size={16} /> Đã đọc
           </button>
         </div>
 
@@ -197,9 +197,18 @@ export default function ManagerNotificationList() {
                         {item.is_read ? 'Đã đọc' : 'Chưa đọc'}
                       </span>
                     </td>
-                    <td>{formatDate(item.createdAt)}</td>
+                    <td>{formatDateTime(item.createdAt)}</td>
                     <td>
-                      <div className="action-buttons">
+                      <div className="action-buttons" style={{ display: 'flex', gap: '8px' }}>
+                        {!item.is_read && (
+                          <button
+                            className="btn-action edit"
+                            onClick={() => handleMarkAsRead(item)}
+                            title="Đánh dấu đã đọc"
+                          >
+                            <CheckCheck size={16} />
+                          </button>
+                        )}
                         <button
                           className="btn-action view"
                           onClick={() => handleViewDetail(item)}
@@ -254,7 +263,7 @@ export default function ManagerNotificationList() {
                 <h2 className="detail-title">{viewNotification.title}</h2>
                 <div className="detail-meta">
                   <div className="meta-item">
-                    <span>Ngày gửi: {formatDate(viewNotification.createdAt)}</span>
+                    <span>Ngày gửi: {formatDateTime(viewNotification.createdAt)}</span>
                   </div>
                   <span className={`status-badge ${viewNotification.is_read ? 'status-sent' : 'status-draft'}`}>
                     {viewNotification.is_read ? 'Đã đọc' : 'Chưa đọc'}
@@ -267,8 +276,8 @@ export default function ManagerNotificationList() {
               />
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={() => setViewNotification(null)}>
-                Đóng
+              <button type="button" className="btn btn-secondary" onClick={() => setViewNotification(null)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <X size={18} /> Đóng
               </button>
             </div>
           </div>
