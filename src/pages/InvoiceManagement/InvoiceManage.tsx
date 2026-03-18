@@ -933,7 +933,7 @@ const InvoiceManager = () => {
                           <td style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b' }}>
                             {item.isIndex === true ? (
                               <span style={{ fontSize: '13px' }}>
-                                Tiêu thụ: <b>{item.usage}</b> <br/> (Cũ: {item.oldIndex} - Mới: {item.newIndex})
+                                Tiêu thụ: <b>{item.usage}</b> <br/> ({item.oldIndex} - {item.newIndex})
                               </span>
                             ) : (
                               <span>{item.usage}</span>
