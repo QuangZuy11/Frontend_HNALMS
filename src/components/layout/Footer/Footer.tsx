@@ -33,11 +33,7 @@ export default function Footer() {
                   Nội Quy
                 </Link>
               </li>
-              <li>
-                <Link to="/news" className="footer-link">
-                  Tin Tức
-                </Link>
-              </li>
+             
             </ul>
           </div>
 
@@ -52,10 +48,10 @@ export default function Footer() {
                 <strong>Email:</strong> toanhahoangnam@gmail.com
               </li>
               <li className="footer-contact-item">
-                <strong>Địa Chỉ:</strong> Thạch Hoà, Thạch Thất, Hà Nội
+                <strong>Địa Chỉ:</strong> Số nhà 56, Cụm 3, Thôn 3, Xã Hòa Lạc, Hà Nội
               </li>
               <li className="footer-contact-item">
-                <strong>Giờ Làm:</strong> 8:00 - 21:00
+                <strong>Giờ Làm:</strong> 24/7 (Tất cả các ngày)
               </li>
             </ul>
           </div>

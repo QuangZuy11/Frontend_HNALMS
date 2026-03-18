@@ -65,16 +65,16 @@ export default function Contact() {
     {
       icon: MapPin,
       title: "Địa Chỉ",
-      value: "Thạch Hoà, Thạch Thất, Hà Nội",
+      value: "Số nhà 56, Cụm 3, Thôn 3, Xã Hòa Lạc, Hà Nội",
       action: "#",
       label: "Xem Map",
     },
     {
       icon: Clock,
       title: "Giờ Làm Việc",
-      value: "8:00 - 21:00 (Tất cả các ngày)",
-      action: "#",
-      label: "Liên Hệ",
+      value: "24/7 (Tất cả các ngày)",
+      label: "Luôn Sẵn Sàng",
+      isTextOnly: true,
     },
   ];
 
@@ -107,15 +107,23 @@ export default function Contact() {
                   <CardDescription className="contact-method-value">
                     {method.value}
                   </CardDescription>
-                  <a href={method.action} className="contact-method-link">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="contact-method-btn"
-                    >
-                      {method.label}
-                    </Button>
-                  </a>
+                  <div className="contact-method-action">
+                    {method.isTextOnly ? (
+                      <span className="contact-method-text-badge">
+                        {method.label}
+                      </span>
+                    ) : (
+                      <a href={method.action} className="contact-method-link">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="contact-method-btn"
+                        >
+                          {method.label}
+                        </Button>
+                      </a>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             );

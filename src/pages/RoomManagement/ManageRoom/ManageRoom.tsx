@@ -34,7 +34,6 @@ import {
   Map as MapIcon,
   User,
   Users,
-  Calendar,
   FileText,
   Phone,
   Mail,
@@ -82,6 +81,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
   const [loading, setLoading] = useState(false);
   const [contracts, setContracts] = useState<any[]>([]);
+  const [deposits, setDeposits] = useState<any[]>([]);
 
   // View Mode
   const [viewMode, setViewMode] = useState<"list" | "map">("map");
@@ -109,6 +109,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
   const [viewingRoom, setViewingRoom] = useState<Room | null>(null);
   const [roomBookServices, setRoomBookServices] = useState<any[]>([]);
+  const [prepaidInvoice, setPrepaidInvoice] = useState<any | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   // Form Data
@@ -126,11 +127,12 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [roomsRes, floorsRes, typesRes, contractsRes] = await Promise.all([
+      const [roomsRes, floorsRes, typesRes, contractsRes, depositsRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/rooms`),
         axios.get(`${API_BASE_URL}/floors`),
         axios.get(`${API_BASE_URL}/roomtypes`),
         axios.get(`${API_BASE_URL}/contracts`),
+        axios.get(`${API_BASE_URL}/deposits`, { withCredentials: true }).catch(() => ({ data: { success: false, data: [] } })),
       ]);
 
       setRooms(roomsRes.data.data || roomsRes.data || []);
@@ -139,6 +141,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       setRoomTypes(typesRes.data.data || typesRes.data || []);
       if (contractsRes.data.success) {
         setContracts(contractsRes.data.data || []);
+      }
+      if (depositsRes.data?.success) {
+        setDeposits(depositsRes.data.data || []);
       }
 
       setExpandedFloors(floorsData.map((f: Floor) => f._id));
@@ -180,6 +185,15 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       ) || null
     );
   };
+
+  const getDepositForRoom = (roomId: string) => {
+    return (
+      deposits.find(
+        (d: any) => d.status === "Held" && (d.room?._id === roomId || d.room === roomId),
+      ) || null
+    );
+  };
+
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "---";
@@ -373,15 +387,24 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     setViewingRoom(room);
     setShowDetailModal(true);
     setRoomBookServices([]);
+    setPrepaidInvoice(null);
     const contract = getContractForRoom(room._id);
     if (contract) {
       try {
         setLoadingDetail(true);
-        const res = await axios.get(
-          `${API_BASE_URL}/contracts/${contract._id}`,
-        );
-        if (res.data.success && res.data.data?.bookServices) {
-          setRoomBookServices(res.data.data.bookServices);
+        const [contractRes, incurredRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/contracts/${contract._id}`),
+          axios.get(`${API_BASE_URL}/invoices/incurred?type=prepaid`).catch(() => ({ data: { success: false, data: [] } })),
+        ]);
+        if (contractRes.data.success && contractRes.data.data?.bookServices) {
+          setRoomBookServices(contractRes.data.data.bookServices);
+        }
+        if (incurredRes.data.success) {
+          const allIncurred: any[] = incurredRes.data.data || [];
+          const prepaid = allIncurred.find(
+            (inv: any) => inv.contractId === contract._id || inv.contractId?._id === contract._id
+          );
+          setPrepaidInvoice(prepaid || null);
         }
       } catch (err) {
         console.error("Error fetching contract detail:", err);
@@ -1140,6 +1163,33 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                       </div>
                     </div>
 
+                    {/* THÔNG TIN TIỀN CỌC */}
+                    {(() => {
+                      const roomDeposit = getDepositForRoom(viewingRoom._id);
+                      if (!roomDeposit) return null;
+                      return (
+                        <>
+                          <div className="rd-section-title" style={{ marginTop: 16 }}>
+                            <Banknote size={16} />
+                            <span>Thông tin Tiền cọc</span>
+                          </div>
+                          <div className="rd-grid">
+                            <div className="rd-field">
+                              <label>Đã thu cọc:</label>
+                              <span className="text-price">{formatCurrency(roomDeposit.amount)}</span>
+                            </div>
+                            <div className="rd-field">
+                              <label>Trạng thái:</label>
+                              <span className="status-badge deposited">
+                                <Banknote size={12} />
+                                {roomDeposit.status === "Held" ? "Đang giữ" : roomDeposit.status}
+                              </span>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+
                     {roomContract && (
                       <>
                         <div
@@ -1174,6 +1224,28 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                             <span>{formatDate(roomContract.endDate)}</span>
                           </div>
                         </div>
+
+                        {/* THÔNG TIN TRẢ TRƯỚC - lấy từ invoices_incurred */}
+                        {prepaidInvoice && (
+                          <>
+                            <div className="rd-section-title" style={{ marginTop: 16 }}>
+                              <CreditCard size={16} />
+                              <span>Tiền phòng trả trước</span>
+                            </div>
+                            <div className="rd-grid">
+                              <div className="rd-field">
+                                <label>Số tháng trả trước:</label>
+                                <span style={{ fontWeight: 700 }}>
+                                  {prepaidInvoice.title?.match(/(\d+)\s*tháng/)?.[1] || "---"} tháng
+                                </span>
+                              </div>
+                              <div className="rd-field">
+                                <label>Số tiền đã nộp:</label>
+                                <span className="text-price">{formatCurrency(prepaidInvoice.totalAmount)}</span>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </>
                     )}
                   </div>
