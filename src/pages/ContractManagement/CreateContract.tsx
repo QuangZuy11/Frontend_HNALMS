@@ -760,16 +760,18 @@ const CreateContract = () => {
 
     setSubmitting(true);
     try {
-      let rentPaidUntil = null;
+      let ContRentPaidUntil = null;
+      let InvRentPaidUntil = null;
       if (data.prepayMonths) {
         const start = new Date(data.startDate);
         const monthsToAdd = data.prepayMonths === "all" ? Number(data.duration) : Number(data.prepayMonths);
-        rentPaidUntil = new Date(start.getFullYear(), start.getMonth() + 1 + monthsToAdd, 0).toISOString();
+        ContRentPaidUntil = new Date(start.getFullYear(), start.getMonth() + 1 + monthsToAdd, 0).toISOString();
       }
 
       const payload = {
         ...data,
-        rentPaidUntil,
+        ContRentPaidUntil,
+        InvRentPaidUntil,
         contractDetails: {
           startDate: data.startDate,
           duration: Number(data.duration),
