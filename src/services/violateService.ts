@@ -46,6 +46,7 @@ export interface CreateViolationPayload {
   invoiceCode?: string;
   images?: string[];
   type?: 'violation' | 'repair';
+  status?: 'Draft' | 'Unpaid';
 }
 
 export const violateService = {

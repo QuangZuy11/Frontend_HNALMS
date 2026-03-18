@@ -62,7 +62,6 @@ export default function RepairRequestsList() {
   const [freeForm, setFreeForm] = useState({
     financialTitle: '',
     financialAmount: '',
-    financialType: 'Payment' as 'Payment' | 'Receipt',
   });
   const [freeFormErrors, setFreeFormErrors] = useState({
     financialTitle: '',
@@ -288,7 +287,6 @@ export default function RepairRequestsList() {
     setFreeForm({
       financialTitle: '',
       financialAmount: '',
-      financialType: 'Payment',
     });
     setFreeFormErrors({
       financialTitle: '',
@@ -463,7 +461,6 @@ export default function RepairRequestsList() {
     setFreeForm({
       financialTitle: '',
       financialAmount: '',
-      financialType: 'Payment',
     });
     setFreeFormErrors({
       financialTitle: '',
@@ -515,7 +512,6 @@ export default function RepairRequestsList() {
         {
           financialTitle: freeForm.financialTitle.trim(),
           financialAmount: amountNumber,
-          financialType: freeForm.financialType,
           paymentVoucher: autoPaymentVoucher,
         },
         'EXPENSE'
@@ -555,7 +551,6 @@ export default function RepairRequestsList() {
       setFreeForm({
         financialTitle: '',
         financialAmount: '',
-        financialType: 'Payment',
       });
       setFreeFormErrors({
         financialTitle: '',

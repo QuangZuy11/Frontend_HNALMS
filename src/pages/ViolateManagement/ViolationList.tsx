@@ -141,7 +141,7 @@ export default function ViolationList() {
     try {
       const response = await violateService.getNextViolationCode();
       if (response?.success) {
-        setViolationCode(response.data || '');
+        setViolationCode(response.data?.invoiceCode || '');
       }
     } catch (err) {
       console.error('Lỗi khi lấy mã vi phạm:', err);
@@ -226,6 +226,7 @@ export default function ViolationList() {
         invoiceCode: violationCode || undefined,
         images: uploadedImages,
         type: 'violation',
+        status: 'Unpaid',
       };
 
       const response = await violateService.createViolation(payload);

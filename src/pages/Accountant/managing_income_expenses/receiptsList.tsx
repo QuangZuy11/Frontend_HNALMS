@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
+import { Eye } from "lucide-react";
 import { cashFlowService } from "../../../services/cashFlowService";
 import "./receiptsList.css";
-import { Eye } from "lucide-react";
 
 interface ReceiptTicket {
   _id: string;
   type: "Receipt" | string;
   amount: number;
+  totalAmount?: number;
   title: string;
   status: string;
   transactionDate: string;
   createdAt?: string;
+  invoiceCode?: string | null;
   paymentVoucher?: string | null;
   accountantPaidAt?: string;
   sourceType?: 'violation' | 'repair' | 'manual';
@@ -333,11 +335,11 @@ export default function ReceiptsList() {
                     <td>{startIndex + index + 1}</td>
                     <td>
                       <span className="payments-code-badge">
-                        {t.paymentVoucher || "—"}
+                        {t.invoiceCode || "—"}
                       </span>
                     </td>
                     <td>{t.title}</td>
-                    <td>{formatCurrency(t.amount)}</td>
+                    <td>{formatCurrency(t.totalAmount ?? t.amount)}</td>
                     <td>
                       <span
                         className={`receipts-status-badge ${
@@ -400,7 +402,7 @@ export default function ReceiptsList() {
                   <div className="receipts-detail-row">
                     <span className="receipts-detail-label">Mã phiếu:</span>
                     <span className="receipts-detail-value">
-                      {selectedTicket.paymentVoucher || "-"}
+                      {selectedTicket.invoiceCode || "-"}
                     </span>
                   </div>
                   <div className="receipts-detail-row">
@@ -412,7 +414,7 @@ export default function ReceiptsList() {
                   <div className="receipts-detail-row">
                     <span className="receipts-detail-label">Số tiền:</span>
                     <span className="receipts-detail-value">
-                      {formatCurrency(selectedTicket.amount)} VNĐ
+                      {formatCurrency(selectedTicket.totalAmount ?? selectedTicket.amount)} VNĐ
                     </span>
                   </div>
                 </div>
