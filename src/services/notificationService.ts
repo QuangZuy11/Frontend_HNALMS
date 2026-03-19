@@ -1,5 +1,5 @@
 import api from './api';
-import {
+import type {
   NotificationListResponse,
   NotificationSingleResponse,
   NotificationUnreadCountResponse
@@ -14,6 +14,7 @@ export interface NotificationListFilters {
   fromDate?: string;
   toDate?: string;
   outbound?: 'true' | 'false';
+  type?: 'staff' | 'system' | 'tenant';
 }
 
 export const notificationService = {

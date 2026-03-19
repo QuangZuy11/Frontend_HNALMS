@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, X, Megaphone, ArrowRight, Maximize2, Check, Eye } from 'lucide-react';
+import { Bell, CheckCheck, X, ArrowRight, Maximize2, Check, Eye } from 'lucide-react';
 import { notificationService } from '../../../../services/notificationService';
 import type { Notification } from '../../../../types/notification.types';
 import './HeaderNotification.css';
@@ -44,11 +44,11 @@ const HeaderNotification = ({ role }: HeaderNotificationProps) => {
 
     useEffect(() => {
         if (!canReceiveNotifications) return;
+        console.log(`[HeaderNotification] Role: ${role}, canReceive: ${canReceiveNotifications}`);
         fetchUnreadCount();
         const interval = setInterval(fetchUnreadCount, 30000);
         return () => clearInterval(interval);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [canReceiveNotifications]);
+    }, [canReceiveNotifications, role]);
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -63,41 +63,73 @@ const HeaderNotification = ({ role }: HeaderNotificationProps) => {
     const fetchUnreadCount = async () => {
         try {
             const res = await notificationService.getUnreadCount();
-            if (res.success) setUnreadCount(res.data.unread_count);
-        } catch { /* silent */ }
+            console.log('[HeaderNotification] Unread count response:', res);
+            if (res.success) {
+                setUnreadCount(res.data.unread_count);
+                console.log('[HeaderNotification] Updated unread count:', res.data.unread_count);
+            }
+        } catch (err) {
+            console.error('[HeaderNotification] Error fetching unread count:', err);
+        }
     };
 
     const fetchRecentNotifications = async (tab = dropdownTab) => {
         try {
-            const params: any = { page: 1, limit: 10 };
+            const params: Record<string, string | number> = { page: 1, limit: 10 };
             if (tab === 'UNREAD') params.is_read = 'false';
+            console.log('[HeaderNotification] Fetching recent notifications with params:', params);
             const res = await notificationService.getMyNotifications(params);
+            console.log('[HeaderNotification] Raw response:', res);
             if (res.success) {
                 let notifs = res.data.notifications || [];
-                // Owner chỉ hiển thị thông báo type là 'system'
+                console.log('[HeaderNotification] Total notifications:', notifs.length);
+                console.log('[HeaderNotification] Role:', role);
+                // Owner: chỉ hiển thị thông báo type là 'system' (từ tenant requests)
+                // Manager: hiển thị cả 'system' (từ tenant), 'tenant' (từ owner/manager), và 'staff' (từ owner)
                 if (role === 'owner') {
+                    const beforeFilter = notifs.length;
                     notifs = notifs.filter(n => n.type === 'system');
+                    console.log(`[HeaderNotification] Owner - Filtered from ${beforeFilter} to ${notifs.length} notifications (type='system')`);
+                } else if (role === 'manager') {
+                    const beforeFilter = notifs.length;
+                    notifs = notifs.filter(n => n.type === 'system' || n.type === 'tenant' || n.type === 'staff');
+                    console.log(`[HeaderNotification] Manager - Showing all notifications (${notifs.length} total, filtered from ${beforeFilter})`);
                 }
+                console.log('[HeaderNotification] Filtered notifications:', notifs);
                 setNotifications(notifs);
             }
-        } catch { /* silent */ }
+        } catch (err) {
+            console.error('[HeaderNotification] Error fetching notifications:', err);
+        }
     };
 
     const fetchAllNotifications = async (pg = 1) => {
         try {
             setAllLoading(true);
+            console.log('[HeaderNotification] Fetching all notifications, page:', pg);
             const res = await notificationService.getMyNotifications({ page: pg, limit: 10 });
+            console.log('[HeaderNotification] All notifications response:', res);
             if (res.success) {
                 let notifs = res.data.notifications || [];
-                // Owner chỉ hiển thị thông báo type là 'system'
+                console.log('[HeaderNotification] Total all notifications:', notifs.length);
+                // Owner: chỉ hiển thị thông báo type là 'system' (từ tenant requests)
+                // Manager: hiển thị cả 'system' (từ tenant), 'tenant' (từ owner/manager), và 'staff' (từ owner)
                 if (role === 'owner') {
+                    const beforeFilter = notifs.length;
                     notifs = notifs.filter(n => n.type === 'system');
+                    console.log(`[HeaderNotification] Owner - Filtered from ${beforeFilter} to ${notifs.length} notifications (type='system')`);
+                } else if (role === 'manager') {
+                    const beforeFilter = notifs.length;
+                    notifs = notifs.filter(n => n.type === 'system' || n.type === 'tenant' || n.type === 'staff');
+                    console.log(`[HeaderNotification] Manager - Showing all notifications (${notifs.length} total, filtered from ${beforeFilter})`);
                 }
                 setAllNotifications(notifs);
                 setAllTotalPages(res.data.pagination.total_pages);
                 setAllPage(pg);
             }
-        } catch { /* silent */ }
+        } catch (err) {
+            console.error('[HeaderNotification] Error fetching all notifications:', err);
+        }
         finally { setAllLoading(false); }
     };
 
@@ -170,6 +202,14 @@ const HeaderNotification = ({ role }: HeaderNotificationProps) => {
     const truncate = (text: string, max: number) =>
         text.length > max ? text.substring(0, max) + '...' : text;
 
+    const formatNotificationTitle = (title: string) => {
+        // Remove all emojis (at beginning or anywhere) and " từ undefined" at the end
+        return title
+            .replace(/^\s*[\p{Emoji}\s]+/u, '') // Remove any emoji at start
+            .replace(/\s+[\p{Emoji}]+\s*$/u, '') // Remove any emoji at end
+            .replace(/ từ undefined$/i, ''); // Remove " từ undefined" at end
+    };
+
     if (!canReceiveNotifications) {
         return null; // Return nothing if role is not manager/accountant
     }
@@ -234,14 +274,9 @@ const HeaderNotification = ({ role }: HeaderNotificationProps) => {
                                     className={`notification-item fb-style-item ${!notif.is_read ? 'unread' : ''}`}
                                     onClick={(e) => handleViewDetail(notif, e)}
                                 >
-                                    <div className="notif-avatar">
-                                        <div className="avatar-circle">
-                                            <Megaphone size={16} color="#3579c6" />
-                                        </div>
-                                    </div>
 
                                     <div className="notif-body">
-                                        <p className="notif-title">{notif.title}</p>
+                                        <p className="notif-title">{formatNotificationTitle(notif.title)}</p>
                                         <p className="notif-preview">{truncate(notif.content, 50)}</p>
                                         <span className={`notif-time ${!notif.is_read ? 'unread-time' : ''}`}>{formatRelativeTime(notif.createdAt)}</span>
                                     </div>
@@ -304,14 +339,9 @@ const HeaderNotification = ({ role }: HeaderNotificationProps) => {
                                             className={`notif-all-item fb-style-item ${!notif.is_read ? 'unread' : ''}`}
                                             onClick={() => handleViewDetail(notif)}
                                         >
-                                            <div className="notif-avatar">
-                                                <div className="avatar-circle">
-                                                    <Megaphone size={16} />
-                                                </div>
-                                            </div>
 
                                             <div className="notif-all-body">
-                                                <p className="notif-all-title">{notif.title}</p>
+                                                <p className="notif-all-title">{formatNotificationTitle(notif.title)}</p>
                                                 <p className="notif-all-preview">{truncate(notif.content, 80)}</p>
                                                 <span className={`notif-all-time ${!notif.is_read ? 'unread-time' : ''}`}>Ngày gửi: {formatDateTime(notif.createdAt)}</span>
                                             </div>
@@ -374,18 +404,19 @@ const HeaderNotification = ({ role }: HeaderNotificationProps) => {
                         </div>
 
                         <div className="notif-modal-body">
-                            <div className="notif-detail-title">{detailNotification.title}</div>
+                            <div className="notif-detail-title">{formatNotificationTitle(detailNotification.title)}</div>
 
                             {/* Meta Info: Người gửi & Thời gian */}
                             <div className="notif-detail-meta-group">
-                                <div className="notif-detail-avatar">
-                                    <div className="avatar-circle l">
-                                        <Megaphone size={20} />
-                                    </div>
-                                </div>
                                 <div className="notif-detail-info">
                                     <div className="notif-detail-sender">
-                                        <strong>Người gửi:</strong> Ban quản lý (Owner)
+                                        <strong>Người gửi:</strong> {
+                                            detailNotification.type === 'system' 
+                                                ? 'Cư dân (Tenant)' 
+                                                : detailNotification.type === 'staff'
+                                                ? 'Ban quản lý (Owner)'
+                                                : 'Quản lý (Manager)'
+                                        }
                                     </div>
                                     <div className="notif-detail-time-row">
                                         <span className="notif-detail-time">{formatDateTime(detailNotification.createdAt)}</span>
@@ -396,10 +427,22 @@ const HeaderNotification = ({ role }: HeaderNotificationProps) => {
                                 </div>
                             </div>
 
-                            <div
-                                className="notif-detail-content"
-                                dangerouslySetInnerHTML={{ __html: detailNotification.content }}
-                            />
+                            <div className="notif-detail-content">
+                                {detailNotification.type === 'system' ? (
+                                    // System notification - Yêu cầu từ tenant
+                                    <div style={{ lineHeight: '1.8', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                        {detailNotification.content}
+                                    </div>
+                                ) : detailNotification.type === 'staff' ? (
+                                    // Staff notification - Thông báo từ owner
+                                    <div style={{ lineHeight: '1.8', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                        {detailNotification.content}
+                                    </div>
+                                ) : (
+                                    // Tenant notification - Thông báo từ manager
+                                    <div dangerouslySetInnerHTML={{ __html: detailNotification.content }} />
+                                )}
+                            </div>
                         </div>
 
                         <div className="notif-modal-footer" style={{ justifyContent: 'flex-end' }}>
