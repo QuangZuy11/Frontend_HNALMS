@@ -165,17 +165,17 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
           const floorNameLower = floor.name.toLowerCase();
 
           if (floorNameLower.includes("2")) {
-             return <FloorMapLevel2 key={floor._id} rooms={floorRooms} onRoomSelect={handleRoomSelect} />;
+             return <FloorMapLevel2 key={floor._id} rooms={floorRooms} onRoomSelect={handleRoomSelect} legendType="contract" />;
           } else if (floorNameLower.includes("3")) {
-             return <FloorMapLevel3 key={floor._id} rooms={floorRooms} onRoomSelect={handleRoomSelect} />;
+             return <FloorMapLevel3 key={floor._id} rooms={floorRooms} onRoomSelect={handleRoomSelect} legendType="contract" />;
           } else if (floorNameLower.includes("4")) {
-             return <FloorMapLevel4 key={floor._id} rooms={floorRooms} onRoomSelect={handleRoomSelect} />;
+             return <FloorMapLevel4 key={floor._id} rooms={floorRooms} onRoomSelect={handleRoomSelect} legendType="contract" />;
           } else if (floorNameLower.includes("5")) {
-             return <FloorMapLevel5 key={floor._id} rooms={floorRooms} onRoomSelect={handleRoomSelect} />;
+             return <FloorMapLevel5 key={floor._id} rooms={floorRooms} onRoomSelect={handleRoomSelect} legendType="contract" />;
           }
 
           // Use default generic component for Level 1 and any newly added unknown floors
-          return <FloorMap key={floor._id} rooms={floorRooms} floorName={floor.name} onRoomSelect={handleRoomSelect} />;
+          return <FloorMap key={floor._id} rooms={floorRooms} floorName={floor.name} onRoomSelect={handleRoomSelect} legendType="contract" />;
         })}
       </div>
     </div>
