@@ -624,6 +624,21 @@
   max-width: 500px;
 }
 
+.repair-status-confirm-modal {
+  max-width: 420px;
+}
+
+.status-confirm-text {
+  font-size: 15px;
+  color: #374151;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.status-confirm-text strong {
+  color: #1e293b;
+}
+
 /* Modal sửa chi phí */
 .repair-edit-cost-modal {
   max-width: 420px;
