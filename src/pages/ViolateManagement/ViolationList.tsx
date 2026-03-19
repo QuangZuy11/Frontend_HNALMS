@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Eye, Plus, X } from 'lucide-react';
+import { CheckCircle2, Eye, Plus, X } from 'lucide-react';
 import { Autocomplete, TextField, createFilterOptions } from '@mui/material';
 import violateService, { Violation, type CreateViolationPayload } from '../../services/violateService';
 import api from '../../services/api';
@@ -47,6 +47,7 @@ export default function ViolationList() {
   const [violationCode, setViolationCode] = useState<string>('');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [toast, setToast] = useState<{ title: string; message: string } | null>(null);
 
   // Create form state
   const [formData, setFormData] = useState<{
@@ -121,6 +122,18 @@ export default function ViolationList() {
   useEffect(() => {
     fetchViolations();
   }, [fetchViolations]);
+
+  useEffect(() => {
+    if (!toast) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setToast(null);
+    }, 4000);
+
+    return () => window.clearTimeout(timer);
+  }, [toast]);
 
   const fetchContracts = useCallback(async () => {
     try {
@@ -232,7 +245,10 @@ export default function ViolationList() {
       const response = await violateService.createViolation(payload);
 
       if (response.success) {
-        alert('Tạo vi phạm thành công!');
+        setToast({
+          title: 'Thành công',
+          message: 'Tạo vi phạm thành công!',
+        });
         closeCreateModal();
         fetchViolations();
       }
@@ -369,6 +385,26 @@ export default function ViolationList() {
 
   return (
     <div className="violation-requests-page">
+      {toast && (
+        <div className="success-toast" role="status" aria-live="polite">
+          <div className="success-toast-icon">
+            <CheckCircle2 size={20} />
+          </div>
+          <div className="success-toast-content">
+            <div className="success-toast-title">{toast.title}</div>
+            <div className="success-toast-message">{toast.message}</div>
+          </div>
+          <button
+            type="button"
+            className="success-toast-close"
+            onClick={() => setToast(null)}
+            aria-label="Đóng thông báo"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <div className="violation-requests-card">
         <div className="violation-requests-header">
           <div>
