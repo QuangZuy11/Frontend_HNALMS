@@ -242,15 +242,30 @@ const InvoiceManager = () => {
         .map(inv => getRoomIdStr(inv))
         .filter(id => id !== ''); 
 
+      // [MỚI] Gọi API lấy Hợp đồng để quét các phòng vừa trả trong tháng này
+      const contractsRes = await axios.get(`${API_BASE_URL}/contracts`);
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = new Date().getFullYear();
+
+      const validContractRoomIds = (contractsRes.data.data || []).filter((c: any) => {
+        if (c.status === 'active') return true;
+        if ((c.status === 'terminated' || c.status === 'expired') && c.endDate) {
+          const ed = new Date(c.endDate);
+          return (ed.getMonth() + 1) === currentMonth && ed.getFullYear() === currentYear;
+        }
+        return false;
+      }).map((c: any) => typeof c.roomId === 'object' ? c.roomId._id : c.roomId);
+
       const roomsRes = await axios.get(`${API_BASE_URL}/rooms`);
       const allRooms = roomsRes.data.data || [];
 
+      // [ĐÃ SỬA] Đưa validContractRoomIds vào điều kiện vớt phòng
       const activeRooms = allRooms.filter((r: any) => 
-        r.status === 'Occupied' || draftRoomIds.includes(r._id)
+        r.status === 'Occupied' || draftRoomIds.includes(r._id) || validContractRoomIds.includes(r._id)
       );
 
       if (activeRooms.length === 0) {
-        toastr.warning("Không có phòng nào cần ghi điện nước lúc này! (Gợi ý: Hãy bấm 'Tạo HĐ Định kỳ' trước)");
+        toastr.warning("Không có phòng nào cần ghi điện nước lúc này!");
         return;
       }
 
@@ -266,8 +281,8 @@ const InvoiceManager = () => {
 
       const updatedData = { ...initialData };
       const newCompletedStatus: Record<string, boolean> = {}; 
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
+      const currentMonthIndex = new Date().getMonth();
+      const currentYearIndex = new Date().getFullYear();
 
       await Promise.all(activeRooms.map(async (room: any) => {
         let eDone = false;
@@ -281,7 +296,7 @@ const InvoiceManager = () => {
               updatedData[room._id].eNew = res.data.data.newIndex; 
               
               const createdDate = new Date(res.data.data.createdAt);
-              if (createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear) {
+              if (createdDate.getMonth() === currentMonthIndex && createdDate.getFullYear() === currentYearIndex) {
                 eDone = true;
               }
             }
@@ -295,7 +310,7 @@ const InvoiceManager = () => {
               updatedData[room._id].wNew = res.data.data.newIndex;
 
               const createdDate = new Date(res.data.data.createdAt);
-              if (createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear) {
+              if (createdDate.getMonth() === currentMonthIndex && createdDate.getFullYear() === currentYearIndex) {
                 wDone = true;
               }
             }
@@ -933,7 +948,7 @@ const InvoiceManager = () => {
                           <td style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b' }}>
                             {item.isIndex === true ? (
                               <span style={{ fontSize: '13px' }}>
-                                Tiêu thụ: <b>{item.usage}</b> <br/> (Cũ: {item.oldIndex} - Mới: {item.newIndex})
+                                Tiêu thụ: <b>{item.usage}</b> <br/> ({item.oldIndex} - {item.newIndex})
                               </span>
                             ) : (
                               <span>{item.usage}</span>
