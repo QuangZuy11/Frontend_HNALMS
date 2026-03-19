@@ -121,11 +121,33 @@ export default function ComplaintRequestList() {
     setSelectedComplaint(null);
   };
 
+  const canTransitionStatus = (
+    current: 'Pending' | 'Processing' | 'Done' | 'Rejected',
+    target: 'Pending' | 'Processing' | 'Done' | 'Rejected',
+  ) => {
+    const allowedTransitions: Record<
+      'Pending' | 'Processing' | 'Done' | 'Rejected',
+      Array<'Pending' | 'Processing' | 'Done' | 'Rejected'>
+    > = {
+      Pending: ['Pending', 'Processing'],
+      Processing: ['Processing', 'Done', 'Rejected'],
+      Done: ['Done'],
+      Rejected: ['Rejected'],
+    };
+
+    return allowedTransitions[current]?.includes(target) ?? false;
+  };
+
   const handleUpdateStatus = async (
     complaint: Complaint,
     nextStatus: 'Pending' | 'Processing' | 'Done' | 'Rejected',
   ) => {
     if (nextStatus === complaint.status) return;
+
+    if (!canTransitionStatus(complaint.status, nextStatus)) {
+      alert('Chỉ được chuyển trạng thái theo thứ tự: Chờ xử lý → Đang xử lý → Đã xử lý hoặc Từ chối');
+      return;
+    }
 
     if (nextStatus === 'Done' || nextStatus === 'Rejected') {
       setCompletingComplaint(complaint);
@@ -616,20 +638,46 @@ export default function ComplaintRequestList() {
                     >
                       <option
                         value="Pending"
-                        disabled={selectedComplaint.status !== 'Pending'}
+                        disabled={
+                          !canTransitionStatus(
+                            selectedComplaint.status as 'Pending' | 'Processing' | 'Done' | 'Rejected',
+                            'Pending',
+                          )
+                        }
                       >
                         Chờ xử lý
                       </option>
                       <option
                         value="Processing"
-                        disabled={selectedComplaint.status !== 'Pending'}
+                        disabled={
+                          !canTransitionStatus(
+                            selectedComplaint.status as 'Pending' | 'Processing' | 'Done' | 'Rejected',
+                            'Processing',
+                          )
+                        }
                       >
                         Đang xử lý
                       </option>
-                      <option value="Done" disabled={selectedComplaint.status === 'Done'}>
+                      <option
+                        value="Done"
+                        disabled={
+                          !canTransitionStatus(
+                            selectedComplaint.status as 'Pending' | 'Processing' | 'Done' | 'Rejected',
+                            'Done',
+                          )
+                        }
+                      >
                         Đã xử lý
                       </option>
-                      <option value="Rejected" disabled={selectedComplaint.status === 'Rejected'}>
+                      <option
+                        value="Rejected"
+                        disabled={
+                          !canTransitionStatus(
+                            selectedComplaint.status as 'Pending' | 'Processing' | 'Done' | 'Rejected',
+                            'Rejected',
+                          )
+                        }
+                      >
                         Từ chối
                       </option>
                     </select>
