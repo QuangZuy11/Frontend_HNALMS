@@ -42,6 +42,21 @@ export default function NotificationDetail({ isOpen, onClose, notification, onPu
     setIsPublishing(false);
   };
 
+  const parseSystemNotificationContent = (content: string) => {
+    // Parse content format: "Phòng: Phòng 228 Loại: Sửa chữa Mô tả: kajajjajajaja"
+    const lines = content.split('\n').filter(line => line.trim());
+    const result: Record<string, string> = {};
+    
+    lines.forEach(line => {
+      const [key, ...valueParts] = line.split(':');
+      if (key && valueParts.length > 0) {
+        result[key.trim()] = valueParts.join(':').trim();
+      }
+    });
+    
+    return result;
+  };
+
   const isDraft = notification.status === 'draft';
   const isSent = notification.status === 'sent';
 
@@ -51,9 +66,33 @@ export default function NotificationDetail({ isOpen, onClose, notification, onPu
       <div className="notification-modal modal-lg detail-view" onClick={e => e.stopPropagation()}>
         <div className="modal-header" style={{ paddingBottom: '16px', borderBottom: 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span className={`status-badge status-${notification.status}`}>
-              {isDraft ? 'Bản nháp' : isSent ? 'Đã gửi' : 'Đã lưu trữ'}
-            </span>
+            {notification.type === 'system' ? (
+              <span style={{ 
+                padding: '4px 12px', 
+                backgroundColor: '#dcfce7', 
+                color: '#166534', 
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: 500
+              }}>
+                Yêu cầu từ Tenant
+              </span>
+            ) : notification.type === 'staff' ? (
+              <span style={{ 
+                padding: '4px 12px', 
+                backgroundColor: '#e0e7ff', 
+                color: '#3730a3', 
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: 500
+              }}>
+                Thông báo từ Owner
+              </span>
+            ) : (
+              <span className={`status-badge status-${notification.status}`}>
+                {isDraft ? 'Bản nháp' : isSent ? 'Đã gửi' : 'Đã lưu trữ'}
+              </span>
+            )}
           </div>
           <button className="btn-close" onClick={onClose}>
             <X size={24} />
@@ -67,22 +106,65 @@ export default function NotificationDetail({ isOpen, onClose, notification, onPu
             <div className="detail-meta">
               <div className="meta-item">
                 <Calendar size={14} />
-                <span>Ngày tạo: {formatDate(notification.updatedAt)}</span>
+                <span>Ngày: {formatDate(notification.type === 'system' || notification.type === 'staff' ? notification.createdAt : notification.updatedAt)}</span>
               </div>
               <div className="meta-item">
                 <Clock size={14} />
-                <span>{formatTime(notification.updatedAt)}</span>
+                <span>{formatTime(notification.type === 'system' || notification.type === 'staff' ? notification.createdAt : notification.updatedAt)}</span>
               </div>
+              {notification.type === 'system' && (
+                <div className="meta-item" style={{ color: '#059669', fontWeight: 500 }}>
+                  Từ: Cư dân (Tenant)
+                </div>
+              )}
+              {notification.type === 'staff' && (
+                <div className="meta-item" style={{ color: '#6366f1', fontWeight: 500 }}>
+                  Từ: Ban quản lý (Owner)
+                </div>
+              )}
             </div>
           </div>
 
-          <div
-            className="detail-content"
-            dangerouslySetInnerHTML={{ __html: notification.content }}
-          />
+          {notification.type === 'system' ? (
+            // System notification - Yêu cầu từ tenant
+            <div className="detail-content" style={{ lineHeight: '1.8' }}>
+              {(() => {
+                const parsed = parseSystemNotificationContent(notification.content);
+                if (Object.keys(parsed).length === 0) {
+                  return <p>{notification.content}</p>;
+                }
+                return (
+                  <div style={{ display: 'grid', gap: '12px' }}>
+                    {Object.entries(parsed).map(([key, value]) => (
+                      <div key={key} style={{ 
+                        padding: '12px', 
+                        backgroundColor: '#f8fafc', 
+                        borderLeft: '3px solid #3b82f6',
+                        borderRadius: '4px'
+                      }}>
+                        <strong style={{ color: '#1e293b' }}>{key}:</strong>
+                        <p style={{ margin: '4px 0 0', color: '#475569' }}>{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          ) : notification.type === 'staff' ? (
+            // Staff notification - Thông báo từ owner cho staff
+            <div className="detail-content" style={{ lineHeight: '1.8', whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: '#374151' }}>
+              {notification.content}
+            </div>
+          ) : (
+            // Tenant notification - Thông báo từ manager/owner cho tenants
+            <div
+              className="detail-content"
+              dangerouslySetInnerHTML={{ __html: notification.content }}
+            />
+          )}
 
-          {/* Recipients section only visible if status is 'sent' */}
-          {isSent && notification.recipients && notification.recipients.length > 0 && (
+          {/* Recipients section only visible if status is 'sent' and NOT system/staff notification */}
+          {isSent && notification.type !== 'system' && notification.type !== 'staff' && notification.recipients && notification.recipients.length > 0 && (
             <div className="recipients-section">
               <h3>Danh sách người nhận ({notification.recipients.length})</h3>
 
@@ -123,7 +205,7 @@ export default function NotificationDetail({ isOpen, onClose, notification, onPu
             Đóng
           </button>
 
-          {isDraft && (
+          {isDraft && notification.type !== 'system' && notification.type !== 'staff' && (
             <button
               type="button"
               className="btn btn-success"
@@ -138,7 +220,7 @@ export default function NotificationDetail({ isOpen, onClose, notification, onPu
       </div>
     </div>
 
-    {showConfirm && (
+    {showConfirm && notification.type !== 'system' && notification.type !== 'staff' && (
       <div className="notification-modal-overlay" style={{ zIndex: 1100 }} onClick={() => setShowConfirm(false)}>
         <div className="notification-modal" style={{ maxWidth: '420px', width: '90%' }} onClick={e => e.stopPropagation()}>
           <div className="modal-header">
