@@ -9,6 +9,8 @@ import FloorMapLevel3 from "../RoomManagement/RoomList/components/FloorMapLevel3
 import FloorMapLevel4 from "../RoomManagement/RoomList/components/FloorMapLevel4";
 import FloorMapLevel5 from "../RoomManagement/RoomList/components/FloorMapLevel5";
 import "./ContractFloorMap.css";
+import toastr from "toastr";
+import "toastr/build/toastr.min.css";
 
 interface Room {
   _id: string;
@@ -125,10 +127,10 @@ const DepositFloorMap = () => {
       navigate(`${basePath}/deposits/create/${room._id}`);
     } else if (room.status === "Deposited") {
       // Room already has deposit, maybe show info or navigate to deposit details
-      alert("Phòng này đã có tiền cọc. Vui lòng chọn phòng trống.");
+      toastr.warning("Phòng này đã có tiền cọc. Vui lòng chọn phòng trống.");
     } else {
       // Room is occupied
-      alert("Phòng này đã có hợp đồng. Vui lòng chọn phòng trống để tạo cọc.");
+      toastr.error("Phòng này đã có hợp đồng. Vui lòng chọn phòng trống để tạo cọc.");
     }
   };
 

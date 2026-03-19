@@ -6,7 +6,7 @@ export const cashFlowService = {
    * Backend: GET /financial-tickets/payments/next-voucher
    */
   async getNextPaymentVoucher() {
-    const response = await api.get('/financial-tickets/payments/next-voucher');
+    const response = await api.get("/financial-tickets/payments/next-voucher");
     return response.data;
   },
 
@@ -50,40 +50,18 @@ export const cashFlowService = {
   },
 
   /**
-   * Lấy danh sách phiếu thu (Receipt)
-   * Backend: GET /financial-tickets/receipts
+   * Lấy danh sách phiếu thu (Receipt) từ hóa đơn phát sinh
+   * Backend: GET /invoices/incurred
    */
   async getReceiptTickets(params?: {
     from?: string;
     to?: string;
-    keyword?: string;
     status?: "Paid" | "Unpaid";
+    type?: "violation" | "repair";
   }) {
-    const response = await api.get("/financial-tickets/receipts", {
+    const response = await api.get("/invoices/incurred", {
       params,
     });
-    return response.data;
-  },
-
-  /**
-   * Lấy mã phiếu thu kế tiếp theo format RC-DDMMYYYY-XXXX
-   * Backend: GET /financial-tickets/receipts/next-voucher
-   */
-  async getNextReceiptVoucher() {
-    const response = await api.get("/financial-tickets/receipts/next-voucher");
-    return response.data;
-  },
-
-  /**
-   * Tạo phiếu thu thủ công
-   * Backend: POST /financial-tickets/receipts
-   */
-  async createManualReceiptTicket(payload: {
-    title: string;
-    amount: number;
-    status: "Paid" | "Unpaid";
-  }) {
-    const response = await api.post("/financial-tickets/receipts", payload);
     return response.data;
   },
 

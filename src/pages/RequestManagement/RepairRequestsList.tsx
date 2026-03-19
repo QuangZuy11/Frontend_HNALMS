@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Eye } from 'lucide-react';
+import { CheckCircle2, Eye } from 'lucide-react';
 import { requestService } from '../../services/requestService';
 import useAuth from '../../hooks/useAuth';
 import './RepairRequestsList.css';
@@ -51,6 +51,7 @@ export default function RepairRequestsList() {
   const [autoPaymentVoucher, setAutoPaymentVoucher] = useState<string>('');
   const [autoPaymentVoucherLoading, setAutoPaymentVoucherLoading] = useState(false);
   const [autoPaymentVoucherError, setAutoPaymentVoucherError] = useState<string>('');
+  const [repairToast, setRepairToast] = useState<{ title: string; message: string } | null>(null);
   const [completeForm, setCompleteForm] = useState({
     invoiceTitle: '',
     invoiceTotalAmount: '',
@@ -62,7 +63,6 @@ export default function RepairRequestsList() {
   const [freeForm, setFreeForm] = useState({
     financialTitle: '',
     financialAmount: '',
-    financialType: 'Payment' as 'Payment' | 'Receipt',
   });
   const [freeFormErrors, setFreeFormErrors] = useState({
     financialTitle: '',
@@ -129,6 +129,18 @@ export default function RepairRequestsList() {
   useEffect(() => {
     fetchRequests();
   }, [fetchRequests]);
+
+  useEffect(() => {
+    if (!repairToast) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setRepairToast(null);
+    }, 4000);
+
+    return () => window.clearTimeout(timer);
+  }, [repairToast]);
 
   // Reset về trang 1 khi thay đổi filter
   useEffect(() => {
@@ -288,7 +300,6 @@ export default function RepairRequestsList() {
     setFreeForm({
       financialTitle: '',
       financialAmount: '',
-      financialType: 'Payment',
     });
     setFreeFormErrors({
       financialTitle: '',
@@ -433,6 +444,10 @@ export default function RepairRequestsList() {
         invoiceTitle: '',
         invoiceTotalAmount: '',
       });
+      setRepairToast({
+        title: 'Thành công',
+        message: 'Tạo yêu cầu sửa chữa có phí thành công!',
+      });
     } catch (err: any) {
       console.error('Lỗi khi hoàn thành yêu cầu:', err);
       alert(err?.response?.data?.message || 'Không thể hoàn thành yêu cầu');
@@ -463,7 +478,6 @@ export default function RepairRequestsList() {
     setFreeForm({
       financialTitle: '',
       financialAmount: '',
-      financialType: 'Payment',
     });
     setFreeFormErrors({
       financialTitle: '',
@@ -515,7 +529,6 @@ export default function RepairRequestsList() {
         {
           financialTitle: freeForm.financialTitle.trim(),
           financialAmount: amountNumber,
-          financialType: freeForm.financialType,
           paymentVoucher: autoPaymentVoucher,
         },
         'EXPENSE'
@@ -555,11 +568,14 @@ export default function RepairRequestsList() {
       setFreeForm({
         financialTitle: '',
         financialAmount: '',
-        financialType: 'Payment',
       });
       setFreeFormErrors({
         financialTitle: '',
         financialAmount: '',
+      });
+      setRepairToast({
+        title: 'Thành công',
+        message: 'Tạo yêu cầu sửa chữa miễn phí thành công!',
       });
     } catch (err: any) {
       console.error('Lỗi khi hoàn thành yêu cầu (miễn phí):', err);
@@ -582,6 +598,26 @@ export default function RepairRequestsList() {
 
   return (
     <div className="repair-requests-page">
+      {repairToast && (
+        <div className="repair-success-toast" role="status" aria-live="polite">
+          <div className="repair-success-toast-icon">
+            <CheckCircle2 size={20} />
+          </div>
+          <div className="repair-success-toast-content">
+            <div className="repair-success-toast-title">{repairToast.title}</div>
+            <div className="repair-success-toast-message">{repairToast.message}</div>
+          </div>
+          <button
+            type="button"
+            className="repair-success-toast-close"
+            onClick={() => setRepairToast(null)}
+            aria-label="Đóng thông báo"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <div className="repair-requests-card">
         <div className="repair-requests-header">
           <div>

@@ -25,7 +25,7 @@ interface FloorMapProps {
   floorName?: string;
   compact?: boolean;
   onRoomSelect?: (room: Room) => void;
-  legendType?: "default" | "deposit" | "guest" | "none";
+  legendType?: "default" | "deposit" | "guest" | "none" | "contract";
   showDateYear?: boolean;
 }
 
@@ -174,9 +174,11 @@ export default function FloorMapLevel5({
             <span style={{ fontSize: "0.8rem", color: "#374151" }}>
               {legendType === "deposit"
                 ? "Phòng sáng màu = chưa có cọc, click để tạo cọc mới."
-                : legendType === "guest"
-                  ? "Phòng sáng màu = Phòng trống, có thể đặt phòng."
-                  : "Phòng sáng màu = chưa có hợp đồng, click để tạo HĐ mới."}
+                  : legendType === "guest"
+                    ? "Phòng sáng màu = Phòng trống, có thể đặt phòng."
+                    : legendType === "contract"
+                      ? "Phòng sáng màu = chưa có hợp đồng, click để tạo HĐ mới."
+                    : "Phòng sáng màu = chưa có hợp đồng"}
             </span>
             <span
               style={{
@@ -198,21 +200,23 @@ export default function FloorMapLevel5({
                   border: "1px solid #d1d5db",
                 }}
               />
-              Đã thuê{legendType === "default" && " → Click để xem HĐ"}
+              Đã thuê{legendType === "contract" && " → Click để xem HĐ"}
+              {legendType === "default" && " → Click để xem chi tiết"}
               {legendType === "guest" && " (Không khả dụng)"}
             </span>
-            <span
-              style={{
-                fontSize: "0.8rem",
-                color: "#374151",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.35rem",
-              }}
-            >
+            {(legendType !== "default") && (
               <span
                 style={{
-                  position: "relative",
+                  fontSize: "0.8rem",
+                  color: "#374151",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.35rem",
+                }}
+              >
+                <span
+                  style={{
+                    position: "relative",
                   display: "inline-block",
                   width: "16px",
                   height: "16px",
@@ -246,9 +250,10 @@ export default function FloorMapLevel5({
                   !
                 </span>
               </span>
-              Đã cọc{legendType === "default" && " → Click để tạo HĐ"}
+              Đã cọc
               {legendType === "guest" && " (Không khả dụng)"}
             </span>
+            )}
           </div>
 
           {/* Room Type Legend (Dynamic) */}
