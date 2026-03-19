@@ -68,9 +68,10 @@ export default function CreateManagerNotification({ isOpen, onClose, onSuccess, 
       }
 
       onSuccess();
-    } catch (err: any) {
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } };
       console.error('Error saving notification:', err);
-      setError(err?.response?.data?.message || 'Có lỗi xảy ra khi lưu thông báo');
+      setError(error?.response?.data?.message || 'Có lỗi xảy ra khi lưu thông báo');
     } finally {
       setIsSubmitting(false);
     }
