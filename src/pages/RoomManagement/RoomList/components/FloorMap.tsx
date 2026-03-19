@@ -25,7 +25,7 @@ interface FloorMapProps {
   floorName?: string;
   compact?: boolean;
   onRoomSelect?: (room: Room) => void;
-  legendType?: "default" | "deposit" | "guest" | "none";
+  legendType?: "default" | "deposit" | "guest" | "none" | "contract";
   showDateYear?: boolean;
 }
 
@@ -179,7 +179,9 @@ export default function FloorMap({
                   ? "Phòng sáng màu = chưa có cọc, click để tạo cọc mới."
                   : legendType === "guest"
                     ? "Phòng sáng màu = Phòng trống, có thể đặt phòng."
-                    : "Phòng sáng màu = chưa có hợp đồng, click để tạo HĐ mới."}
+                    : legendType === "contract"
+                      ? "Phòng sáng màu = chưa có hợp đồng, click để tạo HĐ mới."
+                      : "Phòng sáng màu = chưa có hợp đồng"}
               </span>
               <span
                 style={{
@@ -201,9 +203,11 @@ export default function FloorMap({
                     border: "1px solid #d1d5db",
                   }}
                 />
-                Đã thuê{legendType === "default" && " → Click để xem HĐ"}
+                Đã thuê{legendType === "contract" && " → Click để xem HĐ"}
+              {legendType === "default" && " → Click để xem chi tiết"}
                 {legendType === "guest" && " (Không khả dụng)"}
               </span>
+              {(legendType !== "default") && (
               <span
                 style={{
                   fontSize: "0.8rem",
@@ -249,10 +253,11 @@ export default function FloorMap({
                     !
                   </span>
                 </span>
-                Đã cọc{legendType === "default" && " → Click để tạo HĐ"}
-                {legendType === "guest" && " (Không khả dụng)"}
-              </span>
-            </div>
+                Đã cọc
+              {legendType === "guest" && " (Không khả dụng)"}
+            </span>
+            )}
+          </div>
           )}
 
           {/* Room Type Legend (Dynamic) */}

@@ -1163,7 +1163,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                       </div>
                     </div>
 
-                    {/* THÔNG TIN TIỀN CỌC */}
                     {(() => {
                       const roomDeposit = getDepositForRoom(viewingRoom._id);
                       if (!roomDeposit) return null;
@@ -1174,6 +1173,18 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                             <span>Thông tin Tiền cọc</span>
                           </div>
                           <div className="rd-grid">
+                            <div className="rd-field full">
+                              <label>Người cọc:</label>
+                              <span style={{ fontWeight: 600 }}>{roomDeposit.name || "---"}</span>
+                            </div>
+                            <div className="rd-field">
+                              <label>SĐT:</label>
+                              <span>{roomDeposit.phone || "---"}</span>
+                            </div>
+                            <div className="rd-field">
+                              <label>Ngày cọc:</label>
+                              <span>{roomDeposit.createdAt ? formatDate(roomDeposit.createdAt) : "---"}</span>
+                            </div>
                             <div className="rd-field">
                               <label>Đã thu cọc:</label>
                               <span className="text-price">{formatCurrency(roomDeposit.amount)}</span>
@@ -1243,6 +1254,14 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                                 <label>Số tiền đã nộp:</label>
                                 <span className="text-price">{formatCurrency(prepaidInvoice.totalAmount)}</span>
                               </div>
+                              {roomContract.startDate && roomContract.rentPaidUntil && (
+                                <div className="rd-field full">
+                                  <label>Thời gian đã trả:</label>
+                                  <span style={{ fontWeight: 600, color: "#2563eb" }}>
+                                    {formatDate(roomContract.startDate)} → {formatDate(roomContract.rentPaidUntil)}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </>
                         )}
