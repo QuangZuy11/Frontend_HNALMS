@@ -554,17 +554,6 @@ export default function ViolationList() {
               </span>
             </div>
             <div className="violation-pagination-items-per-page">
-              <label htmlFor="items-per-page">Hiển thị:</label>
-              <select
-                id="items-per-page"
-                className="violation-pagination-select"
-                value={itemsPerPage}
-                onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={15}>15</option>
-              </select>
             </div>
             <div className="violation-pagination-controls">
               <button
