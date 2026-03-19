@@ -50,14 +50,14 @@ export default function Contact() {
   const contactMethods = [
     {
       icon: Phone,
-      title: "Gọi Hotline",
+      title: "Hotline",
       value: "(+84) 869048066",
       action: "tel:+84869048066",
       label: "Gọi Ngay",
     },
     {
       icon: Mail,
-      title: "Email",
+      title: "Địa Chỉ Email",
       value: "toanhahoangnam@gmail.com",
       action: "mailto:toanhahoangnam@gmail.com",
       label: "Gửi Email",
@@ -107,7 +107,7 @@ export default function Contact() {
                   <CardDescription className="contact-method-value">
                     {method.value}
                   </CardDescription>
-                  <div className="contact-method-action">
+                  {/* <div className="contact-method-action">
                     {method.isTextOnly ? (
                       <span className="contact-method-text-badge">
                         {method.label}
@@ -123,7 +123,7 @@ export default function Contact() {
                         </Button>
                       </a>
                     )}
-                  </div>
+                  </div> */}
                 </CardContent>
               </Card>
             );
