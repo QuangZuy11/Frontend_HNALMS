@@ -37,7 +37,7 @@ export default function FloatingContact() {
               <div>
                 <p className="floating-menu-hours-title">Giờ Làm Việc</p>
                 <p className="floating-menu-hours-time">
-                  8:00 - 21:00 (Mỗi ngày)
+                  24/7 (Tất cả các ngày)
                 </p>
               </div>
             </div>

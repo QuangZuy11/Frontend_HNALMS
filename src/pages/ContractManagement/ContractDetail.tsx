@@ -280,13 +280,13 @@ const ContractDetail = () => {
   );
 
   const calculatePrepayMonths = () => {
-    if (!contract.startDate || !contract.ContRentPaidUntil) return 0;
+    if (!contract.startDate || !contract.rentPaidUntil) return 0;
     const start = new Date(contract.startDate);
-    const paidUntil = new Date(contract.ContRentPaidUntil);
+    const paidUntil = new Date(contract.rentPaidUntil);
     let months = (paidUntil.getFullYear() - start.getFullYear()) * 12;
     months -= start.getMonth();
     months += paidUntil.getMonth();
-    // The ContRentPaidUntil logic goes to end of month. If ContRentPaidUntil is end of Jan, and start is mid Dec,
+    // The rentPaidUntil logic goes to end of month. If rentPaidUntil is end of Jan, and start is mid Dec,
     // differences in month is 1. If start is Dec 1 and paidUntil is Jan 31, diff is 1.
     // The formulation used in Creation is exactly: start.getMonth() + 1 + prepayMonths
     // So prepayMonths = paidUntil.getMonth() - start.getMonth() - 1 + (years * 12)
@@ -614,7 +614,7 @@ const ContractDetail = () => {
             {prepayMonths > 0 && (
               <>
                 <br />- Trả trước tiền phòng: <strong>{prepayMonths}</strong> tháng
-                (Đến hết ngày <strong>{formatDateVN(contract.ContRentPaidUntil)}</strong>).
+                (Đến hết ngày <strong>{formatDateVN(contract.rentPaidUntil)}</strong>).
               </>
             )}
             <br />- Giá thuê phòng là:{" "}
