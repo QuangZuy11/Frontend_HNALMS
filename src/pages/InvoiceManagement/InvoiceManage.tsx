@@ -62,7 +62,6 @@ const InvoiceManager = () => {
   const [showDetailModal, setShowDetailModal] = useState(false); 
   const [showBulkReadingModal, setShowBulkReadingModal] = useState(false);
   
-  // [CẬP NHẬT] Thêm eReset và wReset vào BulkData
   const [bulkData, setBulkData] = useState<Record<string, { eOld: number, eNew: number, wOld: number, wNew: number, eReset: boolean, wReset: boolean }>>({});
   const [occupiedRooms, setOccupiedRooms] = useState<any[]>([]);
   const [completedRooms, setCompletedRooms] = useState<Record<string, boolean>>({});
@@ -78,7 +77,6 @@ const InvoiceManager = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [services, setServices] = useState<any[]>([]);
 
-  // [CẬP NHẬT] Thêm trạng thái Reset cho Modal nhập đơn lẻ
   const [isElecReset, setIsElecReset] = useState(false);
   const [isWaterReset, setIsWaterReset] = useState(false);
 
@@ -168,13 +166,26 @@ const InvoiceManager = () => {
 
     let eOld = 0, wOld = 0;
     let eCurrent = 0, wCurrent = 0;
+    
+    const currentMonthIndex = new Date().getMonth();
+    const currentYearIndex = new Date().getFullYear();
 
     if (elecService && rId) {
       try {
         const resE = await axios.get(`${API_BASE_URL}/meter-readings/latest?roomId=${rId}&utilityId=${elecService._id}`);
         if (resE.data?.data) {
-          eOld = resE.data.data.newIndex;
-          eCurrent = resE.data.data.newIndex; 
+          const reading = resE.data.data;
+          const createdDate = new Date(reading.createdAt);
+          
+          // [ĐÃ FIX] Kiểm tra xem chỉ số này có phải vừa nhập trong tháng này không
+          if (createdDate.getMonth() === currentMonthIndex && createdDate.getFullYear() === currentYearIndex) {
+            eOld = reading.oldIndex;
+            eCurrent = reading.newIndex; 
+            setIsElecReset(reading.isReset || false);
+          } else {
+            eOld = reading.newIndex;
+            eCurrent = reading.newIndex;
+          }
         }
       } catch (error) {}
     }
@@ -183,8 +194,18 @@ const InvoiceManager = () => {
       try {
         const resW = await axios.get(`${API_BASE_URL}/meter-readings/latest?roomId=${rId}&utilityId=${waterService._id}`);
         if (resW.data?.data) {
-          wOld = resW.data.data.newIndex;
-          wCurrent = resW.data.data.newIndex; 
+          const reading = resW.data.data;
+          const createdDate = new Date(reading.createdAt);
+          
+          // [ĐÃ FIX] Tương tự với Nước
+          if (createdDate.getMonth() === currentMonthIndex && createdDate.getFullYear() === currentYearIndex) {
+            wOld = reading.oldIndex;
+            wCurrent = reading.newIndex; 
+            setIsWaterReset(reading.isReset || false);
+          } else {
+            wOld = reading.newIndex;
+            wCurrent = reading.newIndex;
+          }
         }
       } catch (error) {}
     }
@@ -206,20 +227,20 @@ const InvoiceManager = () => {
 
       const apiCalls = [];
 
-      // Tính toán tiêu thụ nháp trên Frontend để kiểm tra điều kiện
       const eUsage = isElecReset ? (100000 - dualReadingForm.elecOld + dualReadingForm.elecNew) : (dualReadingForm.elecNew - dualReadingForm.elecOld);
       const wUsage = isWaterReset ? (100000 - dualReadingForm.waterOld + dualReadingForm.waterNew) : (dualReadingForm.waterNew - dualReadingForm.waterOld);
 
-      if (elecService && eUsage > 0) {
+      if (elecService && eUsage >= 0 && dualReadingForm.elecOld !== dualReadingForm.elecNew) {
         apiCalls.push({ roomId: rId, utilityId: elecService._id, oldIndex: dualReadingForm.elecOld, newIndex: dualReadingForm.elecNew, isReset: isElecReset, maxIndex: 100000 });
       }
 
-      if (waterService && wUsage > 0) {
+      if (waterService && wUsage >= 0 && dualReadingForm.waterOld !== dualReadingForm.waterNew) {
         apiCalls.push({ roomId: rId, utilityId: waterService._id, oldIndex: dualReadingForm.waterOld, newIndex: dualReadingForm.waterNew, isReset: isWaterReset, maxIndex: 100000 });
       }
 
       if (apiCalls.length === 0) {
-        toastr.warning("Không có chỉ số hợp lệ nào được nhập!");
+        toastr.warning("Không có chỉ số thay đổi nào được nhập!");
+        setShowReadingModal(false);
         return;
       }
 
@@ -242,7 +263,6 @@ const InvoiceManager = () => {
         .map(inv => getRoomIdStr(inv))
         .filter(id => id !== ''); 
 
-      // [MỚI] Gọi API lấy Hợp đồng để quét các phòng vừa trả trong tháng này
       const contractsRes = await axios.get(`${API_BASE_URL}/contracts`);
       const currentMonth = new Date().getMonth() + 1;
       const currentYear = new Date().getFullYear();
@@ -259,7 +279,6 @@ const InvoiceManager = () => {
       const roomsRes = await axios.get(`${API_BASE_URL}/rooms`);
       const allRooms = roomsRes.data.data || [];
 
-      // [ĐÃ SỬA] Đưa validContractRoomIds vào điều kiện vớt phòng
       const activeRooms = allRooms.filter((r: any) => 
         r.status === 'Occupied' || draftRoomIds.includes(r._id) || validContractRoomIds.includes(r._id)
       );
@@ -288,30 +307,42 @@ const InvoiceManager = () => {
         let eDone = false;
         let wDone = false;
 
+        // [ĐÃ FIX LỖI SỐ CŨ CHO GHI HÀNG LOẠT]
         if (elecService) {
           try {
             const res = await axios.get(`${API_BASE_URL}/meter-readings/latest?roomId=${room._id}&utilityId=${elecService._id}`);
             if (res.data?.data) {
-              updatedData[room._id].eOld = res.data.data.newIndex;
-              updatedData[room._id].eNew = res.data.data.newIndex; 
+              const reading = res.data.data;
+              const createdDate = new Date(reading.createdAt);
               
-              const createdDate = new Date(res.data.data.createdAt);
               if (createdDate.getMonth() === currentMonthIndex && createdDate.getFullYear() === currentYearIndex) {
+                updatedData[room._id].eOld = reading.oldIndex;
+                updatedData[room._id].eNew = reading.newIndex; 
+                updatedData[room._id].eReset = reading.isReset || false;
                 eDone = true;
+              } else {
+                updatedData[room._id].eOld = reading.newIndex;
+                updatedData[room._id].eNew = reading.newIndex; 
               }
             }
           } catch (e) {}
         }
+
         if (waterService) {
           try {
             const res = await axios.get(`${API_BASE_URL}/meter-readings/latest?roomId=${room._id}&utilityId=${waterService._id}`);
             if (res.data?.data) {
-              updatedData[room._id].wOld = res.data.data.newIndex;
-              updatedData[room._id].wNew = res.data.data.newIndex;
-
-              const createdDate = new Date(res.data.data.createdAt);
+              const reading = res.data.data;
+              const createdDate = new Date(reading.createdAt);
+              
               if (createdDate.getMonth() === currentMonthIndex && createdDate.getFullYear() === currentYearIndex) {
+                updatedData[room._id].wOld = reading.oldIndex;
+                updatedData[room._id].wNew = reading.newIndex;
+                updatedData[room._id].wReset = reading.isReset || false;
                 wDone = true;
+              } else {
+                updatedData[room._id].wOld = reading.newIndex;
+                updatedData[room._id].wNew = reading.newIndex;
               }
             }
           } catch (e) {}
@@ -1049,7 +1080,7 @@ const InvoiceManager = () => {
                 </thead>
                 <tbody>
                   {occupiedRooms.map(room => {
-                    const isDone = completedRooms[room._id]; // Kiểm tra xem phòng này đã chốt chưa
+                    const isDone = completedRooms[room._id]; 
 
                     return (
                       <tr key={room._id} style={{ opacity: isDone ? 0.6 : 1, background: isDone ? '#f8fafc' : 'white' }}>
