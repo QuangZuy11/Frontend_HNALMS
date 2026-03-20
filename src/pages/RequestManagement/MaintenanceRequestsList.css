@@ -1,0 +1,95 @@
+.maintenance-success-toast {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 1300;
+  min-width: 320px;
+  max-width: 440px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.82) 0%, rgba(46, 125, 50, 0.82) 100%);
+  backdrop-filter: blur(2px);
+  box-shadow: 0 12px 28px rgba(46, 125, 50, 0.25);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  animation: maintenanceToastSlideIn 0.28s ease;
+}
+
+.maintenance-success-toast-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.maintenance-success-toast-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.maintenance-success-toast-title {
+  font-size: 22px;
+  line-height: 1.1;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.maintenance-success-toast-message {
+  font-size: 19px;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.maintenance-success-toast-close {
+  margin-left: auto;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex: 0 0 auto;
+}
+
+.maintenance-success-toast-close:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+@keyframes maintenanceToastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.maintenance-status-confirm-modal {
+  max-width: 420px;
+}
+
+.maintenance-status-confirm-text {
+  font-size: 15px;
+  color: #374151;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.maintenance-status-confirm-text strong {
+  color: #1e293b;
+}

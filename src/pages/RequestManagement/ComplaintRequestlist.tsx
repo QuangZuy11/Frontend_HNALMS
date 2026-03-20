@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Eye } from 'lucide-react';
+import { CheckCircle2, Eye } from 'lucide-react';
 import { complaintService } from '../../services/complaintService';
 import useAuth from '../../hooks/useAuth';
 import './RepairRequestsList.css';
+import './ComplaintRequestList.css';
 
 interface Complaint {
   _id: string;
@@ -69,11 +70,33 @@ export default function ComplaintRequestList() {
   const [completingComplaint, setCompletingComplaint] = useState<Complaint | null>(null);
   const [statusNote, setStatusNote] = useState('');
   const [statusNoteError, setStatusNoteError] = useState('');
+  const [showComplaintStatusConfirmModal, setShowComplaintStatusConfirmModal] = useState(false);
+  const [pendingComplaintStatusChange, setPendingComplaintStatusChange] = useState<{
+    complaint: Complaint;
+    nextStatus: 'Pending' | 'Processing' | 'Done' | 'Rejected';
+  } | null>(null);
+  const [complaintToast, setComplaintToast] = useState<{
+    title: string;
+    message: string;
+    variant: 'success' | 'error';
+  } | null>(null);
 
   useEffect(() => {
     fetchComplaints();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!complaintToast) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setComplaintToast(null);
+    }, 4000);
+
+    return () => window.clearTimeout(timer);
+  }, [complaintToast]);
 
   const fetchComplaints = async () => {
     try {
@@ -138,32 +161,10 @@ export default function ComplaintRequestList() {
     return allowedTransitions[current]?.includes(target) ?? false;
   };
 
-  const handleUpdateStatus = async (
+  const applyComplaintStatusUpdate = async (
     complaint: Complaint,
     nextStatus: 'Pending' | 'Processing' | 'Done' | 'Rejected',
   ) => {
-    if (nextStatus === complaint.status) return;
-
-    if (!canTransitionStatus(complaint.status, nextStatus)) {
-      alert('Chỉ được chuyển trạng thái theo thứ tự: Chờ xử lý → Đang xử lý → Đã xử lý hoặc Từ chối');
-      return;
-    }
-
-    if (nextStatus === 'Done' || nextStatus === 'Rejected') {
-      setCompletingComplaint(complaint);
-      setStatusNoteMode(nextStatus);
-      setStatusNote('');
-      setStatusNoteError('');
-      setShowStatusNoteModal(true);
-      return;
-    }
-
-    const confirmText =
-      nextStatus === 'Processing'
-        ? 'Bạn có chắc muốn chuyển khiếu nại này sang trạng thái "Đang xử lý"?'
-        : `Bạn có chắc muốn chuyển khiếu nại này sang trạng thái "${nextStatus}"?`;
-    if (!window.confirm(confirmText)) return;
-
     try {
       setUpdatingId(complaint._id);
 
@@ -210,6 +211,44 @@ export default function ComplaintRequestList() {
     } finally {
       setUpdatingId(null);
     }
+  };
+
+  const handleUpdateStatus = async (
+    complaint: Complaint,
+    nextStatus: 'Pending' | 'Processing' | 'Done' | 'Rejected',
+  ) => {
+    if (nextStatus === complaint.status) return;
+
+    if (!canTransitionStatus(complaint.status, nextStatus)) {
+      alert('Chỉ được chuyển trạng thái theo thứ tự: Chờ xử lý → Đang xử lý → Đã xử lý hoặc Từ chối');
+      return;
+    }
+
+    if (nextStatus === 'Done' || nextStatus === 'Rejected') {
+      setCompletingComplaint(complaint);
+      setStatusNoteMode(nextStatus);
+      setStatusNote('');
+      setStatusNoteError('');
+      setShowStatusNoteModal(true);
+      return;
+    }
+
+    setPendingComplaintStatusChange({ complaint, nextStatus });
+    setShowComplaintStatusConfirmModal(true);
+  };
+
+  const handleConfirmComplaintStatusChange = async () => {
+    if (!pendingComplaintStatusChange) return;
+    const { complaint, nextStatus } = pendingComplaintStatusChange;
+    setShowComplaintStatusConfirmModal(false);
+    setPendingComplaintStatusChange(null);
+    await applyComplaintStatusUpdate(complaint, nextStatus);
+  };
+
+  const handleCloseComplaintStatusConfirmModal = () => {
+    if (updatingId) return;
+    setShowComplaintStatusConfirmModal(false);
+    setPendingComplaintStatusChange(null);
   };
 
   const handleCloseStatusNoteModal = () => {
@@ -282,6 +321,19 @@ export default function ComplaintRequestList() {
       setCompletingComplaint(null);
       setStatusNote('');
       setStatusNoteError('');
+      setComplaintToast(
+        statusNoteMode === 'Rejected'
+          ? {
+            title: 'Đã từ chối',
+            message: 'Xác nhận từ chối khiếu nại thành công!',
+            variant: 'error',
+          }
+          : {
+            title: 'Thành công',
+            message: 'Hoàn thành xử lý khiếu nại thành công!',
+            variant: 'success',
+          },
+      );
     } catch (err: unknown) {
       console.error('Lỗi khi cập nhật trạng thái khiếu nại:', err);
       const anyErr = err as { response?: { data?: { error?: { message?: string } } } };
@@ -291,6 +343,15 @@ export default function ComplaintRequestList() {
     } finally {
       setUpdatingId(null);
     }
+  };
+
+  const getComplaintStatusText = (
+    status: 'Pending' | 'Processing' | 'Done' | 'Rejected',
+  ) => {
+    if (status === 'Pending') return 'Chờ xử lý';
+    if (status === 'Processing') return 'Đang xử lý';
+    if (status === 'Rejected') return 'Từ chối';
+    return 'Đã xử lý';
   };
 
   const normalize = (value: string) =>
@@ -357,6 +418,30 @@ export default function ComplaintRequestList() {
 
   return (
     <div className="repair-requests-page">
+      {complaintToast && (
+        <div
+          className={`complaint-success-toast ${complaintToast.variant === 'error' ? 'complaint-success-toast--error' : ''}`}
+          role="status"
+          aria-live="polite"
+        >
+          <div className="complaint-success-toast-icon">
+            <CheckCircle2 size={20} />
+          </div>
+          <div className="complaint-success-toast-content">
+            <div className="complaint-success-toast-title">{complaintToast.title}</div>
+            <div className="complaint-success-toast-message">{complaintToast.message}</div>
+          </div>
+          <button
+            type="button"
+            className="complaint-success-toast-close"
+            onClick={() => setComplaintToast(null)}
+            aria-label="Đóng thông báo"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <div className="repair-requests-card">
         <div className="repair-requests-header">
           <div>
@@ -692,6 +777,51 @@ export default function ComplaintRequestList() {
                       Xong
                     </button>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showComplaintStatusConfirmModal && pendingComplaintStatusChange && (
+          <div className="repair-modal-overlay" onClick={handleCloseComplaintStatusConfirmModal}>
+            <div
+              className="repair-modal complaint-status-confirm-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="repair-modal-header">
+                <h2>Xác nhận chuyển trạng thái</h2>
+                <button
+                  type="button"
+                  className="modal-close-btn"
+                  onClick={handleCloseComplaintStatusConfirmModal}
+                  aria-label="Đóng"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="repair-modal-body">
+                <p className="complaint-status-confirm-text">
+                  Bạn có chắc muốn chuyển khiếu nại này sang trạng thái{' '}
+                  <strong>{getComplaintStatusText(pendingComplaintStatusChange.nextStatus)}</strong>?
+                </p>
+                <div className="complete-form-actions">
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    onClick={handleCloseComplaintStatusConfirmModal}
+                    disabled={Boolean(updatingId)}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-submit"
+                    onClick={handleConfirmComplaintStatusChange}
+                    disabled={Boolean(updatingId)}
+                  >
+                    Xác nhận
+                  </button>
                 </div>
               </div>
             </div>

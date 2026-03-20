@@ -44,6 +44,11 @@ export default function RepairRequestsList() {
   const [showCompleteTypeModal, setShowCompleteTypeModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showFreeModal, setShowFreeModal] = useState(false);
+  const [showStatusConfirmModal, setShowStatusConfirmModal] = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState<{
+    request: RepairRequest;
+    nextStatus: 'Pending' | 'Processing' | 'Done' | 'Unpaid';
+  } | null>(null);
   const [completingRequest, setCompletingRequest] = useState<RepairRequest | null>(null);
   const [autoInvoiceCode, setAutoInvoiceCode] = useState<string>('');
   const [autoInvoiceCodeLoading, setAutoInvoiceCodeLoading] = useState(false);
@@ -209,6 +214,13 @@ export default function RepairRequestsList() {
     return 'Đã xử lý';
   };
 
+  const getStatusText = (status: 'Pending' | 'Processing' | 'Done' | 'Unpaid') => {
+    if (status === 'Pending') return 'Chờ xử lý';
+    if (status === 'Processing') return 'Đang xử lý';
+    if (status === 'Unpaid') return 'Chờ thanh toán';
+    return 'Đã xử lý';
+  };
+
   const handleViewDetail = (request: RepairRequest) => {
     setSelectedRequest(request);
   };
@@ -221,22 +233,10 @@ export default function RepairRequestsList() {
     setOpenMenuId((prev) => (prev === id ? null : id));
   };
 
-  const handleUpdateStatus = async (
+  const applyStatusUpdate = async (
     request: RepairRequest,
     nextStatus: 'Pending' | 'Processing' | 'Done' | 'Unpaid',
   ) => {
-    // Nếu chuyển sang "Đã xử lý", hiện modal chọn loại xử lý (có phí / miễn phí)
-    if (nextStatus === 'Done') {
-      setCompletingRequest(request);
-      setShowCompleteTypeModal(true);
-      setOpenMenuId(null);
-      return;
-    }
-
-    const confirmText = `Bạn có chắc muốn chuyển yêu cầu này sang trạng thái "${nextStatus}"?`;
-
-    if (!window.confirm(confirmText)) return;
-
     try {
       setUpdatingId(request._id);
       setOpenMenuId(null);
@@ -258,6 +258,36 @@ export default function RepairRequestsList() {
     } finally {
       setUpdatingId(null);
     }
+  };
+
+  const handleUpdateStatus = async (
+    request: RepairRequest,
+    nextStatus: 'Pending' | 'Processing' | 'Done' | 'Unpaid',
+  ) => {
+    // Nếu chuyển sang "Đã xử lý", hiện modal chọn loại xử lý (có phí / miễn phí)
+    if (nextStatus === 'Done') {
+      setCompletingRequest(request);
+      setShowCompleteTypeModal(true);
+      setOpenMenuId(null);
+      return;
+    }
+
+    setPendingStatusChange({ request, nextStatus });
+    setShowStatusConfirmModal(true);
+  };
+
+  const handleConfirmStatusChange = async () => {
+    if (!pendingStatusChange) return;
+    const { request, nextStatus } = pendingStatusChange;
+    setShowStatusConfirmModal(false);
+    setPendingStatusChange(null);
+    await applyStatusUpdate(request, nextStatus);
+  };
+
+  const handleCloseStatusConfirmModal = () => {
+    if (updatingId) return;
+    setShowStatusConfirmModal(false);
+    setPendingStatusChange(null);
   };
 
   const handleChoosePaidRepair = () => {
@@ -1010,6 +1040,53 @@ export default function RepairRequestsList() {
                 ×
               </button>
               <img src={previewImageUrl} alt="Xem ảnh yêu cầu" className="repair-image-preview" />
+            </div>
+          </div>
+        )}
+
+        {showStatusConfirmModal && pendingStatusChange && (
+          <div className="repair-modal-overlay" onClick={handleCloseStatusConfirmModal}>
+            <div
+              className="repair-modal repair-status-confirm-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="repair-modal-header">
+                <h2>Xác nhận chuyển trạng thái</h2>
+                <button
+                  type="button"
+                  className="modal-close-btn"
+                  onClick={handleCloseStatusConfirmModal}
+                  aria-label="Đóng"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="repair-modal-body">
+                <p className="status-confirm-text">
+                  Bạn có chắc muốn chuyển yêu cầu này sang trạng thái
+                  {' '}
+                  <strong>{getStatusText(pendingStatusChange.nextStatus)}</strong>
+                  ?
+                </p>
+                <div className="complete-form-actions">
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    onClick={handleCloseStatusConfirmModal}
+                    disabled={Boolean(updatingId)}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-submit"
+                    onClick={handleConfirmStatusChange}
+                    disabled={Boolean(updatingId)}
+                  >
+                    Xác nhận
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

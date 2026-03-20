@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Eye } from 'lucide-react';
+import { CheckCircle2, Eye } from 'lucide-react';
 import { requestService } from '../../services/requestService';
 import { useAuth } from '../../hooks/useAuth';
 import './RepairRequestsList.css';
+import './MaintenanceRequestsList.css';
 
 interface RepairRequest {
   _id: string;
@@ -42,9 +43,15 @@ export default function MaintenanceRequestsList() {
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showMaintenanceStatusConfirmModal, setShowMaintenanceStatusConfirmModal] = useState(false);
+  const [pendingMaintenanceStatusChange, setPendingMaintenanceStatusChange] = useState<{
+    request: RepairRequest;
+    nextStatus: 'Pending' | 'Processing' | 'Done';
+  } | null>(null);
   const [autoPaymentVoucher, setAutoPaymentVoucher] = useState<string>('');
   const [autoPaymentVoucherLoading, setAutoPaymentVoucherLoading] = useState(false);
   const [autoPaymentVoucherError, setAutoPaymentVoucherError] = useState<string>('');
+  const [maintenanceToast, setMaintenanceToast] = useState<{ title: string; message: string } | null>(null);
   const [paymentForm, setPaymentForm] = useState({
     financialTitle: '',
     financialAmount: '',
@@ -96,6 +103,18 @@ export default function MaintenanceRequestsList() {
     fetchRequests();
   }, [fetchRequests]);
 
+  useEffect(() => {
+    if (!maintenanceToast) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setMaintenanceToast(null);
+    }, 4000);
+
+    return () => window.clearTimeout(timer);
+  }, [maintenanceToast]);
+
   // Reset về trang 1 khi thay đổi filter
   useEffect(() => {
     setCurrentPage(1);
@@ -130,6 +149,12 @@ export default function MaintenanceRequestsList() {
     return 'Đã xử lý';
   };
 
+  const getMaintenanceStatusText = (status: 'Pending' | 'Processing' | 'Done') => {
+    if (status === 'Pending') return 'Chờ xử lý';
+    if (status === 'Processing') return 'Đang xử lý';
+    return 'Đã xử lý';
+  };
+
   const handleViewDetail = (request: RepairRequest) => {
     setSelectedRequest(request);
   };
@@ -144,6 +169,35 @@ export default function MaintenanceRequestsList() {
 
   const handleCloseImagePreview = () => {
     setPreviewImageUrl(null);
+  };
+
+  const applyMaintenanceStatusUpdate = async (
+    request: RepairRequest,
+    nextStatus: 'Pending' | 'Processing' | 'Done',
+  ) => {
+    try {
+      setUpdatingId(request._id);
+      const response = await requestService.updateRepairStatus(request._id, nextStatus);
+      const updated = response.data;
+
+      if (updated?._id) {
+        setRequests((prev) =>
+          prev.map((r) => (r._id === updated._id ? { ...r, status: updated.status } : r)),
+        );
+
+        if (selectedRequest && selectedRequest._id === updated._id) {
+          setSelectedRequest((prev) => (prev ? { ...prev, status: updated.status } : prev));
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi khi cập nhật trạng thái yêu cầu:', err);
+      alert(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (err as any)?.response?.data?.message || 'Không thể cập nhật trạng thái yêu cầu',
+      );
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   const handleUpdateStatus = async (
@@ -188,33 +242,22 @@ export default function MaintenanceRequestsList() {
       return;
     }
 
-    const confirmText = `Bạn có chắc muốn chuyển yêu cầu này sang trạng thái "${nextStatus}"?`;
+    setPendingMaintenanceStatusChange({ request, nextStatus });
+    setShowMaintenanceStatusConfirmModal(true);
+  };
 
-    if (!window.confirm(confirmText)) return;
+  const handleConfirmMaintenanceStatusChange = async () => {
+    if (!pendingMaintenanceStatusChange) return;
+    const { request, nextStatus } = pendingMaintenanceStatusChange;
+    setShowMaintenanceStatusConfirmModal(false);
+    setPendingMaintenanceStatusChange(null);
+    await applyMaintenanceStatusUpdate(request, nextStatus);
+  };
 
-    try {
-      setUpdatingId(request._id);
-      const response = await requestService.updateRepairStatus(request._id, nextStatus);
-      const updated = response.data;
-
-      if (updated?._id) {
-        setRequests((prev) =>
-          prev.map((r) => (r._id === updated._id ? { ...r, status: updated.status } : r)),
-        );
-
-        if (selectedRequest && selectedRequest._id === updated._id) {
-          setSelectedRequest((prev) => (prev ? { ...prev, status: updated.status } : prev));
-        }
-      }
-    } catch (err) {
-      console.error('Lỗi khi cập nhật trạng thái yêu cầu:', err);
-      alert(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (err as any)?.response?.data?.message || 'Không thể cập nhật trạng thái yêu cầu',
-      );
-    } finally {
-      setUpdatingId(null);
-    }
+  const handleCloseMaintenanceStatusConfirmModal = () => {
+    if (updatingId) return;
+    setShowMaintenanceStatusConfirmModal(false);
+    setPendingMaintenanceStatusChange(null);
   };
 
   const handleClosePaymentModal = () => {
@@ -318,6 +361,10 @@ export default function MaintenanceRequestsList() {
         financialTitle: '',
         financialAmount: '',
       });
+      setMaintenanceToast({
+        title: 'Thành công',
+        message: 'Tạo phiếu chi bảo trì thành công!',
+      });
     } catch (err) {
       console.error('Lỗi khi hoàn thành yêu cầu bảo trì:', err);
       alert(
@@ -361,6 +408,26 @@ export default function MaintenanceRequestsList() {
 
   return (
     <div className="repair-requests-page">
+      {maintenanceToast && (
+        <div className="maintenance-success-toast" role="status" aria-live="polite">
+          <div className="maintenance-success-toast-icon">
+            <CheckCircle2 size={20} />
+          </div>
+          <div className="maintenance-success-toast-content">
+            <div className="maintenance-success-toast-title">{maintenanceToast.title}</div>
+            <div className="maintenance-success-toast-message">{maintenanceToast.message}</div>
+          </div>
+          <button
+            type="button"
+            className="maintenance-success-toast-close"
+            onClick={() => setMaintenanceToast(null)}
+            aria-label="Đóng thông báo"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <div className="repair-requests-card">
         <div className="repair-requests-header">
           <div>
@@ -692,6 +759,51 @@ export default function MaintenanceRequestsList() {
                       Xong
                     </button>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showMaintenanceStatusConfirmModal && pendingMaintenanceStatusChange && (
+          <div className="repair-modal-overlay" onClick={handleCloseMaintenanceStatusConfirmModal}>
+            <div
+              className="repair-modal maintenance-status-confirm-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="repair-modal-header">
+                <h2>Xác nhận chuyển trạng thái</h2>
+                <button
+                  type="button"
+                  className="modal-close-btn"
+                  onClick={handleCloseMaintenanceStatusConfirmModal}
+                  aria-label="Đóng"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="repair-modal-body">
+                <p className="maintenance-status-confirm-text">
+                  Bạn có chắc muốn chuyển yêu cầu này sang trạng thái{' '}
+                  <strong>{getMaintenanceStatusText(pendingMaintenanceStatusChange.nextStatus)}</strong>?
+                </p>
+                <div className="complete-form-actions">
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    onClick={handleCloseMaintenanceStatusConfirmModal}
+                    disabled={Boolean(updatingId)}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-submit"
+                    onClick={handleConfirmMaintenanceStatusChange}
+                    disabled={Boolean(updatingId)}
+                  >
+                    Xác nhận
+                  </button>
                 </div>
               </div>
             </div>
