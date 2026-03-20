@@ -52,8 +52,8 @@ export default function Contact() {
       icon: Phone,
       title: "Gọi Hotline",
       value: "(+84) 869048066",
-      action: "tel:+84869048066",
-      label: "Gọi Ngay",
+      label: "Chăm Sóc Khách Hàng",
+      isTextOnly: true,
     },
     {
       icon: Mail,
