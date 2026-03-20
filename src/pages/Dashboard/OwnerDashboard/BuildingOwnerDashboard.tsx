@@ -247,8 +247,8 @@ export default function BuildingOwnerDashboard() {
     <div className="owner-dashboard">
       {/* Header */}
       <header className="dashboard-header">
-        <h1>Owner Dashboard</h1>
-        <p>Tổng quan quản lý tòa nhà Hoàng Nam</p>
+        <h1>Tổng Quan Tòa Nhà Hoàng Nam</h1>
+        <p>Hiển thị số liệu tổng quan về tòa nhà của bạn</p>
       </header>
 
       {/* Summary Cards */}
