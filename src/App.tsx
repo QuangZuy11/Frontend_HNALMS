@@ -66,7 +66,7 @@ import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
 import ManagingIncomeExpenses from "./pages/Accountant/managing_income_expenses/managingIncomeExpenses";
 import ReceiptsList from "./pages/Accountant/managing_income_expenses/receiptsList";
 import InvoiceList from "./pages/InvoiceManagement/InvoiceList";
-import OwnerPaymentsList from "./pages/Owner/OwnerPaymentsList";
+import OwnerPaymentsList from "./pages/CashFlowManagement/Owner/OwnerPaymentsList";
 
 // Pages - Profile (All authenticated roles)
 import ViewProfile from "./pages/Auth/Profile/ViewProfile";
