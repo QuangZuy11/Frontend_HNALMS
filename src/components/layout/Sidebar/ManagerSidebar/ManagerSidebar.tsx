@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
-  ShoppingBag,
   FileText,
   Receipt,
   Wallet,
@@ -17,6 +16,9 @@ import {
   AlertTriangle,
   ArrowRightLeft,
   LogOut,
+  BarChart3,
+  Activity,
+  SwatchBook,
 } from 'lucide-react';
 import './ManagerSidebar.css';
 import logo from '../../../../assets/images/Logo.png';
@@ -60,7 +62,7 @@ const MENU_ITEMS = [
   },
   {
     title: "Dịch Vụ",
-    icon: <ShoppingBag size={20} />,
+    icon: <SwatchBook size={20} />,
     path: "/manager/services",
     subItems: []
   },
@@ -77,17 +79,27 @@ const MENU_ITEMS = [
     ]
   },
   {
-    title: "Gửi Thông Báo",
-    icon: <Bell size={20} />,
-    path: "/manager/notifications",
-    subItems: []
-  },
-  {
     title: "Xử Lý Vi Phạm",
     icon: <AlertTriangle size={20} />,
     path: "/manager/violations",
     subItems: []
   },
+  {
+    title: "Thống Kê",
+    icon: <BarChart3 size={20} />,
+    path: "/owner/reports",
+    subItems: [
+      { title: "Hiệu suất", path: "/owner/reports/occupancy", icon: <Activity size={16} /> },
+      { title: "Sửa chữa & Bảo trì", path: "/owner/reports/maintenance", icon: <Wrench size={16} /> },
+    ]
+  },
+  {
+    title: "Thông Báo",
+    icon: <Bell size={20} />,
+    path: "/manager/notifications",
+    subItems: []
+  },
+
 
 ];
 
