@@ -72,12 +72,28 @@ function DepositModal({
                 : depositId._id || depositId;
             found = res.data.data.find((d: any) => d._id === id);
           } else if (roomId) {
-            // Find active "Held" deposit for this room
-            found = res.data.data.find(
+            // Find active "Held" deposits for this room
+            const heldDeposits = res.data.data.filter(
               (d: any) =>
                 (d.room === roomId || d.room?._id === roomId) &&
                 d.status === "Held",
             );
+
+            if (heldDeposits.length > 1) {
+              // If multiple, find the one NOT used by any active contract
+              axios.get(`${API_URL}/contracts`).then((cRes) => {
+                const activeContracts = cRes.data.data.filter((c: any) =>
+                  (c.roomId === roomId || c.roomId?._id === roomId) && c.status === "active"
+                );
+                const freeDeposit = heldDeposits.find((d: any) =>
+                  !activeContracts.some((c: any) => c.depositId && (c.depositId === d._id || c.depositId._id === d._id))
+                );
+                setDeposit(freeDeposit || heldDeposits[0]);
+              });
+              return; // The axios chain will setDeposit
+            } else {
+              found = heldDeposits[0] || null;
+            }
           }
           setDeposit(found || null);
         }
@@ -236,12 +252,12 @@ function DepositModal({
               <Typography sx={{ fontFamily: serifFont }}>
                 {deposit.createdAt
                   ? new Date(deposit.createdAt).toLocaleDateString("vi-VN", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
                   : "—"}
               </Typography>
             </Box>
@@ -471,6 +487,26 @@ const CreateContract = () => {
     }
   }, [watchRoomId, rooms]);
 
+  const watchStartDate = watch("startDate");
+  useEffect(() => {
+    if (selectedRoom?.futureContractStartDate) {
+      const start = watchStartDate ? new Date(watchStartDate) : new Date();
+      const future = new Date(selectedRoom.futureContractStartDate);
+      if (start < future) {
+        let months = (future.getFullYear() - start.getFullYear()) * 12 + (future.getMonth() - start.getMonth());
+        if (future.getDate() < start.getDate()) {
+          months -= 1;
+        }
+        const maxDur = Math.max(1, months);
+        
+        const currentDuration = getValues("duration");
+        if (currentDuration > maxDur || currentDuration === 12) {
+          setValue("duration", maxDur, { shouldValidate: true });
+        }
+      }
+    }
+  }, [selectedRoom, watchStartDate, setValue, getValues]);
+
   // Helper: determine service category by name
   const getServiceCategory = (serviceName: string): ServiceCategory => {
     const n = serviceName.toLowerCase();
@@ -685,7 +721,7 @@ const CreateContract = () => {
       console.error("OCR Error:", err);
       toastr.error(
         "Lỗi khi kết nối tới FPT.AI: " +
-          (err.response?.data?.errorMessage || err.message),
+        (err.response?.data?.errorMessage || err.message),
       );
     } finally {
       setOcrLoading(false);
@@ -811,406 +847,362 @@ const CreateContract = () => {
         <fieldset disabled={submitting} style={{ border: "none", margin: 0, padding: 0 }}>
           <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
             {/* CONTRACT DETAILS */}
-          <Box>
-            {/* Contract Configuration Removed - Merged into Document */}
+            <Box>
+              {/* Contract Configuration Removed - Merged into Document */}
 
-            {/* Paper Document Representation */}
-            <Paper
-              elevation={3}
-              sx={{
-                p: 5,
-                minHeight: "800px",
-                mx: "auto",
-                maxWidth: "900px",
-                fontFamily: '"Times New Roman", Times, serif',
-              }}
-            >
-              {/* Header */}
-              <Box sx={{ textAlign: "center", mb: 4 }}>
-                <Typography
-                  variant="h5"
-                  sx={{ textTransform: "uppercase", fontWeight: "bold" }}
-                >
-                  CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
-                </Typography>
-                <Typography
-                  variant="subtitle1"
-                  sx={{ fontWeight: "bold", textDecoration: "underline" }}
-                >
-                  Độc lập - Tự do - Hạnh phúc
-                </Typography>
-                <Typography
-                  variant="h4"
-                  sx={{ mt: 3, fontWeight: "bold", textTransform: "uppercase" }}
-                >
-                  HỢP ĐỒNG THUÊ NHÀ
-                </Typography>
-                <Typography variant="body1" sx={{ fontStyle: "italic", mt: 1 }}>
-                  (Số: {selectedRoom ? `HĐ-${selectedRoom.name}` : "..."}/...)
-                </Typography>
-              </Box>
-
-              {/* Body */}
-              <Box sx={{ lineHeight: 2, fontSize: "1.1rem" }}>
-                <Typography paragraph>
-                  Hôm nay, ngày {new Date().getDate()} tháng{" "}
-                  {new Date().getMonth() + 1} năm {new Date().getFullYear()},
-                  tại địa chỉ quản lý tòa nhà.
-                </Typography>
-                <Typography paragraph sx={{ fontWeight: "bold" }}>
-                  Chúng tôi gồm có:
-                </Typography>
-
-                {/* BEN A */}
-                <Box sx={{ mb: 2 }}>
+              {/* Paper Document Representation */}
+              <Paper
+                elevation={3}
+                sx={{
+                  p: 5,
+                  minHeight: "800px",
+                  mx: "auto",
+                  maxWidth: "900px",
+                  fontFamily: '"Times New Roman", Times, serif',
+                }}
+              >
+                {/* Header */}
+                <Box sx={{ textAlign: "center", mb: 4 }}>
                   <Typography
+                    variant="h5"
+                    sx={{ textTransform: "uppercase", fontWeight: "bold" }}
+                  >
+                    CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+                  </Typography>
+                  <Typography
+                    variant="subtitle1"
                     sx={{ fontWeight: "bold", textDecoration: "underline" }}
                   >
-                    BÊN A (Bên cho thuê):
+                    Độc lập - Tự do - Hạnh phúc
                   </Typography>
-                  <Typography>
-                    Ông/Bà: <strong>QUẢN LÝ TÒA NHÀ HOÀNG NAM</strong>
+                  <Typography
+                    variant="h4"
+                    sx={{ mt: 3, fontWeight: "bold", textTransform: "uppercase" }}
+                  >
+                    HỢP ĐỒNG THUÊ NHÀ
                   </Typography>
-                  <Typography>Đại diện cho chủ sở hữu căn hộ.</Typography>
+                  <Typography variant="body1" sx={{ fontStyle: "italic", mt: 1 }}>
+                    (Số: {selectedRoom ? `HĐ-${selectedRoom.name}` : "..."}/...)
+                  </Typography>
                 </Box>
 
-                {/* BEN B */}
-                <Box sx={{ mb: 2 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      mb: 2,
-                    }}
-                  >
+                {/* Body */}
+                <Box sx={{ lineHeight: 2, fontSize: "1.1rem" }}>
+                  <Typography paragraph>
+                    Hôm nay, ngày {new Date().getDate()} tháng{" "}
+                    {new Date().getMonth() + 1} năm {new Date().getFullYear()},
+                    tại địa chỉ quản lý tòa nhà.
+                  </Typography>
+                  <Typography paragraph sx={{ fontWeight: "bold" }}>
+                    Chúng tôi gồm có:
+                  </Typography>
+
+                  {/* BEN A */}
+                  <Box sx={{ mb: 2 }}>
                     <Typography
                       sx={{ fontWeight: "bold", textDecoration: "underline" }}
                     >
-                      BÊN B (Bên thuê):
+                      BÊN A (Bên cho thuê):
                     </Typography>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => ocrFileInputRef.current?.click()}
-                      disabled={ocrLoading}
-                      sx={{
-                        fontFamily: '"Times New Roman", serif',
-                        fontSize: "0.9rem",
-                        textTransform: "none",
-                        color: "#333",
-                        borderColor: "#333",
-                        borderStyle: "dashed",
-                        px: 2,
-                        py: 0.5,
-                        "&:hover": {
-                          borderColor: "#000",
-                          bgcolor: "#fafafa",
-                        },
-                      }}
-                    >
-                      {ocrLoading ? (
-                        <>
-                          <CircularProgress
-                            size={14}
-                            sx={{ mr: 1, color: "#333" }}
-                          />
-                          Đang nhận diện...
-                        </>
-                      ) : (
-                        "Quét CCCD (Tự động điền)"
-                      )}
-                    </Button>
-                    <input
-                      type="file"
-                      accept="image/jpg,image/jpeg,image/png"
-                      ref={ocrFileInputRef}
-                      style={{ display: "none" }}
-                      onChange={handleOcrUpload}
-                    />
+                    <Typography>
+                      Ông/Bà: <strong>QUẢN LÝ TÒA NHÀ HOÀNG NAM</strong>
+                    </Typography>
+                    <Typography>Đại diện cho chủ sở hữu căn hộ.</Typography>
                   </Box>
-                  <Grid container spacing={1} alignItems="center">
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <TextField
-                        variant="standard"
-                        fullWidth
-                        placeholder="Họ và tên..."
-                        {...register("tenantInfo.fullName", {
-                          required: "Họ và tên là bắt buộc",
-                        })}
-                        error={!!errors.tenantInfo?.fullName}
-                        helperText={
-                          errors.tenantInfo?.fullName?.message as string
-                        }
-                        InputProps={{
-                          style: { fontSize: "1.1rem", fontWeight: "bold" },
-                        }}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Grid container alignItems="center">
-                        <Typography component="span" sx={{ mr: 1 }}>
-                          Sinh ngày:
-                        </Typography>
-                        <Controller
-                          name="tenantInfo.dob"
-                          control={control}
-                          rules={{ required: "Ngày sinh là bắt buộc" }}
-                          render={({ field }) => (
-                            <DatePicker
-                              value={field.value ? new Date(field.value) : null}
-                              onChange={(date) => {
-                                if (date && !isNaN(date.getTime())) {
-                                  field.onChange(
-                                    formatDate(date, "yyyy-MM-dd"),
-                                  );
-                                } else {
-                                  field.onChange("");
-                                }
-                              }}
-                              format="dd/MM/yyyy"
-                              slotProps={{
-                                textField: {
-                                  variant: "standard",
-                                  error: !!errors.tenantInfo?.dob,
-                                  helperText: errors.tenantInfo?.dob
-                                    ?.message as string,
-                                  InputProps: {
-                                    style: { fontSize: "1.1rem" },
-                                  },
-                                  sx: { flex: 1 },
-                                },
-                              }}
-                            />
-                          )}
-                        />
-                      </Grid>
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Grid container alignItems="center">
-                        <Typography component="span" sx={{ mr: 1 }}>
-                          CCCD/CMND:
-                        </Typography>
-                        <TextField
-                          variant="standard"
-                          fullWidth
-                          placeholder="Số CCCD..."
-                          {...register("tenantInfo.cccd", {
-                            required: "CCCD là bắt buộc",
-                            pattern: {
-                              value: /^[0-9]{12}$/,
-                              message: "CCCD phải gồm đúng 12 chữ số",
-                            },
-                          })}
-                          error={!!errors.tenantInfo?.cccd}
-                          helperText={
-                            errors.tenantInfo?.cccd?.message as string
-                          }
-                          InputProps={{ style: { fontSize: "1.1rem" } }}
-                          sx={{ flex: 1 }}
-                        />
-                      </Grid>
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Grid container alignItems="center">
-                        <Typography component="span" sx={{ mr: 1 }}>
-                          Điện thoại:
-                        </Typography>
-                        <TextField
-                          variant="standard"
-                          fullWidth
-                          placeholder="SĐT liên hệ..."
-                          {...register("tenantInfo.phone", {
-                            required: "Số điện thoại là bắt buộc",
-                            pattern: {
-                              value: /^0[0-9]{9}$/,
-                              message: "SĐT phải gồm 10 chữ số, bắt đầu bằng 0",
-                            },
-                          })}
-                          error={!!errors.tenantInfo?.phone}
-                          helperText={
-                            errors.tenantInfo?.phone?.message as string
-                          }
-                          InputProps={{ style: { fontSize: "1.1rem" } }}
-                          sx={{ flex: 1 }}
-                        />
-                      </Grid>
-                    </Grid>
-                    <Grid size={12}>
-                      <Grid container alignItems="center">
-                        <Typography component="span" sx={{ mr: 1 }}>
-                          Email:
-                        </Typography>
-                        <TextField
-                          variant="standard"
-                          fullWidth
-                          placeholder="Email nhận thông báo..."
-                          {...register("tenantInfo.email", {
-                            required: "Email là bắt buộc",
-                            pattern: {
-                              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                              message: "Email không đúng định dạng",
-                            },
-                          })}
-                          error={!!errors.tenantInfo?.email}
-                          helperText={
-                            errors.tenantInfo?.email?.message as string
-                          }
-                          InputProps={{ style: { fontSize: "1.1rem" } }}
-                          sx={{ flex: 1 }}
-                        />
-                      </Grid>
-                    </Grid>
-                    <Grid size={12}>
-                      <Grid container alignItems="center">
-                        <Typography component="span" sx={{ mr: 1 }}>
-                          Hộ khẩu thường trú:
-                        </Typography>
-                        <TextField
-                          variant="standard"
-                          fullWidth
-                          placeholder="Địa chỉ..."
-                          {...register("tenantInfo.address", {
-                            required: "Hộ khẩu thường trú là bắt buộc",
-                          })}
-                          error={!!errors.tenantInfo?.address}
-                          helperText={
-                            errors.tenantInfo?.address?.message as string
-                          }
-                          InputProps={{ style: { fontSize: "1.1rem" } }}
-                          sx={{ flex: 1 }}
-                        />
-                      </Grid>
-                    </Grid>
-                  </Grid>
-                </Box>
 
-                {/* Danh sách người ở cùng - trước thỏa thuận */}
-                <Typography
-                  paragraph
-                  sx={{
-                    mt: 2,
-                    fontFamily: '"Times New Roman", serif',
-                    fontSize: "1.1rem",
-                  }}
-                >
-                  <strong>Danh sách người ở cùng trong phòng</strong> (tối đa{" "}
-                  {selectedRoom?.roomTypeId?.personMax || 1} người/phòng):
-                </Typography>
-                <Box sx={{ pl: 3 }}>
-                  {coResidentFields.length > 0 ? (
+                  {/* BEN B */}
+                  <Box sx={{ mb: 2 }}>
                     <Box
-                      component="table"
                       sx={{
-                        width: "100%",
-                        borderCollapse: "collapse",
-                        fontFamily: '"Times New Roman", serif',
-                        fontSize: "1.05rem",
-                        mb: 1.5,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        mb: 2,
                       }}
                     >
-                      <Box component="thead">
-                        <Box component="tr">
-                          {["STT", "Họ và tên", "Số CCCD/CMND", ""].map((h) => (
-                            <Box
-                              component="th"
-                              key={h || "action"}
-                              sx={{
-                                border: h ? "1px solid #333" : "none",
-                                py: 0.8,
-                                px: 1.5,
-                                textAlign: "center",
-                                fontWeight: "bold",
-                                bgcolor: h ? "#fafafa" : "transparent",
-                                fontFamily: '"Times New Roman", serif',
-                                width: h === "" ? "40px" : "auto",
-                              }}
-                            >
-                              {h}
-                            </Box>
-                          ))}
-                        </Box>
-                      </Box>
-                      <Box component="tbody">
-                        {coResidentFields.map((item, index) => (
-                          <Box component="tr" key={item.id}>
-                            <Box
-                              component="td"
-                              sx={{
-                                border: "1px solid #333",
-                                py: 0.3,
-                                px: 1.5,
-                                textAlign: "center",
-                                fontFamily: '"Times New Roman", serif',
-                                width: "50px",
-                              }}
-                            >
-                              {index + 1}
-                            </Box>
-                            <Box
-                              component="td"
-                              sx={{
-                                border: "1px solid #333",
-                                py: 0.3,
-                                px: 1,
-                                fontFamily: '"Times New Roman", serif',
-                              }}
-                            >
-                              <TextField
-                                variant="standard"
-                                fullWidth
-                                placeholder="Họ và tên..."
-                                {...register(
-                                  `coResidents.${index}.fullName` as const,
-                                  { required: "Bắt buộc" },
-                                )}
-                                error={!!errors.coResidents?.[index]?.fullName}
-                                helperText={
-                                  errors.coResidents?.[index]?.fullName
-                                    ?.message as string
-                                }
-                                InputProps={{
-                                  disableUnderline: true,
-                                  style: {
-                                    fontSize: "1.05rem",
-                                    fontFamily: '"Times New Roman", serif',
+                      <Typography
+                        sx={{ fontWeight: "bold", textDecoration: "underline" }}
+                      >
+                        BÊN B (Bên thuê):
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => ocrFileInputRef.current?.click()}
+                        disabled={ocrLoading}
+                        sx={{
+                          fontFamily: '"Times New Roman", serif',
+                          fontSize: "0.9rem",
+                          textTransform: "none",
+                          color: "#333",
+                          borderColor: "#333",
+                          borderStyle: "dashed",
+                          px: 2,
+                          py: 0.5,
+                          "&:hover": {
+                            borderColor: "#000",
+                            bgcolor: "#fafafa",
+                          },
+                        }}
+                      >
+                        {ocrLoading ? (
+                          <>
+                            <CircularProgress
+                              size={14}
+                              sx={{ mr: 1, color: "#333" }}
+                            />
+                            Đang nhận diện...
+                          </>
+                        ) : (
+                          "Quét CCCD (Tự động điền)"
+                        )}
+                      </Button>
+                      <input
+                        type="file"
+                        accept="image/jpg,image/jpeg,image/png"
+                        ref={ocrFileInputRef}
+                        style={{ display: "none" }}
+                        onChange={handleOcrUpload}
+                      />
+                    </Box>
+                    <Grid container spacing={1} alignItems="center">
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField
+                          variant="standard"
+                          fullWidth
+                          placeholder="Họ và tên..."
+                          {...register("tenantInfo.fullName", {
+                            required: "Họ và tên là bắt buộc",
+                          })}
+                          error={!!errors.tenantInfo?.fullName}
+                          helperText={
+                            errors.tenantInfo?.fullName?.message as string
+                          }
+                          InputProps={{
+                            style: { fontSize: "1.1rem", fontWeight: "bold" },
+                          }}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid container alignItems="center">
+                          <Typography component="span" sx={{ mr: 1 }}>
+                            Sinh ngày:
+                          </Typography>
+                          <Controller
+                            name="tenantInfo.dob"
+                            control={control}
+                            rules={{ required: "Ngày sinh là bắt buộc" }}
+                            render={({ field }) => (
+                              <DatePicker
+                                value={field.value ? new Date(field.value) : null}
+                                onChange={(date) => {
+                                  if (date && !isNaN(date.getTime())) {
+                                    field.onChange(
+                                      formatDate(date, "yyyy-MM-dd"),
+                                    );
+                                  } else {
+                                    field.onChange("");
+                                  }
+                                }}
+                                format="dd/MM/yyyy"
+                                slotProps={{
+                                  textField: {
+                                    variant: "standard",
+                                    error: !!errors.tenantInfo?.dob,
+                                    helperText: errors.tenantInfo?.dob
+                                      ?.message as string,
+                                    InputProps: {
+                                      style: { fontSize: "1.1rem" },
+                                    },
+                                    sx: { flex: 1 },
                                   },
                                 }}
                               />
-                            </Box>
-                            <Box
-                              component="td"
-                              sx={{
-                                border: "1px solid #333",
-                                py: 0.3,
-                                px: 1,
-                                fontFamily: '"Times New Roman", serif',
-                              }}
-                            >
+                            )}
+                          />
+                        </Grid>
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid container alignItems="center">
+                          <Typography component="span" sx={{ mr: 1 }}>
+                            CCCD/CMND:
+                          </Typography>
+                          <TextField
+                            variant="standard"
+                            fullWidth
+                            placeholder="Số CCCD..."
+                            {...register("tenantInfo.cccd", {
+                              required: "CCCD là bắt buộc",
+                              pattern: {
+                                value: /^[0-9]{12}$/,
+                                message: "CCCD phải gồm đúng 12 chữ số",
+                              },
+                            })}
+                            error={!!errors.tenantInfo?.cccd}
+                            helperText={
+                              errors.tenantInfo?.cccd?.message as string
+                            }
+                            InputProps={{ style: { fontSize: "1.1rem" } }}
+                            sx={{ flex: 1 }}
+                          />
+                        </Grid>
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid container alignItems="center">
+                          <Typography component="span" sx={{ mr: 1 }}>
+                            Điện thoại:
+                          </Typography>
+                          <TextField
+                            variant="standard"
+                            fullWidth
+                            placeholder="SĐT liên hệ..."
+                            {...register("tenantInfo.phone", {
+                              required: "Số điện thoại là bắt buộc",
+                              pattern: {
+                                value: /^0[0-9]{9}$/,
+                                message: "SĐT phải gồm 10 chữ số, bắt đầu bằng 0",
+                              },
+                            })}
+                            error={!!errors.tenantInfo?.phone}
+                            helperText={
+                              errors.tenantInfo?.phone?.message as string
+                            }
+                            InputProps={{ style: { fontSize: "1.1rem" } }}
+                            sx={{ flex: 1 }}
+                          />
+                        </Grid>
+                      </Grid>
+                      <Grid size={12}>
+                        <Grid container alignItems="center">
+                          <Typography component="span" sx={{ mr: 1 }}>
+                            Email:
+                          </Typography>
+                          <TextField
+                            variant="standard"
+                            fullWidth
+                            placeholder="Email nhận thông báo..."
+                            {...register("tenantInfo.email", {
+                              required: "Email là bắt buộc",
+                              pattern: {
+                                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                message: "Email không đúng định dạng",
+                              },
+                            })}
+                            error={!!errors.tenantInfo?.email}
+                            helperText={
+                              errors.tenantInfo?.email?.message as string
+                            }
+                            InputProps={{ style: { fontSize: "1.1rem" } }}
+                            sx={{ flex: 1 }}
+                          />
+                        </Grid>
+                      </Grid>
+                      <Grid size={12}>
+                        <Grid container alignItems="center">
+                          <Typography component="span" sx={{ mr: 1 }}>
+                            Hộ khẩu thường trú:
+                          </Typography>
+                          <TextField
+                            variant="standard"
+                            fullWidth
+                            placeholder="Địa chỉ..."
+                            {...register("tenantInfo.address", {
+                              required: "Hộ khẩu thường trú là bắt buộc",
+                            })}
+                            error={!!errors.tenantInfo?.address}
+                            helperText={
+                              errors.tenantInfo?.address?.message as string
+                            }
+                            InputProps={{ style: { fontSize: "1.1rem" } }}
+                            sx={{ flex: 1 }}
+                          />
+                        </Grid>
+                      </Grid>
+                    </Grid>
+                  </Box>
+
+                  {/* Danh sách người ở cùng - trước thỏa thuận */}
+                  <Typography
+                    paragraph
+                    sx={{
+                      mt: 2,
+                      fontFamily: '"Times New Roman", serif',
+                      fontSize: "1.1rem",
+                    }}
+                  >
+                    <strong>Danh sách người ở cùng trong phòng</strong> (tối đa{" "}
+                    {selectedRoom?.roomTypeId?.personMax || 1} người/phòng):
+                  </Typography>
+                  <Box sx={{ pl: 3 }}>
+                    {coResidentFields.length > 0 ? (
+                      <Box
+                        component="table"
+                        sx={{
+                          width: "100%",
+                          borderCollapse: "collapse",
+                          fontFamily: '"Times New Roman", serif',
+                          fontSize: "1.05rem",
+                          mb: 1.5,
+                        }}
+                      >
+                        <Box component="thead">
+                          <Box component="tr">
+                            {["STT", "Họ và tên", "Số CCCD/CMND", ""].map((h) => (
                               <Box
+                                component="th"
+                                key={h || "action"}
                                 sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 1,
+                                  border: h ? "1px solid #333" : "none",
+                                  py: 0.8,
+                                  px: 1.5,
+                                  textAlign: "center",
+                                  fontWeight: "bold",
+                                  bgcolor: h ? "#fafafa" : "transparent",
+                                  fontFamily: '"Times New Roman", serif',
+                                  width: h === "" ? "40px" : "auto",
+                                }}
+                              >
+                                {h}
+                              </Box>
+                            ))}
+                          </Box>
+                        </Box>
+                        <Box component="tbody">
+                          {coResidentFields.map((item, index) => (
+                            <Box component="tr" key={item.id}>
+                              <Box
+                                component="td"
+                                sx={{
+                                  border: "1px solid #333",
+                                  py: 0.3,
+                                  px: 1.5,
+                                  textAlign: "center",
+                                  fontFamily: '"Times New Roman", serif',
+                                  width: "50px",
+                                }}
+                              >
+                                {index + 1}
+                              </Box>
+                              <Box
+                                component="td"
+                                sx={{
+                                  border: "1px solid #333",
+                                  py: 0.3,
+                                  px: 1,
+                                  fontFamily: '"Times New Roman", serif',
                                 }}
                               >
                                 <TextField
                                   variant="standard"
                                   fullWidth
-                                  placeholder="Số CCCD..."
+                                  placeholder="Họ và tên..."
                                   {...register(
-                                    `coResidents.${index}.cccd` as const,
-                                    {
-                                      required: "Bắt buộc",
-                                      pattern: {
-                                        value: /^[0-9]{12}$/,
-                                        message: "CCCD phải gồm 12 chữ số",
-                                      },
-                                    },
+                                    `coResidents.${index}.fullName` as const,
+                                    { required: "Bắt buộc" },
                                   )}
-                                  error={!!errors.coResidents?.[index]?.cccd}
+                                  error={!!errors.coResidents?.[index]?.fullName}
                                   helperText={
-                                    errors.coResidents?.[index]?.cccd
+                                    errors.coResidents?.[index]?.fullName
                                       ?.message as string
                                   }
                                   InputProps={{
@@ -1220,241 +1212,435 @@ const CreateContract = () => {
                                       fontFamily: '"Times New Roman", serif',
                                     },
                                   }}
-                                  sx={{ flex: 1 }}
                                 />
-                                <input
-                                  type="file"
-                                  accept="image/jpg,image/jpeg,image/png"
-                                  style={{ display: "none" }}
-                                  id={`coResident-ocr-input-${index}`}
-                                  onChange={async (e) => {
-                                    const files = e.target.files;
-                                    if (!files || files.length === 0) return;
-                                    const formData = new FormData();
-                                    formData.append("image", files[0]);
-                                    try {
-                                      const res = await axios.post(
-                                        "https://api.fpt.ai/vision/idr/vnm",
-                                        formData,
-                                        {
-                                          headers: {
-                                            "api-key":
-                                              "UJ4VXI9R2N49AIyl2TCnofOH31cJP4Rw",
-                                            "Content-Type":
-                                              "multipart/form-data",
-                                          },
-                                        },
-                                      );
-                                      if (
-                                        res.data?.errorCode === 0 &&
-                                        res.data?.data &&
-                                        res.data.data.length > 0
-                                      ) {
-                                        const data = res.data.data[0];
-                                        if (data.name)
-                                          setValue(
-                                            `coResidents.${index}.fullName`,
-                                            data.name,
-                                            { shouldValidate: true },
-                                          );
-                                        if (data.id)
-                                          setValue(
-                                            `coResidents.${index}.cccd`,
-                                            data.id,
-                                            { shouldValidate: true },
-                                          );
-                                        toastr.success(
-                                          "Đã nhận diện và điền tự động dữ liệu CCCD thành công!",
-                                        );
-                                      } else {
-                                        toastr.warning(
-                                          "Không thể nhận diện CCCD. Vui lòng thử lại với ảnh rõ nét hơn.",
-                                        );
-                                      }
-                                    } catch (err: any) {
-                                      toastr.error(
-                                        "Lỗi khi kết nối tới FPT.AI: " +
-                                          (err.response?.data?.errorMessage ||
-                                            err.message),
-                                      );
-                                    }
-                                    // Reset file input
-                                    const fileInput = document.getElementById(
-                                      `coResident-ocr-input-${index}`,
-                                    ) as HTMLInputElement;
-                                    if (fileInput) fileInput.value = "";
-                                  }}
-                                />
-                                <label
-                                  htmlFor={`coResident-ocr-input-${index}`}
-                                >
-                                  <Button
-                                    variant="outlined"
-                                    size="small"
-                                    sx={{
-                                      fontFamily: '"Times New Roman", serif',
-                                      fontSize: "0.9rem",
-                                      textTransform: "none",
-                                      color: "#333",
-                                      borderColor: "#333",
-                                      borderStyle: "dashed",
-                                      px: 1.5,
-                                      py: 0.5,
-                                      minWidth: 0,
-                                      ml: 1,
-                                      "&:hover": {
-                                        borderColor: "#000",
-                                        bgcolor: "#fafafa",
-                                      },
-                                    }}
-                                    component="span"
-                                  >
-                                    Quét CCCD
-                                  </Button>
-                                </label>
                               </Box>
-                            </Box>
-                            <Box
-                              component="td"
-                              sx={{
-                                py: 0.3,
-                                px: 0.5,
-                                textAlign: "center",
-                              }}
-                            >
-                              <IconButton
-                                size="small"
-                                onClick={() => removeCoResident(index)}
+                              <Box
+                                component="td"
                                 sx={{
-                                  color: "#999",
-                                  "&:hover": { color: "#d32f2f" },
+                                  border: "1px solid #333",
+                                  py: 0.3,
+                                  px: 1,
+                                  fontFamily: '"Times New Roman", serif',
                                 }}
                               >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                  }}
+                                >
+                                  <TextField
+                                    variant="standard"
+                                    fullWidth
+                                    placeholder="Số CCCD..."
+                                    {...register(
+                                      `coResidents.${index}.cccd` as const,
+                                      {
+                                        required: "Bắt buộc",
+                                        pattern: {
+                                          value: /^[0-9]{12}$/,
+                                          message: "CCCD phải gồm 12 chữ số",
+                                        },
+                                      },
+                                    )}
+                                    error={!!errors.coResidents?.[index]?.cccd}
+                                    helperText={
+                                      errors.coResidents?.[index]?.cccd
+                                        ?.message as string
+                                    }
+                                    InputProps={{
+                                      disableUnderline: true,
+                                      style: {
+                                        fontSize: "1.05rem",
+                                        fontFamily: '"Times New Roman", serif',
+                                      },
+                                    }}
+                                    sx={{ flex: 1 }}
+                                  />
+                                  <input
+                                    type="file"
+                                    accept="image/jpg,image/jpeg,image/png"
+                                    style={{ display: "none" }}
+                                    id={`coResident-ocr-input-${index}`}
+                                    onChange={async (e) => {
+                                      const files = e.target.files;
+                                      if (!files || files.length === 0) return;
+                                      const formData = new FormData();
+                                      formData.append("image", files[0]);
+                                      try {
+                                        const res = await axios.post(
+                                          "https://api.fpt.ai/vision/idr/vnm",
+                                          formData,
+                                          {
+                                            headers: {
+                                              "api-key":
+                                                "UJ4VXI9R2N49AIyl2TCnofOH31cJP4Rw",
+                                              "Content-Type":
+                                                "multipart/form-data",
+                                            },
+                                          },
+                                        );
+                                        if (
+                                          res.data?.errorCode === 0 &&
+                                          res.data?.data &&
+                                          res.data.data.length > 0
+                                        ) {
+                                          const data = res.data.data[0];
+                                          if (data.name)
+                                            setValue(
+                                              `coResidents.${index}.fullName`,
+                                              data.name,
+                                              { shouldValidate: true },
+                                            );
+                                          if (data.id)
+                                            setValue(
+                                              `coResidents.${index}.cccd`,
+                                              data.id,
+                                              { shouldValidate: true },
+                                            );
+                                          toastr.success(
+                                            "Đã nhận diện và điền tự động dữ liệu CCCD thành công!",
+                                          );
+                                        } else {
+                                          toastr.warning(
+                                            "Không thể nhận diện CCCD. Vui lòng thử lại với ảnh rõ nét hơn.",
+                                          );
+                                        }
+                                      } catch (err: any) {
+                                        toastr.error(
+                                          "Lỗi khi kết nối tới FPT.AI: " +
+                                          (err.response?.data?.errorMessage ||
+                                            err.message),
+                                        );
+                                      }
+                                      // Reset file input
+                                      const fileInput = document.getElementById(
+                                        `coResident-ocr-input-${index}`,
+                                      ) as HTMLInputElement;
+                                      if (fileInput) fileInput.value = "";
+                                    }}
+                                  />
+                                  <label
+                                    htmlFor={`coResident-ocr-input-${index}`}
+                                  >
+                                    <Button
+                                      variant="outlined"
+                                      size="small"
+                                      sx={{
+                                        fontFamily: '"Times New Roman", serif',
+                                        fontSize: "0.9rem",
+                                        textTransform: "none",
+                                        color: "#333",
+                                        borderColor: "#333",
+                                        borderStyle: "dashed",
+                                        px: 1.5,
+                                        py: 0.5,
+                                        minWidth: 0,
+                                        ml: 1,
+                                        "&:hover": {
+                                          borderColor: "#000",
+                                          bgcolor: "#fafafa",
+                                        },
+                                      }}
+                                      component="span"
+                                    >
+                                      Quét CCCD
+                                    </Button>
+                                  </label>
+                                </Box>
+                              </Box>
+                              <Box
+                                component="td"
+                                sx={{
+                                  py: 0.3,
+                                  px: 0.5,
+                                  textAlign: "center",
+                                }}
+                              >
+                                <IconButton
+                                  size="small"
+                                  onClick={() => removeCoResident(index)}
+                                  sx={{
+                                    color: "#999",
+                                    "&:hover": { color: "#d32f2f" },
+                                  }}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Box>
                             </Box>
-                          </Box>
-                        ))}
+                          ))}
+                        </Box>
                       </Box>
-                    </Box>
-                  ) : (
-                    <Typography
-                      sx={{
-                        fontStyle: "italic",
-                        fontFamily: '"Times New Roman", serif',
-                        fontSize: "1.05rem",
-                        mb: 1,
-                      }}
-                    >
-                      Chưa có người ở cùng.
-                    </Typography>
-                  )}
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Button
-                      size="small"
-                      variant="text"
-                      onClick={() =>
-                        appendCoResident({ fullName: "", cccd: "" })
-                      }
-                      disabled={
-                        coResidentFields.length + 1 >=
-                        (selectedRoom?.roomTypeId?.personMax || 1)
-                      }
-                      sx={{
-                        fontFamily: '"Times New Roman", serif',
-                        fontSize: "0.95rem",
-                        textTransform: "none",
-                        color: "#333",
-                        textDecoration: "underline",
-                        "&:hover": {
-                          textDecoration: "underline",
-                          bgcolor: "transparent",
-                          color: "#000",
-                        },
-                      }}
-                    >
-                      + Thêm người ở cùng ({coResidentFields.length + 1}/
-                      {selectedRoom?.roomTypeId?.personMax || 1})
-                    </Button>
-                    {coResidentFields.length + 1 >=
-                      (selectedRoom?.roomTypeId?.personMax || 1) && (
+                    ) : (
                       <Typography
                         sx={{
                           fontStyle: "italic",
                           fontFamily: '"Times New Roman", serif',
-                          fontSize: "0.9rem",
-                          color: "#999",
+                          fontSize: "1.05rem",
+                          mb: 1,
                         }}
                       >
-                        (Đã đạt giới hạn số người cho loại phòng này)
+                        Chưa có người ở cùng.
                       </Typography>
                     )}
-                  </Box>
-                </Box>
-
-                {/* Agreement */}
-                <Typography paragraph>
-                  Hai bên cùng thỏa thuận ký kết hợp đồng thuê nhà với các điều
-                  khoản sau:
-                </Typography>
-
-                <Typography component="div" sx={{ mb: 2 }}>
-                  <strong>Điều 1:</strong> Bên A đồng ý cho Bên B thuê phòng số{" "}
-                  <strong>{selectedRoom?.name || "..."}</strong>.
-                  <br />
-                  - Thời hạn thuê:
-                  <TextField
-                    variant="standard"
-                    type="number"
-                    sx={{
-                      width: 80,
-                      mx: 1,
-                      verticalAlign: "baseline",
-                      "& .MuiInput-root": {
-                        pb: 0,
-                        position: "relative",
-                        top: "-2px",
-                      },
-                      "& .MuiFormHelperText-root": { mt: 0 },
-                    }}
-                    inputProps={{
-                      style: {
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "1rem",
-                        padding: "0 0 2px 0",
-                      },
-                      min: 6,
-                    }}
-                    {...register("duration", {
-                      required: "Bắt buộc",
-                      min: { value: 6, message: "Tối thiểu 6 tháng" },
-                      valueAsNumber: true,
-                    })}
-                    error={!!errors.duration}
-                    helperText={errors.duration?.message as string}
-                  />
-                  tháng, bắt đầu từ ngày
-                  <Controller
-                    name="startDate"
-                    control={control}
-                    rules={{ required: "Ngày bắt đầu là bắt buộc" }}
-                    render={({ field }) => (
-                      <DatePicker
-                        value={field.value ? new Date(field.value) : null}
-                        onChange={(date) => {
-                          if (date && !isNaN(date.getTime())) {
-                            field.onChange(formatDate(date, "yyyy-MM-dd"));
-                          } else {
-                            field.onChange("");
-                          }
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Button
+                        size="small"
+                        variant="text"
+                        onClick={() =>
+                          appendCoResident({ fullName: "", cccd: "" })
+                        }
+                        disabled={
+                          coResidentFields.length + 1 >=
+                          (selectedRoom?.roomTypeId?.personMax || 1)
+                        }
+                        sx={{
+                          fontFamily: '"Times New Roman", serif',
+                          fontSize: "0.95rem",
+                          textTransform: "none",
+                          color: "#333",
+                          textDecoration: "underline",
+                          "&:hover": {
+                            textDecoration: "underline",
+                            bgcolor: "transparent",
+                            color: "#000",
+                          },
                         }}
-                        format="dd/MM/yyyy"
-                        slotProps={{
-                          textField: {
-                            variant: "standard",
-                            sx: {
-                              width: 170,
+                      >
+                        + Thêm người ở cùng ({coResidentFields.length + 1}/
+                        {selectedRoom?.roomTypeId?.personMax || 1})
+                      </Button>
+                      {coResidentFields.length + 1 >=
+                        (selectedRoom?.roomTypeId?.personMax || 1) && (
+                          <Typography
+                            sx={{
+                              fontStyle: "italic",
+                              fontFamily: '"Times New Roman", serif',
+                              fontSize: "0.9rem",
+                              color: "#999",
+                            }}
+                          >
+                            (Đã đạt giới hạn số người cho loại phòng này)
+                          </Typography>
+                        )}
+                    </Box>
+                  </Box>
+
+                  {(() => {
+                    const watchSd = watch("startDate");
+                    const getMaxDuration = () => {
+                      if (selectedRoom?.futureContractStartDate) {
+                        const start = watchSd ? new Date(watchSd) : new Date();
+                        const future = new Date(selectedRoom.futureContractStartDate);
+                        if (start >= future) return 1; // Fallback for invalid state
+
+                        let months = (future.getFullYear() - start.getFullYear()) * 12 + (future.getMonth() - start.getMonth());
+                        // If the start day is strictly after the future day, you have less than a full month segment
+                        if (future.getDate() < start.getDate()) {
+                          months -= 1;
+                        }
+                        return Math.max(1, months);
+                      }
+                      return 36; // Normal contracts max
+                    };
+                    const maxDur = getMaxDuration();
+
+                    return (
+                      <>
+                        {/* Agreement */}
+                        <Typography paragraph>
+                          Hai bên cùng thỏa thuận ký kết hợp đồng thuê nhà với các điều
+                          khoản sau:
+                        </Typography>
+
+                        <Typography component="div" sx={{ mb: 2 }}>
+                          <strong>Điều 1:</strong> Bên A đồng ý cho Bên B thuê phòng số{" "}
+                          <strong>{selectedRoom?.name || "..."}</strong>.
+                          <br />
+                          - Thời hạn thuê:
+                          <TextField
+                            variant="standard"
+                            type="number"
+                            sx={{
+                              width: 80,
+                              minWidth: 80,
+                              mx: 1,
+                              verticalAlign: "middle",
+                              "& .MuiInput-root": {
+                                pb: 0,
+                              },
+                              "& .MuiFormHelperText-root": { mt: 0, position: "absolute", top: "100%" },
+                            }}
+                            inputProps={{
+                              style: {
+                                textAlign: "center",
+                                fontWeight: "bold",
+                                fontSize: "1rem",
+                                padding: "0 0 2px 0",
+                              },
+                              min: selectedRoom?.futureContractStartDate ? 1 : 6,
+                              max: maxDur,
+                            }}
+                            {...register("duration", {
+                              required: "Bắt buộc",
+                              validate: (value) => {
+                                const val = Number(value);
+                                if (!selectedRoom?.futureContractStartDate && val < 6) return "Tối thiểu 6 tháng";
+
+                                if (selectedRoom?.futureContractStartDate) {
+                                  const startStr = getValues("startDate");
+                                  if (startStr) {
+                                    const contractStart = new Date(startStr);
+                                    const contractEnd = new Date(contractStart);
+                                    contractEnd.setMonth(contractEnd.getMonth() + val);
+                                    const futureStart = new Date(selectedRoom.futureContractStartDate);
+
+                                    // It's acceptable for contractEnd to equal futureStart (meaning they check out the day the next person checks in).
+                                    if (contractEnd > futureStart) {
+                                      // If duration is 1, and it still exceeds, provide a very clear error message
+                                      if (val === 1) {
+                                        return `Ngày bắt đầu quá sát hợp đồng tiếp theo (${futureStart.toLocaleDateString("vi-VN")}). Rút ngắn ngày bắt đầu hoặc chọn tối đa 1 tháng không vượt quá.`;
+                                      }
+                                      return `Tối đa ${val - 1} tháng để trả phòng trước ${futureStart.toLocaleDateString("vi-VN")}`;
+                                    }
+                                  }
+                                }
+                                return true;
+                              },
+                              valueAsNumber: true,
+                            })}
+                            error={!!errors.duration}
+                            helperText={errors.duration?.message as string}
+                          />
+                          tháng, bắt đầu từ ngày
+                          <Controller
+                            name="startDate"
+                            control={control}
+                            rules={{
+                              required: "Ngày bắt đầu là bắt buộc",
+                              validate: (value) => {
+                                if (selectedRoom?.futureContractStartDate && value) {
+                                  const selectedDate = new Date(value);
+                                  const futureDate = new Date(selectedRoom.futureContractStartDate);
+                                  if (selectedDate >= futureDate) {
+                                    return `Phải trước ngày ${futureDate.toLocaleDateString("vi-VN")}`;
+                                  }
+                                  
+                                  const minEndDate = new Date(selectedDate);
+                                  minEndDate.setMonth(minEndDate.getMonth() + 1);
+                                  if (minEndDate > futureDate) {
+                                    return `Không đủ 1 tháng`;
+                                  }
+                                }
+                                return true;
+                              }
+                            }}
+                            render={({ field }) => (
+                              <DatePicker
+                                value={field.value ? new Date(field.value) : null}
+                                onChange={(date) => {
+                                  if (date && !isNaN(date.getTime())) {
+                                    field.onChange(formatDate(date, "yyyy-MM-dd"));
+                                  } else {
+                                    field.onChange("");
+                                  }
+                                }}
+                                format="dd/MM/yyyy"
+                                slotProps={{
+                                  textField: {
+                                    variant: "standard",
+                                    sx: {
+                                      width: 140,
+                                      minWidth: 140,
+                                      mx: 1,
+                                      verticalAlign: "middle",
+                                      "& .MuiInput-root": {
+                                        pb: 0,
+                                      },
+                                      "& .MuiFormHelperText-root": { mt: 0, position: "absolute", top: "100%", width: "max-content" },
+                                    },
+                                    inputProps: {
+                                      style: {
+                                        fontSize: "1rem",
+                                        padding: "0 0 2px 0",
+                                        textAlign: "center",
+                                        whiteSpace: "nowrap",
+                                      },
+                                    },
+                                    error: !!errors.startDate,
+                                    helperText: errors.startDate?.message as string,
+                                  },
+                                }}
+                              />
+                            )}
+                          />
+                          {(() => {
+                            const st = watch("startDate");
+                            const d = watch("duration");
+                            if (st && d) {
+                              const eDate = new Date(st);
+                              eDate.setMonth(eDate.getMonth() + Number(d));
+                              // In ra ngày kết thúc. Nếu có lỗi về ngày do duration vượt quá, nó vẫn in ra để người dùng thấy sai.
+                              return (
+                                <Typography component="span" sx={{ ml: 1, whiteSpace: "nowrap" }}>
+                                  đến ngày <strong style={{ textDecoration: "underline" }}>{eDate.toLocaleDateString("vi-VN")}</strong>.
+                                </Typography>
+                              );
+                            }
+                            return ".";
+                          })()}
+                          {selectedRoom?.futureContractStartDate && (
+                            <Typography component="div" sx={{ mt: 3, mb: 1, p: 1.5, bgcolor: "#fff3cd", color: "#856404", borderRadius: 1, border: "1px solid #ffeeba", fontSize: "0.95rem", lineHeight: 1.5 }}>
+                              <strong>⚠️ Lấp chỗ trống:</strong> Phòng đã có khách cọc trước và sẽ nhận phòng vào ngày <strong>{new Date(selectedRoom.futureContractStartDate).toLocaleDateString("vi-VN")}</strong>. Hợp đồng ngắn hạn này bị giới hạn tối đa <strong>{maxDur} tháng</strong> tính từ ngày bắt đầu.
+                            </Typography>
+                          )}
+                          <br />
+                          - Trả trước tiền phòng:
+                          <TextField
+                            variant="standard"
+                            type="number"
+                            sx={{
+                              width: 80,
+                              mx: 1,
+                              verticalAlign: "baseline",
+                              "& .MuiInput-root": {
+                                pb: 0,
+                                position: "relative",
+                                top: "-2px",
+                              },
+                              "& .MuiFormHelperText-root": { mt: 0, width: 250 },
+                            }}
+                            inputProps={{
+                              style: {
+                                textAlign: "center",
+                                fontWeight: "bold",
+                                fontSize: "1rem",
+                                padding: "0 0 2px 0",
+                              },
+                              min: 1,
+                              max: Number(watch("duration")) || 12,
+                            }}
+                            {...register("prepayMonths", {
+                              valueAsNumber: true,
+                              validate: (value) =>
+                                !value || Number(value) <= (Number(watch("duration")) || 12) || "Không vượt quá thời hạn thuê"
+                            })}
+                            error={!!errors.prepayMonths}
+                            helperText={errors.prepayMonths?.message as string}
+                          />
+                          tháng. <br />
+                          <Typography component="span" sx={{ fontStyle: "italic", fontSize: "0.9rem", color: "#666", ml: 2, display: "inline-block", mt: 0.5 }}>
+                            *Lưu ý: Thời hạn tính tiền phòng đã trả sẽ bắt đầu từ ngày đầu tiên của tháng tiếp theo (nếu tạo hợp đồng vào ngày lẻ trong tháng).
+                          </Typography>
+                          <br />
+                          - Giá thuê phòng là:
+                          <TextField
+                            variant="standard"
+                            type="text"
+                            sx={{
+                              width: 120,
                               mx: 1,
                               verticalAlign: "baseline",
                               "& .MuiInput-root": {
@@ -1463,763 +1649,697 @@ const CreateContract = () => {
                                 top: "-2px",
                               },
                               "& .MuiFormHelperText-root": { mt: 0 },
-                            },
-                            inputProps: {
+                            }}
+                            inputProps={{
                               style: {
+                                textAlign: "right",
+                                fontWeight: "bold",
+                                color: "#d32f2f",
                                 fontSize: "1rem",
                                 padding: "0 0 2px 0",
-                                textAlign: "center",
                               },
-                            },
-                            error: !!errors.startDate,
-                            helperText: errors.startDate?.message as string,
-                          },
-                        }}
-                      />
-                    )}
-                  />
-                  .
-                  <br />
-                  - Trả trước tiền phòng:
-                  <TextField
-                    variant="standard"
-                    type="number"
-                    sx={{
-                      width: 80,
-                      mx: 1,
-                      verticalAlign: "baseline",
-                      "& .MuiInput-root": {
-                        pb: 0,
-                        position: "relative",
-                        top: "-2px",
-                      },
-                      "& .MuiFormHelperText-root": { mt: 0, width: 250 },
-                    }}
-                    inputProps={{
-                      style: {
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "1rem",
-                        padding: "0 0 2px 0",
-                      },
-                      min: 1,
-                      max: Number(watch("duration")) || 12,
-                    }}
-                    {...register("prepayMonths", {
-                      valueAsNumber: true,
-                      validate: (value) => 
-                        !value || Number(value) <= (Number(watch("duration")) || 12) || "Không vượt quá thời hạn thuê"
-                    })}
-                    error={!!errors.prepayMonths}
-                    helperText={errors.prepayMonths?.message as string}
-                  />
-                  tháng. <br/>
-                  <Typography component="span" sx={{ fontStyle: "italic", fontSize: "0.9rem", color: "#666", ml: 2, display: "inline-block", mt: 0.5 }}>
-                    *Lưu ý: Thời hạn tính tiền phòng đã trả sẽ bắt đầu từ ngày đầu tiên của tháng tiếp theo (nếu tạo hợp đồng vào ngày lẻ trong tháng).
-                  </Typography>
-                  <br />
-                  - Giá thuê phòng là:
-                  <TextField
-                    variant="standard"
-                    type="text"
-                    sx={{
-                      width: 120,
-                      mx: 1,
-                      verticalAlign: "baseline",
-                      "& .MuiInput-root": {
-                        pb: 0,
-                        position: "relative",
-                        top: "-2px",
-                      },
-                      "& .MuiFormHelperText-root": { mt: 0 },
-                    }}
-                    inputProps={{
-                      style: {
-                        textAlign: "right",
-                        fontWeight: "bold",
-                        color: "#d32f2f",
-                        fontSize: "1rem",
-                        padding: "0 0 2px 0",
-                      },
-                    }}
-                    InputProps={{ readOnly: true }}
-                    value={Number(
-                      selectedRoom?.roomTypeId?.currentPrice ||
-                        selectedRoom?.price ||
-                        0,
-                    ).toLocaleString()}
-                  />
-                  VNĐ/tháng. (Giá này cố định theo loại phòng).
-                  <br />- Tiền đặt cọc:{" "}
-                  {selectedRoom?.status === "Deposited" ? (
-                    <>
-                      <TextField
-                        variant="standard"
-                        type="text"
-                        sx={{
-                          width: 120,
-                          mx: 1,
-                          verticalAlign: "baseline",
-                          "& .MuiInput-root": {
-                            pb: 0,
-                            position: "relative",
-                            top: "-2px",
-                          },
-                          "& .MuiFormHelperText-root": { mt: 0 },
-                        }}
-                        inputProps={{
-                          style: {
-                            textAlign: "right",
-                            fontWeight: "bold",
-                            fontSize: "1rem",
-                            padding: "0 0 2px 0",
-                          },
-                        }}
-                        InputProps={{ readOnly: true }}
-                        value={Number(
-                          selectedRoom?.roomTypeId?.currentPrice ||
-                            selectedRoom?.price ||
-                            0,
-                        ).toLocaleString()}
-                      />
-                      VNĐ (Tương đương 01 tháng tiền phòng).
-                      <span
-                        onClick={() => setShowDepositModal(true)}
-                        style={{
-                          color: "#2e7d32",
-                          fontWeight: "bold",
-                          marginLeft: 8,
-                          cursor: "pointer",
-                          textDecoration: "underline",
-                          textDecorationStyle: "dotted" as const,
-                        }}
-                        title="Xem thông tin cọc"
-                      >
-                        ✓ Đã cọc
-                      </span>
-                    </>
-                  ) : selectedRoom?.status === "Available" ? (
-                    <>
-                      <span
-                        style={{
-                          fontStyle: "italic",
-                          color: "#d32f2f",
-                          marginLeft: 4,
-                        }}
-                      >
-                        Chưa đặt cọc
-                      </span>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => {
-                          // Save current form data to sessionStorage before leaving
-                          const draft = {
-                            formValues: getValues(),
-                            selectedServices,
-                            vehicleQuantities,
-                            contractImages,
-                          };
-                          sessionStorage.setItem(
-                            "contractFormDraft",
-                            JSON.stringify(draft),
-                          );
-                          const basePath = location.pathname.startsWith(
-                            "/owner",
-                          )
-                            ? "/owner"
-                            : "/manager";
-                          navigate(
-                            `${basePath}/deposits/create/${selectedRoom._id}`,
-                            {
-                              state: {
-                                returnTo: "create-contract",
-                                roomId: selectedRoom._id,
-                              },
-                            },
-                          );
-                        }}
-                        sx={{
-                          ml: 1,
-                          fontFamily: '"Times New Roman", serif',
-                          fontSize: "0.9rem",
-                          textTransform: "none",
-                          color: "#d32f2f",
-                          borderColor: "#d32f2f",
-                          py: 0.2,
-                          px: 1.5,
-                          "&:hover": {
-                            borderColor: "#b71c1c",
-                            bgcolor: "#fff5f5",
-                          },
-                        }}
-                      >
-                        Tạo cọc ngay
-                      </Button>
-                    </>
-                  ) : (
-                    <span style={{ fontStyle: "italic", marginLeft: 4 }}>
-                      Chọn phòng để hiển thị
-                    </span>
-                  )}
-                </Typography>
+                            }}
+                            InputProps={{ readOnly: true }}
+                            value={Number(
+                              selectedRoom?.roomTypeId?.currentPrice ||
+                              selectedRoom?.price ||
+                              0,
+                            ).toLocaleString()}
+                          />
+                          VNĐ/tháng. (Giá này cố định theo loại phòng).
+                          <br />- Tiền đặt cọc:{" "}
+                          {selectedRoom?.status === "Deposited" ? (
+                            <>
+                              <TextField
+                                variant="standard"
+                                type="text"
+                                sx={{
+                                  width: 120,
+                                  mx: 1,
+                                  verticalAlign: "baseline",
+                                  "& .MuiInput-root": {
+                                    pb: 0,
+                                    position: "relative",
+                                    top: "-2px",
+                                  },
+                                  "& .MuiFormHelperText-root": { mt: 0 },
+                                }}
+                                inputProps={{
+                                  style: {
+                                    textAlign: "right",
+                                    fontWeight: "bold",
+                                    fontSize: "1rem",
+                                    padding: "0 0 2px 0",
+                                  },
+                                }}
+                                InputProps={{ readOnly: true }}
+                                value={Number(
+                                  selectedRoom?.roomTypeId?.currentPrice ||
+                                  selectedRoom?.price ||
+                                  0,
+                                ).toLocaleString()}
+                              />
+                              VNĐ (Tương đương 01 tháng tiền phòng).
+                              <span
+                                onClick={() => setShowDepositModal(true)}
+                                style={{
+                                  color: "#2e7d32",
+                                  fontWeight: "bold",
+                                  marginLeft: 8,
+                                  cursor: "pointer",
+                                  textDecoration: "underline",
+                                  textDecorationStyle: "dotted" as const,
+                                }}
+                                title="Xem thông tin cọc"
+                              >
+                                ✓ Đã cọc
+                              </span>
+                            </>
+                          ) : selectedRoom?.status === "Available" ? (
+                            <>
+                              <span
+                                style={{
+                                  fontStyle: "italic",
+                                  color: "#d32f2f",
+                                  marginLeft: 4,
+                                }}
+                              >
+                                Chưa đặt cọc
+                              </span>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => {
+                                  // Save current form data to sessionStorage before leaving
+                                  const draft = {
+                                    formValues: getValues(),
+                                    selectedServices,
+                                    vehicleQuantities,
+                                    contractImages,
+                                  };
+                                  sessionStorage.setItem(
+                                    "contractFormDraft",
+                                    JSON.stringify(draft),
+                                  );
+                                  const basePath = location.pathname.startsWith(
+                                    "/owner",
+                                  )
+                                    ? "/owner"
+                                    : "/manager";
+                                  navigate(
+                                    `${basePath}/deposits/create/${selectedRoom._id}`,
+                                    {
+                                      state: {
+                                        returnTo: "create-contract",
+                                        roomId: selectedRoom._id,
+                                      },
+                                    },
+                                  );
+                                }}
+                                sx={{
+                                  ml: 1,
+                                  fontFamily: '"Times New Roman", serif',
+                                  fontSize: "0.9rem",
+                                  textTransform: "none",
+                                  color: "#d32f2f",
+                                  borderColor: "#d32f2f",
+                                  py: 0.2,
+                                  px: 1.5,
+                                  "&:hover": {
+                                    borderColor: "#b71c1c",
+                                    bgcolor: "#fff5f5",
+                                  },
+                                }}
+                              >
+                                Tạo cọc ngay
+                              </Button>
+                            </>
+                          ) : (
+                            <span style={{ fontStyle: "italic", marginLeft: 4 }}>
+                              Chọn phòng để hiển thị
+                            </span>
+                          )}
+                        </Typography>
+                      </>
+                    );
+                  })()}
 
-                <Typography
-                  component="div"
-                  sx={{
-                    mb: 1,
-                    fontFamily: '"Times New Roman", serif',
-                    fontSize: "1.1rem",
-                  }}
-                >
-                  <strong>Điều 2:</strong> Các trang thiết bị, tài sản bàn giao
-                  kèm theo phòng:
-                </Typography>
-                <Box sx={{ pl: 3 }}>
-                  {roomDevices.length > 0 ? (
-                    <Box
-                      component="table"
-                      sx={{
-                        width: "100%",
-                        borderCollapse: "collapse",
-                        fontFamily: '"Times New Roman", serif',
-                        fontSize: "1.05rem",
-                        mb: 1,
-                      }}
-                    >
-                      <Box component="thead">
-                        <Box component="tr">
-                          {[
-                            "STT",
-                            "Tên thiết bị",
-                            "Số lượng",
-                            "Đơn vị",
-                            "Tình trạng",
-                          ].map((h) => (
-                            <Box
-                              component="th"
-                              key={h}
-                              sx={{
-                                border: "1px solid #333",
-                                py: 0.8,
-                                px: 1.5,
-                                textAlign: "center",
-                                fontWeight: "bold",
-                                bgcolor: "#fafafa",
-                                fontFamily: '"Times New Roman", serif',
-                              }}
-                            >
-                              {h}
+                  <Typography
+                    component="div"
+                    sx={{
+                      mb: 1,
+                      fontFamily: '"Times New Roman", serif',
+                      fontSize: "1.1rem",
+                    }}
+                  >
+                    <strong>Điều 2:</strong> Các trang thiết bị, tài sản bàn giao
+                    kèm theo phòng:
+                  </Typography>
+                  <Box sx={{ pl: 3 }}>
+                    {roomDevices.length > 0 ? (
+                      <Box
+                        component="table"
+                        sx={{
+                          width: "100%",
+                          borderCollapse: "collapse",
+                          fontFamily: '"Times New Roman", serif',
+                          fontSize: "1.05rem",
+                          mb: 1,
+                        }}
+                      >
+                        <Box component="thead">
+                          <Box component="tr">
+                            {[
+                              "STT",
+                              "Tên thiết bị",
+                              "Số lượng",
+                              "Đơn vị",
+                              "Tình trạng",
+                            ].map((h) => (
+                              <Box
+                                component="th"
+                                key={h}
+                                sx={{
+                                  border: "1px solid #333",
+                                  py: 0.8,
+                                  px: 1.5,
+                                  textAlign: "center",
+                                  fontWeight: "bold",
+                                  bgcolor: "#fafafa",
+                                  fontFamily: '"Times New Roman", serif',
+                                }}
+                              >
+                                {h}
+                              </Box>
+                            ))}
+                          </Box>
+                        </Box>
+                        <Box component="tbody">
+                          {roomDevices.map((device: any, index: number) => (
+                            <Box component="tr" key={index}>
+                              <Box
+                                component="td"
+                                sx={{
+                                  border: "1px solid #333",
+                                  py: 0.5,
+                                  px: 1.5,
+                                  textAlign: "center",
+                                  fontFamily: '"Times New Roman", serif',
+                                }}
+                              >
+                                {index + 1}
+                              </Box>
+                              <Box
+                                component="td"
+                                sx={{
+                                  border: "1px solid #333",
+                                  py: 0.5,
+                                  px: 1.5,
+                                  fontFamily: '"Times New Roman", serif',
+                                }}
+                              >
+                                {device.name}
+                                {device.brand ? ` (${device.brand})` : ""}
+                              </Box>
+                              <Box
+                                component="td"
+                                sx={{
+                                  border: "1px solid #333",
+                                  py: 0.5,
+                                  px: 1.5,
+                                  textAlign: "center",
+                                  fontWeight: "bold",
+                                  fontFamily: '"Times New Roman", serif',
+                                }}
+                              >
+                                {device.quantity}
+                              </Box>
+                              <Box
+                                component="td"
+                                sx={{
+                                  border: "1px solid #333",
+                                  py: 0.5,
+                                  px: 1.5,
+                                  textAlign: "center",
+                                  fontFamily: '"Times New Roman", serif',
+                                }}
+                              >
+                                {device.unit || "cái"}
+                              </Box>
+                              <Box
+                                component="td"
+                                sx={{
+                                  border: "1px solid #333",
+                                  py: 0.5,
+                                  px: 1.5,
+                                  textAlign: "center",
+                                  fontFamily: '"Times New Roman", serif',
+                                }}
+                              >
+                                {device.condition}
+                              </Box>
                             </Box>
                           ))}
                         </Box>
                       </Box>
-                      <Box component="tbody">
-                        {roomDevices.map((device: any, index: number) => (
-                          <Box component="tr" key={index}>
-                            <Box
-                              component="td"
-                              sx={{
-                                border: "1px solid #333",
-                                py: 0.5,
-                                px: 1.5,
-                                textAlign: "center",
-                                fontFamily: '"Times New Roman", serif',
-                              }}
-                            >
-                              {index + 1}
-                            </Box>
-                            <Box
-                              component="td"
-                              sx={{
-                                border: "1px solid #333",
-                                py: 0.5,
-                                px: 1.5,
-                                fontFamily: '"Times New Roman", serif',
-                              }}
-                            >
-                              {device.name}
-                              {device.brand ? ` (${device.brand})` : ""}
-                            </Box>
-                            <Box
-                              component="td"
-                              sx={{
-                                border: "1px solid #333",
-                                py: 0.5,
-                                px: 1.5,
-                                textAlign: "center",
-                                fontWeight: "bold",
-                                fontFamily: '"Times New Roman", serif',
-                              }}
-                            >
-                              {device.quantity}
-                            </Box>
-                            <Box
-                              component="td"
-                              sx={{
-                                border: "1px solid #333",
-                                py: 0.5,
-                                px: 1.5,
-                                textAlign: "center",
-                                fontFamily: '"Times New Roman", serif',
-                              }}
-                            >
-                              {device.unit || "cái"}
-                            </Box>
-                            <Box
-                              component="td"
-                              sx={{
-                                border: "1px solid #333",
-                                py: 0.5,
-                                px: 1.5,
-                                textAlign: "center",
-                                fontFamily: '"Times New Roman", serif',
-                              }}
-                            >
-                              {device.condition}
-                            </Box>
-                          </Box>
-                        ))}
-                      </Box>
-                    </Box>
-                  ) : (
-                    <Typography
-                      sx={{
-                        fontStyle: "italic",
-                        fontFamily: '"Times New Roman", serif',
-                        fontSize: "1.05rem",
-                      }}
-                    >
-                      Chưa có thiết bị nào được ghi nhận.
-                    </Typography>
-                  )}
-                </Box>
+                    ) : (
+                      <Typography
+                        sx={{
+                          fontStyle: "italic",
+                          fontFamily: '"Times New Roman", serif',
+                          fontSize: "1.05rem",
+                        }}
+                      >
+                        Chưa có thiết bị nào được ghi nhận.
+                      </Typography>
+                    )}
+                  </Box>
 
-                <Typography
-                  paragraph
-                  sx={{
-                    mt: 2,
-                    fontFamily: '"Times New Roman", serif',
-                    fontSize: "1.1rem",
-                  }}
-                >
-                  <strong>Điều 3:</strong> Các dịch vụ hàng tháng đi kèm:
-                </Typography>
-                <Box sx={{ pl: 3 }}>
-                  {availableServices.length > 0 ? (
-                    <>
-                      {/* a) Dịch vụ cố định hàng tháng */}
-                      {(() => {
-                        const fixedServices = availableServices
-                          .filter(
-                            (s) =>
-                              getServiceCategory(s.name) === "fixed_monthly" &&
-                              !isServiceExcludedForRoom(s.name),
-                          )
-                          .sort(
-                            (a, b) =>
-                              getFixedServiceSortOrder(a.name) -
-                              getFixedServiceSortOrder(b.name),
-                          );
-                        if (fixedServices.length === 0) return null;
-                        return (
-                          <Box sx={{ mb: 2.5 }}>
-                            <Typography
-                              sx={{
-                                fontWeight: "bold",
-                                fontFamily: '"Times New Roman", serif',
-                                fontSize: "1.1rem",
-                                mb: 0.5,
-                                textDecoration: "underline",
-                              }}
-                            >
-                              a) Dịch vụ cố định hàng tháng:
-                            </Typography>
-                            {fixedServices.map((service, idx) => {
-                              const personCount = coResidentFields.length + 1;
-                              const perPerson = isPerPersonService(
-                                service.name,
-                              );
-                              return (
-                                <Typography
-                                  key={service._id}
-                                  sx={{
-                                    fontFamily: '"Times New Roman", serif',
-                                    fontSize: "1.1rem",
-                                    pl: 2,
-                                    mb: 0.3,
-                                    lineHeight: 1.8,
-                                  }}
-                                >
-                                  {idx + 1}. {service.name}:{" "}
-                                  <strong>
-                                    {service.currentPrice.toLocaleString()}
-                                  </strong>{" "}
-                                  {getServiceUnit(service.name)}
-                                  {perPerson && (
-                                    <>
-                                      {" "}
-                                      × {personCount} người ={" "}
-                                      <strong>
-                                        {(
-                                          service.currentPrice * personCount
-                                        ).toLocaleString()}
-                                      </strong>{" "}
-                                      VNĐ/tháng
-                                    </>
-                                  )}{" "}
-                                  <span style={{ fontStyle: "italic" }}>
-                                    (Bắt buộc)
-                                  </span>
-                                </Typography>
-                              );
-                            })}
-                          </Box>
-                        );
-                      })()}
-
-                      {/* b) Dịch vụ tùy chọn */}
-                      {(() => {
-                        const optionalServices = availableServices.filter(
-                          (s) =>
-                            getServiceCategory(s.name) === "quantity_based",
-                        );
-                        if (optionalServices.length === 0) return null;
-                        return (
-                          <Box sx={{ mb: 2 }}>
-                            <Typography
-                              sx={{
-                                fontWeight: "bold",
-                                fontFamily: '"Times New Roman", serif',
-                                fontSize: "1.1rem",
-                                mb: 0.5,
-                                textDecoration: "underline",
-                              }}
-                            >
-                              b) Dịch vụ tùy chọn (nhập số lượng sử dụng):
-                            </Typography>
-                            {optionalServices.map((service) => {
-                              const selected = selectedServices.find(
-                                (s) => s.serviceId === service._id,
-                              );
-                              const qty = vehicleQuantities[service._id] || 1;
-                              return (
-                                <Box
-                                  key={service._id}
-                                  sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    pl: 2,
-                                    mb: 0.3,
-                                  }}
-                                >
-                                  <FormControlLabel
-                                    control={
-                                      <Checkbox
-                                        checked={!!selected}
-                                        onChange={() =>
-                                          handleServiceToggle(service)
-                                        }
-                                        size="small"
-                                        sx={{
-                                          p: 0.3,
-                                          color: "#555",
-                                          "&.Mui-checked": {
-                                            color: "#333",
-                                          },
-                                        }}
-                                      />
-                                    }
-                                    label={
-                                      <Typography
-                                        sx={{
-                                          fontFamily:
-                                            '"Times New Roman", serif',
-                                          fontSize: "1.1rem",
-                                        }}
-                                      >
-                                        {service.name} –{" "}
+                  <Typography
+                    paragraph
+                    sx={{
+                      mt: 2,
+                      fontFamily: '"Times New Roman", serif',
+                      fontSize: "1.1rem",
+                    }}
+                  >
+                    <strong>Điều 3:</strong> Các dịch vụ hàng tháng đi kèm:
+                  </Typography>
+                  <Box sx={{ pl: 3 }}>
+                    {availableServices.length > 0 ? (
+                      <>
+                        {/* a) Dịch vụ cố định hàng tháng */}
+                        {(() => {
+                          const fixedServices = availableServices
+                            .filter(
+                              (s) =>
+                                getServiceCategory(s.name) === "fixed_monthly" &&
+                                !isServiceExcludedForRoom(s.name),
+                            )
+                            .sort(
+                              (a, b) =>
+                                getFixedServiceSortOrder(a.name) -
+                                getFixedServiceSortOrder(b.name),
+                            );
+                          if (fixedServices.length === 0) return null;
+                          return (
+                            <Box sx={{ mb: 2.5 }}>
+                              <Typography
+                                sx={{
+                                  fontWeight: "bold",
+                                  fontFamily: '"Times New Roman", serif',
+                                  fontSize: "1.1rem",
+                                  mb: 0.5,
+                                  textDecoration: "underline",
+                                }}
+                              >
+                                a) Dịch vụ cố định hàng tháng:
+                              </Typography>
+                              {fixedServices.map((service, idx) => {
+                                const personCount = coResidentFields.length + 1;
+                                const perPerson = isPerPersonService(
+                                  service.name,
+                                );
+                                return (
+                                  <Typography
+                                    key={service._id}
+                                    sx={{
+                                      fontFamily: '"Times New Roman", serif',
+                                      fontSize: "1.1rem",
+                                      pl: 2,
+                                      mb: 0.3,
+                                      lineHeight: 1.8,
+                                    }}
+                                  >
+                                    {idx + 1}. {service.name}:{" "}
+                                    <strong>
+                                      {service.currentPrice.toLocaleString()}
+                                    </strong>{" "}
+                                    {getServiceUnit(service.name)}
+                                    {perPerson && (
+                                      <>
+                                        {" "}
+                                        × {personCount} người ={" "}
                                         <strong>
-                                          {service.currentPrice.toLocaleString()}
+                                          {(
+                                            service.currentPrice * personCount
+                                          ).toLocaleString()}
                                         </strong>{" "}
                                         VNĐ/tháng
-                                      </Typography>
-                                    }
-                                    sx={{ mr: 1 }}
-                                  />
-                                  {selected &&
-                                    needsQuantityInput(service.name) && (
-                                      <Box
-                                        sx={{
-                                          display: "flex",
-                                          alignItems: "center",
-                                          gap: 0.5,
-                                        }}
-                                      >
-                                        <Typography
-                                          sx={{
-                                            fontFamily:
-                                              '"Times New Roman", serif',
-                                            fontSize: "1rem",
-                                          }}
-                                        >
-                                          Số lượng:
-                                        </Typography>
-                                        <TextField
-                                          variant="standard"
-                                          type="number"
-                                          value={qty}
-                                          onChange={(e) =>
-                                            handleVehicleQuantityChange(
-                                              service._id,
-                                              parseInt(e.target.value) || 1,
-                                            )
+                                      </>
+                                    )}{" "}
+                                    <span style={{ fontStyle: "italic" }}>
+                                      (Bắt buộc)
+                                    </span>
+                                  </Typography>
+                                );
+                              })}
+                            </Box>
+                          );
+                        })()}
+
+                        {/* b) Dịch vụ tùy chọn */}
+                        {(() => {
+                          const optionalServices = availableServices.filter(
+                            (s) =>
+                              getServiceCategory(s.name) === "quantity_based",
+                          );
+                          if (optionalServices.length === 0) return null;
+                          return (
+                            <Box sx={{ mb: 2 }}>
+                              <Typography
+                                sx={{
+                                  fontWeight: "bold",
+                                  fontFamily: '"Times New Roman", serif',
+                                  fontSize: "1.1rem",
+                                  mb: 0.5,
+                                  textDecoration: "underline",
+                                }}
+                              >
+                                b) Dịch vụ tùy chọn (nhập số lượng sử dụng):
+                              </Typography>
+                              {optionalServices.map((service) => {
+                                const selected = selectedServices.find(
+                                  (s) => s.serviceId === service._id,
+                                );
+                                const qty = vehicleQuantities[service._id] || 1;
+                                return (
+                                  <Box
+                                    key={service._id}
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      pl: 2,
+                                      mb: 0.3,
+                                    }}
+                                  >
+                                    <FormControlLabel
+                                      control={
+                                        <Checkbox
+                                          checked={!!selected}
+                                          onChange={() =>
+                                            handleServiceToggle(service)
                                           }
-                                          inputProps={{
-                                            min: 1,
-                                            max: 10,
-                                            style: {
-                                              textAlign: "center",
-                                              width: "40px",
-                                              fontWeight: "bold",
-                                              fontFamily:
-                                                '"Times New Roman", serif',
+                                          size="small"
+                                          sx={{
+                                            p: 0.3,
+                                            color: "#555",
+                                            "&.Mui-checked": {
+                                              color: "#333",
                                             },
                                           }}
                                         />
+                                      }
+                                      label={
                                         <Typography
                                           sx={{
                                             fontFamily:
                                               '"Times New Roman", serif',
-                                            fontSize: "1rem",
+                                            fontSize: "1.1rem",
                                           }}
                                         >
-                                          ={" "}
+                                          {service.name} –{" "}
                                           <strong>
-                                            {(
-                                              service.currentPrice * qty
-                                            ).toLocaleString()}
+                                            {service.currentPrice.toLocaleString()}
                                           </strong>{" "}
                                           VNĐ/tháng
                                         </Typography>
-                                      </Box>
-                                    )}
-                                </Box>
-                              );
-                            })}
-                          </Box>
-                        );
-                      })()}
-                    </>
-                  ) : (
-                    <Typography
-                      sx={{
-                        pl: 2,
-                        fontStyle: "italic",
-                        fontFamily: '"Times New Roman", serif',
-                      }}
-                    >
-                      Chưa có dịch vụ hàng tháng nào được cấu hình.
-                    </Typography>
-                  )}
-                </Box>
-              </Box>
-
-              {/* Contract Image Upload */}
-              <Box
-                sx={{
-                  mt: 4,
-                  pt: 3,
-                  borderTop: "1px solid #333",
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontWeight: "bold",
-                    fontFamily: '"Times New Roman", serif',
-                    fontSize: "1.1rem",
-                    mb: 1,
-                  }}
-                >
-                  Ảnh hợp đồng bản cứng (đã ký){" "}
-                  <span style={{ color: "red" }}>*</span>
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: '"Times New Roman", serif',
-                    fontSize: "1rem",
-                    fontStyle: "italic",
-                    mb: 1.5,
-                    color: "#555",
-                  }}
-                >
-                  Tải lên ảnh chụp hợp đồng đã ký (tối đa 5 ảnh). Hỗ trợ định
-                  dạng: JPG, PNG, JPEG, WebP.
-                </Typography>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                    mb: 2,
-                  }}
-                >
-                  <input
-                    type="file"
-                    accept="image/jpg,image/jpeg,image/png,image/webp"
-                    multiple
-                    ref={fileInputRef}
-                    style={{ display: "none" }}
-                    onChange={handleImageUpload}
-                  />
-                  <Button
-                    variant="outlined"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading || contractImages.length >= 5}
-                    sx={{
-                      fontFamily: '"Times New Roman", serif',
-                      fontSize: "0.95rem",
-                      textTransform: "none",
-                      color: "#333",
-                      borderColor: "#333",
-                      borderStyle: "dashed",
-                      px: 3,
-                      py: 1,
-                      "&:hover": {
-                        borderColor: "#000",
-                        bgcolor: "#fafafa",
-                      },
-                    }}
-                  >
-                    {uploading ? (
-                      <>
-                        <CircularProgress
-                          size={16}
-                          sx={{ mr: 1, color: "#333" }}
-                        />
-                        Đang tải lên...
+                                      }
+                                      sx={{ mr: 1 }}
+                                    />
+                                    {selected &&
+                                      needsQuantityInput(service.name) && (
+                                        <Box
+                                          sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 0.5,
+                                          }}
+                                        >
+                                          <Typography
+                                            sx={{
+                                              fontFamily:
+                                                '"Times New Roman", serif',
+                                              fontSize: "1rem",
+                                            }}
+                                          >
+                                            Số lượng:
+                                          </Typography>
+                                          <TextField
+                                            variant="standard"
+                                            type="number"
+                                            value={qty}
+                                            onChange={(e) =>
+                                              handleVehicleQuantityChange(
+                                                service._id,
+                                                parseInt(e.target.value) || 1,
+                                              )
+                                            }
+                                            inputProps={{
+                                              min: 1,
+                                              max: 10,
+                                              style: {
+                                                textAlign: "center",
+                                                width: "40px",
+                                                fontWeight: "bold",
+                                                fontFamily:
+                                                  '"Times New Roman", serif',
+                                              },
+                                            }}
+                                          />
+                                          <Typography
+                                            sx={{
+                                              fontFamily:
+                                                '"Times New Roman", serif',
+                                              fontSize: "1rem",
+                                            }}
+                                          >
+                                            ={" "}
+                                            <strong>
+                                              {(
+                                                service.currentPrice * qty
+                                              ).toLocaleString()}
+                                            </strong>{" "}
+                                            VNĐ/tháng
+                                          </Typography>
+                                        </Box>
+                                      )}
+                                  </Box>
+                                );
+                              })}
+                            </Box>
+                          );
+                        })()}
                       </>
                     ) : (
-                      `Chọn ảnh tải lên (${contractImages.length}/5)`
+                      <Typography
+                        sx={{
+                          pl: 2,
+                          fontStyle: "italic",
+                          fontFamily: '"Times New Roman", serif',
+                        }}
+                      >
+                        Chưa có dịch vụ hàng tháng nào được cấu hình.
+                      </Typography>
                     )}
-                  </Button>
+                  </Box>
                 </Box>
 
-                {imageError && contractImages.length === 0 && (
+                {/* Contract Image Upload */}
+                <Box
+                  sx={{
+                    mt: 4,
+                    pt: 3,
+                    borderTop: "1px solid #333",
+                  }}
+                >
                   <Typography
                     sx={{
-                      color: "#d32f2f",
+                      fontWeight: "bold",
                       fontFamily: '"Times New Roman", serif',
-                      fontSize: "0.95rem",
-                      mb: 1.5,
+                      fontSize: "1.1rem",
+                      mb: 1,
                     }}
                   >
-                    Vui lòng tải lên ít nhất 1 ảnh hợp đồng bản cứng (đã ký) để
-                    tạo hợp đồng.
+                    Ảnh hợp đồng bản cứng (đã ký){" "}
+                    <span style={{ color: "red" }}>*</span>
                   </Typography>
-                )}
+                  <Typography
+                    sx={{
+                      fontFamily: '"Times New Roman", serif',
+                      fontSize: "1rem",
+                      fontStyle: "italic",
+                      mb: 1.5,
+                      color: "#555",
+                    }}
+                  >
+                    Tải lên ảnh chụp hợp đồng đã ký (tối đa 5 ảnh). Hỗ trợ định
+                    dạng: JPG, PNG, JPEG, WebP.
+                  </Typography>
 
-                {/* Image Preview Grid */}
-                {contractImages.length > 0 && (
-                  <Grid container spacing={2}>
-                    {contractImages.map((url, index) => (
-                      <Grid size={{ xs: 6, sm: 4, md: 3 }} key={index}>
-                        <Box
-                          sx={{
-                            position: "relative",
-                            border: "1px solid #333",
-                            overflow: "hidden",
-                            "&:hover .delete-btn": { opacity: 1 },
-                          }}
-                        >
-                          <img
-                            src={url}
-                            alt={`Hợp đồng ${index + 1}`}
-                            style={{
-                              width: "100%",
-                              height: 180,
-                              objectFit: "cover",
-                              display: "block",
-                            }}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      mb: 2,
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept="image/jpg,image/jpeg,image/png,image/webp"
+                      multiple
+                      ref={fileInputRef}
+                      style={{ display: "none" }}
+                      onChange={handleImageUpload}
+                    />
+                    <Button
+                      variant="outlined"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading || contractImages.length >= 5}
+                      sx={{
+                        fontFamily: '"Times New Roman", serif',
+                        fontSize: "0.95rem",
+                        textTransform: "none",
+                        color: "#333",
+                        borderColor: "#333",
+                        borderStyle: "dashed",
+                        px: 3,
+                        py: 1,
+                        "&:hover": {
+                          borderColor: "#000",
+                          bgcolor: "#fafafa",
+                        },
+                      }}
+                    >
+                      {uploading ? (
+                        <>
+                          <CircularProgress
+                            size={16}
+                            sx={{ mr: 1, color: "#333" }}
                           />
-                          <IconButton
-                            className="delete-btn"
-                            size="small"
-                            onClick={() => handleRemoveImage(index)}
-                            sx={{
-                              position: "absolute",
-                              top: 4,
-                              right: 4,
-                              bgcolor: "rgba(255,255,255,0.9)",
-                              opacity: 0,
-                              transition: "opacity 0.2s",
-                              "&:hover": {
-                                bgcolor: "#ffebee",
-                                color: "#d32f2f",
-                              },
-                            }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                          <Typography
-                            sx={{
-                              display: "block",
-                              textAlign: "center",
-                              py: 0.5,
-                              fontFamily: '"Times New Roman", serif',
-                              fontSize: "0.9rem",
-                              borderTop: "1px solid #333",
-                            }}
-                          >
-                            Ảnh {index + 1}
-                          </Typography>
-                        </Box>
-                      </Grid>
-                    ))}
-                  </Grid>
-                )}
-              </Box>
-            </Paper>
-          </Box>
+                          Đang tải lên...
+                        </>
+                      ) : (
+                        `Chọn ảnh tải lên (${contractImages.length}/5)`
+                      )}
+                    </Button>
+                  </Box>
 
-          <Box
-            sx={{
-              position: "sticky",
-              bottom: 0,
-              bgcolor: "white",
-              p: 2,
-              borderTop: "1px solid #ccc",
-              display: "flex",
-              justifyContent: "center",
-              gap: 2,
-              zIndex: 1000,
-            }}
-          >
-            <Button
-              variant="outlined"
-              onClick={() => navigate("/manager/contracts")}
+                  {imageError && contractImages.length === 0 && (
+                    <Typography
+                      sx={{
+                        color: "#d32f2f",
+                        fontFamily: '"Times New Roman", serif',
+                        fontSize: "0.95rem",
+                        mb: 1.5,
+                      }}
+                    >
+                      Vui lòng tải lên ít nhất 1 ảnh hợp đồng bản cứng (đã ký) để
+                      tạo hợp đồng.
+                    </Typography>
+                  )}
+
+                  {/* Image Preview Grid */}
+                  {contractImages.length > 0 && (
+                    <Grid container spacing={2}>
+                      {contractImages.map((url, index) => (
+                        <Grid size={{ xs: 6, sm: 4, md: 3 }} key={index}>
+                          <Box
+                            sx={{
+                              position: "relative",
+                              border: "1px solid #333",
+                              overflow: "hidden",
+                              "&:hover .delete-btn": { opacity: 1 },
+                            }}
+                          >
+                            <img
+                              src={url}
+                              alt={`Hợp đồng ${index + 1}`}
+                              style={{
+                                width: "100%",
+                                height: 180,
+                                objectFit: "cover",
+                                display: "block",
+                              }}
+                            />
+                            <IconButton
+                              className="delete-btn"
+                              size="small"
+                              onClick={() => handleRemoveImage(index)}
+                              sx={{
+                                position: "absolute",
+                                top: 4,
+                                right: 4,
+                                bgcolor: "rgba(255,255,255,0.9)",
+                                opacity: 0,
+                                transition: "opacity 0.2s",
+                                "&:hover": {
+                                  bgcolor: "#ffebee",
+                                  color: "#d32f2f",
+                                },
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                            <Typography
+                              sx={{
+                                display: "block",
+                                textAlign: "center",
+                                py: 0.5,
+                                fontFamily: '"Times New Roman", serif',
+                                fontSize: "0.9rem",
+                                borderTop: "1px solid #333",
+                              }}
+                            >
+                              Ảnh {index + 1}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  )}
+                </Box>
+              </Paper>
+            </Box>
+
+            <Box
+              sx={{
+                position: "sticky",
+                bottom: 0,
+                bgcolor: "white",
+                p: 2,
+                borderTop: "1px solid #ccc",
+                display: "flex",
+                justifyContent: "center",
+                gap: 2,
+                zIndex: 1000,
+              }}
             >
-              Hủy bỏ
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              size="large"
-              disabled={selectedRoom?.status !== "Deposited" || submitting}
-            >
-              {submitting ? (
-                <>
-                  <CircularProgress size={20} sx={{ color: "#fff", mr: 1 }} />
-                  Đang tạo hợp đồng...
-                </>
-              ) : (
-                "Xác nhận & Tạo Hợp Đồng"
-              )}
-            </Button>
-          </Box>
-        </Container>
+              <Button
+                variant="outlined"
+                onClick={() => navigate("/manager/contracts")}
+              >
+                Hủy bỏ
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                size="large"
+                disabled={selectedRoom?.status !== "Deposited" || submitting}
+              >
+                {submitting ? (
+                  <>
+                    <CircularProgress size={20} sx={{ color: "#fff", mr: 1 }} />
+                    Đang tạo hợp đồng...
+                  </>
+                ) : (
+                  "Xác nhận & Tạo Hợp Đồng"
+                )}
+              </Button>
+            </Box>
+          </Container>
         </fieldset>
       </form>
 

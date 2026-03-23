@@ -16,6 +16,8 @@ interface Room {
   price?: number;
   contractStartDate?: string;
   contractEndDate?: string;
+  hasFloatingDeposit?: boolean; // true if room has deposit not yet linked to contract
+  isShortTermAvailable?: boolean; // true if room can accept short-term rental
   [key: string]: any;
 }
 
@@ -52,6 +54,17 @@ const getExpiryLabel = (contractEndDate?: string): string | null => {
   const month = (vacantDate.getMonth() + 1).toString().padStart(2, "0");
   return `Trống từ ${day}/${month}`;
 };
+
+// Label for Deposited rooms with a future contract: "Có người thuê từ DD/MM/YYYY"
+const getComingSoonLabel = (contractStartDate?: string): string | null => {
+  if (!contractStartDate) return null;
+  const d = new Date(contractStartDate);
+  const day = d.getDate().toString().padStart(2, "0");
+  const month = (d.getMonth() + 1).toString().padStart(2, "0");
+  const year = d.getFullYear();
+  return `Có người thuê từ ${day}/${month}/${year}`;
+};
+
 
 const extractTypeNumber = (typeName: string): number => {
   const match = typeName.match(/(\d+)/);
@@ -295,12 +308,22 @@ export default function FloorMap({
               const isDeposited = room.status === "Deposited";
               const typeColor = getRoomTypeColor(room.roomTypeId?._id);
 
+              // For guest view: if room is Deposited but no floating deposit and
+              // has future contract >= 30 days, treat it as available for short-term
+              const isShortTermAvailable = room.isShortTermAvailable || false;
+              const hasFloatingDeposit = room.hasFloatingDeposit || false;
+
+              // Visual: show as available if truly available OR short-term available
+              const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFloatingDeposit);
+              // Visual: show deposit badge if deposited AND has floating deposit
+              const showDepositedBadge = isDeposited && hasFloatingDeposit;
+
               // Check if highlighted
               const isGhosted =
                 highlightedRooms &&
                 !highlightedRooms.some((r) => r._id === room._id);
 
-              const statusClass = isAvailable
+              const statusClass = showAsAvailable
                 ? "status-available"
                 : isDeposited
                   ? "status-deposited"
@@ -313,18 +336,18 @@ export default function FloorMap({
                   <div
                     className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""}`}
                     onClick={() => handleRoomClick(room._id)}
-                    title={`${room.name} - ${room.roomTypeId?.typeName || room.roomTypeId?.name || ""}`}
+                    title={`${room.name} - ${room.roomTypeId?.typeName || room.roomTypeId?.name || ""}${isShortTermAvailable && !hasFloatingDeposit ? " (Có thể thuê ngắn hạn)" : ""}`}
                     data-color={typeColor}
                     style={
-                      isAvailable || isDeposited
+                      showAsAvailable || showDepositedBadge
                         ? {
                           background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
                         }
                         : undefined
                     }
                   >
-                    {/* Deposited badge - exclamation mark */}
-                    {isDeposited && (
+                    {/* Deposited badge - exclamation mark (only show if has floating deposit) */}
+                    {showDepositedBadge && (
                       <span
                         style={{
                           position: "absolute",
@@ -352,17 +375,31 @@ export default function FloorMap({
                       </span>
                     )}
                     <span className="room-node-name">{formatRoomLabel(room.name)}</span>
-                    {!room.contractStartDate && getExpiryLabel(room.contractEndDate) && (
+                    {/* Short-term available: show "Thuê đến DD/MM" label */}
+                    {isShortTermAvailable && !hasFloatingDeposit && room.contractStartDate && (
+                      <span className="room-expiry-label" style={{ fontSize: "0.55rem", color: "#fff8e1", fontWeight: 600, textShadow: "0 1px 2px rgba(0,0,0,0.4)", lineHeight: 1.1 }}>
+                        Thuê đến {new Date(room.contractStartDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                      </span>
+                    )}
+                    {/* Deposited with floating deposit + future contract → "Có người thuê từ DD/MM/YYYY" */}
+                    {showDepositedBadge && room.contractStartDate && getComingSoonLabel(room.contractStartDate) && (
+                      <span className="room-expiry-label" style={{ fontSize: "0.6rem", color: "#fff8e1", fontWeight: 600, textShadow: "0 1px 2px rgba(0,0,0,0.4)", lineHeight: 1.2 }}>
+                        {getComingSoonLabel(room.contractStartDate)}
+                      </span>
+                    )}
+                    {/* Occupied rooms → normal expiry / contract date range */}
+                    {!isDeposited && !room.contractStartDate && getExpiryLabel(room.contractEndDate) && (
                       <span className="room-expiry-label">
                         {getExpiryLabel(room.contractEndDate)}
                       </span>
                     )}
-                    {room.contractStartDate && getContractDateLabel(room.contractStartDate, room.contractEndDate, showDateYear) && (
+                    {!isDeposited && room.contractStartDate && getContractDateLabel(room.contractStartDate, room.contractEndDate, showDateYear) && (
                       <span className="room-contract-dates">
                         {getContractDateLabel(room.contractStartDate, room.contractEndDate, showDateYear)}
                       </span>
                     )}
                   </div>
+
 
                   {/* Insert Corridor 1 after first row (index 7) */}
                   {index === 7 && (

@@ -38,6 +38,7 @@ interface Room {
   floor?: string;
   floorLabel?: string;
   typeName?: string;
+  futureContractStartDate?: string; // Ngày bắt đầu hợp đồng tương lai (nếu có)
 }
 
 export default function CreateDeposit() {
@@ -98,6 +99,7 @@ export default function CreateDeposit() {
             floorLabel: `Tầng ${roomData.floorId?.name || "N/A"}`,
             price,
             typeName: roomData.roomTypeId?.typeName || "Phòng",
+            futureContractStartDate: roomData.futureContractStartDate,
           });
         }
       } catch (err) {
@@ -277,6 +279,13 @@ export default function CreateDeposit() {
                     <p>✓ Sau khi tạo cọc, hệ thống sẽ ghi nhận thông tin</p>
                     <p>✓ Phòng sẽ được giữ trong vòng 7 ngày</p>
                     <p>✓ Khách hàng cần ký hợp đồng trong thời gian này</p>
+                    {room.futureContractStartDate && (
+                      <p style={{ color: "#d97706", fontWeight: 500 }}>
+                        ⚠ Lưu ý: Phòng này đã có người đặt cọc từ ngày{" "}
+                        {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}.
+                        Hợp đồng mới phải kết thúc trước ngày này.
+                      </p>
+                    )}
                   </div>
 
                   <div className="deposit-amount-display">
@@ -463,6 +472,40 @@ export default function CreateDeposit() {
                     <span>Phải ký HĐ trong 7 ngày</span>
                   </li>
                 </ul>
+                {room.futureContractStartDate && (
+                  <div
+                    style={{
+                      marginTop: "1rem",
+                      padding: "0.75rem",
+                      backgroundColor: "#fef3c7",
+                      borderRadius: "0.5rem",
+                      border: "1px solid #f59e0b",
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: "0.875rem",
+                        color: "#92400e",
+                        fontWeight: 500,
+                      }}
+                    >
+                      ⚠ Thuê ngắn hạn
+                    </p>
+                    <p
+                      style={{
+                        margin: "0.25rem 0 0 0",
+                        fontSize: "0.8rem",
+                        color: "#78350f",
+                      }}
+                    >
+                      Phòng có người thuê từ{" "}
+                      {new Date(room.futureContractStartDate).toLocaleDateString(
+                        "vi-VN"
+                      )}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

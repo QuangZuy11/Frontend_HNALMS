@@ -77,16 +77,18 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
   // - Has active contract → go to contract detail
   // - Available/Deposited → go to create contract
   const handleRoomSelect = (room: any) => {
-    const contractId = roomContractMap[room._id];
-    if (contractId) {
-      // Room has active contract → view it
-      navigate(`${contractId}`);
-    } else if (
+    // If the room is Deposited or Available, prioritize going to the Create screen to process deposits
+    if (
       !readOnly &&
       (room.status === "Available" || room.status === "Deposited")
     ) {
-      // Room is available → create new contract (only if not readOnly)
       navigate("create", { state: { roomId: room._id } });
+    } else {
+      const contractId = roomContractMap[room._id];
+      if (contractId) {
+        // Room has active contract → view it
+        navigate(`${contractId}`);
+      }
     }
   };
 
