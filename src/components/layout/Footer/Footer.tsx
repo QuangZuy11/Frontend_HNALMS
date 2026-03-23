@@ -33,7 +33,7 @@ export default function Footer() {
                   Nội Quy
                 </Link>
               </li>
-             
+
             </ul>
           </div>
 
@@ -58,25 +58,7 @@ export default function Footer() {
 
           {/* Social Links */}
           <div className="footer-section">
-            <h4 className="footer-section-heading">Kết Nối</h4>
-            <ul className="footer-list">
-              <li>
-                <a
-                  href="https://www.facebook.com/nguyen.quang.958297/"
-                  className="footer-link"
-                >
-                  Facebook
-                </a>
-              </li>
-              <li>
-                <a href="https://zalo.me/0869048066" className="footer-link">
-                  Zalo
-                </a>
-              </li>
-              <li>
-               
-              </li>
-            </ul>
+
           </div>
         </div>
 

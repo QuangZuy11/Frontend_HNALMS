@@ -11,14 +11,16 @@ import {
     ChevronRight,
     DoorOpen,
     Settings,
-    BookOpen,
+    Scale,
     Cpu,
     Layers,
-    Star,
+    SwatchBook,
     TrendingUp,
     DollarSign,
     Activity,
     Wrench,
+    Computer,
+    Receipt
 } from 'lucide-react';
 import './OwnerSidebar.css';
 import logo from '../../../../assets/images/Logo.png';
@@ -31,23 +33,47 @@ const MENU_ITEMS = [
         subItems: []
     },
     {
-        title: "Quản lý tòa nhà",
+        title: "Cấu Hình Tòa Nhà",
         icon: <Building2 size={20} />,
         path: "/owner/buildings",
         subItems: [
             { title: "Danh sách phòng", path: "/owner/rooms", icon: <DoorOpen size={16} /> },
-            { title: "Cấu hình tòa nhà", path: "/owner/building-config", icon: <Settings size={16} /> },
-            { title: "Nội quy tòa nhà", path: "/owner/rules", icon: <BookOpen size={16} /> },
-            { title: "Danh sách thiết bị", path: "/owner/devices", icon: <Cpu size={16} /> },
-            { title: "Thiết bị theo loại phòng", path: "/owner/room-devices", icon: <Layers size={16} /> },
-            { title: "Danh sách dịch vụ", path: "/owner/services", icon: <Star size={16} /> },
-            { title: "Danh sách phiếu chi", path: "/owner/transactions/payments", icon: <FileText size={16} /> },
+            { title: "Tầng & Loại Phòng", path: "/owner/building-config", icon: <Settings size={16} /> },
         ]
     },
     {
-        title: "Quản lý nhân sự",
+        title: "Nội Quy",
+        icon: <Scale size={20} />,
+        path: "/owner/rules",
+        subItems: [
+        ]
+    },
+    {
+        title: "Thiết Bị",
+        icon: <Computer size={20} />,
+        path: "/owner/devices",
+        subItems: [
+            { title: "Danh sách thiết bị", path: "/owner/devices", icon: <Cpu size={16} /> },
+            { title: "Thiết bị theo loại phòng", path: "/owner/room-devices", icon: <Layers size={16} /> },
+        ]
+    },
+    {
+        title: "Dịch Vụ",
+        icon: <SwatchBook size={20} />,
+        path: "/owner/services",
+        subItems: [
+        ]
+    },
+    {
+        title: "Nhân Sự",
         icon: <Users size={20} />,
         path: "/owner/accounts",
+        subItems: []
+    },
+    {
+        title: "Phiếu Chi",
+        icon: <Receipt size={20} />,
+        path: "/owner/transactions/payments",
         subItems: []
     },
     {

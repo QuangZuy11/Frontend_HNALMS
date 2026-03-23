@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { cashFlowService } from "../../services/cashFlowService";
+import { cashFlowService } from "../../../services/cashFlowService";
 import { Eye } from "lucide-react";
-import "../Accountant/managing_income_expenses/managingIncomeExpenses.css";
+import "../../Accountant/managing_income_expenses/managingIncomeExpenses.css";
 
 interface OwnerPaymentTicket {
   _id: string;
@@ -172,11 +172,11 @@ export default function OwnerPaymentsList() {
           prev.map((t) =>
             t._id === ticketId
               ? {
-                  ...t,
-                  status: res.data.status,
-                  accountantPaidAt: res.data.accountantPaidAt,
-                  rejectionReason: res.data.rejectionReason ?? null,
-                }
+                ...t,
+                status: res.data.status,
+                accountantPaidAt: res.data.accountantPaidAt,
+                rejectionReason: res.data.rejectionReason ?? null,
+              }
               : t,
           ),
         );
@@ -184,11 +184,11 @@ export default function OwnerPaymentsList() {
         setSelectedTicket((prev) =>
           prev && prev._id === ticketId
             ? {
-                ...prev,
-                status: res.data.status,
-                accountantPaidAt: res.data.accountantPaidAt,
-                rejectionReason: res.data.rejectionReason ?? null,
-              }
+              ...prev,
+              status: res.data.status,
+              accountantPaidAt: res.data.accountantPaidAt,
+              rejectionReason: res.data.rejectionReason ?? null,
+            }
             : prev,
         );
       }
@@ -286,11 +286,11 @@ export default function OwnerPaymentsList() {
                 onChange={(e) => {
                   setStatusFilter(
                     e.target.value as
-                      | "all"
-                      | "pending"
-                      | "approved"
-                      | "paid"
-                      | "rejected",
+                    | "all"
+                    | "pending"
+                    | "approved"
+                    | "paid"
+                    | "rejected",
                   );
                   setCurrentPage(1);
                 }}
@@ -428,7 +428,7 @@ export default function OwnerPaymentsList() {
                     <span className="paychi-detail-value">
                       {formatDate(
                         selectedTicket.createdAt ||
-                          selectedTicket.transactionDate,
+                        selectedTicket.transactionDate,
                       )}
                     </span>
                   </div>
@@ -454,13 +454,13 @@ export default function OwnerPaymentsList() {
                   </div>
                   {toUiStatus(selectedTicket.status) === "rejected" &&
                     selectedTicket.rejectionReason && (
-                    <div className="paychi-detail-row">
-                      <span className="paychi-detail-label">Lý do từ chối:</span>
-                      <span className="paychi-detail-value">
-                        {selectedTicket.rejectionReason}
-                      </span>
-                    </div>
-                  )}
+                      <div className="paychi-detail-row">
+                        <span className="paychi-detail-label">Lý do từ chối:</span>
+                        <span className="paychi-detail-value">
+                          {selectedTicket.rejectionReason}
+                        </span>
+                      </div>
+                    )}
                 </div>
 
                 <div className="paychi-detail-actions">

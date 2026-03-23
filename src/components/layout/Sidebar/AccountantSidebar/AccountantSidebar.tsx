@@ -7,10 +7,11 @@ import {
     BarChart3,
     ChevronDown,
     ChevronRight,
-    ArrowDownCircle,
+    FileOutput,
     ArrowUpCircle,
     TrendingUp,
     CreditCard,
+    FileInput,
 } from 'lucide-react';
 import './AccountantSidebar.css';
 import logo from '../../../../assets/images/Logo.png';
@@ -18,13 +19,13 @@ import logo from '../../../../assets/images/Logo.png';
 // Định nghĩa cấu trúc menu cho Kế toán
 const MENU_ITEMS = [
     {
-        title: "Tổng quan",
+        title: "Tổng Quan",
         icon: <LayoutDashboard size={20} />,
         path: "/accountant",
         subItems: []
     },
     {
-        title: "Hóa đơn",
+        title: "Hóa Đơn",
         icon: <Receipt size={20} />,
         path: "/accountant/invoices",
         subItems: []
@@ -34,17 +35,17 @@ const MENU_ITEMS = [
         icon: <FileText size={20} />,
         path: "/accountant/transactions",
         subItems: [
-            { title: "Phiếu thu", path: "/accountant/transactions/receipts", icon: <ArrowDownCircle size={16} /> },
-            { title: "Phiếu chi", path: "/accountant/transactions/payments", icon: <ArrowUpCircle size={16} /> },
+            { title: "Phiếu Thu", path: "/accountant/transactions/receipts", icon: <FileOutput size={16} /> },
+            { title: "Phiếu Chi", path: "/accountant/transactions/payments", icon: <FileInput size={16} /> },
         ]
     },
     {
-        title: "Báo cáo tài chính",
+        title: "Báo Cáo Tài Chính",
         icon: <BarChart3 size={20} />,
         path: "/accountant/reports",
         subItems: [
-            { title: "Báo cáo doanh thu", path: "/accountant/reports/revenue", icon: <TrendingUp size={16} /> },
-            { title: "Báo cáo công nợ", path: "/accountant/reports/debt", icon: <CreditCard size={16} /> },
+            { title: "Báo Cáo Doanh Thu", path: "/accountant/reports/revenue", icon: <TrendingUp size={16} /> },
+            { title: "Báo Cáo Công Nợ", path: "/accountant/reports/debt", icon: <CreditCard size={16} /> },
         ]
     },
 

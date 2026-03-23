@@ -227,11 +227,6 @@ export default function DepositPayment({ depositData, onSuccess, onCancel }: Dep
                             </div>
                         </div>
                     </div>
-
-                    <div className="dp-note">
-                        <AlertCircle size={14} />
-                        <strong>Không sửa nội dung chuyển khoản để hệ thống tự động xác nhận</strong>
-                    </div>
                 </div>
             </div>
 

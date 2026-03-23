@@ -15,7 +15,19 @@ const HeaderDashboard = () => {
     const role = user?.role?.toLowerCase();
 
     const displayName = user?.fullname || user?.name || user?.email || 'Người dùng';
-    const displayEmail = user?.email || '';
+    
+    // Convert role to Vietnamese display name
+    const displayRole = (() => {
+        switch (role) {
+            case 'admin': return 'Quản Trị Viên';
+            case 'owner': return 'Chủ Tòa Nhà';
+            case 'manager': return 'Quản Lý';
+            case 'accountant': return 'Kế Toán';
+            case 'tenant': return 'Người Thuê';
+            default: return 'Người Dùng';
+        }
+    })();
+
     const initials = displayName
         .split(' ')
         .map((n: string) => n[0])
@@ -61,7 +73,7 @@ const HeaderDashboard = () => {
                         <div className="user-avatar">{initials}</div>
                         <div className="user-info">
                             <span className="user-name">{displayName}</span>
-                            <span className="user-email">{displayEmail}</span>
+                            <span className="user-email">{displayRole}</span>
                         </div>
                         <ChevronDown size={16} className="user-chevron" />
                     </div>
