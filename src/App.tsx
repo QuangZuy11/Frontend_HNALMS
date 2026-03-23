@@ -67,6 +67,8 @@ import ManagingIncomeExpenses from "./pages/Accountant/managing_income_expenses/
 import ReceiptsList from "./pages/Accountant/managing_income_expenses/receiptsList";
 import InvoiceList from "./pages/InvoiceManagement/InvoiceList";
 import OwnerPaymentsList from "./pages/CashFlowManagement/Owner/OwnerPaymentsList";
+import ReportRevenue from "./pages/ReportManagement/ReportRevenue";
+
 
 // Pages - Profile (All authenticated roles)
 import ViewProfile from "./pages/Auth/Profile/ViewProfile";
@@ -312,7 +314,9 @@ function LayoutWrapper() {
             path="transactions/payments"
             element={<ManagingIncomeExpenses />}
           />
+          <Route path="reports/revenue" element={<ReportRevenue />} />
         </Route>
+        
 
         {/* ==================== SHARED PROFILE ROUTES (Legacy support) ==================== */}
         <Route
