@@ -18,13 +18,15 @@ interface Room {
   contractEndDate?: string;
   hasFloatingDeposit?: boolean;
   isShortTermAvailable?: boolean;
+  futureContractId?: string;
+  futureContractStartDate?: string;
   [key: string]: any;
 }
 
 interface FloorMapLevel2Props {
   rooms: Room[];
   floorName?: string;
-  onRoomSelect?: (room: Room) => void;
+  onRoomSelect?: (room: Room, event?: React.MouseEvent) => void;
   legendType?: "default" | "deposit" | "guest" | "none" | "contract";
 }
 
@@ -93,14 +95,14 @@ const getExpiryLabel = (contractEndDate?: string): string | null => {
   return `Trống từ ${day}/${month}`;
 };
 
-// Label for Deposited rooms with a future contract
+// Label for Deposited rooms with a future contract (short format: room is available until this date)
 const getComingSoonLabel = (contractStartDate?: string): string | null => {
   if (!contractStartDate) return null;
   const d = new Date(contractStartDate);
   const day = d.getDate().toString().padStart(2, "0");
   const month = (d.getMonth() + 1).toString().padStart(2, "0");
-  const year = d.getFullYear();
-  return `Có người thuê từ ${day}/${month}/${year}`;
+  const year = d.getFullYear().toString().slice(-2);
+  return `Trống đến → ${day}/${month}/${year}`;
 };
 
 const extractTypeNumber = (typeName: string): number => {
@@ -149,7 +151,7 @@ export default function FloorMapLevel2({
 }: FloorMapLevel2Props & {
   highlightedRooms?: Room[];
   compact?: boolean;
-  onRoomSelect?: (room: Room) => void;
+  onRoomSelect?: (room: Room, event?: React.MouseEvent) => void;
 }) {
   const navigate = useNavigate();
 
@@ -189,10 +191,10 @@ export default function FloorMapLevel2({
     return `${(price / 1000).toFixed(0)}k`;
   };
 
-  const handleRoomClick = (roomId: string) => {
+  const handleRoomClick = (roomId: string, event: React.MouseEvent) => {
     if (onRoomSelect) {
       const room = rooms.find((r) => r._id === roomId);
-      if (room) onRoomSelect(room);
+      if (room) onRoomSelect(room, event);
     } else {
       navigate(`/rooms/${roomId}`);
     }
@@ -402,8 +404,10 @@ export default function FloorMapLevel2({
                           const isDeposited = room.status === "Deposited";
                           const isShortTermAvailable = room.isShortTermAvailable || false;
                           const hasFloatingDeposit = room.hasFloatingDeposit || false;
-                          const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFloatingDeposit);
-                          const showDepositedBadge = isDeposited && hasFloatingDeposit;
+                          const hasFutureContract = !!(room.futureContractId || room.contractStartDate);
+                          const hasMultiOptions = isDeposited && hasFutureContract;
+                          const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFutureContract);
+                          const showDepositedBadge = isDeposited && !hasMultiOptions;
                           const typeColor = getRoomTypeColor(
                             room.roomTypeId?._id,
                           );
@@ -419,12 +423,12 @@ export default function FloorMapLevel2({
                           return (
                             <div
                               key={room._id}
-                              className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""}`}
-                              onClick={() => handleRoomClick(room._id)}
+                              className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""} ${hasMultiOptions ? "has-multi-options" : ""}`}
+                              onClick={(e) => handleRoomClick(room._id, e)}
                               data-color={typeColor}
                               style={{
                                 flex: 1, // Expand to fill space
-                                ...(showAsAvailable || showDepositedBadge
+                                ...(showAsAvailable || isDeposited
                                   ? {
                                     background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
                                   }
@@ -465,7 +469,7 @@ export default function FloorMapLevel2({
                               </span>
                               {/* Deposited + future contract */}
                               {isDeposited && room.contractStartDate && getComingSoonLabel(room.contractStartDate) && (
-                                <span className="room-expiry-label" style={{ fontSize: "0.6rem", color: "#fff8e1", fontWeight: 600, lineHeight: 1.2 }}>
+                                <span className="room-coming-soon-label" style={{ fontSize: "0.6rem", color: "#fff", fontWeight: 700, lineHeight: 1.2, textAlign: "center", background: "rgba(16, 185, 129, 0.9)", padding: "2px 4px", borderRadius: "3px" }}>
                                   {getComingSoonLabel(room.contractStartDate)}
                                 </span>
                               )}
@@ -533,8 +537,10 @@ export default function FloorMapLevel2({
                   const isDeposited = room.status === "Deposited";
                   const isShortTermAvailable = room.isShortTermAvailable || false;
                   const hasFloatingDeposit = room.hasFloatingDeposit || false;
-                  const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFloatingDeposit);
-                  const showDepositedBadge = isDeposited && hasFloatingDeposit;
+                  const hasFutureContract = !!(room.futureContractId || room.contractStartDate);
+                  const hasMultiOptions = isDeposited && hasFutureContract;
+                  const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFutureContract);
+                  const showDepositedBadge = isDeposited && !hasMultiOptions;
                   const typeColor = getRoomTypeColor(room.roomTypeId?._id);
                   const isGhosted =
                     highlightedRooms &&
@@ -548,11 +554,11 @@ export default function FloorMapLevel2({
                   return (
                     <div
                       key={room._id}
-                      className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""}`}
-                      onClick={() => handleRoomClick(room._id)}
+                      className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""} ${hasMultiOptions ? "has-multi-options" : ""}`}
+                      onClick={(e) => handleRoomClick(room._id, e)}
                       data-color={typeColor}
                       style={
-                        showAsAvailable || showDepositedBadge
+                        showAsAvailable || isDeposited
                           ? {
                             background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
                           }
@@ -591,7 +597,7 @@ export default function FloorMapLevel2({
                       <span className="room-node-name">{formatRoomLabel(room.name)}</span>
                       {/* Deposited + future contract */}
                       {isDeposited && room.contractStartDate && getComingSoonLabel(room.contractStartDate) && (
-                        <span className="room-expiry-label" style={{ fontSize: "0.6rem", color: "#fff8e1", fontWeight: 600, lineHeight: 1.2 }}>
+                        <span className="room-coming-soon-label" style={{ fontSize: "0.65rem", color: "#fff", fontWeight: 700, lineHeight: 1.25, textAlign: "center", background: "rgba(37, 99, 235, 0.9)", padding: "2px 4px", borderRadius: "3px", whiteSpace: "normal" }}>
                           {getComingSoonLabel(room.contractStartDate)}
                         </span>
                       )}

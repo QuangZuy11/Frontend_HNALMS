@@ -5,7 +5,7 @@
    CONTRACT CONTAINER - Matches room-container style
    ============================== */
 .contract-container {
-  padding: 32px 40px;
+  padding: 32px -1px;
   background-color: #ffffff;
   min-height: 100%;
   font-family: "Inter", sans-serif;
@@ -215,3 +215,149 @@
 .contract-floor-map .room-node.status-available {
   cursor: pointer;
 }
+
+/* ==============================
+   ROOM ACTION POPUP - For rooms with multiple options
+   ============================== */
+.room-action-popup {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2), 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  min-width: 260px;
+  overflow: hidden;
+  animation: popupFadeIn 0.15s ease-out;
+}
+
+@keyframes popupFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -90%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%);
+  }
+}
+
+.room-action-popup .popup-arrow {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid white;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
+}
+
+.room-action-popup .popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #3579c6 0%, #1e5296 100%);
+  color: white;
+}
+
+.room-action-popup .popup-room-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.room-action-popup .popup-badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.room-action-popup .popup-options {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.room-action-popup .popup-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.room-action-popup .popup-option:hover {
+  background: #e6f0ff;
+  transform: translateX(4px);
+}
+
+.room-action-popup .popup-option svg {
+  flex-shrink: 0;
+  color: #3579c6;
+}
+
+.room-action-popup .popup-option .option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.room-action-popup .popup-option .option-title {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #1e293b;
+}
+
+.room-action-popup .popup-option .option-desc {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.room-action-popup .option-view:hover svg {
+  color: #10b981;
+}
+
+.room-action-popup .option-create:hover svg {
+  color: #f59e0b;
+}
+
+/* ==============================
+   SPECIAL STATUS: Room with multiple contracts/deposits
+   Show special badge for rooms with both future contract AND floating deposit
+   ============================== */
+.contract-floor-map .room-node.has-multi-options {
+  position: relative;
+}
+
+.contract-floor-map .room-node.has-multi-options::after {
+  content: "2";
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3579c6 0%, #1e5296 100%);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  z-index: 5;
+}
+

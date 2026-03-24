@@ -18,6 +18,8 @@ interface Room {
   contractEndDate?: string;
   hasFloatingDeposit?: boolean; // true if room has deposit not yet linked to contract
   isShortTermAvailable?: boolean; // true if room can accept short-term rental
+  futureContractId?: string; // ID of future contract if exists
+  futureContractStartDate?: string;
   [key: string]: any;
 }
 
@@ -26,7 +28,7 @@ interface FloorMapProps {
   highlightedRooms?: Room[];
   floorName?: string;
   compact?: boolean;
-  onRoomSelect?: (room: Room) => void;
+  onRoomSelect?: (room: Room, event?: React.MouseEvent) => void;
   legendType?: "default" | "deposit" | "guest" | "none" | "contract";
   showDateYear?: boolean;
 }
@@ -55,14 +57,14 @@ const getExpiryLabel = (contractEndDate?: string): string | null => {
   return `Trống từ ${day}/${month}`;
 };
 
-// Label for Deposited rooms with a future contract: "Có người thuê từ DD/MM/YYYY"
+// Label for Deposited rooms with a future contract (short format: room is available until this date)
 const getComingSoonLabel = (contractStartDate?: string): string | null => {
   if (!contractStartDate) return null;
   const d = new Date(contractStartDate);
   const day = d.getDate().toString().padStart(2, "0");
   const month = (d.getMonth() + 1).toString().padStart(2, "0");
-  const year = d.getFullYear();
-  return `Có người thuê từ ${day}/${month}/${year}`;
+  const year = d.getFullYear().toString().slice(-2);
+  return `Trống đến → ${day}/${month}/${year}`;
 };
 
 
@@ -161,10 +163,10 @@ export default function FloorMap({
     });
   });
 
-  const handleRoomClick = (roomId: string) => {
+  const handleRoomClick = (roomId: string, event: React.MouseEvent) => {
     if (onRoomSelect) {
       const room = rooms.find((r) => r._id === roomId);
-      if (room) onRoomSelect(room);
+      if (room) onRoomSelect(room, event);
     } else {
       navigate(`/rooms/${roomId}`);
     }
@@ -312,11 +314,15 @@ export default function FloorMap({
               // has future contract >= 30 days, treat it as available for short-term
               const isShortTermAvailable = room.isShortTermAvailable || false;
               const hasFloatingDeposit = room.hasFloatingDeposit || false;
+              const hasFutureContract = !!(room.futureContractId || room.contractStartDate);
+
+              // Special case: room is Deposited AND has future contract
+              const hasMultiOptions = isDeposited && hasFutureContract;
 
               // Visual: show as available if truly available OR short-term available
-              const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFloatingDeposit);
-              // Visual: show deposit badge if deposited AND has floating deposit
-              const showDepositedBadge = isDeposited && hasFloatingDeposit;
+              const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFutureContract);
+              // Visual: show deposit badge if deposited (but not multi-options - those show different indicator)
+              const showDepositedBadge = isDeposited && !hasMultiOptions;
 
               // Check if highlighted
               const isGhosted =
@@ -334,12 +340,12 @@ export default function FloorMap({
                 <React.Fragment key={room._id}>
                   {/* Render the room node */}
                   <div
-                    className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""}`}
-                    onClick={() => handleRoomClick(room._id)}
-                    title={`${room.name} - ${room.roomTypeId?.typeName || room.roomTypeId?.name || ""}${isShortTermAvailable && !hasFloatingDeposit ? " (Có thể thuê ngắn hạn)" : ""}`}
+                    className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""} ${hasMultiOptions ? "has-multi-options" : ""}`}
+                    onClick={(e) => handleRoomClick(room._id, e)}
+                    title={`${room.name} - ${room.roomTypeId?.typeName || room.roomTypeId?.name || ""}${hasMultiOptions ? " (Có 2 lựa chọn)" : isShortTermAvailable && !hasFloatingDeposit ? " (Có thể thuê ngắn hạn)" : ""}`}
                     data-color={typeColor}
                     style={
-                      showAsAvailable || showDepositedBadge
+                      showAsAvailable || isDeposited
                         ? {
                           background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
                         }
@@ -375,15 +381,15 @@ export default function FloorMap({
                       </span>
                     )}
                     <span className="room-node-name">{formatRoomLabel(room.name)}</span>
-                    {/* Short-term available: show "Thuê đến DD/MM" label */}
+                    {/* Short-term available: show "trống đến → DD/MM/YY" label */}
                     {isShortTermAvailable && !hasFloatingDeposit && room.contractStartDate && (
-                      <span className="room-expiry-label" style={{ fontSize: "0.55rem", color: "#fff8e1", fontWeight: 600, textShadow: "0 1px 2px rgba(0,0,0,0.4)", lineHeight: 1.1 }}>
-                        Thuê đến {new Date(room.contractStartDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                      <span className="room-expiry-label" style={{ fontSize: "0.6rem", color: "#fff", fontWeight: 700, background: "rgba(16, 185, 129, 0.9)", padding: "2px 4px", borderRadius: "3px", lineHeight: 1.2 }}>
+                        Trống đến → {new Date(room.contractStartDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "2-digit" })}
                       </span>
                     )}
-                    {/* Deposited with floating deposit + future contract → "Có người thuê từ DD/MM/YYYY" */}
+                    {/* Deposited with future contract → "Trống → DD/MM" */}
                     {showDepositedBadge && room.contractStartDate && getComingSoonLabel(room.contractStartDate) && (
-                      <span className="room-expiry-label" style={{ fontSize: "0.6rem", color: "#fff8e1", fontWeight: 600, textShadow: "0 1px 2px rgba(0,0,0,0.4)", lineHeight: 1.2 }}>
+                      <span className="room-coming-soon-label" style={{ fontSize: "0.6rem", color: "#fff", fontWeight: 700, lineHeight: 1.2, textAlign: "center", background: "rgba(16, 185, 129, 0.9)", padding: "2px 4px", borderRadius: "3px" }}>
                         {getComingSoonLabel(room.contractStartDate)}
                       </span>
                     )}
