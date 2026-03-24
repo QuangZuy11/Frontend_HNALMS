@@ -1,25 +1,23 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Download, Search, Filter } from 'lucide-react';
-import * as XLSX from 'xlsx'; // Cài thư viện này để xuất Excel: npm install xlsx
+import * as XLSX from 'xlsx'; 
 import toastr from 'toastr';
-import './ReportRevenue.css';
+import './ReportCashFlow.css';
 
 const API_BASE_URL = 'http://localhost:9999/api';
-const ITEMS_PER_PAGE = 15; // Định mức 15 hóa đơn/trang
+const ITEMS_PER_PAGE = 15; 
 
-const ReportRevenue = () => {
+const ReportCashFlow = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   
-  // Mặc định lấy từ ngày 1 đến hiện tại
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
   });
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // [MỚI] State lưu trang hiện tại
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -29,9 +27,9 @@ const ReportRevenue = () => {
   const fetchReport = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE_URL}/finance/revenue-report?startDate=${startDate}&endDate=${endDate}`);
+      const res = await axios.get(`${API_BASE_URL}/finance/cashflow?startDate=${startDate}&endDate=${endDate}`);
       setData(res.data.data);
-      setCurrentPage(1); // Reset về trang 1 mỗi khi lọc lại dữ liệu mới
+      setCurrentPage(1); 
     } catch (error) {
       toastr.error("Lỗi lấy báo cáo");
     } finally {
@@ -46,7 +44,6 @@ const ReportRevenue = () => {
   const exportToExcel = () => {
     if (!data || !data.ledger) return;
     
-    // Chuẩn bị dữ liệu cho Excel (Xuất toàn bộ, không bị giới hạn bởi phân trang)
     const excelData = data.ledger.map((item: any) => ({
       "Ngày CT": new Date(item.date).toLocaleDateString('vi-VN'),
       "Mã CT": item.code,
@@ -62,11 +59,12 @@ const ReportRevenue = () => {
 
     const ws = XLSX.utils.json_to_sheet(excelData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Sao_Ke_Kinh_Doanh");
-    XLSX.writeFile(wb, `Bao_Cao_Doanh_Thu_${startDate}_${endDate}.xlsx`);
+    // [ĐÃ SỬA] Đổi tên Sheet cho chuyên nghiệp
+    XLSX.utils.book_append_sheet(wb, ws, "Bao_Cao_Dong_Tien");
+    // [ĐÃ SỬA] Đổi tên file xuất ra Excel
+    XLSX.writeFile(wb, `Bao_Cao_Dong_Tien_${startDate}_${endDate}.xlsx`);
   };
 
-  // [MỚI] Tính toán dữ liệu hiển thị cho trang hiện tại
   const ledgerItems = data?.ledger || [];
   const totalPages = Math.ceil(ledgerItems.length / ITEMS_PER_PAGE);
   
@@ -81,7 +79,8 @@ const ReportRevenue = () => {
   return (
     <div className="report-container">
       <div className="report-header">
-        <h2>Báo Cáo Tổng Hợp Thu Chi & Công Nợ</h2>
+        {/* [ĐÃ SỬA] Sửa lại tiêu đề cho đúng bản chất nghiệp vụ Kế toán */}
+        <h2>Báo Cáo Dòng Tiền & Công Nợ</h2>
         <div className="report-actions">
           <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input"/>
           <span>đến</span>
@@ -208,4 +207,4 @@ const ReportRevenue = () => {
   );
 };
 
-export default ReportRevenue;
+export default ReportCashFlow;

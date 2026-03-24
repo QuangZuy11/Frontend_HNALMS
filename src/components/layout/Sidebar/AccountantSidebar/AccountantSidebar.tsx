@@ -12,6 +12,7 @@ import {
     TrendingUp,
     CreditCard,
     FileInput,
+    Activity,
 } from 'lucide-react';
 import './AccountantSidebar.css';
 import logo from '../../../../assets/images/Logo.png';
@@ -44,8 +45,8 @@ const MENU_ITEMS = [
         icon: <BarChart3 size={20} />,
         path: "/accountant/reports",
         subItems: [
-            { title: "Báo Cáo Doanh Thu", path: "/accountant/reports/revenue", icon: <TrendingUp size={16} /> },
-            { title: "Báo Cáo Công Nợ", path: "/accountant/reports/debt", icon: <CreditCard size={16} /> },
+            { title: "Báo Cáo Dòng Tiền", path: "/accountant/reports/cash-flow", icon: <Activity size={16} /> },
+            { title: "Báo Cáo Doanh Thu", path: "/accountant/reports/revenue", icon: <TrendingUp size={16} /> },         
         ]
     },
 
