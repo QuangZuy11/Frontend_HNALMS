@@ -62,6 +62,15 @@ export default function BookingPage() {
                             price = Number(rawPrice);
                         }
                     }
+                    const futureStart = roomData.futureContractStartDate;
+                    let isShortTermAvailable = false;
+                    if (roomData.status === "Deposited" && futureStart) {
+                        const daysUntil = Math.ceil((new Date(futureStart).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                        if (daysUntil >= 30) {
+                            isShortTermAvailable = true;
+                        }
+                    }
+
                     setRoom({
                         ...roomData,
                         roomCode: roomData.roomCode || roomData.name,
@@ -69,6 +78,8 @@ export default function BookingPage() {
                         floorLabel: `Tầng ${roomData.floorId?.name || "N/A"} `,
                         price,
                         typeName: roomData.roomTypeId?.typeName || "Phòng",
+                        futureContractStartDate: futureStart,
+                        isShortTermAvailable,
                     });
                 }
             } catch (err) {
@@ -77,7 +88,9 @@ export default function BookingPage() {
                 setLoading(false);
             }
         };
-        fetchRoom();
+        if (id) {
+            fetchRoom();
+        }
     }, [id]);
 
     const validate = (): boolean => {
@@ -352,6 +365,12 @@ export default function BookingPage() {
                                         <span className="check">✓</span>
                                         <span>Phải ký HĐ trong 7 ngày</span>
                                     </li>
+                                    {room.isShortTermAvailable && room.futureContractStartDate && (
+                                        <li>
+                                            <span className="check" style={{ color: "var(--warning)" }}>⚠</span>
+                                            <span style={{ color: "var(--warning)", fontWeight: "bold" }}>Thuê ngắn hạn đến {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}</span>
+                                        </li>
+                                    )}
                                 </ul>
                             </div>
                         </div>
