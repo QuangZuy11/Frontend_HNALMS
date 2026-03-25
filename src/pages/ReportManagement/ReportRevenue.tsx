@@ -1,2 +1,0 @@
-// Report revenue
-export { }
