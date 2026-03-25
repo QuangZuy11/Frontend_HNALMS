@@ -90,6 +90,7 @@ import NotificationList from "./pages/NotificationManagement/Owner/NotificationL
 // Pages - Notification Management (Manager)
 import ManagerNotificationList from "./pages/NotificationManagement/Manager/ManagerNotificationList";
 import ReportPerformance from "./pages/ReportManagement/ReportPerformance";
+import ReportRepairMaintenance from "./pages/ReportManagement/ReportRepairMaintenance";
 
 // Pages - Contract Management
 import CreateContract from "./pages/ContractManagement/CreateContract";
@@ -292,6 +293,7 @@ function LayoutWrapper() {
           <Route path="invoices" element={<ManagerInvoice />} />
           <Route path="violations" element={<ViolationList />} />
           <Route path="statistics/performance" element={<ReportPerformance />} />
+          <Route path="statistics/repairs" element={<ReportRepairMaintenance />} />
           {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
         </Route>
 

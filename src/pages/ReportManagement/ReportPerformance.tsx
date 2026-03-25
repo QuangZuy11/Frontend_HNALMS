@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   BarChart,
   Bar,
@@ -40,14 +40,6 @@ const MONTH_NAMES = [
   "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12",
 ];
 
-// Sinh danh sách năm — năm hiện tại và năm trước
-const generateYearOptions = () => {
-  const now = new Date();
-  return [now.getFullYear(), now.getFullYear() - 1];
-};
-
-const YEAR_OPTIONS = generateYearOptions();
-
 export default function ReportPerformance() {
   const [monthlyData, setMonthlyData] = useState<VacancyMonthData[]>([]);
   const [snapshot, setSnapshot] = useState<SnapshotData | null>(null);
@@ -56,27 +48,31 @@ export default function ReportPerformance() {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
-  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
-  const [selectedYear, setSelectedYear] = useState(currentYear);
-  const selectedMonthRef = useRef(currentMonth);
-  const selectedYearRef = useRef(currentYear);
+  const currentMonthStr = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
+  const [selectedMonthStr, setSelectedMonthStr] = useState(currentMonthStr);
+  // MONTH_OPTIONS động: chỉ hiện 6 tháng gần nhất tính từ tháng hiện tại
+  const monthOptions = (() => {
+    const opts = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(currentYear, currentMonth - 1 - i, 1);
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      opts.push({
+        value: `${y}-${String(m).padStart(2, "0")}`,
+        label: `${MONTH_NAMES[m - 1]} ${y}`,
+      });
+    }
+    return opts;
+  })();
 
-  // MONTH_OPTIONS động: nếu chọn năm hiện tại thì giới hạn tháng <= tháng hiện tại
-  const monthOptions = MONTH_NAMES.map((label, index) => {
-    const value = index + 1;
-    const maxMonth = selectedYear === currentYear ? currentMonth : 12;
-    const disabled = value > maxMonth;
-    return { value, label, disabled };
-  });
-
-  const loadData = useCallback(async (month: number, year: number) => {
+  const loadData = useCallback(async (monthStr: string) => {
     try {
       setError(null);
-      const monthStr = `${year}-${String(month).padStart(2, "0")}`;
 
       // Lấy 6 tháng kết thúc tại selectedMonth
-      let barStartYear = year;
-      let barStartMonth = month - 5;
+      const [y, m] = monthStr.split("-").map(Number);
+      let barStartYear = y;
+      let barStartMonth = m - 5;
       if (barStartMonth <= 0) {
         barStartMonth += 12;
         barStartYear -= 1;
@@ -100,23 +96,11 @@ export default function ReportPerformance() {
 
   // Load initial data once on mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadData(currentMonth, currentYear); }, []);
+  useEffect(() => { loadData(currentMonthStr); }, []);
 
-  const handleMonthChange = (month: number) => {
-    setSelectedMonth(month);
-    selectedMonthRef.current = month;
-    loadData(month, selectedYearRef.current);
-  };
-
-  const handleYearChange = (year: number) => {
-    const newMonth = year === currentYear
-      ? Math.min(selectedMonthRef.current, currentMonth)
-      : selectedMonthRef.current;
-    setSelectedYear(year);
-    setSelectedMonth(newMonth);
-    selectedYearRef.current = year;
-    selectedMonthRef.current = newMonth;
-    loadData(newMonth, year);
+  const handleMonthChange = (monthStr: string) => {
+    setSelectedMonthStr(monthStr);
+    loadData(monthStr);
   };
 
   const pieData = snapshot
@@ -138,31 +122,16 @@ export default function ReportPerformance() {
       {/* Filter row */}
       <div className="report-performance-filters">
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <FormControl size="small" sx={{ minWidth: 140 }}>
+          <FormControl size="small" sx={{ minWidth: 160 }}>
             <InputLabel>Tháng</InputLabel>
             <Select
               label="Tháng"
-              value={selectedMonth}
-              onChange={(e) => handleMonthChange(e.target.value as number)}
+              value={selectedMonthStr}
+              onChange={(e) => handleMonthChange(e.target.value as string)}
             >
               {monthOptions.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value} disabled={opt.disabled}>
+                <MenuItem key={opt.value} value={opt.value}>
                   {opt.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Năm</InputLabel>
-            <Select
-              label="Năm"
-              value={selectedYear}
-              onChange={(e) => handleYearChange(e.target.value as number)}
-            >
-              {YEAR_OPTIONS.map((year) => (
-                <MenuItem key={year} value={year}>
-                  {year}
                 </MenuItem>
               ))}
             </Select>
@@ -273,7 +242,7 @@ export default function ReportPerformance() {
 
             {/* Pie chart */}
             <div className="chart-card pie-chart-card">
-              <h3 className="chart-title">Tỷ lệ lấp đầy tháng {selectedMonth}/{selectedYear}</h3>
+              <h3 className="chart-title">Tỷ lệ lấp đầy tháng {selectedMonthStr}</h3>
               {snapshot && (
                 <>
                   <ResponsiveContainer width="100%" height={240}>

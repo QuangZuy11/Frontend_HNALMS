@@ -90,7 +90,7 @@ const MENU_ITEMS = [
     path: "/manager/statistics/performance",
     subItems: [
       { title: "Hiệu suất", path: "/manager/statistics/performance", icon: <Activity size={16} /> },
-      { title: "Sửa chữa & Bảo trì", path: "/owner/reports/maintenance", icon: <Wrench size={16} /> },
+      { title: "Sửa chữa & Bảo trì", path: "/manager/statistics/repairs", icon: <Wrench size={16} /> },
     ]
   },
   {
