@@ -1242,6 +1242,13 @@ const CreateContract = () => {
                                           value: /^[0-9]{12}$/,
                                           message: "CCCD phải gồm 12 chữ số",
                                         },
+                                        validate: (value) => {
+                                          const tenantCccd = watch("tenantInfo.cccd");
+                                          if (value && tenantCccd && value === tenantCccd) {
+                                            return "CCCD người ở cùng không được trùng với CCCD bên B";
+                                          }
+                                          return true;
+                                        },
                                       },
                                     )}
                                     error={!!errors.coResidents?.[index]?.cccd}
@@ -1619,13 +1626,19 @@ const CreateContract = () => {
                                 fontSize: "1rem",
                                 padding: "0 0 2px 0",
                               },
-                              min: 1,
+                              min: 2,
                               max: Number(watch("duration")) || 12,
                             }}
                             {...register("prepayMonths", {
                               valueAsNumber: true,
-                              validate: (value) =>
-                                !value || Number(value) <= (Number(watch("duration")) || 12) || "Không vượt quá thời hạn thuê"
+                              required: "Bắt buộc nhập số tháng trả trước",
+                              validate: (value) => {
+                                const val = Number(value);
+                                const dur = Number(watch("duration")) || 12;
+                                if (val < 2) return "Phải trả trước tối thiểu 2 tháng";
+                                if (val > dur) return `Không được vượt quá thời hạn thuê (${dur} tháng)`;
+                                return true;
+                              }
                             })}
                             error={!!errors.prepayMonths}
                             helperText={errors.prepayMonths?.message as string}
