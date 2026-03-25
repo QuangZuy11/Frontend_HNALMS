@@ -75,7 +75,7 @@ const MENU_ITEMS = [
       { title: "Yêu cầu bảo trì", path: "/manager/requests/maintenance", icon: <HardHat size={16} /> },
       { title: "Danh sách khiếu nại", path: "/manager/requests/complaints", icon: <AlertTriangle size={16} /> },
       { title: "Yêu cầu chuyển phòng", path: "/manager/requests/transfers", icon: <ArrowRightLeft size={16} /> },
-      { title: "Yêu cầu trả phòng", path: "/manager/requests/checkouts", icon: <LogOut size={16} /> },
+      { title: "Yêu cầu trả phòng", path: "/manager/requests/move-outs", icon: <LogOut size={16} /> },
     ]
   },
   {
