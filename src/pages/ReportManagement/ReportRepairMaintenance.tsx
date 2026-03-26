@@ -225,12 +225,7 @@ export default function ReportRepairMaintenance() {
               <div className="rrm-card-sub">
                 {peakMonth ? formatMonth(peakMonth.month) : "—"}
               </div>
-              {peakMonth && (
-                <div className="rrm-peak-badge">
-                  <AlertTriangle size={10} />
-                  Cao nhất {peakPct}%
-                </div>
-              )}
+              
             </div>
           </div>
 
@@ -289,6 +284,7 @@ export default function ReportRepairMaintenance() {
                   />
                   <Bar dataKey="repairs" fill={TYPE_COLORS[0]} name="repairs" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="maintenance" fill={TYPE_COLORS[1]} name="maintenance" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="total" fill="transparent" stroke="transparent" name="total" />
                 </BarChart>
               </ResponsiveContainer>
             </div>

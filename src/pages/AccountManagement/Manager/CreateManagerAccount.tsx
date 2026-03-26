@@ -71,7 +71,7 @@ export default function CreateManagerAccount() {
           </div>
           <div className="form-group">
             <label htmlFor="phoneNumber">Số điện thoại *</label>
-            <input type="tel" id="phoneNumber" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} placeholder="0901234567" required />
+            <input type="tel" id="phoneNumber" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} placeholder="Số điện thoại bắt đầu bằng số 0" required />
           </div>
           <div className="form-group">
             <label htmlFor="email">Email *</label>
