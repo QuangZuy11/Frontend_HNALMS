@@ -44,7 +44,7 @@ const ReportCashFlow = () => {
   const exportToExcel = () => {
     if (!data || !data.ledger) return;
     
-    // [ĐÃ SỬA] Đã xóa cột "Hình thức thanh toán" khỏi mảng dữ liệu xuất Excel
+    // 1. Chuẩn bị dữ liệu mảng
     const excelData = data.ledger.map((item: any) => ({
       "Ngày chứng từ": new Date(item.date).toLocaleDateString('vi-VN'),
       "Mã chứng từ": item.code,
@@ -57,10 +57,28 @@ const ReportCashFlow = () => {
       "Trạng thái": item.status === 'Paid' ? 'Đã thu' : item.status === 'Unpaid' ? 'Đang nợ' : item.status
     }));
 
+    // [MỚI] Push thêm 1 dòng "Tổng cộng" vào cuối mảng Excel Dòng tiền
+    excelData.push({
+      "Ngày chứng từ": "TỔNG CỘNG",
+      "Mã chứng từ": "",
+      "Phòng": "",
+      "Diễn giải": "",
+      "Loại": "",
+      "Hạng mục": "",
+      "Phát sinh TĂNG (Thu)": data.summary.expectedRevenue, // Lấy từ Tổng Thực Thu
+      "Phát sinh GIẢM (Chi)": data.summary.actualExpense,   // Lấy từ Tổng Thực Chi
+      "Trạng thái": ""
+    });
+
+    // 2. Chuyển đổi dữ liệu thành Sheet
     const ws = XLSX.utils.json_to_sheet(excelData);
 
+    // ==========================================
+    // PHẦN THÊM STYLE CHO EXCEL
+    // ==========================================
     const range = XLSX.utils.decode_range(ws['!ref'] as string);
 
+    // Bôi vàng và in đậm hàng Tiêu đề (Row 0)
     for (let col = range.s.c; col <= range.e.c; col++) {
       const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col }); 
       if (!ws[cellAddress]) continue;
@@ -72,7 +90,19 @@ const ReportCashFlow = () => {
       };
     }
 
-    // [ĐÃ SỬA] Xóa định dạng độ rộng cho cột "Hình thức TT"
+    // [MỚI] In đậm và bôi màu xám nhạt cho hàng Tổng cộng (Row cuối cùng)
+    const lastRowIndex = range.e.r;
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: lastRowIndex, c: col }); 
+      if (!ws[cellAddress]) continue;
+
+      ws[cellAddress].s = {
+        font: { bold: true, color: { rgb: "000000" } },
+        fill: { fgColor: { rgb: "FFFF00" } }, // Màu nền xám nhạt để tách biệt với dữ liệu
+      };
+    }
+
+    // Set độ rộng cột (Đã chỉnh theo cấu trúc 9 cột của Cashflow)
     ws['!cols'] = [
       { wch: 15 }, // Ngày CT
       { wch: 25 }, // Mã CT
@@ -84,12 +114,14 @@ const ReportCashFlow = () => {
       { wch: 22 }, // Phát sinh GIẢM
       { wch: 15 }  // Trạng thái
     ];
+    // ==========================================
 
+    // 3. Đóng gói và xuất file
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Bao_Cao_Dong_Tien");
     
     XLSX.writeFile(wb, `Bao_Cao_Dong_Tien_${startDate}_${endDate}.xlsx`);
-};
+  };
 
   const ledgerItems = data?.ledger || [];
   const totalPages = Math.ceil(ledgerItems.length / ITEMS_PER_PAGE);
@@ -152,8 +184,8 @@ const ReportCashFlow = () => {
               <th>Loại</th>
               <th>Hạng mục</th>
               {/* Đã xóa <th>Hình thức TT</th> ở đây */}
-              <th style={{textAlign: 'right'}}>Tăng (+)</th>
-              <th style={{textAlign: 'right'}}>Giảm (-)</th>
+              <th style={{textAlign: 'right'}}>Doanh thu (+)</th>
+              <th style={{textAlign: 'right'}}>Chi phí (-)</th>
               <th>Trạng thái</th>
             </tr>
           </thead>
