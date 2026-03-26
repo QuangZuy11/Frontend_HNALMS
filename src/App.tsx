@@ -60,6 +60,7 @@ import ManagerInvoice from "./pages/InvoiceManagement/InvoiceManage";
 import ComplaintRequestList from "./pages/RequestManagement/ComplaintRequestlist";
 import TransferRequestsList from "./pages/RequestManagement/TransferRequestsList";
 import ViolationList from "./pages/ViolateManagement/ViolationList";
+import MoveOutRequestsList from "./pages/RequestManagement/MoveOutRequestsList";
 
 // Pages - Accountant Dashboard
 import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
@@ -283,6 +284,7 @@ function LayoutWrapper() {
             element={<ComplaintRequestList />}
           />
           <Route path="requests/transfers" element={<TransferRequestsList />} />
+          <Route path="/manager/requests/move-outs" element={<MoveOutRequestsList />} />
           <Route path="notifications" element={<ManagerNotificationList />} />
           <Route path="profile" element={<ManagerProfile />} />
           <Route path="contracts" element={<ContractList />} />
