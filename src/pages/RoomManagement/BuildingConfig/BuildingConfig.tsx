@@ -77,7 +77,7 @@ const BuildingConfig = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   
-  // --- [MỚI] STATE CHO MODAL XÁC NHẬN XÓA TÙY CHỈNH ---
+  // --- STATE CHO MODAL XÁC NHẬN XÓA TÙY CHỈNH ---
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     action: 'DELETE_FLOOR' | 'DELETE_TYPE' | null;
@@ -221,7 +221,6 @@ const BuildingConfig = () => {
     }
   };
 
-  // --- [MỚI] MỞ HỘP THOẠI XÁC NHẬN XÓA TẦNG ---
   const handleOpenDeleteFloorConfirm = (id: string, name: string) => {
     setConfirmModal({
       isOpen: true,
@@ -231,7 +230,6 @@ const BuildingConfig = () => {
     });
   };
 
-  // --- [MỚI] MỞ HỘP THOẠI XÁC NHẬN XÓA LOẠI PHÒNG ---
   const handleOpenDeleteTypeConfirm = (id: string, name: string) => {
     setConfirmModal({
       isOpen: true,
@@ -241,7 +239,6 @@ const BuildingConfig = () => {
     });
   };
 
-  // --- [MỚI] THỰC THI HÀNH ĐỘNG SAU KHI XÁC NHẬN ---
   const executeConfirmAction = async () => {
     if (!confirmModal.targetId) return;
 
@@ -442,36 +439,57 @@ const BuildingConfig = () => {
               <Plus size={16} /> Thêm tầng
             </button>
           </div>
-          <div className="floor-grid">
-            {floors.map((floor) => (
-              <div key={floor._id} className="floor-card">
-                <div className="floor-card-header">
-                  <span className="floor-icon-bg">
-                    <Layers size={24} />
-                  </span>
-                  <button className="btn-icon">
-                    <MoreVertical size={16} />
-                  </button>
-                </div>
-                <div className="floor-info">
-                  <h4>{floor.name}</h4>
-                  {floor.description && (
-                    <p className="floor-desc" title={floor.description}>
-                      {floor.description}
-                    </p>
-                  )}
-                  <p className="floor-meta">
-                    <BedDouble size={14} style={{ marginRight: 4 }} />
-                    {floor.roomCount || 0} phòng
-                  </p>
-                </div>
-                <div className="floor-actions">
-                  <button className="btn-action edit" onClick={() => handleOpenFloorModal(floor)}>Sửa</button>
-                  {/* Dùng Modal Custom thay cho window.confirm */}
-                  <button className="btn-action delete" onClick={() => handleOpenDeleteFloorConfirm(floor._id, floor.name)}>Xóa</button>
-                </div>
+          
+          {/* --- [SỬA ĐỔI] CHUYỂN DANH SÁCH TẦNG SANG DẠNG BẢNG --- */}
+          <div className="table-wrapper">
+            <table className="config-table">
+              <thead>
+                <tr>
+                  <th>Tên tầng</th>
+                  <th>Số phòng</th>
+                  <th>Mô tả</th>
+                  <th style={{ width: "160px", textAlign: "center" }}>Thao tác</th> 
+                </tr>
+              </thead>
+              <tbody>
+                {floors.map((floor) => (
+                  <tr key={floor._id}>
+                    <td>
+                      <div className="room-type-name">
+                        <Layers size={16} style={{ marginRight: '8px', color: '#3b82f6' }} />
+                        {floor.name}
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <BedDouble size={14} className="text-muted" />
+                        <span style={{ fontWeight: 500, color: '#334155' }}>
+                          {floor.roomCount || 0} phòng
+                        </span>
+                      </div>
+                    </td>
+                    <td className="text-muted">
+                      {floor.description || <span style={{ fontStyle: 'italic', color: '#cbd5e1' }}>Không có mô tả</span>}
+                    </td>
+                    <td>
+                      <div className="action-group">
+                        <button className="btn-icon-sm edit" onClick={() => handleOpenFloorModal(floor)} title="Sửa">
+                          <Edit size={16} />
+                        </button>
+                        <button className="btn-icon-sm delete" onClick={() => handleOpenDeleteFloorConfirm(floor._id, floor.name)} title="Xóa">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {floors.length === 0 && !loading && (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#64748b', fontStyle: 'italic', background: '#f8fafc', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }}>
+                Chưa có dữ liệu tầng nào.
               </div>
-            ))}
+            )}
           </div>
         </section>
 
@@ -520,7 +538,6 @@ const BuildingConfig = () => {
                         <button className="btn-icon-sm edit" onClick={() => handleOpenTypeModal(type)} title="Sửa">
                           <Edit size={16} />
                         </button>
-                        {/* Dùng Modal Custom thay cho window.confirm */}
                         <button className="btn-icon-sm delete" onClick={() => handleOpenDeleteTypeConfirm(type._id, type.typeName)} title="Xóa">
                           <Trash2 size={16} />
                         </button>
@@ -530,6 +547,11 @@ const BuildingConfig = () => {
                 ))}
               </tbody>
             </table>
+            {roomTypes.length === 0 && !loading && (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#64748b', fontStyle: 'italic', background: '#f8fafc', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }}>
+                Chưa có dữ liệu loại phòng.
+              </div>
+            )}
           </div>
         </section>
       </div>
@@ -868,7 +890,7 @@ const BuildingConfig = () => {
         </div>
       )}
 
-      {/* --- [MỚI] MODAL HỘP THOẠI XÁC NHẬN XÓA (THAY CHO WINDOW.CONFIRM) --- */}
+      {/* --- MODAL HỘP THOẠI XÁC NHẬN XÓA TÙY CHỈNH --- */}
       {confirmModal.isOpen && (
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }}>
