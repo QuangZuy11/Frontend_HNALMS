@@ -60,6 +60,7 @@ import ManagerInvoice from "./pages/InvoiceManagement/InvoiceManage";
 import ComplaintRequestList from "./pages/RequestManagement/ComplaintRequestlist";
 import TransferRequestsList from "./pages/RequestManagement/TransferRequestsList";
 import ViolationList from "./pages/ViolateManagement/ViolationList";
+import MoveOutRequestsList from "./pages/RequestManagement/MoveOutRequestsList";
 
 // Pages - Accountant Dashboard
 import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
@@ -91,6 +92,8 @@ import NotificationList from "./pages/NotificationManagement/Owner/NotificationL
 
 // Pages - Notification Management (Manager)
 import ManagerNotificationList from "./pages/NotificationManagement/Manager/ManagerNotificationList";
+import ReportPerformance from "./pages/ReportManagement/ReportPerformance";
+import ReportRepairMaintenance from "./pages/ReportManagement/ReportRepairMaintenance";
 
 // Pages - Contract Management
 import CreateContract from "./pages/ContractManagement/CreateContract";
@@ -281,6 +284,7 @@ function LayoutWrapper() {
             element={<ComplaintRequestList />}
           />
           <Route path="requests/transfers" element={<TransferRequestsList />} />
+          <Route path="/manager/requests/move-outs" element={<MoveOutRequestsList />} />
           <Route path="notifications" element={<ManagerNotificationList />} />
           <Route path="profile" element={<ManagerProfile />} />
           <Route path="contracts" element={<ContractList />} />
@@ -292,6 +296,8 @@ function LayoutWrapper() {
           <Route path="deposits/create/:id" element={<CreateDeposit />} />
           <Route path="invoices" element={<ManagerInvoice />} />
           <Route path="violations" element={<ViolationList />} />
+          <Route path="statistics/performance" element={<ReportPerformance />} />
+          <Route path="statistics/repairs" element={<ReportRepairMaintenance />} />
           {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
         </Route>
 

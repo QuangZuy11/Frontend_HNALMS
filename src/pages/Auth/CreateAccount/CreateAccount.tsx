@@ -165,7 +165,7 @@ export default function CreateAccount() {
               name="phoneNumber"
               value={formData.phoneNumber}
               onChange={handleChange}
-              placeholder="0901234567"
+              placeholder="Số điện thoại bắt đầu bằng số 0"
               required
             />
           </div>

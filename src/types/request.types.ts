@@ -75,3 +75,37 @@ export interface TransferRequestResponse {
   limit?: number;
   totalPages?: number;
 }
+
+// Move-out Request Types
+export interface MoveOutRequest {
+  _id: string;
+  requestCode?: string;
+  tenantId?: User | null;
+  contractId?: string;
+  roomId?: Room | null;
+  reason?: string;
+  moveOutDate?: string | null;
+  status: 'Requested' | 'Approved' | 'Rejected' | 'Completed' | 'Cancelled';
+  managerNote?: string;
+  rejectReason?: string;
+  completedAt?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface MoveOutRequestFilters {
+  status?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface MoveOutRequestResponse {
+  success: boolean;
+  message: string;
+  data?: MoveOutRequest | MoveOutRequest[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}

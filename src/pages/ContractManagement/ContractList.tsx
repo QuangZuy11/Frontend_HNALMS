@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FileText, Home, Clock, Building } from "lucide-react";
+import { FileText, Home, Clock, Building, Eye, PlusCircle                                                         } from "lucide-react";
 
 // Floor Maps
 import FloorMap from "../RoomManagement/RoomList/components/FloorMap";
@@ -13,12 +13,38 @@ import "./ContractFloorMap.css";
 
 const API_URL = "http://localhost:9999/api";
 
+interface RoomActionPopup {
+  show: boolean;
+  room: any;
+  position: { x: number; y: number };
+  futureContractId?: string;
+}
+
 const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
   const navigate = useNavigate();
   const [rooms, setRooms] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
   const [floors, setFloors] = useState<any[]>([]);
   const [activeFloorTab, setActiveFloorTab] = useState(0);
+  const [actionPopup, setActionPopup] = useState<RoomActionPopup>({
+    show: false,
+    room: null,
+    position: { x: 0, y: 0 },
+  });
+  const popupRef = useRef<HTMLDivElement>(null);
+
+  // Close popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
+        setActionPopup({ show: false, room: null, position: { x: 0, y: 0 } });
+      }
+    };
+    if (actionPopup.show) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [actionPopup.show]);
 
   useEffect(() => {
     // Fetch rooms, contracts, and floors in parallel
@@ -29,6 +55,8 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
     ])
       .then(([roomsRes, contractsRes, floorsRes]) => {
         const rawRooms = roomsRes.data.data || [];
+        const allContracts = contractsRes.data.data || [];
+
         const mappedRooms = rawRooms.map((room: any) => {
           let priceNum = 0;
           if (
@@ -43,6 +71,16 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
             priceNum = room.price;
           }
 
+          // Find future contracts for this room (active but startDate > today)
+          const futureContract = allContracts.find((c: any) => {
+            const roomId = c.roomId?._id || c.roomId;
+            return (
+              roomId === room._id &&
+              c.status === "active" &&
+              new Date(c.startDate) > new Date()
+            );
+          });
+
           return {
             ...room,
             price: priceNum,
@@ -51,12 +89,16 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
                 ? `${(priceNum / 1000000).toFixed(1)}M`
                 : "Chưa có giá",
             floorLabel: room.floorId?.name || "N/A",
+            hasFloatingDeposit: room.hasFloatingDeposit || false,
+            contractStartDate: room.contractStartDate || null,
+            futureContractId: futureContract?._id || null,
+            futureContractStartDate: futureContract?.startDate || room.contractStartDate || null,
           };
         });
         setRooms(mappedRooms);
 
         if (contractsRes.data.success) {
-          setContracts(contractsRes.data.data || []);
+          setContracts(allContracts);
         }
 
         const rawFloors = floorsRes.data.data || floorsRes.data || [];
@@ -65,29 +107,60 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
       .catch((err) => console.error("Error fetching data:", err));
   }, []);
 
-  // Build a map: roomId -> contractId (only active contracts)
+  // Build a map: roomId -> contractId (only active contracts that have started)
   const roomContractMap: Record<string, string> = {};
   contracts.forEach((c: any) => {
-    if (c.status === "active" && c.roomId?._id) {
-      roomContractMap[c.roomId._id] = c._id;
+    const roomId = c.roomId?._id || c.roomId;
+    if (c.status === "active" && roomId && new Date(c.startDate) <= new Date()) {
+      roomContractMap[roomId] = c._id;
     }
   });
 
   // When a room is clicked:
+  // - Deposited + future contract → show popup with options
   // - Has active contract → go to contract detail
   // - Available/Deposited → go to create contract
-  const handleRoomSelect = (room: any) => {
+  const handleRoomSelect = (room: any, event?: React.MouseEvent) => {
+    // Case 1: Room is Deposited AND has future contract → show popup with 2 options
+    if (room.status === "Deposited" && room.futureContractId) {
+      const rect = (event?.currentTarget as HTMLElement)?.getBoundingClientRect();
+      const x = rect ? rect.left + rect.width / 2 : event?.clientX || 200;
+      const y = rect ? rect.top : event?.clientY || 200;
+
+      setActionPopup({
+        show: true,
+        room,
+        position: { x, y },
+        futureContractId: room.futureContractId,
+      });
+      return;
+    }
+
+    // Case 2: Room is Deposited or Available → go to create contract
+    if (!readOnly && (room.status === "Available" || room.status === "Deposited")) {
+      navigate("create", { state: { roomId: room._id } });
+      return;
+    }
+
+    // Case 3: Room has active contract (currently running) → view it
     const contractId = roomContractMap[room._id];
     if (contractId) {
-      // Room has active contract → view it
       navigate(`${contractId}`);
-    } else if (
-      !readOnly &&
-      (room.status === "Available" || room.status === "Deposited")
-    ) {
-      // Room is available → create new contract (only if not readOnly)
-      navigate("create", { state: { roomId: room._id } });
     }
+  };
+
+  const handleViewFutureContract = () => {
+    if (actionPopup.futureContractId) {
+      navigate(`${actionPopup.futureContractId}`);
+    }
+    setActionPopup({ show: false, room: null, position: { x: 0, y: 0 } });
+  };
+
+  const handleCreateNewContract = () => {
+    if (actionPopup.room) {
+      navigate("create", { state: { roomId: actionPopup.room._id } });
+    }
+    setActionPopup({ show: false, room: null, position: { x: 0, y: 0 } });
   };
 
   const activeContracts = contracts.filter(
@@ -164,20 +237,70 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
 
           const floorNameLower = floor.name.toLowerCase();
 
+          // Pass event to handleRoomSelect for popup positioning
+          const onRoomSelect = (room: any, e?: React.MouseEvent) => handleRoomSelect(room, e);
+
           if (floorNameLower.includes("2")) {
-             return <FloorMapLevel2 key={floor._id} rooms={floorRooms} onRoomSelect={handleRoomSelect} legendType="contract" />;
+             return <FloorMapLevel2 key={floor._id} rooms={floorRooms} onRoomSelect={onRoomSelect} legendType="contract" />;
           } else if (floorNameLower.includes("3")) {
-             return <FloorMapLevel3 key={floor._id} rooms={floorRooms} onRoomSelect={handleRoomSelect} legendType="contract" />;
+             return <FloorMapLevel3 key={floor._id} rooms={floorRooms} onRoomSelect={onRoomSelect} legendType="contract" />;
           } else if (floorNameLower.includes("4")) {
-             return <FloorMapLevel4 key={floor._id} rooms={floorRooms} onRoomSelect={handleRoomSelect} legendType="contract" />;
+             return <FloorMapLevel4 key={floor._id} rooms={floorRooms} onRoomSelect={onRoomSelect} legendType="contract" />;
           } else if (floorNameLower.includes("5")) {
-             return <FloorMapLevel5 key={floor._id} rooms={floorRooms} onRoomSelect={handleRoomSelect} legendType="contract" />;
+             return <FloorMapLevel5 key={floor._id} rooms={floorRooms} onRoomSelect={onRoomSelect} legendType="contract" />;
           }
 
           // Use default generic component for Level 1 and any newly added unknown floors
-          return <FloorMap key={floor._id} rooms={floorRooms} floorName={floor.name} onRoomSelect={handleRoomSelect} legendType="contract" />;
+          return <FloorMap key={floor._id} rooms={floorRooms} floorName={floor.name} onRoomSelect={onRoomSelect} legendType="contract" />;
         })}
       </div>
+
+      {/* Action Popup for rooms with multiple options */}
+      {actionPopup.show && actionPopup.room && (
+        <div
+          ref={popupRef}
+          className="room-action-popup"
+          style={{
+            position: "fixed",
+            left: actionPopup.position.x,
+            top: actionPopup.position.y - 10,
+            transform: "translate(-50%, -100%)",
+            zIndex: 1000,
+          }}
+        >
+          <div className="popup-arrow"></div>
+          <div className="popup-header">
+            <span className="popup-room-name">{actionPopup.room.name}</span>
+            <span className="popup-badge">2 lựa chọn</span>
+          </div>
+          <div className="popup-options">
+            <button
+              className="popup-option option-view"
+              onClick={handleViewFutureContract}
+            >
+              <Eye size={16} />
+              <div className="option-text">
+                <span className="option-title">Xem hợp đồng đã ký</span>
+                <span className="option-desc">
+                  Chưa đến ngày sử dụng ({actionPopup.room.futureContractStartDate
+                    ? new Date(actionPopup.room.futureContractStartDate).toLocaleDateString("vi-VN")
+                    : "N/A"})
+                </span>
+              </div>
+            </button>
+            <button
+              className="popup-option option-create"
+              onClick={handleCreateNewContract}
+            >
+              <PlusCircle size={16} />
+              <div className="option-text">
+                <span className="option-title">Ký hợp đồng mới</span>
+                <span className="option-desc">Cho khách cọc chưa có hợp đồng</span>
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -75,7 +75,7 @@ const MENU_ITEMS = [
       { title: "Yêu cầu bảo trì", path: "/manager/requests/maintenance", icon: <HardHat size={16} /> },
       { title: "Danh sách khiếu nại", path: "/manager/requests/complaints", icon: <AlertTriangle size={16} /> },
       { title: "Yêu cầu chuyển phòng", path: "/manager/requests/transfers", icon: <ArrowRightLeft size={16} /> },
-      { title: "Yêu cầu trả phòng", path: "/manager/requests/checkouts", icon: <LogOut size={16} /> },
+      { title: "Yêu cầu trả phòng", path: "/manager/requests/move-outs", icon: <LogOut size={16} /> },
     ]
   },
   {
@@ -87,10 +87,10 @@ const MENU_ITEMS = [
   {
     title: "Thống Kê",
     icon: <BarChart3 size={20} />,
-    path: "/owner/reports",
+    path: "/manager/statistics/performance",
     subItems: [
-      { title: "Hiệu suất", path: "/owner/reports/occupancy", icon: <Activity size={16} /> },
-      { title: "Sửa chữa & Bảo trì", path: "/owner/reports/maintenance", icon: <Wrench size={16} /> },
+      { title: "Hiệu suất", path: "/manager/statistics/performance", icon: <Activity size={16} /> },
+      { title: "Sửa chữa & Bảo trì", path: "/manager/statistics/repairs", icon: <Wrench size={16} /> },
     ]
   },
   {

@@ -111,6 +111,8 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const [roomBookServices, setRoomBookServices] = useState<any[]>([]);
   const [prepaidInvoice, setPrepaidInvoice] = useState<any | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
+  const [availableContracts, setAvailableContracts] = useState<any[]>([]);
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -178,13 +180,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     return floors.find((f) => f._id === idOrObj)?.name || "---";
   };
 
-  const getContractForRoom = (roomId: string) => {
-    return (
-      contracts.find(
-        (c: any) => c.status === "active" && c.roomId?._id === roomId,
-      ) || null
-    );
-  };
+
 
   const getDepositForRoom = (roomId: string) => {
     return (
@@ -383,34 +379,65 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     setShowModal(true);
   };
 
+  const fetchContractDetails = async (contractId: string) => {
+    try {
+      setLoadingDetail(true);
+      setRoomBookServices([]);
+      setPrepaidInvoice(null);
+      
+      const [contractRes, incurredRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/contracts/${contractId}`),
+        axios.get(`${API_BASE_URL}/invoices/incurred?type=prepaid`).catch(() => ({ data: { success: false, data: [] } })),
+      ]);
+      if (contractRes.data.success && contractRes.data.data?.bookServices) {
+        setRoomBookServices(contractRes.data.data.bookServices);
+      }
+      if (incurredRes.data.success) {
+        const allIncurred: any[] = incurredRes.data.data || [];
+        const prepaid = allIncurred.find(
+          (inv: any) => inv.contractId === contractId || inv.contractId?._id === contractId
+        );
+        setPrepaidInvoice(prepaid || null);
+      }
+    } catch (err) {
+      console.error("Error fetching contract detail:", err);
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  const handleContractChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const contractId = e.target.value;
+    setSelectedContractId(contractId);
+    if (contractId) {
+      fetchContractDetails(contractId);
+    }
+  };
+
   const handleViewDetail = async (room: Room) => {
     setViewingRoom(room);
     setShowDetailModal(true);
     setRoomBookServices([]);
     setPrepaidInvoice(null);
-    const contract = getContractForRoom(room._id);
-    if (contract) {
-      try {
-        setLoadingDetail(true);
-        const [contractRes, incurredRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/contracts/${contract._id}`),
-          axios.get(`${API_BASE_URL}/invoices/incurred?type=prepaid`).catch(() => ({ data: { success: false, data: [] } })),
-        ]);
-        if (contractRes.data.success && contractRes.data.data?.bookServices) {
-          setRoomBookServices(contractRes.data.data.bookServices);
-        }
-        if (incurredRes.data.success) {
-          const allIncurred: any[] = incurredRes.data.data || [];
-          const prepaid = allIncurred.find(
-            (inv: any) => inv.contractId === contract._id || inv.contractId?._id === contract._id
-          );
-          setPrepaidInvoice(prepaid || null);
-        }
-      } catch (err) {
-        console.error("Error fetching contract detail:", err);
-      } finally {
-        setLoadingDetail(false);
-      }
+    setSelectedContractId(null);
+    
+    // Get all relevant contracts for the room
+    const roomContracts = contracts.filter(
+      (c: any) => (c.status === "active" || c.status === "Pending") && (c.roomId?._id === room._id || c.roomId === room._id)
+    );
+    // Sort so active is first, or by startDate
+    roomContracts.sort((a, b) => {
+      if (a.status === "active" && b.status !== "active") return -1;
+      if (b.status === "active" && a.status !== "active") return 1;
+      return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+    });
+    
+    setAvailableContracts(roomContracts);
+    
+    if (roomContracts.length > 0) {
+      const defaultContract = roomContracts[0];
+      setSelectedContractId(defaultContract._id);
+      await fetchContractDetails(defaultContract._id);
     }
   };
 
@@ -1099,7 +1126,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       {showDetailModal &&
         viewingRoom &&
         (() => {
-          const roomContract = getContractForRoom(viewingRoom._id);
+          const roomContract = availableContracts.find(c => c._id === selectedContractId) || null;
           return (
             <div className="rd-overlay" style={{ zIndex: 1100 }}>
               <div className="rd-content">
@@ -1210,6 +1237,21 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                           <FileText size={16} />
                           <span>Hợp đồng</span>
                         </div>
+                        {availableContracts.length > 1 && (
+                          <div className="rd-contract-selector" style={{ marginBottom: "12px" }}>
+                            <select 
+                              value={selectedContractId || ""}
+                              onChange={handleContractChange}
+                              style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1", outline: "none", fontSize: "14px", fontWeight: "500", color: "#1e293b" }}
+                            >
+                              {availableContracts.map((c: any) => (
+                                <option key={c._id} value={c._id}>
+                                  Hợp đồng {c.contractCode} - {c.status === "active" ? "Đang hiệu lực" : c.status === "Pending" ? "Sắp tới" : c.status} ({formatDate(c.startDate)} ➔ {formatDate(c.endDate)})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
                         <div className="rd-grid">
                           <div className="rd-field">
                             <label>Mã HĐ:</label>

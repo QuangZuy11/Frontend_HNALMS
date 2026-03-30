@@ -651,7 +651,7 @@ export default function OwnerAccountList() {
                 </div>
                 <div className="form-group">
                   <label htmlFor="create-phoneNumber">Số điện thoại *</label>
-                  <input type="tel" id="create-phoneNumber" name="phoneNumber" value={createFormData.phoneNumber} onChange={handleCreateChange} placeholder="0901234567" required />
+                  <input type="tel" id="create-phoneNumber" name="phoneNumber" value={createFormData.phoneNumber} onChange={handleCreateChange} placeholder="Số điện thoại bắt đầu bằng số 0" required />
                 </div>
                 <div className="form-group">
                   <label htmlFor="create-email">Email *</label>
