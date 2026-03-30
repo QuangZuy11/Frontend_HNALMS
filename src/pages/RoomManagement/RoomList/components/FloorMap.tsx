@@ -20,6 +20,7 @@ interface Room {
   isShortTermAvailable?: boolean; // true if room can accept short-term rental
   futureContractId?: string; // ID of future contract if exists
   futureContractStartDate?: string;
+  hasFutureInactiveContract?: boolean; // true: contract inactive (>30 days) → show green label, no !
   [key: string]: any;
 }
 
@@ -315,14 +316,15 @@ export default function FloorMap({
               const isShortTermAvailable = room.isShortTermAvailable || false;
               const hasFloatingDeposit = room.hasFloatingDeposit || false;
               const hasFutureContract = !!(room.futureContractId || room.contractStartDate);
+              const hasFutureInactiveContract = room.hasFutureInactiveContract || false;
 
               // Special case: room is Deposited AND has future contract
               const hasMultiOptions = isDeposited && hasFutureContract;
 
-              // Visual: show as available if truly available OR short-term available
-              const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFutureContract);
-              // Visual: show deposit badge if deposited (but not multi-options - those show different indicator)
-              const showDepositedBadge = isDeposited && !hasMultiOptions;
+              // Inactive contract (>30 days): treat as available, green label, no !
+              const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFutureContract) || hasFutureInactiveContract;
+              // Visual: show deposit badge if deposited + has floating deposit (NOT for inactive contracts)
+              const showDepositedBadge = isDeposited && !hasMultiOptions && !hasFutureInactiveContract;
 
               // Check if highlighted
               const isGhosted =
@@ -342,7 +344,7 @@ export default function FloorMap({
                   <div
                     className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""} ${hasMultiOptions ? "has-multi-options" : ""}`}
                     onClick={(e) => handleRoomClick(room._id, e)}
-                    title={`${room.name} - ${room.roomTypeId?.typeName || room.roomTypeId?.name || ""}${hasMultiOptions ? " (Có 2 lựa chọn)" : isShortTermAvailable && !hasFloatingDeposit ? " (Có thể thuê ngắn hạn)" : ""}`}
+                    title={`${room.name} - ${room.roomTypeId?.typeName || room.roomTypeId?.name || ""}${hasFutureInactiveContract ? " (Có HĐ inactive, đặt cọc được)" : hasMultiOptions ? " (Có 2 lựa chọn)" : isShortTermAvailable && !hasFloatingDeposit ? " (Có thể thuê ngắn hạn)" : ""}`}
                     data-color={typeColor}
                     style={
                       showAsAvailable || isDeposited
@@ -381,8 +383,14 @@ export default function FloorMap({
                       </span>
                     )}
                     <span className="room-node-name">{formatRoomLabel(room.name)}</span>
-                    {/* Short-term available: show "trống đến → DD/MM/YY" label */}
-                    {isShortTermAvailable && !hasFloatingDeposit && room.contractStartDate && (
+                    {/* Inactive contract (>30 days): green label "Trống đến → DD/MM/YYYY" */}
+                    {hasFutureInactiveContract && room.contractStartDate && (
+                      <span className="room-inactive-label">
+                        Trống đến → {new Date(room.contractStartDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                      </span>
+                    )}
+                    {/* Short-term available: show "trống đến → DD/MM/YY" label (KHÔNG khi có inactive contract) */}
+                    {isShortTermAvailable && !hasFloatingDeposit && !hasFutureInactiveContract && room.contractStartDate && (
                       <span className="room-expiry-label" style={{ fontSize: "0.6rem", color: "#fff", fontWeight: 700, background: "rgba(16, 185, 129, 0.9)", padding: "2px 4px", borderRadius: "3px", lineHeight: 1.2 }}>
                         Trống đến → {new Date(room.contractStartDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "2-digit" })}
                       </span>
