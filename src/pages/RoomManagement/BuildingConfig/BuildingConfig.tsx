@@ -536,194 +536,228 @@ const BuildingConfig = () => {
       </div>
 
       {/* =========================================================================
-          CÁC MODAL ĐÃ ĐƯỢC CẬP NHẬT: Thêm z-index và tính năng click ra ngoài để đóng 
+          CÁC MODAL ĐÃ ĐƯỢC CẬP NHẬT: Thêm scroll-body để ko bị tràn nút Lưu
           ========================================================================= */}
 
       {/* 1. Modal Thêm/Sửa Tầng */}
       {showFloorModal && (
         <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => setShowFloorModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+          <div className="modal-content" style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ flexShrink: 0 }}>
               <h3>{editingFloor ? "Sửa Tầng" : "Thêm Tầng Mới"}</h3>
               <button onClick={() => setShowFloorModal(false)}><X size={20} /></button>
             </div>
-            <form onSubmit={handleSaveFloor}>
-              <div className="form-group">
-                <label>Tên tầng</label>
-                <input
-                  type="text"
-                  value={floorName}
-                  onChange={(e) => setFloorName(e.target.value)}
-                  required
-                  placeholder="Ví dụ: Tầng 1"
-                />
+            <form onSubmit={handleSaveFloor} style={{ display: 'flex', flexDirection: 'column', margin: 0, padding: 0, flex: 1, overflow: 'hidden' }}>
+              <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+                <div className="form-group">
+                  <label>Tên tầng</label>
+                  <input
+                    type="text"
+                    value={floorName}
+                    onChange={(e) => setFloorName(e.target.value)}
+                    required
+                    placeholder="Ví dụ: Tầng 1"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Mô tả</label>
+                  <textarea
+                    rows={2}
+                    value={floorDesc}
+                    onChange={(e) => setFloorDesc(e.target.value)}
+                    placeholder="Ghi chú thêm..."
+                  />
+                </div>
               </div>
-              <div className="form-group">
-                <label>Mô tả</label>
-                <textarea
-                  rows={2}
-                  value={floorDesc}
-                  onChange={(e) => setFloorDesc(e.target.value)}
-                  placeholder="Ghi chú thêm..."
-                />
-              </div>
-              <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowFloorModal(false)}>Hủy</button>
-                <button type="submit" className="btn-primary">Lưu lại</button>
+              <div 
+                className="modal-actions" 
+                style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', padding: '16px 24px', borderTop: '1px solid #e2e8f0', margin: 0, flexShrink: 0, background: '#fff' }}
+              >
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  onClick={() => setShowFloorModal(false)}
+                  style={{ width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 0, margin: 0, boxSizing: 'border-box' }}
+                >
+                  Hủy
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn-primary"
+                  style={{ width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 0, margin: 0, boxSizing: 'border-box' }}
+                >
+                  Lưu lại
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* 2. Modal Thêm/Sửa Loại Phòng */}
+      {/* 2. Modal Thêm/Sửa Loại Phòng (ĐÃ FIX LỖI MẤT NÚT LƯU) */}
       {showTypeModal && (
         <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => setShowTypeModal(false)}>
-          <div className="modal-content" style={{ maxWidth: '800px', width: '90%' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+          <div className="modal-content" style={{ maxWidth: '800px', width: '90%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ flexShrink: 0 }}>
               <h3>{editingType ? "Sửa Loại Phòng" : "Thêm Loại Phòng"}</h3>
               <button onClick={() => setShowTypeModal(false)}><X size={20} /></button>
             </div>
-            <form onSubmit={handleSaveType}>
-              <div className="form-group">
-                <label>Tên loại phòng</label>
-                <input
-                  type="text"
-                  value={typeForm.typeName}
-                  onChange={(e) => setTypeForm({ ...typeForm, typeName: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="form-row">
+            
+            <form onSubmit={handleSaveType} style={{ display: 'flex', flexDirection: 'column', margin: 0, padding: 0, flex: 1, overflow: 'hidden' }}>
+              <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
                 <div className="form-group">
-                  <label>Giá phòng</label>
+                  <label>Tên loại phòng</label>
                   <input
-                    type="number"
-                    value={typeForm.currentPrice}
-                    onChange={(e) => setTypeForm({ ...typeForm, currentPrice: Number(e.target.value) })}
+                    type="text"
+                    value={typeForm.typeName}
+                    onChange={(e) => setTypeForm({ ...typeForm, typeName: e.target.value })}
                     required
                   />
                 </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Giá phòng</label>
+                    <input
+                      type="number"
+                      value={typeForm.currentPrice}
+                      onChange={(e) => setTypeForm({ ...typeForm, currentPrice: Number(e.target.value) })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Số người tối đa</label>
+                    <input
+                      type="number"
+                      value={typeForm.personMax}
+                      onChange={(e) => setTypeForm({ ...typeForm, personMax: Number(e.target.value) })}
+                      required
+                    />
+                  </div>
+                </div>
                 <div className="form-group">
-                  <label>Số người tối đa</label>
-                  <input
-                    type="number"
-                    value={typeForm.personMax}
-                    onChange={(e) => setTypeForm({ ...typeForm, personMax: Number(e.target.value) })}
-                    required
+                  <label>Mô tả</label>
+                  <textarea
+                    rows={2}
+                    value={typeForm.description}
+                    onChange={(e) => setTypeForm({ ...typeForm, description: e.target.value })}
                   />
                 </div>
-              </div>
-              <div className="form-group">
-                <label>Mô tả</label>
-                <textarea
-                  rows={2}
-                  value={typeForm.description}
-                  onChange={(e) => setTypeForm({ ...typeForm, description: e.target.value })}
-                />
-              </div>
-              
-              <div className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  Thư viện ảnh minh họa ({imageSlots.filter(s => s !== null).length}/7)
-                  <span style={{ color: '#ef4444', fontSize: '13px', fontWeight: 'normal' }}>
-                    *Bắt buộc upload đủ 7 ô ảnh
-                  </span>
-                </label>
                 
-                <div style={{ fontSize: '13px', color: '#0369a1', background: '#e0f2fe', padding: '8px 12px', borderRadius: '6px', marginBottom: '12px', border: '1px solid #bae6fd' }}>
-                  <strong>*Lưu ý quan trọng:</strong> Vui lòng upload 7 ảnh theo đúng thứ tự: <br/>
-                  (1) Ảnh tổng quan, (2) Ảnh bếp, (3) Ảnh giường, (4) Ảnh bàn học, (5) Ảnh ban công (view), (6) Ảnh nhà vệ sinh, (7) Ảnh tiện ích khác.
-                </div>
-                
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', 
-                  gap: '16px', 
-                  marginTop: '12px' 
-                }}>
-                  {IMAGE_LABELS.map((label, index) => {
-                    const slot = imageSlots[index];
-                    return (
-                      <div 
-                        key={index} 
-                        style={{ 
-                          border: slot ? 'none' : '2px dashed #cbd5e1', 
-                          borderRadius: '8px', 
-                          height: '140px', 
-                          position: 'relative', 
-                          cursor: 'pointer', 
-                          overflow: 'hidden', 
-                          display: 'flex', 
-                          flexDirection: 'column', 
-                          alignItems: 'center', 
-                          justifyContent: 'center', 
-                          backgroundColor: slot ? '#fff' : '#f8fafc',
-                          boxShadow: slot ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
-                          transition: 'all 0.2s'
-                        }} 
-                        onClick={() => document.getElementById(`slot-${index}`)?.click()}
-                      >
-                        <input 
-                          type="file" 
-                          id={`slot-${index}`} 
-                          style={{ display: 'none' }} 
-                          accept="image/*" 
-                          onChange={(e) => { 
-                            if (e.target.files && e.target.files[0]) {
-                              handleSlotFileChange(index, e.target.files[0]); 
-                            }
-                            e.target.value = ''; 
+                <div className="form-group">
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    Thư viện ảnh minh họa ({imageSlots.filter(s => s !== null).length}/7)
+                    <span style={{ color: '#ef4444', fontSize: '13px', fontWeight: 'normal' }}>
+                      *Bắt buộc upload đủ 7 ô ảnh
+                    </span>
+                  </label>
+                  
+                  <div style={{ fontSize: '13px', color: '#0369a1', background: '#e0f2fe', padding: '8px 12px', borderRadius: '6px', marginBottom: '12px', border: '1px solid #bae6fd' }}>
+                    <strong>*Lưu ý quan trọng:</strong> Vui lòng upload 7 ảnh theo đúng thứ tự: <br/>
+                    (1) Ảnh tổng quan, (2) Ảnh bếp, (3) Ảnh giường, (4) Ảnh bàn học, (5) Ảnh ban công (view), (6) Ảnh nhà vệ sinh, (7) Ảnh tiện ích khác.
+                  </div>
+                  
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', 
+                    gap: '16px', 
+                    marginTop: '12px' 
+                  }}>
+                    {IMAGE_LABELS.map((label, index) => {
+                      const slot = imageSlots[index];
+                      return (
+                        <div 
+                          key={index} 
+                          style={{ 
+                            border: slot ? 'none' : '2px dashed #cbd5e1', 
+                            borderRadius: '8px', 
+                            height: '140px', 
+                            position: 'relative', 
+                            cursor: 'pointer', 
+                            overflow: 'hidden', 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            backgroundColor: slot ? '#fff' : '#f8fafc',
+                            boxShadow: slot ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+                            transition: 'all 0.2s'
                           }} 
-                        />
-                        {slot ? (
-                          <>
-                            <img 
-                              src={slot.url || slot.preview} 
-                              alt={label}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                            />
-                            <button 
-                              type="button" 
-                              onClick={(e) => handleRemoveSlot(index, e)} 
-                              style={{ 
-                                position: 'absolute', top: 6, right: 6, 
-                                backgroundColor: '#ef4444', color: '#ffffff', 
-                                border: 'none', borderRadius: '50%', width: 24, height: 24, 
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: 'pointer', zIndex: 10, padding: 0 
-                              }}
-                            > 
-                              <X size={14} color="#ffffff" strokeWidth={3} /> 
-                            </button>
-                            <div style={{ 
-                              position: 'absolute', bottom: 0, left: 0, right: 0, 
-                              background: 'rgba(15, 23, 42, 0.75)', color: 'white', 
-                              fontSize: '12px', fontWeight: 500, textAlign: 'center', padding: '6px' 
-                            }}>
-                              {label}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <Upload size={28} color="#94a3b8" />
-                            <span style={{ 
-                              fontSize: '12px', color: '#475569', marginTop: '12px', 
-                              textAlign: 'center', padding: '0 8px', fontWeight: 500 
-                            }}>
-                              + {label}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
+                          onClick={() => document.getElementById(`slot-${index}`)?.click()}
+                        >
+                          <input 
+                            type="file" 
+                            id={`slot-${index}`} 
+                            style={{ display: 'none' }} 
+                            accept="image/*" 
+                            onChange={(e) => { 
+                              if (e.target.files && e.target.files[0]) {
+                                handleSlotFileChange(index, e.target.files[0]); 
+                              }
+                              e.target.value = ''; 
+                            }} 
+                          />
+                          {slot ? (
+                            <>
+                              <img 
+                                src={slot.url || slot.preview} 
+                                alt={label}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                              />
+                              <button 
+                                type="button" 
+                                onClick={(e) => handleRemoveSlot(index, e)} 
+                                style={{ 
+                                  position: 'absolute', top: 6, right: 6, 
+                                  backgroundColor: '#ef4444', color: '#ffffff', 
+                                  border: 'none', borderRadius: '50%', width: 24, height: 24, 
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  cursor: 'pointer', zIndex: 10, padding: 0 
+                                }}
+                              > 
+                                <X size={14} color="#ffffff" strokeWidth={3} /> 
+                              </button>
+                              <div style={{ 
+                                position: 'absolute', bottom: 0, left: 0, right: 0, 
+                                background: 'rgba(15, 23, 42, 0.75)', color: 'white', 
+                                fontSize: '12px', fontWeight: 500, textAlign: 'center', padding: '6px' 
+                              }}>
+                                {label}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <Upload size={28} color="#94a3b8" />
+                              <span style={{ 
+                                fontSize: '12px', color: '#475569', marginTop: '12px', 
+                                textAlign: 'center', padding: '0 8px', fontWeight: 500 
+                              }}>
+                                + {label}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
-              <div className="modal-actions" style={{ marginTop: '24px' }}>
-                <button type="button" className="btn-secondary" onClick={() => setShowTypeModal(false)}>Hủy</button>
-                <button type="submit" className="btn-primary">Lưu lại</button>
+              <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', padding: '16px 24px', borderTop: '1px solid #e2e8f0', margin: 0, flexShrink: 0, background: '#fff' }}>
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  onClick={() => setShowTypeModal(false)}
+                  style={{ width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 0, margin: 0, boxSizing: 'border-box' }}
+                >
+                  Hủy
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn-primary" 
+                  style={{ width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 0, margin: 0, boxSizing: 'border-box' }}
+                >
+                  Lưu lại
+                </button>
               </div>
             </form>
           </div>
@@ -733,13 +767,13 @@ const BuildingConfig = () => {
       {/* 3. Modal Xem Chi Tiết Loại Phòng */}
       {showDetailModal && viewingType && (
         <div className="modal-overlay" style={{ zIndex: 1050 }} onClick={() => setShowDetailModal(false)}>
-          <div className="modal-content" style={{ maxWidth: '800px', width: '90%' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+          <div className="modal-content" style={{ maxWidth: '800px', width: '90%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ flexShrink: 0 }}>
               <h3>Chi tiết Loại phòng: {viewingType.typeName}</h3>
               <button onClick={() => setShowDetailModal(false)}><X size={20} /></button>
             </div>
             
-            <div className="detail-body">
+            <div className="detail-body" style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px', background: '#f8fafc', padding: '16px', borderRadius: '8px' }}>
                 <div className="info-group">
                   <label style={{ fontSize: '13px', color: '#64748b', display: 'block', marginBottom: '4px' }}>Tên loại phòng</label>
@@ -810,9 +844,24 @@ const BuildingConfig = () => {
               </div>
             </div>
 
-            <div className="modal-actions" style={{ marginTop: '24px' }}>
-              <button type="button" className="btn-secondary" onClick={() => setShowDetailModal(false)}>Đóng</button>
-              <button type="button" className="btn-primary" onClick={() => { setShowDetailModal(false); handleOpenTypeModal(viewingType); }}>
+            <div 
+              className="modal-actions" 
+              style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', padding: '16px 24px', borderTop: '1px solid #e2e8f0', margin: 0, flexShrink: 0, background: '#fff' }}
+            >
+              <button 
+                type="button" 
+                className="btn-secondary" 
+                onClick={() => setShowDetailModal(false)}
+                style={{ width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 0, margin: 0, boxSizing: 'border-box' }}
+              >
+                Đóng
+              </button>
+              <button 
+                type="button" 
+                className="btn-primary" 
+                onClick={() => { setShowDetailModal(false); handleOpenTypeModal(viewingType); }}
+                style={{ width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', padding: 0, margin: 0, boxSizing: 'border-box' }}
+              >
                 <Edit size={16} /> Chỉnh sửa
               </button>
             </div>
@@ -823,8 +872,8 @@ const BuildingConfig = () => {
       {/* 4. Modal Lịch Sử Giá */}
       {showHistoryModal && viewingHistoryType && (
         <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={() => setShowHistoryModal(false)}>
-          <div className="modal-content" style={{ maxWidth: "600px" }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+          <div className="modal-content" style={{ maxWidth: "600px", maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ flexShrink: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <CalendarClock size={24} className="text-primary" />
                 <h3>Lịch sử thay đổi giá: {viewingHistoryType.typeName}</h3>
@@ -832,7 +881,7 @@ const BuildingConfig = () => {
               <button onClick={() => setShowHistoryModal(false)}><X size={20} /></button>
             </div>
 
-            <div className="detail-body">
+            <div className="detail-body" style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
               {viewingHistoryType.histories && viewingHistoryType.histories.length > 0 ? (
                 <div className="history-list">
                   <div className="history-header-row">
@@ -855,7 +904,7 @@ const BuildingConfig = () => {
               )}
             </div>
 
-            <div className="modal-actions">
+            <div className="modal-actions" style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', margin: 0, flexShrink: 0, background: '#fff' }}>
               <button type="button" className="btn-secondary" onClick={() => setShowHistoryModal(false)}>Đóng</button>
             </div>
           </div>
