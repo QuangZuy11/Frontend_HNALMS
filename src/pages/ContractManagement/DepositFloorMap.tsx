@@ -27,6 +27,8 @@ interface Room {
     currentPrice?: any;
   };
   price?: number;
+  contractStartDate?: string; // Ngày bắt đầu hợp đồng tương lai (nếu có)
+  contractEndDate?: string;   // Ngày kết thúc hợp đồng
   [key: string]: any;
 }
 
@@ -126,8 +128,32 @@ const DepositFloorMap = () => {
     if (room.status === "Available" || room.status === "Trống") {
       navigate(`${basePath}/deposits/create/${room._id}`);
     } else if (room.status === "Deposited") {
-      // Room already has deposit, maybe show info or navigate to deposit details
-      toastr.warning("Phòng này đã có tiền cọc. Vui lòng chọn phòng trống.");
+      // Kiểm tra nếu phòng có hợp đồng tương lai > 30 ngày từ hôm nay
+      // thì cho phép cọc tiếp (short-term rental)
+      if (room.contractStartDate) {
+        const futureStartDate = new Date(room.contractStartDate);
+        const today = new Date();
+        const daysUntilFutureContract = Math.ceil(
+          (futureStartDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        if (daysUntilFutureContract >= 30) {
+          // Cho phép cọc tiếp cho giai đoạn ngắn hạn
+          const futureDate = futureStartDate.toLocaleDateString("vi-VN");
+          toastr.info(
+            `Phòng này đã có người đặt cọc từ ngày ${futureDate}. Bạn có thể đặt cọc cho giai đoạn ngắn hạn trước đó.`
+          );
+          navigate(`${basePath}/deposits/create/${room._id}`);
+        } else {
+          // Thời gian quá ngắn, không cho phép cọc
+          toastr.warning(
+            `Phòng này đã có người đặt cọc và sẽ có người vào ở trong vòng ${daysUntilFutureContract} ngày. Không thể tạo cọc mới.`
+          );
+        }
+      } else {
+        // Phòng Deposited nhưng chưa ký hợp đồng (đang chờ ký)
+        toastr.warning("Phòng này đã có tiền cọc và đang chờ ký hợp đồng.");
+      }
     } else {
       // Room is occupied
       toastr.error("Phòng này đã có hợp đồng. Vui lòng chọn phòng trống để tạo cọc.");

@@ -1,0 +1,224 @@
+/* ==========================================================================
+   BÁO CÁO DOANH THU & DÒNG TIỀN (REVENUE REPORT)
+   ========================================================================== */
+
+.report-container {
+  padding: 24px;
+  background-color: #f8fafc;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* --- KHU VỰC HEADER & BỘ LỌC --- */
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end; /* Căn lề dưới cho tiêu đề và bộ lọc */
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.report-header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 24px;
+  line-height: 1.2; /* Tinh chỉnh line-height cho tiêu đề gọn */
+}
+
+.report-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  padding: 10px; /* Tăng nhẹ padding container cho thoáng */
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.report-actions span {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* --- NÚT BẤM VÀ INPUT CHUẨN KÍCH THƯỚC --- */
+/* Đặt chiều cao, padding và font chuẩn cho cả Input và Button */
+.date-input, .btn-primary, .btn-success {
+  box-sizing: border-box; /* Quan trọng nhất! Ép padding/border nằm bên trong */
+  height: 38px; /* Force chiều cao cố định để thẳng hàng tắp */
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  font-family: inherit;
+}
+
+/* Kiểu dáng cho Input Date */
+.date-input {
+  padding: 0 12px; /* Set padding ngang, chiều cao handle vertical */
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  outline: none;
+  background-color: transparent; /* Loại bỏ background mặc định của input date */
+}
+.date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}
+
+/* Kiểu dáng chung cho Button */
+.btn-primary, .btn-success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0 16px; /* Set padding ngang cho button */
+  color: white;
+}
+.btn-primary:hover { background: #2563eb; }
+.btn-success:hover { background: #059669; }
+
+/* Icon bên trong Button */
+.btn-primary svg, .btn-success svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+/* Màu sắc riêng cho từng nút */
+.btn-primary { background: #3b82f6; }
+.btn-success { background: #10b981; }
+
+
+/* --- KHU VỰC THẺ CÂN ĐỐI (BALANCE SHEET) --- */
+.balance-sheet {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  padding-bottom: 8px; /* Tránh bị cụt bóng đổ */
+}
+
+.balance-item {
+  flex: 1;
+  min-width: 200px;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.balance-item .label {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.balance-item .value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+}
+
+.balance-item small {
+  font-size: 13px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Màu sắc chỉ số */
+.text-blue { color: #2563eb !important; }
+.text-green { color: #16a34a !important; }
+.text-red { color: #ef4444 !important; }
+.text-orange { color: #d97706 !important; }
+
+/* Thẻ Net Cash Flow nổi bật */
+.balance-item.highlight {
+  background: #0f172a;
+  border-color: #0f172a;
+}
+.balance-item.highlight .label { color: #cbd5e1; }
+.balance-item.highlight .value { color: white !important; }
+
+/* Thẻ Công nợ rủi ro */
+.balance-item.warning {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+
+/* --- KHU VỰC BẢNG SAO KÊ CHI TIẾT (LEDGER TABLE) --- */
+.ledger-table-container {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow-x: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.ledger-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  min-width: 900px;
+}
+
+.ledger-table th {
+  background: #f8fafc;
+  padding: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.ledger-table td {
+  padding: 16px;
+  font-size: 14px;
+  color: #334155;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.ledger-table tr:last-child td {
+  border-bottom: none;
+}
+
+.ledger-table tr:hover {
+  background-color: #f8fafc;
+}
+
+/* --- NHÃN TRẠNG THÁI (TAGS) --- */
+.tag {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-block;
+  letter-spacing: 0.5px;
+}
+
+.tag-green {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.tag-red {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.tag-orange {
+  background: #ffedd5;
+  color: #b45309;
+}

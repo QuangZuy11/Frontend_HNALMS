@@ -47,9 +47,13 @@ function Badge({ className = "", variant = "default", ...props }) {
 
 // RoomCard Component
 export default function RoomCard({ room }) {
-  const statusLabel = room.status === "available" ? "Trống" : "Đã Thuê";
+  let statusLabel = room.status === "available" ? "Trống" : "Đã Thuê";
+  if (room.isShortTermAvailable) {
+    statusLabel = "Trống ngắn hạn";
+  }
+
   const statusColor =
-    room.status === "available"
+    room.status === "available" || room.isShortTermAvailable
       ? "room-card-status-available"
       : "room-card-status-booked";
 
@@ -128,13 +132,12 @@ export default function RoomCard({ room }) {
           )}
         </div>
 
-        {/* CTA Button */}
-        <Link href={`/rooms/${room.id}`} className="room-card-link">
+        <Link href={`/rooms/${room._id}`} className="room-card-link">
           <Button
             variant="default"
             size="sm"
             className="room-card-button"
-            disabled={room.status === "booked"}
+            disabled={room.status !== "available" && !room.isShortTermAvailable}
           >
             Xem Chi Tiết
           </Button>

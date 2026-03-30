@@ -68,6 +68,8 @@ import ManagingIncomeExpenses from "./pages/Accountant/managing_income_expenses/
 import ReceiptsList from "./pages/Accountant/managing_income_expenses/receiptsList";
 import InvoiceList from "./pages/InvoiceManagement/InvoiceList";
 import OwnerPaymentsList from "./pages/CashFlowManagement/Owner/OwnerPaymentsList";
+import ReportCashFlow from "./pages/ReportManagement/ReportCashFlow";
+import ReportRevenue from "./pages/ReportManagement/RevenueReport";
 
 // Pages - Profile (All authenticated roles)
 import ViewProfile from "./pages/Auth/Profile/ViewProfile";
@@ -90,6 +92,8 @@ import NotificationList from "./pages/NotificationManagement/Owner/NotificationL
 
 // Pages - Notification Management (Manager)
 import ManagerNotificationList from "./pages/NotificationManagement/Manager/ManagerNotificationList";
+import ReportPerformance from "./pages/ReportManagement/ReportPerformance";
+import ReportRepairMaintenance from "./pages/ReportManagement/ReportRepairMaintenance";
 
 // Pages - Contract Management
 import CreateContract from "./pages/ContractManagement/CreateContract";
@@ -292,6 +296,8 @@ function LayoutWrapper() {
           <Route path="deposits/create/:id" element={<CreateDeposit />} />
           <Route path="invoices" element={<ManagerInvoice />} />
           <Route path="violations" element={<ViolationList />} />
+          <Route path="statistics/performance" element={<ReportPerformance />} />
+          <Route path="statistics/repairs" element={<ReportRepairMaintenance />} />
           {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
         </Route>
 
@@ -314,7 +320,11 @@ function LayoutWrapper() {
             path="transactions/payments"
             element={<ManagingIncomeExpenses />}
           />
+          <Route path="reports/revenue" element={<ReportRevenue />} />
+       
+          <Route path="reports/cash-flow" element={<ReportCashFlow />} />
         </Route>
+        
 
         {/* ==================== SHARED PROFILE ROUTES (Legacy support) ==================== */}
         <Route

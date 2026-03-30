@@ -25,6 +25,8 @@ interface Room {
   };
   description?: string;
   contractEndDate?: string;
+  contractStartDate?: string;
+  hasFloatingDeposit?: boolean; // true if room has a deposit not yet linked to contract
   // mapped props
   title: string;
   floor: string;
@@ -35,6 +37,7 @@ interface Room {
   capacity: number;
   amenities: string[];
   images: string[];
+  isShortTermAvailable?: boolean;
 }
 
 export default function RoomList() {
@@ -147,28 +150,42 @@ export default function RoomList() {
             priceNum = room.price;
           }
 
-          return {
-            ...room,
-            title: room.name,
-            floor: room.floorId?.name || "N/A",
-            floorLabel: (room.floorId?.name || "")
-              .toLowerCase()
-              .startsWith("tầng")
-              ? room.floorId?.name
-              : `Tầng ${room.floorId?.name || "N/A"}`,
-            price: priceNum,
-            priceLabel:
-              priceNum > 0
-                ? `${(priceNum / 1000000).toFixed(1)}M`
-                : "Chưa có giá",
-            area: room.roomTypeId?.area || 30,
-            capacity: room.roomTypeId?.personMax || 2,
-            description: room.description || room.roomTypeId?.description || "",
-            amenities: [],
-            images: room.roomTypeId?.images || [],
-            contractEndDate: room.contractEndDate || null,
-          };
-        });
+            let isShortTermAvailable = false;
+            // Check if room is Deposited and has a future contract >= 30 days away
+            // AND does NOT have a floating deposit (pending contract signing)
+            // In room.service.js, it attaches contractStartDate to Deposited rooms.
+            if (room.status === "Deposited" && room.contractStartDate && !room.hasFloatingDeposit) {
+               const daysUntil = Math.ceil((new Date(room.contractStartDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+               if (daysUntil >= 30) {
+                  isShortTermAvailable = true;
+               }
+            }
+
+            return {
+              ...room,
+              title: room.name,
+              floor: room.floorId?.name || "N/A",
+              floorLabel: (room.floorId?.name || "")
+                .toLowerCase()
+                .startsWith("tầng")
+                ? room.floorId?.name
+                : `Tầng ${room.floorId?.name || "N/A"}`,
+              price: priceNum,
+              priceLabel:
+                priceNum > 0
+                  ? `${(priceNum / 1000000).toFixed(1)}M`
+                  : "Chưa có giá",
+              area: room.roomTypeId?.area || 30,
+              capacity: room.roomTypeId?.personMax || 2,
+              description: room.description || room.roomTypeId?.description || "",
+              amenities: [],
+              images: room.roomTypeId?.images || [],
+              contractEndDate: room.contractEndDate || null,
+              contractStartDate: room.contractStartDate || null,
+              hasFloatingDeposit: room.hasFloatingDeposit || false,
+              isShortTermAvailable,
+            };
+          });
 
         let currentFloorRooms: Room[] = [];
         let displayRooms = transformedRooms;
