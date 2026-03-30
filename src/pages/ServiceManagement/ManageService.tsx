@@ -5,17 +5,16 @@ import {
   Package, Zap, X,
   Filter, ArrowUpDown,
   History, CalendarClock,
-  AlertTriangle // [MỚI] Icon cảnh báo cho modal xóa
+  AlertTriangle,
+  CheckCircle2, XCircle // Icon trạng thái
 } from 'lucide-react';
 import './ManageService.css';
 
-// [TOASTR] Import thư viện Toastr
 import toastr from 'toastr';
 import 'toastr/build/toastr.min.css';
 
 const API_BASE_URL = 'http://localhost:9999/api';
 
-// Interface cho lịch sử giá
 interface PriceHistory {
   _id: string;
   name: string;
@@ -24,7 +23,6 @@ interface PriceHistory {
   endDate: string | null;
 }
 
-// Interface Service
 interface Service {
   _id: string;
   name: string;
@@ -36,18 +34,12 @@ interface Service {
 }
 
 const ManageService = () => {
-  // --- States ---
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // Filter States
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('ALL');
-
-  // Sort State
   const [sortOption, setSortOption] = useState('newest');
 
-  // Modal & Form States
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
@@ -55,15 +47,16 @@ const ManageService = () => {
     name: '', currentPrice: 0, description: '', type: 'Fixed', isActive: true
   });
 
-  // Modal History States
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [viewingHistoryService, setViewingHistoryService] = useState<Service | null>(null);
 
-  // [MỚI] State cho Modal Xóa (Thay thế window.confirm)
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
-  // --- Cấu hình Toastr & Fetch Data ---
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const userRole = currentUser?.role || ''; 
+  const canModify = userRole === 'owner';
+
   useEffect(() => {
     toastr.options = {
       closeButton: true,
@@ -81,25 +74,20 @@ const ManageService = () => {
       const res = await axios.get(`${API_BASE_URL}/services`);
       setServices(res.data.data || res.data || []);
     } catch (error) { 
-      console.error(error);
       toastr.error("Không thể tải danh sách dịch vụ!", "Lỗi kết nối"); 
     } finally { 
       setLoading(false); 
     }
   };
 
-  // --- Logic Xử lý dữ liệu (Filter + Sort) ---
   const processedServices = useMemo(() => {
     let result = [...services];
-
-    // 1. Lọc
     result = result.filter(s => {
       const matchSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchType = filterType === 'ALL' || s.type === filterType;
       return matchSearch && matchType;
     });
 
-    // 2. Sắp xếp
     switch (sortOption) {
       case 'price-asc': result.sort((a, b) => a.currentPrice - b.currentPrice); break;
       case 'price-desc': result.sort((a, b) => b.currentPrice - a.currentPrice); break;
@@ -109,8 +97,6 @@ const ManageService = () => {
     return result;
   }, [services, searchTerm, filterType, sortOption]);
 
-
-  // --- Handlers ---
   const handleOpenAdd = () => {
     setIsEditing(false);
     setFormData({ name: '', currentPrice: 0, description: '', type: 'Fixed', isActive: true });
@@ -135,24 +121,20 @@ const ManageService = () => {
     setShowHistoryModal(true);
   };
 
-  // [MỚI] 1. Khi bấm nút thùng rác -> Mở Modal (Không xóa ngay)
   const handleDeleteClick = (id: string) => {
     setItemToDelete(id);
     setShowDeleteModal(true);
   };
 
-  // [MỚI] 2. Khi bấm "Xóa" trong Modal -> Gọi API
   const handleConfirmDelete = async () => {
     if (!itemToDelete) return;
-    
     try { 
       await axios.delete(`${API_BASE_URL}/services/${itemToDelete}`); 
       toastr.success("Xóa dịch vụ thành công!", "Thành công");
       fetchServices();
-      setShowDeleteModal(false); // Đóng modal
+      setShowDeleteModal(false);
       setItemToDelete(null);
-    }
-    catch (e) { 
+    } catch (e) { 
       toastr.error("Có lỗi xảy ra khi xóa dịch vụ.", "Lỗi"); 
     }
   };
@@ -187,7 +169,6 @@ const ManageService = () => {
 
   return (
     <div className="service-container">
-
       {/* HEADER */}
       <div className="service-header">
         <div className="service-title">
@@ -202,9 +183,12 @@ const ManageService = () => {
             </span>
           </div>
         </div>
-        <button className="btn-primary" onClick={handleOpenAdd}>
-          <Plus size={18} /> Thêm Dịch vụ
-        </button>
+        
+        {canModify && (
+          <button className="btn-primary" onClick={handleOpenAdd}>
+            <Plus size={18} /> Thêm Dịch vụ
+          </button>
+        )}
       </div>
 
       {/* TOOLBAR */}
@@ -254,53 +238,77 @@ const ManageService = () => {
         </div>
       </div>
 
-      {/* GRID VIEW */}
-      <div className="service-grid">
-        {processedServices.map(service => (
-          <div key={service._id} className={`service-card ${!service.isActive ? 'inactive-card' : ''}`}>
-            <div className="card-header">
-              <div className={`service-icon-wrapper ${service.type === 'Fixed' ? 'icon-fixed' : 'icon-extension'}`}>
-                {service.type === 'Fixed' ? <Package size={24} /> : <Zap size={24} />}
-              </div>
-              <div className="service-price">
-                {formatCurrency(service.currentPrice)}
-              </div>
-            </div>
+      {/* BẢNG DỮ LIỆU (TABLE VIEW) */}
+      <div className="service-table-container">
+        <table className="service-table">
+          <thead>
+            <tr>
+              <th style={{ width: '40px' }}></th>
+              <th>Tên dịch vụ</th>
+              <th>Loại dịch vụ</th>
+              <th style={{ textAlign: 'right' }}>Giá hiện tại</th>
+              <th style={{ width: '30%' }}>Mô tả</th>
+              <th style={{ textAlign: 'center' }}>Trạng thái</th>
+              <th style={{ textAlign: 'right' }}>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {processedServices.map(service => (
+              <tr key={service._id} className={!service.isActive ? 'inactive-row' : ''}>
+                <td style={{ textAlign: 'center' }}>
+                  <div className={`table-icon ${service.type === 'Fixed' ? 'icon-fixed' : 'icon-extension'}`}>
+                    {service.type === 'Fixed' ? <Package size={18} /> : <Zap size={18} />}
+                  </div>
+                </td>
+                <td style={{ fontWeight: 600, color: '#1e293b' }}>{service.name}</td>
+                <td>
+                  <span className={`type-badge ${service.type === 'Fixed' ? 'badge-fixed' : 'badge-extension'}`}>
+                    {service.type === 'Fixed' ? 'Cố định / Tháng' : 'Phụ trội'}
+                  </span>
+                </td>
+                <td style={{ textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>
+                  {formatCurrency(service.currentPrice)}
+                </td>
+                <td style={{ color: '#64748b', fontSize: '13px' }}>
+                  {service.description || <span style={{ fontStyle: 'italic', color: '#cbd5e1' }}>Không có mô tả</span>}
+                </td>
+                <td style={{ textAlign: 'center' }}>
+                  {service.isActive ? (
+                    <span className="status-badge active"><CheckCircle2 size={14}/> Hoạt động</span>
+                  ) : (
+                    <span className="status-badge inactive"><XCircle size={14}/> Tạm ngưng</span>
+                  )}
+                </td>
+                <td style={{ textAlign: 'right' }}>
+                  <div className="table-actions">
+                    <button className="btn-icon btn-history" onClick={() => handleViewHistory(service)} title="Lịch sử giá">
+                      <History size={16} />
+                    </button> 
+                    {canModify && (
+                      <>
+                        <button className="btn-icon btn-edit" onClick={() => handleOpenEdit(service)} title="Sửa">
+                          <Edit size={16} />
+                        </button>
+                        <button className="btn-icon btn-delete" onClick={() => handleDeleteClick(service._id)} title="Xóa">
+                          <Trash2 size={16} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
-            <div className="service-name">{service.name}</div>
-            <div className="service-desc">{service.description || "Chưa có mô tả"}</div>
-
-            <div className="card-footer">
-              <span className={`type-badge ${service.type === 'Fixed' ? 'badge-fixed' : 'badge-extension'}`}>
-                {service.type === 'Fixed' ? 'Cố định / Tháng' : 'Phụ trội'}
-              </span>
-
-              <div className="card-actions">
-                <button className="btn-icon btn-history" onClick={() => handleViewHistory(service)} title="Lịch sử giá">
-                    <History size={16} />
-                </button>
-
-                <button className="btn-icon btn-edit" onClick={() => handleOpenEdit(service)} title="Sửa">
-                  <Edit size={16} />
-                </button>
-                {/* Thay đổi handler: gọi handleDeleteClick thay vì window.confirm */}
-                <button className="btn-icon btn-delete" onClick={() => handleDeleteClick(service._id)} title="Xóa">
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
+        {processedServices.length === 0 && !loading && (
+          <div className="empty-state">
+            <p style={{ fontSize: 16, fontWeight: 500, color: '#64748b' }}>Không tìm thấy dịch vụ nào.</p>
           </div>
-        ))}
+        )}
       </div>
 
-      {processedServices.length === 0 && !loading && (
-        <div style={{ textAlign: 'center', marginTop: 60, color: '#94a3b8' }}>
-          <p style={{ fontSize: 18, marginBottom: 8 }}>Không tìm thấy kết quả nào.</p>
-          <p style={{ fontSize: 14 }}>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.</p>
-        </div>
-      )}
-
-      {/* --- MODAL ADD/EDIT --- */}
+      {/* MODAL THÊM/SỬA, LỊCH SỬ, XÓA (Giữ nguyên như cũ) */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '500px' }}>
@@ -311,29 +319,66 @@ const ManageService = () => {
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>Tên dịch vụ <span style={{ color: 'red' }}>*</span></label>
-                <input type="text" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                <input 
+                  type="text" 
+                  required 
+                  value={formData.name} 
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  // [VALIDATE] Khóa tên nếu là dịch vụ cố định khi đang sửa
+                  disabled={isEditing && formData.type === 'Fixed'} 
+                />
+                {isEditing && formData.type === 'Fixed' && (
+                  <small style={{ color: '#94a3b8', marginTop: '4px' }}>Dịch vụ cố định không được đổi tên</small>
+                )}
               </div>
+
               <div className="form-row">
                 <div className="form-group">
                   <label>Giá (VNĐ) <span style={{ color: 'red' }}>*</span></label>
-                  <input type="number" required min="0" value={formData.currentPrice} onChange={e => setFormData({ ...formData, currentPrice: Number(e.target.value) })} />
+                  <input 
+                    type="number" 
+                    required 
+                    min="0" 
+                    value={formData.currentPrice} 
+                    onChange={e => setFormData({ ...formData, currentPrice: Number(e.target.value) })} 
+                  />
                 </div>
                 <div className="form-group">
                   <label>Loại dịch vụ</label>
-                  <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value as any })}>
+                  <select 
+                    value={formData.type} 
+                    onChange={e => setFormData({ ...formData, type: e.target.value as any })}
+                    // [VALIDATE] Khóa loại dịch vụ khi đang sửa nếu là Fixed
+                    disabled={isEditing && formData.type === 'Fixed'}
+                  >
                     <option value="Fixed">Cố định (Fixed)</option>
                     <option value="Extension">Phụ trội (Extension)</option>
                   </select>
                 </div>
               </div>
+
               <div className="form-group">
                 <label>Mô tả</label>
-                <textarea rows={3} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                <textarea 
+                  rows={3} 
+                  value={formData.description} 
+                  onChange={e => setFormData({ ...formData, description: e.target.value })} 
+                />
               </div>
+
               <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <input type="checkbox" id="activeChk" checked={formData.isActive} onChange={e => setFormData({ ...formData, isActive: e.target.checked })} style={{ width: 'auto', margin: 0 }} />
-                <label htmlFor="activeChk" style={{ margin: 0, cursor: 'pointer' }}>Đang hoạt động</label>
+                <input 
+                  type="checkbox" 
+                  id="activeChk" 
+                  checked={formData.isActive} 
+                  onChange={e => setFormData({ ...formData, isActive: e.target.checked })} 
+                  style={{ width: 'auto', margin: 0 }}
+                />
+                <label htmlFor="activeChk" style={{ margin: 0, cursor: 'pointer' }}>
+                  Đang hoạt động
+                </label>
               </div>
+
               <div className="modal-actions">
                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Hủy</button>
                 <button type="submit" className="btn-primary">Lưu thông tin</button>
@@ -343,9 +388,8 @@ const ManageService = () => {
         </div>
       )}
 
-      {/* --- MODAL LỊCH SỬ GIÁ --- */}
       {showHistoryModal && viewingHistoryService && (
-        <div className="modal-overlay" style={{ zIndex: 1100 }}>
+         <div className="modal-overlay" style={{ zIndex: 1100 }}>
           <div className="modal-content" style={{ maxWidth: '600px' }}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -402,41 +446,25 @@ const ManageService = () => {
         </div>
       )}
 
-      {/* --- [MỚI] MODAL XÁC NHẬN XÓA (Thay thế window.confirm) --- */}
       {showDeleteModal && (
-        <div className="modal-overlay" style={{ zIndex: 1200 }}>
+         <div className="modal-overlay" style={{ zIndex: 1200 }}>
           <div className="modal-content" style={{ maxWidth: '400px', padding: '24px', textAlign: 'center' }}>
             <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
                 <div style={{ backgroundColor: '#fee2e2', padding: '12px', borderRadius: '50%' }}>
                     <AlertTriangle size={32} color="#ef4444" />
                 </div>
             </div>
-            
             <h3 style={{ marginBottom: '8px', fontSize: '18px', color: '#1e293b' }}>Xác nhận xóa?</h3>
             <p style={{ color: '#64748b', marginBottom: '24px', fontSize: '14px' }}>
                 Bạn có chắc chắn muốn xóa dịch vụ này không? Hành động này không thể hoàn tác.
             </p>
-
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <button 
-                className="btn-secondary" 
-                onClick={() => { setShowDeleteModal(false); setItemToDelete(null); }}
-                style={{ width: '100px' }}
-              >
-                Hủy
-              </button>
-              <button 
-                className="btn-primary" 
-                onClick={handleConfirmDelete}
-                style={{ backgroundColor: '#ef4444', borderColor: '#ef4444', width: '100px', justifyContent: 'center' }}
-              >
-                Xóa
-              </button>
+              <button className="btn-secondary" onClick={() => { setShowDeleteModal(false); setItemToDelete(null); }} style={{ width: '100px' }}>Hủy</button>
+              <button className="btn-primary" onClick={handleConfirmDelete} style={{ backgroundColor: '#ef4444', borderColor: '#ef4444', width: '100px', justifyContent: 'center' }}>Xóa</button>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 };
