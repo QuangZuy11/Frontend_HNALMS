@@ -2,36 +2,17 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import toastr from 'toastr';
 import {
-  Plus,
-  Edit,
-  Trash2,
-  Layers,
-  LayoutTemplate,
-  BedDouble,
-  MoreVertical,
-  X,
-  Building,
-  Home,
-  Tag,
-  Upload,
-  Eye,
-  ChevronLeft,
-  ChevronRight,
-  History, 
-  CalendarClock, 
+  Plus, Edit, Trash2, Layers, LayoutTemplate, BedDouble,
+  MoreVertical, X, Building, Home, Tag, Upload, Eye,
+  ChevronLeft, ChevronRight, History, CalendarClock, 
 } from "lucide-react";
 import "./BuildingConfig.css";
 
 const API_BASE_URL = "http://localhost:9999/api";
 
 const IMAGE_LABELS = [
-  "Ảnh tổng quan", 
-  "Ảnh bếp", 
-  "Ảnh giường", 
-  "Ảnh bàn học", 
-  "Ảnh ban công", 
-  "Ảnh nhà vệ sinh", 
-  "Ảnh khác"
+  "Ảnh tổng quan", "Ảnh bếp", "Ảnh giường", "Ảnh bàn học", 
+  "Ảnh ban công", "Ảnh nhà vệ sinh", "Ảnh khác"
 ];
 
 interface Floor {
@@ -77,7 +58,6 @@ const BuildingConfig = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   
-  // --- STATE CHO MODAL XÁC NHẬN XÓA TÙY CHỈNH ---
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     action: 'DELETE_FLOOR' | 'DELETE_TYPE' | null;
@@ -440,7 +420,6 @@ const BuildingConfig = () => {
             </button>
           </div>
           
-          {/* --- [SỬA ĐỔI] CHUYỂN DANH SÁCH TẦNG SANG DẠNG BẢNG --- */}
           <div className="table-wrapper">
             <table className="config-table">
               <thead>
@@ -556,10 +535,14 @@ const BuildingConfig = () => {
         </section>
       </div>
 
-      {/* --- CÁC MODAL HIỆN TẠI GIỮ NGUYÊN --- */}
+      {/* =========================================================================
+          CÁC MODAL ĐÃ ĐƯỢC CẬP NHẬT: Thêm z-index và tính năng click ra ngoài để đóng 
+          ========================================================================= */}
+
+      {/* 1. Modal Thêm/Sửa Tầng */}
       {showFloorModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => setShowFloorModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editingFloor ? "Sửa Tầng" : "Thêm Tầng Mới"}</h3>
               <button onClick={() => setShowFloorModal(false)}><X size={20} /></button>
@@ -593,9 +576,10 @@ const BuildingConfig = () => {
         </div>
       )}
 
+      {/* 2. Modal Thêm/Sửa Loại Phòng */}
       {showTypeModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '800px', width: '90%' }}>
+        <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => setShowTypeModal(false)}>
+          <div className="modal-content" style={{ maxWidth: '800px', width: '90%' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editingType ? "Sửa Loại Phòng" : "Thêm Loại Phòng"}</h3>
               <button onClick={() => setShowTypeModal(false)}><X size={20} /></button>
@@ -746,9 +730,10 @@ const BuildingConfig = () => {
         </div>
       )}
 
+      {/* 3. Modal Xem Chi Tiết Loại Phòng */}
       {showDetailModal && viewingType && (
-        <div className="modal-overlay" style={{ zIndex: 1000 }}>
-          <div className="modal-content" style={{ maxWidth: '800px', width: '90%' }}>
+        <div className="modal-overlay" style={{ zIndex: 1050 }} onClick={() => setShowDetailModal(false)}>
+          <div className="modal-content" style={{ maxWidth: '800px', width: '90%' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Chi tiết Loại phòng: {viewingType.typeName}</h3>
               <button onClick={() => setShowDetailModal(false)}><X size={20} /></button>
@@ -835,9 +820,10 @@ const BuildingConfig = () => {
         </div>
       )}
 
+      {/* 4. Modal Lịch Sử Giá */}
       {showHistoryModal && viewingHistoryType && (
-        <div className="modal-overlay" style={{ zIndex: 1100 }}>
-          <div className="modal-content" style={{ maxWidth: "600px" }}>
+        <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={() => setShowHistoryModal(false)}>
+          <div className="modal-content" style={{ maxWidth: "600px" }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <CalendarClock size={24} className="text-primary" />
@@ -876,24 +862,25 @@ const BuildingConfig = () => {
         </div>
       )}
 
+      {/* 5. Lightbox Xem Ảnh Lớn */}
       {isLightboxOpen && (
-        <div className="lightbox-overlay">
+        <div className="lightbox-overlay" style={{ zIndex: 9999 }} onClick={closeLightbox}>
           <button className="lightbox-close-btn" onClick={closeLightbox}><X size={32} /></button>
-          <button className="lightbox-nav-btn prev" onClick={prevImage}><ChevronLeft size={48} /></button>
-          <div className="lightbox-content">
+          <button className="lightbox-nav-btn prev" onClick={(e) => { e.stopPropagation(); prevImage(); }}><ChevronLeft size={48} /></button>
+          <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
             <img src={currentImages[photoIndex]} alt="Full view" className="lightbox-image" />
             <div className="lightbox-counter">
               {IMAGE_LABELS[photoIndex] || `Ảnh ${photoIndex + 1}`} ({photoIndex + 1} / {currentImages.length})
             </div>
           </div>
-          <button className="lightbox-nav-btn next" onClick={nextImage}><ChevronRight size={48} /></button>
+          <button className="lightbox-nav-btn next" onClick={(e) => { e.stopPropagation(); nextImage(); }}><ChevronRight size={48} /></button>
         </div>
       )}
 
-      {/* --- MODAL HỘP THOẠI XÁC NHẬN XÓA TÙY CHỈNH --- */}
+      {/* 6. Modal Hộp Thoại Xác Nhận Xóa */}
       {confirmModal.isOpen && (
-        <div className="modal-overlay" style={{ zIndex: 9999 }}>
-          <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }}>
+        <div className="modal-overlay" style={{ zIndex: 9999 }} onClick={() => setConfirmModal({ isOpen: false, action: null, targetId: null, message: '' })}>
+          <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
               <div style={{ background: '#fee2e2', padding: '12px', borderRadius: '50%' }}>
                 <Trash2 size={32} color="#ef4444" />

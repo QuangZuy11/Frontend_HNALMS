@@ -308,10 +308,14 @@ const ManageService = () => {
         )}
       </div>
 
-      {/* MODAL THÊM/SỬA, LỊCH SỬ, XÓA (Giữ nguyên như cũ) */}
+      {/* =========================================================================
+          CÁC MODAL ĐÃ ĐƯỢC CẬP NHẬT: Thêm z-index và tính năng click ra ngoài để đóng 
+          ========================================================================= */}
+
+      {/* 1. Modal Thêm/Sửa Dịch vụ */}
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '500px' }}>
+        <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => setShowModal(false)}>
+          <div className="modal-content" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{isEditing ? 'Cập nhật Dịch vụ' : 'Thêm Dịch vụ Mới'}</h3>
               <button onClick={() => setShowModal(false)}><X size={20} /></button>
@@ -324,7 +328,6 @@ const ManageService = () => {
                   required 
                   value={formData.name} 
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  // [VALIDATE] Khóa tên nếu là dịch vụ cố định khi đang sửa
                   disabled={isEditing && formData.type === 'Fixed'} 
                 />
                 {isEditing && formData.type === 'Fixed' && (
@@ -348,7 +351,6 @@ const ManageService = () => {
                   <select 
                     value={formData.type} 
                     onChange={e => setFormData({ ...formData, type: e.target.value as any })}
-                    // [VALIDATE] Khóa loại dịch vụ khi đang sửa nếu là Fixed
                     disabled={isEditing && formData.type === 'Fixed'}
                   >
                     <option value="Fixed">Cố định (Fixed)</option>
@@ -388,9 +390,10 @@ const ManageService = () => {
         </div>
       )}
 
+      {/* 2. Modal Lịch Sử Giá */}
       {showHistoryModal && viewingHistoryService && (
-         <div className="modal-overlay" style={{ zIndex: 1100 }}>
-          <div className="modal-content" style={{ maxWidth: '600px' }}>
+         <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={() => setShowHistoryModal(false)}>
+          <div className="modal-content" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <CalendarClock size={24} style={{ color: '#3579c6' }} />
@@ -446,9 +449,10 @@ const ManageService = () => {
         </div>
       )}
 
+      {/* 3. Modal Xác Nhận Xóa */}
       {showDeleteModal && (
-         <div className="modal-overlay" style={{ zIndex: 1200 }}>
-          <div className="modal-content" style={{ maxWidth: '400px', padding: '24px', textAlign: 'center' }}>
+         <div className="modal-overlay" style={{ zIndex: 1200 }} onClick={() => { setShowDeleteModal(false); setItemToDelete(null); }}>
+          <div className="modal-content" style={{ maxWidth: '400px', padding: '24px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
                 <div style={{ backgroundColor: '#fee2e2', padding: '12px', borderRadius: '50%' }}>
                     <AlertTriangle size={32} color="#ef4444" />
