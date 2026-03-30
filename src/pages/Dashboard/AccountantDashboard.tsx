@@ -103,14 +103,15 @@ const AccountantDashboard = () => {
         {/* BAR CHART: DÒNG TIỀN 6 THÁNG */}
         <div className="chart-box">
           <h4 className="box-title"><Wallet size={18}/> Dòng tiền Thu/Chi 6 tháng gần nhất</h4>
-          <div className="chart-wrapper">
+          
+          <div className="chart-wrapper" style={{ width: '100%', height: '300px', marginTop: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <BarChart data={data.chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b'}} tickFormatter={(val) => `${val / 1000000}M`} />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(val) => `${val / 1000000}M`} />
                 <Tooltip formatter={(val: number) => formatCurrency(val)} cursor={{fill: '#f1f5f9'}} />
-                <Legend iconType="circle" />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                 <Bar dataKey="revenue" name="Thực Thu" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={40} />
                 <Bar dataKey="expense" name="Thực Chi" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={40} />
               </BarChart>
@@ -121,30 +122,39 @@ const AccountantDashboard = () => {
         {/* PIE CHART: CƠ CẤU DOANH THU */}
         <div className="chart-box">
           <h4 className="box-title"><PieChartIcon size={18}/> Cơ cấu Doanh thu (Tháng {month})</h4>
-          <div className="chart-wrapper" style={{ display: 'flex', alignItems: 'center' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data.revenueBreakdown}
-                  cx="50%" cy="50%"
-                  innerRadius={60} outerRadius={90}
-                  paddingAngle={5} dataKey="value"
-                >
-                  {data.revenueBreakdown.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(val: number) => formatCurrency(val)} />
-              </PieChart>
-            </ResponsiveContainer>
+          
+          {/* [ĐÃ SỬA] Đổi layout thành row, khóa cứng chiều cao 300px để không bị tràn card */}
+          <div className="chart-wrapper" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', height: '300px', marginTop: '16px' }}>
             
-            {/* Custom Legend cho Pie Chart */}
-            <div className="pie-legend">
+            {/* Vùng chứa PieChart */}
+            <div style={{ flex: '1 1 50%', height: '100%', minWidth: '150px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data.revenueBreakdown}
+                    cx="50%" cy="50%"
+                    innerRadius={60} outerRadius={90}
+                    paddingAngle={5} dataKey="value"
+                  >
+                    {data.revenueBreakdown.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(val: number) => formatCurrency(val)} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            
+            {/* Custom Legend - Đã thêm overflowY: 'auto' và bẻ cột để cuộn gọn gàng nếu nhiều dữ liệu */}
+            {/* Custom Legend - Đã thêm flexbox và canh chỉnh lại */}
+            <div className="pie-legend" style={{ flex: '1 1 50%', display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '280px', overflowY: 'auto', paddingLeft: '16px' }}>
               {data.revenueBreakdown.map((entry: any, index: number) => (
-                <div key={index} className="legend-item">
-                  <span className="legend-dot" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
-                  <span className="legend-name">{entry.name}</span>
-                  <span className="legend-val">{formatCurrency(entry.value)}</span>
+                <div key={index} className="legend-item" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="legend-dot" style={{ backgroundColor: COLORS[index % COLORS.length], width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0 }}></span>
+                    <span className="legend-name" style={{ color: '#475569', lineHeight: '1.2' }}>{entry.name}</span>
+                  </div>
+                  <span className="legend-val" style={{ fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', textAlign: 'right' }}>{formatCurrency(entry.value)}</span>
                 </div>
               ))}
             </div>
@@ -155,13 +165,14 @@ const AccountantDashboard = () => {
       {/* TOP DEBTS TABLE */}
       <div className="table-box">
         <h4 className="box-title"><AlertCircle size={18} color="#ef4444"/> Top 5 Công Nợ Giá Trị Cao Đang Nợ</h4>
-        <table className="debt-table">
+        <div className="table-box-responsive"> 
+          <table className="debt-table">
           <thead>
             <tr>
-              <th>Mã Hóa Đơn</th>
-              <th>Phân Loại</th>
-              <th>Tiêu đề</th>
-              <th>Hạn chót</th>
+              <th style={{ textAlign: 'left' }}>Mã Hóa Đơn</th>
+              <th style={{ textAlign: 'left' }}>Phân Loại</th>
+              <th style={{ textAlign: 'left' }}>Tiêu đề</th>
+              <th style={{ textAlign: 'left' }}>Hạn chót</th>
               <th style={{ textAlign: 'right' }}>Số tiền nợ</th>
             </tr>
           </thead>
@@ -187,6 +198,7 @@ const AccountantDashboard = () => {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
     </div>
