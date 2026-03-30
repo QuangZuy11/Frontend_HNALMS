@@ -478,7 +478,7 @@ export default function RoomDetail() {
                      <p style={{ color: "var(--warning)", fontWeight: "bold" }}>⚠ Chỉ thuê đến trước {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}</p>
                   )}
                   {room.hasFutureInactiveContract && room.futureContractStartDate && (
-                     <p style={{ color: "var(--success, #10b981)", fontWeight: "bold" }}>✓ Phòng trống - HĐ cũ bắt đầu {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}</p>
+                     <p style={{ color: "var(--success, #10b981)", fontWeight: "bold" }}>✓ Phòng hiện trống - Sẽ có Hợp đồng bắt đầu từ {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}</p>
                   )}
                 </div>
 

@@ -63,7 +63,7 @@ const getComingSoonLabel = (contractStartDate?: string): string | null => {
   const d = new Date(contractStartDate);
   const day = d.getDate().toString().padStart(2, "0");
   const month = (d.getMonth() + 1).toString().padStart(2, "0");
-  const year = d.getFullYear().toString().slice(-2);
+  const year = d.getFullYear();
   return `Trống đến → ${day}/${month}/${year}`;
 };
 
@@ -341,44 +341,21 @@ export default function FloorMapLevel5({
                         : undefined
                     }
                   >
-                    {/* Deposited badge */}
-                    {showDepositedBadge && (
-                      <span
-                        style={{
-                          position: "absolute",
-                          top: "-6px",
-                          right: "-6px",
-                          width: "20px",
-                          height: "20px",
-                          borderRadius: "50%",
-                          background:
-                            "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
-                          color: "#1e293b",
-                          fontSize: "13px",
-                          fontWeight: 800,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          lineHeight: 1,
-                          boxShadow:
-                            "0 2px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.3)",
-                          zIndex: 10,
-                          border: "2px solid white",
-                        }}
-                      >
-                        !
-                      </span>
-                    )}
                     <span className="room-node-name">{formatRoomLabel(room.name)}</span>
-                    {/* Inactive contract (>30 days): green label */}
-                    {hasFutureInactiveContract && room.contractStartDate && (
-                      <span style={{ fontSize: "0.6rem", color: "#fff", fontWeight: 700, background: "rgba(16, 185, 129, 0.92)", padding: "2px 4px", borderRadius: "3px", lineHeight: 1.2 }}>
+                    {hasMultiOptions &&
+                      (room.futureContractStartDate || room.contractStartDate) &&
+                      getComingSoonLabel(room.futureContractStartDate || room.contractStartDate) && (
+                        <span className="room-multi-options-date">
+                          {getComingSoonLabel(room.futureContractStartDate || room.contractStartDate)}
+                        </span>
+                      )}
+                    {!hasMultiOptions && hasFutureInactiveContract && room.contractStartDate && (
+                      <span style={{ fontSize: "0.6rem", color: "#fff", fontWeight: 700, background: "rgba(16, 185, 129, 0.92)", padding: "2px 4px", borderRadius: "3px", lineHeight: 1.2, whiteSpace: "nowrap" }}>
                         Trống đến → {new Date(room.contractStartDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
                       </span>
                     )}
-                    {/* Deposited + future contract */}
-                    {isDeposited && room.contractStartDate && getComingSoonLabel(room.contractStartDate) && (
-                      <span className="room-coming-soon-label" style={{ fontSize: "0.65rem", color: "#fff", fontWeight: 700, lineHeight: 1.25, textAlign: "center", background: "rgba(37, 99, 235, 0.9)", padding: "2px 4px", borderRadius: "3px", whiteSpace: "normal" }}>
+                    {showDepositedBadge && room.contractStartDate && getComingSoonLabel(room.contractStartDate) && (
+                      <span className="room-coming-soon-label" style={{ fontSize: "0.65rem", color: "#fff", fontWeight: 700, lineHeight: 1.25, textAlign: "center", background: "rgba(37, 99, 235, 0.9)", padding: "2px 4px", borderRadius: "3px", whiteSpace: "nowrap" }}>
                         {getComingSoonLabel(room.contractStartDate)}
                       </span>
                     )}
@@ -390,6 +367,14 @@ export default function FloorMapLevel5({
                     {!isDeposited && room.contractStartDate && getContractDateLabel(room.contractStartDate, room.contractEndDate, showDateYear) && (
                       <span className="room-contract-dates">
                         {getContractDateLabel(room.contractStartDate, room.contractEndDate, showDateYear)}
+                      </span>
+                    )}
+                    {/* Deposited badge - always on top */}
+                    {showDepositedBadge && (
+                      <span
+                        className="deposited-badge"
+                      >
+                        !
                       </span>
                     )}
                   </div>
