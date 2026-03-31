@@ -14,31 +14,10 @@ import FloorMapLevel4 from "../RoomList/components/FloorMapLevel4";
 import FloorMapLevel5 from "../RoomList/components/FloorMapLevel5";
 import "../RoomList/components/FloorMap.css";
 import {
-  Plus,
-  Edit,
-  Trash2,
-  Eye,
-  ChevronDown,
-  ChevronRight,
-  CheckCircle,
-  AlertCircle,
-  Banknote,
-  X,
-  Building,
-  Home,
-  Tag,
-  Power,
-  Download,
-  FileSpreadsheet,
-  List as ListIcon,
-  Map as MapIcon,
-  User,
-  Users,
-  FileText,
-  Phone,
-  Mail,
-  CreditCard,
-  Zap,
+  Plus, Edit, Trash2, Eye, ChevronDown, ChevronRight, CheckCircle,
+  AlertCircle, Banknote, X, Building, Home, Tag, Power, Download,
+  FileSpreadsheet, List as ListIcon, Map as MapIcon, User, Users,
+  FileText, Phone, Mail, CreditCard, Zap,
 } from "lucide-react";
 import "./ManageRoom.css";
 
@@ -69,9 +48,9 @@ interface Room {
   isActive: boolean;
 }
 
-// Props interface để phân quyền
+// Props interface để phân quyền (Vẫn giữ lại prop này nếu project của bạn có dùng)
 interface ManageRoomProps {
-  readOnly?: boolean; // true = chỉ xem (Manager), false = full quyền (Owner)
+  readOnly?: boolean; 
 }
 
 const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
@@ -97,7 +76,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const [showModal, setShowModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
-  // [MỚI] State cho Modal Xác nhận
+  // State cho Modal Xác nhận
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     action: 'TOGGLE_ACTIVE' | 'DELETE' | null;
@@ -124,6 +103,17 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     description: "",
     isActive: true,
   });
+
+  // ==========================================
+  // [MỚI] LOGIC PHÂN QUYỀN TỪ LOCAL STORAGE
+  // ==========================================
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const userRole = currentUser?.role || ''; 
+  
+  // CHỈ CHO PHÉP 'owner' ĐƯỢC QUYỀN CHỈNH SỬA (THÊM, SỬA, XÓA, IMPORT EXCEL)
+  // Kết hợp thêm prop readOnly (nếu có) để đảm bảo an toàn kép
+  const canModify = userRole === 'owner' && !readOnly;
+  // ==========================================
 
   // --- FETCH DATA ---
   const fetchData = async () => {
@@ -180,8 +170,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     return floors.find((f) => f._id === idOrObj)?.name || "---";
   };
 
-
-
   const getDepositForRoom = (roomId: string) => {
     return (
       deposits.find(
@@ -189,7 +177,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       ) || null
     );
   };
-
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "---";
@@ -441,7 +428,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     }
   };
 
-  // [SỬA] Đổi từ window.confirm sang setConfirmModal
   const handleToggleActive = (room: Room) => {
     const action = room.isActive ? "vô hiệu hóa" : "kích hoạt";
     setConfirmModal({
@@ -452,7 +438,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     });
   };
 
-  // [SỬA] Đổi từ window.confirm sang setConfirmModal
   const handleDelete = (room: Room) => {
     setConfirmModal({
       isOpen: true,
@@ -462,7 +447,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     });
   };
 
-  // [MỚI] Hàm xử lý chung khi người dùng bấm "Đồng ý" trên Modal Xác nhận
   const executeConfirmAction = async () => {
     if (!confirmModal.targetRoom) return;
     const room = confirmModal.targetRoom;
@@ -488,7 +472,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       }
     }
 
-    // Đóng modal sau khi xử lý xong
     setConfirmModal({ isOpen: false, action: null, targetRoom: null, message: '' });
   };
 
@@ -516,10 +499,10 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       <div className="page-header">
         <div>
           <h2 className="page-title">
-            {readOnly ? "Danh sách phòng" : "Quản lý danh sách phòng"}
+            {!canModify ? "Danh sách phòng" : "Quản lý danh sách phòng"}
           </h2>
           <p className="page-subtitle">
-            {readOnly
+            {!canModify
               ? "Xem thông tin phòng theo tầng"
               : "Nhóm theo tầng - Xem dạng bảng"}
           </p>
@@ -552,141 +535,89 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         </div>
       </div>
 
-      {!readOnly && (
-        <div
-          className="toolbar-actions"
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "1rem",
-            alignItems: "center",
-            justifyContent: "flex-end",
-            marginBottom: "1rem",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              background: "#fff",
-              borderRadius: "8px",
-              border: "1px solid #ddd",
-              padding: "4px",
-              marginRight: "auto",
-            }}
-          >
-            <button
-              onClick={() => setViewMode("list")}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "6px 12px",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                background: viewMode === "list" ? "#3579C6" : "transparent",
-                color: viewMode === "list" ? "#fff" : "#666",
-                fontWeight: viewMode === "list" ? "bold" : "normal",
-              }}
-            >
-              <ListIcon size={16} /> Danh sách
-            </button>
-            <button
-              onClick={() => setViewMode("map")}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "6px 12px",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                background: viewMode === "map" ? "#3579C6" : "transparent",
-                color: viewMode === "map" ? "#fff" : "#666",
-                fontWeight: viewMode === "map" ? "bold" : "normal",
-              }}
-            >
-              <MapIcon size={16} /> Sơ đồ
-            </button>
-          </div>
-
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            <button className="btn-secondary" onClick={handleDownloadTemplate}>
-              <Download size={18} /> Tải mẫu Excel
-            </button>
-
-            <button className="btn-success" onClick={triggerFileInput}>
-              <FileSpreadsheet size={18} /> Nhập Excel
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              style={{ display: "none" }}
-              accept=".xlsx, .xls"
-              onChange={handleFileUpload}
-            />
-
-            <button className="btn-primary" onClick={handleOpenAdd}>
-              <Plus size={18} /> Thêm phòng mới
-            </button>
-          </div>
-        </div>
-      )}
-
-      {readOnly && (
+      <div
+        className="toolbar-actions"
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "1rem",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          marginBottom: "1rem",
+        }}
+      >
         <div
           style={{
             display: "flex",
-            justifyContent: "flex-end",
-            marginBottom: "1rem",
+            background: "#fff",
+            borderRadius: "8px",
+            border: "1px solid #ddd",
+            padding: "4px",
+            marginRight: "auto",
           }}
         >
-          <div
+          <button
+            onClick={() => setViewMode("list")}
             style={{
               display: "flex",
-              background: "#fff",
-              borderRadius: "8px",
-              border: "1px solid #ddd",
-              padding: "4px",
+              alignItems: "center",
+              gap: "6px",
+              padding: "6px 12px",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              background: viewMode === "list" ? "#3579C6" : "transparent",
+              color: viewMode === "list" ? "#fff" : "#666",
+              fontWeight: viewMode === "list" ? "bold" : "normal",
             }}
           >
-            <button
-              onClick={() => setViewMode("list")}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "6px 12px",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                background: viewMode === "list" ? "#3579C6" : "transparent",
-                color: viewMode === "list" ? "#fff" : "#666",
-                fontWeight: viewMode === "list" ? "bold" : "normal",
-              }}
-            >
-              <ListIcon size={16} /> Danh sách
-            </button>
-            <button
-              onClick={() => setViewMode("map")}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "6px 12px",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                background: viewMode === "map" ? "#3579C6" : "transparent",
-                color: viewMode === "map" ? "#fff" : "#666",
-                fontWeight: viewMode === "map" ? "bold" : "normal",
-              }}
-            >
-              <MapIcon size={16} /> Sơ đồ
-            </button>
-          </div>
+            <ListIcon size={16} /> Danh sách
+          </button>
+          <button
+            onClick={() => setViewMode("map")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "6px 12px",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              background: viewMode === "map" ? "#3579C6" : "transparent",
+              color: viewMode === "map" ? "#fff" : "#666",
+              fontWeight: viewMode === "map" ? "bold" : "normal",
+            }}
+          >
+            <MapIcon size={16} /> Sơ đồ
+          </button>
         </div>
-      )}
+
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          {/* [PHÂN QUYỀN] Chỉ render nút Tải mẫu, Nhập file, Thêm phòng khi là Owner */}
+          {canModify && (
+            <>
+              <button className="btn-secondary" onClick={handleDownloadTemplate}>
+                <Download size={18} /> Tải mẫu Excel
+              </button>
+
+              <button className="btn-success" onClick={triggerFileInput}>
+                <FileSpreadsheet size={18} /> Nhập Excel
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: "none" }}
+                accept=".xlsx, .xls"
+                onChange={handleFileUpload}
+              />
+
+              <button className="btn-primary" onClick={handleOpenAdd}>
+                <Plus size={18} /> Thêm phòng mới
+              </button>
+            </>
+          )}
+        </div>
+      </div>
 
       {viewMode === "list" ? (
         <div className="floor-list-container">
@@ -736,7 +667,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                             <th>Mô tả</th>
                             <th
                               style={{
-                                width: readOnly ? "100px" : "140px", 
+                                width: !canModify ? "100px" : "140px", 
                                 textAlign: "center",
                                 whiteSpace: "nowrap", 
                               }}
@@ -795,7 +726,8 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
 
                                 <td>
                                   <div className="action-group">
-                                    {!readOnly && (
+                                    {/* [PHÂN QUYỀN] Chỉ render nút Tắt/Bật khi có quyền */}
+                                    {canModify && (
                                       <button
                                         className={`btn-icon-sm power ${room.isActive ? "active" : "inactive"}`}
                                         onClick={() => handleToggleActive(room)}
@@ -817,24 +749,24 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                                       <Eye size={16} />
                                     </button>
 
-                                    {!readOnly && (
-                                      <button
-                                        className="btn-icon-sm edit"
-                                        onClick={() => handleOpenEdit(room)}
-                                        title="Sửa"
-                                      >
-                                        <Edit size={16} />
-                                      </button>
-                                    )}
-
-                                    {!readOnly && (
-                                      <button
-                                        className="btn-icon-sm delete"
-                                        onClick={() => handleDelete(room)}
-                                        title="Xóa"
-                                      >
-                                        <Trash2 size={16} />
-                                      </button>
+                                    {/* [PHÂN QUYỀN] Chỉ render nút Sửa/Xóa khi có quyền */}
+                                    {canModify && (
+                                      <>
+                                        <button
+                                          className="btn-icon-sm edit"
+                                          onClick={() => handleOpenEdit(room)}
+                                          title="Sửa"
+                                        >
+                                          <Edit size={16} />
+                                        </button>
+                                        <button
+                                          className="btn-icon-sm delete"
+                                          onClick={() => handleDelete(room)}
+                                          title="Xóa"
+                                        >
+                                          <Trash2 size={16} />
+                                        </button>
+                                      </>
                                     )}
                                   </div>
                                 </td>
@@ -896,7 +828,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                     key={floor._id}
                     rooms={floorRooms}
                     onRoomSelect={(room) =>
-                      readOnly ? handleViewDetail(room as any) : handleOpenEdit(room as any)
+                      !canModify ? handleViewDetail(room as any) : handleOpenEdit(room as any)
                     }
                   />
                 );
@@ -906,7 +838,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                     key={floor._id}
                     rooms={floorRooms}
                     onRoomSelect={(room) =>
-                      readOnly ? handleViewDetail(room as any) : handleOpenEdit(room as any)
+                      !canModify ? handleViewDetail(room as any) : handleOpenEdit(room as any)
                     }
                   />
                 );
@@ -916,7 +848,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                     key={floor._id}
                     rooms={floorRooms}
                     onRoomSelect={(room) =>
-                      readOnly ? handleViewDetail(room as any) : handleOpenEdit(room as any)
+                      !canModify ? handleViewDetail(room as any) : handleOpenEdit(room as any)
                     }
                   />
                 );
@@ -926,7 +858,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                     key={floor._id}
                     rooms={floorRooms}
                     onRoomSelect={(room) =>
-                      readOnly ? handleViewDetail(room as any) : handleOpenEdit(room as any)
+                      !canModify ? handleViewDetail(room as any) : handleOpenEdit(room as any)
                     }
                   />
                 );
@@ -938,7 +870,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                   floorName={floor.name}
                   rooms={floorRooms}
                   onRoomSelect={(room) =>
-                    readOnly ? handleViewDetail(room as any) : handleOpenEdit(room as any)
+                    !canModify ? handleViewDetail(room as any) : handleOpenEdit(room as any)
                   }
                 />
               );
@@ -947,10 +879,14 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         </div>
       )}
 
-      {/* --- MODAL XÁC NHẬN (CONFIRM MODAL) --- */}
+      {/* =========================================================================
+          CÁC MODAL ĐÃ ĐƯỢC TỐI ƯU HÓA: CÓ THỂ CLICK RA NGOÀI ĐỂ ĐÓNG 
+          ========================================================================= */}
+
+      {/* 1. Modal Xác Nhận Xóa/Kích hoạt */}
       {confirmModal.isOpen && (
-        <div className="modal-overlay" style={{ zIndex: 9999 }}>
-          <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }}>
+        <div className="modal-overlay" style={{ zIndex: 9999 }} onClick={() => setConfirmModal({ isOpen: false, action: null, targetRoom: null, message: '' })}>
+          <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
               <div style={{ 
                 background: confirmModal.action === 'DELETE' ? '#fee2e2' : '#fef3c7', 
@@ -994,10 +930,10 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         </div>
       )}
 
-      {/* --- MODAL ADD/EDIT --- Ẩn khi readOnly */}
-      {!readOnly && showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+      {/* 2. Modal Thêm/Sửa Phòng */}
+      {canModify && showModal && (
+        <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{isEditing ? "Sửa Phòng" : "Thêm Phòng Mới"}</h3>
               <button onClick={() => setShowModal(false)}>
@@ -1122,14 +1058,14 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         </div>
       )}
 
-      {/* --- MODAL XEM CHI TIẾT --- */}
+      {/* 3. Modal Xem Chi Tiết Phòng */}
       {showDetailModal &&
         viewingRoom &&
         (() => {
           const roomContract = availableContracts.find(c => c._id === selectedContractId) || null;
           return (
-            <div className="rd-overlay" style={{ zIndex: 1100 }}>
-              <div className="rd-content">
+            <div className="rd-overlay" style={{ zIndex: 1100 }} onClick={() => setShowDetailModal(false)}>
+              <div className="rd-content" onClick={(e) => e.stopPropagation()}>
                 <div className="rd-header">
                   <h3>Chi tiết Phòng: {viewingRoom.name}</h3>
                   <button onClick={() => setShowDetailModal(false)}>
@@ -1278,7 +1214,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                           </div>
                         </div>
 
-                        {/* THÔNG TIN TRẢ TRƯỚC - lấy từ invoices_incurred */}
+                        {/* THÔNG TIN TRẢ TRƯỚC */}
                         {prepaidInvoice && (
                           <>
                             <div className="rd-section-title" style={{ marginTop: 16 }}>
@@ -1448,7 +1384,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                   >
                     Đóng
                   </button>
-                  {!readOnly && (
+                  {canModify && (
                     <button
                       className="btn-primary"
                       onClick={() => {

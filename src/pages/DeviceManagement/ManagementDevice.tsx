@@ -35,7 +35,7 @@ const ManagerDevice = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
 
-  // [MỚI] State cho Modal Xác nhận xóa
+  // State cho Modal Xác nhận xóa
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     action: 'DELETE' | null;
@@ -51,6 +51,16 @@ const ManagerDevice = () => {
   // Import File Ref
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // ==========================================
+  // [MỚI] LOGIC PHÂN QUYỀN TỪ LOCAL STORAGE
+  // ==========================================
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const userRole = currentUser?.role || ''; 
+  
+  // CHỈ CHO PHÉP 'owner' ĐƯỢC QUYỀN CHỈNH SỬA (THÊM, SỬA, XÓA, EXCEL)
+  const canModify = userRole === 'owner';
+  // ==========================================
 
   // --- Config Toastr ---
   useEffect(() => {
@@ -78,7 +88,6 @@ const ManagerDevice = () => {
     }
   };
 
-  // [SỬA] Đổi từ window.confirm sang mở Modal
   const handleDelete = (device: Device) => {
     setConfirmModal({
       isOpen: true,
@@ -88,7 +97,6 @@ const ManagerDevice = () => {
     });
   };
 
-  // [MỚI] Thực thi xóa khi bấm Đồng ý
   const executeConfirmAction = async () => {
     if (!confirmModal.targetDevice) return;
     
@@ -127,7 +135,7 @@ const ManagerDevice = () => {
   const handleDownloadTemplate = async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/devices/template`, {
-        responseType: 'blob', // Quan trọng: Nhận về dạng file
+        responseType: 'blob', 
       });
       const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       saveAs(blob, 'Device_Import_Template.xlsx');
@@ -158,7 +166,7 @@ const ManagerDevice = () => {
       if (errorCount > 0) {
         toastr.warning(`Có ${errorCount} dòng lỗi.`);
         console.warn("Import Errors:", errors);
-        alert(`Chi tiết lỗi:\n${errors.join('\n')}`); // Show lỗi chi tiết
+        alert(`Chi tiết lỗi:\n${errors.join('\n')}`);
       }
 
       setShowImportModal(false);
@@ -220,17 +228,20 @@ const ManagerDevice = () => {
           />
         </div>
 
-        <div className="button-group">
-          <button className="btn btn-outline" onClick={handleDownloadTemplate}>
-            <Download size={18} /> Tải mẫu Excel
-          </button>
-          <button className="btn btn-success" onClick={() => setShowImportModal(true)}>
-            <FileSpreadsheet size={18} /> Import Excel
-          </button>
-          <button className="btn btn-primary" onClick={handleOpenAdd}>
-            <Plus size={18} /> Thêm thiết bị
-          </button>
-        </div>
+        {/* [PHÂN QUYỀN] Chỉ hiển thị các nút thao tác Excel và Thêm mới nếu là Owner */}
+        {canModify && (
+          <div className="button-group">
+            <button className="btn btn-outline" onClick={handleDownloadTemplate}>
+              <Download size={18} /> Tải mẫu Excel
+            </button>
+            <button className="btn btn-success" onClick={() => setShowImportModal(true)}>
+              <FileSpreadsheet size={18} /> Import Excel
+            </button>
+            <button className="btn btn-primary" onClick={handleOpenAdd}>
+              <Plus size={18} /> Thêm thiết bị
+            </button>
+          </div>
+        )}
       </div>
 
       {/* TABLE */}
@@ -243,8 +254,10 @@ const ManagerDevice = () => {
               <th style={{width: '15%'}}>Danh mục</th>
               <th style={{width: '10%'}}>Đơn vị</th>
               <th style={{width: '15%'}}>Giá niêm yết</th>
-              {/* [ĐÃ SỬA] Căn giữa tiêu đề */}
-              <th style={{ textAlign: 'center', width: '15%' }}>Thao tác</th> 
+              {/* [PHÂN QUYỀN] Ẩn cột Thao tác nếu không phải Owner */}
+              {canModify && (
+                <th style={{ textAlign: 'center', width: '15%' }}>Thao tác</th> 
+              )}
             </tr>
           </thead>
           <tbody>
@@ -267,22 +280,24 @@ const ManagerDevice = () => {
                   <td>{device.unit}</td>
                   <td className="text-price">{formatCurrency(device.price)}</td>
                   
-                  {/* [ĐÃ SỬA] Căn giữa nội dung cột và các nút bấm */}
-                  <td style={{ textAlign: 'center' }}>
-                    <div className="action-buttons" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                      <button className="btn-icon" onClick={() => handleOpenEdit(device)} title="Sửa">
-                        <Edit size={18} />
-                      </button>
-                      <button className="btn-icon delete" onClick={() => handleDelete(device)} title="Xóa">
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
+                  {/* [PHÂN QUYỀN] Ẩn nút Sửa/Xóa nếu không phải Owner */}
+                  {canModify && (
+                    <td style={{ textAlign: 'center' }}>
+                      <div className="action-buttons" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                        <button className="btn-icon" onClick={() => handleOpenEdit(device)} title="Sửa">
+                          <Edit size={18} />
+                        </button>
+                        <button className="btn-icon delete" onClick={() => handleDelete(device)} title="Xóa">
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={6} style={{textAlign: 'center', padding: '40px', color: '#94a3b8'}}>
+                <td colSpan={canModify ? 6 : 5} style={{textAlign: 'center', padding: '40px', color: '#94a3b8'}}>
                   {loading ? 'Đang tải dữ liệu...' : 'Không tìm thấy thiết bị nào.'}
                 </td>
               </tr>
@@ -291,10 +306,14 @@ const ManagerDevice = () => {
         </table>
       </div>
 
-      {/* --- ADD / EDIT MODAL --- */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+      {/* =========================================================================
+          CÁC MODAL ĐÃ ĐƯỢC CẬP NHẬT: Thêm z-index và tính năng click ra ngoài để đóng 
+          ========================================================================= */}
+
+      {/* --- 1. ADD / EDIT MODAL --- */}
+      {canModify && showModal && (
+        <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{isEditing ? 'Cập nhật thông tin' : 'Thêm thiết bị mới'}</h3>
               <button className="btn-icon" onClick={() => setShowModal(false)}><X size={20} /></button>
@@ -341,10 +360,10 @@ const ManagerDevice = () => {
         </div>
       )}
 
-      {/* --- IMPORT EXCEL MODAL --- */}
-      {showImportModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{width: '500px'}}>
+      {/* --- 2. IMPORT EXCEL MODAL --- */}
+      {canModify && showImportModal && (
+        <div className="modal-overlay" style={{ zIndex: 1050 }} onClick={() => setShowImportModal(false)}>
+          <div className="modal-content" style={{width: '500px'}} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Import dữ liệu từ Excel</h3>
               <button className="btn-icon" onClick={() => setShowImportModal(false)}><X size={20} /></button>
@@ -398,10 +417,10 @@ const ManagerDevice = () => {
         </div>
       )}
 
-      {/* --- MODAL XÁC NHẬN (CONFIRM MODAL) --- */}
-      {confirmModal.isOpen && (
-        <div className="modal-overlay" style={{ zIndex: 9999 }}>
-          <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }}>
+      {/* --- 3. MODAL XÁC NHẬN XÓA --- */}
+      {canModify && confirmModal.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }} onClick={() => setConfirmModal({ isOpen: false, action: null, targetDevice: null, message: '' })}>
+          <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
               <div style={{ 
                 background: '#fee2e2', 

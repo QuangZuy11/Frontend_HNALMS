@@ -953,3 +953,23 @@ input::placeholder, textarea::placeholder {
 }
 
 
+/* Ép tất cả các nút trong phần Action của Modal phải có cùng kích thước và căn giữa chữ */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end; /* Hoặc center tùy bạn muốn căn lề nào */
+  gap: 16px !important; /* Khoảng cách giữa 2 nút */
+}
+
+.modal-actions .btn-secondary,
+.modal-actions .btn-primary {
+  width: 140px !important; /* Cố định chiều rộng chính xác là 140px */
+  min-width: 140px !important; 
+  max-width: 140px !important;
+  box-sizing: border-box !important; /* Đảm bảo padding không làm phình nút ra */
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important; /* Căn giữa chữ/icon bên trong nút */
+  text-align: center !important;
+  padding: 10px 0 !important; /* Chỉ giữ padding trên/dưới, bỏ padding trái/phải để tránh lệch */
+  margin: 0 !important; /* Tránh margin thừa */
+}

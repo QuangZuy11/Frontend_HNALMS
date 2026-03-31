@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Download, Search, Filter } from 'lucide-react';
-import * as XLSX from 'xlsx'; 
+import * as XLSX from 'xlsx-js-style';
 import toastr from 'toastr';
 import './ReportCashFlow.css';
 
@@ -44,24 +44,82 @@ const ReportCashFlow = () => {
   const exportToExcel = () => {
     if (!data || !data.ledger) return;
     
+    // 1. Chuẩn bị dữ liệu mảng
     const excelData = data.ledger.map((item: any) => ({
-      "Ngày CT": new Date(item.date).toLocaleDateString('vi-VN'),
-      "Mã CT": item.code,
-      "Khách/Phòng": item.room,
+      "Ngày chứng từ": new Date(item.date).toLocaleDateString('vi-VN'),
+      "Mã chứng từ": item.code,
+      "Phòng": item.room,
       "Diễn giải": item.description, 
       "Loại": item.transactionType,
       "Hạng mục": item.category,
-      "Hình thức TT": item.paymentMethod, 
       "Phát sinh TĂNG (Thu)": item.inflow,
       "Phát sinh GIẢM (Chi)": item.outflow,
       "Trạng thái": item.status === 'Paid' ? 'Đã thu' : item.status === 'Unpaid' ? 'Đang nợ' : item.status
     }));
 
+    // [MỚI] Push thêm 1 dòng "Tổng cộng" vào cuối mảng Excel Dòng tiền
+    excelData.push({
+      "Ngày chứng từ": "TỔNG CỘNG",
+      "Mã chứng từ": "",
+      "Phòng": "",
+      "Diễn giải": "",
+      "Loại": "",
+      "Hạng mục": "",
+      "Phát sinh TĂNG (Thu)": data.summary.expectedRevenue, // Lấy từ Tổng Thực Thu
+      "Phát sinh GIẢM (Chi)": data.summary.actualExpense,   // Lấy từ Tổng Thực Chi
+      "Trạng thái": ""
+    });
+
+    // 2. Chuyển đổi dữ liệu thành Sheet
     const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // ==========================================
+    // PHẦN THÊM STYLE CHO EXCEL
+    // ==========================================
+    const range = XLSX.utils.decode_range(ws['!ref'] as string);
+
+    // Bôi vàng và in đậm hàng Tiêu đề (Row 0)
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col }); 
+      if (!ws[cellAddress]) continue;
+
+      ws[cellAddress].s = {
+        font: { bold: true, color: { rgb: "000000" } },
+        fill: { fgColor: { rgb: "FFFF00" } },
+        alignment: { horizontal: "center", vertical: "center" }
+      };
+    }
+
+    // [MỚI] In đậm và bôi màu xám nhạt cho hàng Tổng cộng (Row cuối cùng)
+    const lastRowIndex = range.e.r;
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: lastRowIndex, c: col }); 
+      if (!ws[cellAddress]) continue;
+
+      ws[cellAddress].s = {
+        font: { bold: true, color: { rgb: "000000" } },
+        fill: { fgColor: { rgb: "FFFF00" } }, // Màu nền xám nhạt để tách biệt với dữ liệu
+      };
+    }
+
+    // Set độ rộng cột (Đã chỉnh theo cấu trúc 9 cột của Cashflow)
+    ws['!cols'] = [
+      { wch: 15 }, // Ngày CT
+      { wch: 25 }, // Mã CT
+      { wch: 12 }, // Phòng
+      { wch: 45 }, // Diễn giải
+      { wch: 12 }, // Loại
+      { wch: 30 }, // Hạng mục
+      { wch: 22 }, // Phát sinh TĂNG
+      { wch: 22 }, // Phát sinh GIẢM
+      { wch: 15 }  // Trạng thái
+    ];
+    // ==========================================
+
+    // 3. Đóng gói và xuất file
     const wb = XLSX.utils.book_new();
-    // [ĐÃ SỬA] Đổi tên Sheet cho chuyên nghiệp
     XLSX.utils.book_append_sheet(wb, ws, "Bao_Cao_Dong_Tien");
-    // [ĐÃ SỬA] Đổi tên file xuất ra Excel
+    
     XLSX.writeFile(wb, `Bao_Cao_Dong_Tien_${startDate}_${endDate}.xlsx`);
   };
 
@@ -79,7 +137,6 @@ const ReportCashFlow = () => {
   return (
     <div className="report-container">
       <div className="report-header">
-        {/* [ĐÃ SỬA] Sửa lại tiêu đề cho đúng bản chất nghiệp vụ Kế toán */}
         <h2>Báo Cáo Dòng Tiền & Công Nợ</h2>
         <div className="report-actions">
           <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="date-input"/>
@@ -120,15 +177,15 @@ const ReportCashFlow = () => {
         <table className="ledger-table" style={{ marginBottom: 0 }}>
           <thead>
             <tr>
-              <th>Ngày CT</th>
-              <th>Mã CT</th>
+              <th>Ngày chứng từ</th>
+              <th>Mã chứng từ</th>
               <th>Phòng</th>
               <th>Diễn giải</th>
               <th>Loại</th>
               <th>Hạng mục</th>
-              <th>Hình thức TT</th>
-              <th style={{textAlign: 'right'}}>Tăng (+)</th>
-              <th style={{textAlign: 'right'}}>Giảm (-)</th>
+              {/* Đã xóa <th>Hình thức TT</th> ở đây */}
+              <th style={{textAlign: 'right'}}>Doanh thu (+)</th>
+              <th style={{textAlign: 'right'}}>Chi phí (-)</th>
               <th>Trạng thái</th>
             </tr>
           </thead>
@@ -151,9 +208,7 @@ const ReportCashFlow = () => {
                   </td>
                   <td>{row.category}</td>
 
-                  <td style={{ color: '#64748b', fontSize: '13px' }}>
-                    {row.paymentMethod}
-                  </td>
+                  {/* Đã xóa thẻ <td> chứa row.paymentMethod ở đây */}
 
                   <td style={{textAlign: 'right', color: '#16a34a', fontWeight: 500}}>
                     {row.inflow > 0 ? formatCurrency(row.inflow) : '-'}
@@ -161,12 +216,13 @@ const ReportCashFlow = () => {
                   <td style={{textAlign: 'right', color: '#ef4444', fontWeight: 500}}>
                     {row.outflow > 0 ? formatCurrency(row.outflow) : '-'}
                   </td>
-                  <td>{row.status === 'Paid' || row.status === 'Completed' ? '✅ Hoàn tất' : '⏳ Đang nợ'}</td>
+                  <td>{row.status === 'Paid' || row.status === 'Completed' ? 'Hoàn tất' : 'Đang nợ'}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={10} style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                {/* [ĐÃ SỬA] colSpan giảm từ 10 xuống 9 vì đã xóa 1 cột */}
+                <td colSpan={9} style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
                   Không có giao dịch nào trong khoảng thời gian này.
                 </td>
               </tr>
@@ -175,7 +231,7 @@ const ReportCashFlow = () => {
         </table>
       </div>
 
-      {/* [MỚI] GIAO DIỆN PHÂN TRANG */}
+      {/* GIAO DIỆN PHÂN TRANG */}
       {ledgerItems.length > 0 && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: '#fff', border: '1px solid #e2e8f0', borderTop: 'none', borderRadius: '0 0 12px 12px' }}>
           <div style={{ fontSize: '14px', color: '#64748b' }}>
