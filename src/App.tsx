@@ -258,6 +258,11 @@ function LayoutWrapper() {
           <Route path="deposits" element={<DepositRoom />} />
           <Route path="deposits/floor-map" element={<DepositFloorMap />} />
           <Route path="deposits/create/:id" element={<CreateDeposit />} />
+          {/* Báo cáo & Thống kê */}
+          <Route path="reports/summary" element={<ReportCashFlow />} />
+          <Route path="reports/revenue" element={<ReportRevenue />} />
+          <Route path="reports/statistics/performance" element={<ReportPerformance />} />
+          <Route path="reports/maintenance" element={<ReportRepairMaintenance />} />
         </Route>
 
         {/* ==================== MANAGER ROUTES ==================== */}
@@ -321,10 +326,10 @@ function LayoutWrapper() {
             element={<ManagingIncomeExpenses />}
           />
           <Route path="reports/revenue" element={<ReportRevenue />} />
-       
+
           <Route path="reports/cash-flow" element={<ReportCashFlow />} />
         </Route>
-        
+
 
         {/* ==================== SHARED PROFILE ROUTES (Legacy support) ==================== */}
         <Route
