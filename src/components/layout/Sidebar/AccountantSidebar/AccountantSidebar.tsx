@@ -8,9 +8,7 @@ import {
     ChevronDown,
     ChevronRight,
     FileOutput,
-    ArrowUpCircle,
     TrendingUp,
-    CreditCard,
     FileInput,
     Activity,
 } from 'lucide-react';
@@ -46,7 +44,7 @@ const MENU_ITEMS = [
         path: "/accountant/reports",
         subItems: [
             { title: "Báo Cáo Dòng Tiền", path: "/accountant/reports/cash-flow", icon: <Activity size={16} /> },
-            { title: "Báo Cáo Doanh Thu", path: "/accountant/reports/revenue", icon: <TrendingUp size={16} /> },         
+            { title: "Báo Cáo Doanh Thu", path: "/accountant/reports/revenue", icon: <TrendingUp size={16} /> },
         ]
     },
 

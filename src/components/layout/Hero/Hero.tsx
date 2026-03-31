@@ -78,9 +78,9 @@ export default function Hero() {
             >
               <div className="hero-content-container">
                 <div className="hero-text-wrapper">
-                  <h2 className="hero-title">{slide.title}</h2>
+                  <h1 className="hero-title">{slide.title}</h1>
                   <p className="hero-description">{slide.description}</p>
-                  <div className="hero-divider"></div>
+                  {/* <div className="hero-divider"></div> */}
                 </div>
               </div>
             </div>
