@@ -24,33 +24,50 @@ export const moveOutService = {
     return response.data;
   },
 
-  // [MANAGER] Duyệt yêu cầu trả phòng
-  // PUT /api/move-outs/:moveOutRequestId/approve
-  // Body: { managerApprovalNotes }
-  approveMoveOutRequest: async (requestId: string, managerApprovalNotes?: string) => {
-    const response = await api.put(`/move-outs/${requestId}/approve`, { managerApprovalNotes });
+  // [MANAGER] Phát hành hóa đơn cuối – STEP 2
+  // PUT /api/move-outs/:id/release-invoice
+  // Body: { managerInvoiceNotes, electricIndex, waterIndex }
+  releaseFinalInvoice: async (requestId: string, payload?: {
+    managerInvoiceNotes?: string;
+    electricIndex?: number;
+    waterIndex?: number;
+  }) => {
+    const response = await api.put(`/move-outs/${requestId}/release-invoice`, payload ?? {});
     return response.data;
   },
 
-  // [MANAGER/TENANT] Hủy yêu cầu trả phòng
-  // DELETE /api/move-outs/:moveOutRequestId
-  // Body: { reason }
-  cancelMoveOutRequest: async (requestId: string, reason?: string) => {
-    const response = await api.delete(`/move-outs/${requestId}`, { data: { reason } });
+  // [MANAGER] So sánh cọc vs hóa đơn cuối – STEP 3
+  // GET /api/move-outs/:id/deposit-vs-invoice
+  getDepositVsInvoice: async (requestId: string) => {
+    const response = await api.get(`/move-outs/${requestId}/deposit-vs-invoice`);
     return response.data;
   },
 
-  // [MANAGER] Hoàn tất trả phòng
-  // PUT /api/move-outs/:moveOutRequestId/complete
-  // Body: { finalSettlementInvoiceId, managerCompletionNotes }
+  // [ACCOUNTANT/MANAGER] Xác nhận thanh toán offline – STEP 4b
+  // PUT /api/move-outs/:id/confirm-payment-offline
+  // Body: { accountantNotes }
+  confirmPaymentOffline: async (requestId: string, accountantNotes?: string) => {
+    const response = await api.put(`/move-outs/${requestId}/confirm-payment-offline`, { accountantNotes });
+    return response.data;
+  },
+
+  // [MANAGER] Hoàn tất trả phòng – STEP 5
+  // PUT /api/move-outs/:id/complete
+  // Body: { managerCompletionNotes }
   completeMoveOutRequest: async (
     requestId: string,
     payload?: {
-      finalSettlementInvoiceId?: string;
       managerCompletionNotes?: string;
     }
   ) => {
     const response = await api.put(`/move-outs/${requestId}/complete`, payload ?? {});
+    return response.data;
+  },
+
+  // [MANAGER/TENANT] Hủy yêu cầu trả phòng
+  // DELETE /api/move-outs/:id
+  cancelMoveOutRequest: async (requestId: string, reason?: string) => {
+    const response = await api.delete(`/move-outs/${requestId}`, { data: { reason } });
     return response.data;
   },
 };
