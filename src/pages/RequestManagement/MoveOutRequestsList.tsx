@@ -13,7 +13,7 @@ interface MoveOutRequestItem {
       _id: string;
       name?: string;
       roomCode?: string;
-    } | null;
+    } | string | null;
   } | string | null;
   tenantId?: {
     _id: string;
@@ -114,18 +114,25 @@ export default function MoveOutRequestsList() {
   // ── Release Invoice modal ─────────────────────────────────────────────────
   const [showReleaseModal, setShowReleaseModal] = useState(false);
   const [releasingRequest, setReleasingRequest] = useState<MoveOutRequestItem | null>(null);
-  const [releaseNote, setReleaseNote] = useState('');
   const [electricIndex, setElectricIndex] = useState<string>('');
   const [waterIndex, setWaterIndex] = useState<string>('');
+  const [oldElectricIndex, setOldElectricIndex] = useState<{ oldIndex: number; newIndex: number } | null>(null);
+  const [oldWaterIndex, setOldWaterIndex] = useState<{ oldIndex: number; newIndex: number } | null>(null);
+  const [oldIndexLoading, setOldIndexLoading] = useState(false);
+  const [oldIndexError, setOldIndexError] = useState('');
   const [releaseLoading, setReleaseLoading] = useState(false);
   const [releaseError, setReleaseError] = useState('');
 
-  // ── Confirm Payment Offline modal ─────────────────────────────────────────
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [payingRequest, setPayingRequest] = useState<MoveOutRequestItem | null>(null);
-  const [paymentNote, setPaymentNote] = useState('');
-  const [paymentLoading, setPaymentLoading] = useState(false);
-  const [paymentError, setPaymentError] = useState('');
+  // ── Check Payment Status modal ────────────────────────────────────────────
+  const [showCheckPaymentModal, setShowCheckPaymentModal] = useState(false);
+  const [checkingRequest, setCheckingRequest] = useState<MoveOutRequestItem | null>(null);
+  const [checkPaymentLoading, setCheckPaymentLoading] = useState(false);
+  const [checkPaymentResult, setCheckPaymentResult] = useState<{
+    isPaid?: boolean;
+    invoiceStatus?: string;
+    invoiceAmount?: number;
+    error?: string;
+  } | null>(null);
 
   // ── Complete modal ────────────────────────────────────────────────────────
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -179,9 +186,19 @@ export default function MoveOutRequestsList() {
 
   const getRoomNumber = (req: MoveOutRequestItem) => {
     if (req.contractId && typeof req.contractId === 'object') {
-      return req.contractId.roomId?.name || req.contractId.roomId?.roomCode || '-';
+      if (req.contractId.roomId && typeof req.contractId.roomId === 'object') {
+        return req.contractId.roomId.name || req.contractId.roomId.roomCode || '-';
+      }
     }
     return '-';
+  };
+
+  const getRoomId = (req: MoveOutRequestItem): string | null => {
+    if (!req.contractId || typeof req.contractId !== 'object') return null;
+    const roomRef = req.contractId.roomId;
+    if (!roomRef) return null;
+    if (typeof roomRef === 'string') return roomRef;
+    return roomRef._id ?? null;
   };
 
   const getInvoiceId = (req: MoveOutRequestItem): string | null => {
@@ -199,32 +216,75 @@ export default function MoveOutRequestsList() {
         setComparisonLoading(true);
         const res = await moveOutService.getDepositVsInvoice(req._id);
         if (res.success && res.data) setDepositComparison(res.data);
-      } catch (_) { /* not critical */ } finally {
+      } catch {
+        /* not critical */
+      } finally {
         setComparisonLoading(false);
       }
     }
   };
 
   // ── Release Invoice ───────────────────────────────────────────────────────
-  const openReleaseModal = (req: MoveOutRequestItem) => {
+  const openReleaseModal = async (req: MoveOutRequestItem) => {
     setReleasingRequest(req);
-    setReleaseNote('');
     setElectricIndex('');
     setWaterIndex('');
+    setOldElectricIndex(null);
+    setOldWaterIndex(null);
+    setOldIndexError('');
     setReleaseError('');
     setShowReleaseModal(true);
+
+    const roomId = getRoomId(req);
+    if (!roomId) {
+      setOldIndexError('Không xác định được phòng để tải chỉ số cũ.');
+      return;
+    }
+
+    try {
+      setOldIndexLoading(true);
+      const servicesRes = await moveOutService.getUtilityServices();
+      const serviceList = Array.isArray(servicesRes?.data) ? servicesRes.data : [];
+
+      const electricService = serviceList.find((s: { _id?: string; name?: string; serviceName?: string }) =>
+        ['điện', 'dien'].includes((s.name || s.serviceName || '').trim().toLowerCase())
+      );
+      const waterService = serviceList.find((s: { _id?: string; name?: string; serviceName?: string }) =>
+        ['nước', 'nuoc'].includes((s.name || s.serviceName || '').trim().toLowerCase())
+      );
+
+      const [electricReadingRes, waterReadingRes] = await Promise.all([
+        electricService?._id
+          ? moveOutService.getLatestMeterReading(roomId, electricService._id).catch(() => null)
+          : Promise.resolve(null),
+        waterService?._id
+          ? moveOutService.getLatestMeterReading(roomId, waterService._id).catch(() => null)
+          : Promise.resolve(null),
+      ]);
+
+      const electricReading = electricReadingRes?.data;
+      const waterReading = waterReadingRes?.data;
+
+      if (electricReading && typeof electricReading.oldIndex === 'number' && typeof electricReading.newIndex === 'number') {
+        setOldElectricIndex({ oldIndex: electricReading.oldIndex, newIndex: electricReading.newIndex });
+      }
+      if (waterReading && typeof waterReading.oldIndex === 'number' && typeof waterReading.newIndex === 'number') {
+        setOldWaterIndex({ oldIndex: waterReading.oldIndex, newIndex: waterReading.newIndex });
+      }
+    } catch {
+      setOldIndexError('Không tải được chỉ số điện nước cũ.');
+    } finally {
+      setOldIndexLoading(false);
+    }
   };
 
   const handleRelease = async () => {
     if (!releasingRequest) return;
 
     const payload: {
-      managerInvoiceNotes?: string;
       electricIndex?: number;
       waterIndex?: number;
     } = {};
-
-    if (releaseNote) payload.managerInvoiceNotes = releaseNote;
     if (electricIndex !== '') {
       const ei = Number(electricIndex);
       if (isNaN(ei) || ei < 0) {
@@ -257,28 +317,32 @@ export default function MoveOutRequestsList() {
     }
   };
 
-  // ── Confirm Offline Payment ───────────────────────────────────────────────
-  const openPaymentModal = (req: MoveOutRequestItem) => {
-    setPayingRequest(req);
-    setPaymentNote('');
-    setPaymentError('');
-    setShowPaymentModal(true);
+  // ── Check Payment Status ──────────────────────────────────────────────────
+  const openCheckPaymentModal = (req: MoveOutRequestItem) => {
+    setCheckingRequest(req);
+    setCheckPaymentResult(null);
+    setShowCheckPaymentModal(true);
   };
 
-  const handleConfirmPayment = async () => {
-    if (!payingRequest) return;
+  const handleCheckPayment = async () => {
+    if (!checkingRequest) return;
     try {
-      setPaymentLoading(true);
-      setPaymentError('');
-      await moveOutService.confirmPaymentOffline(payingRequest._id, paymentNote || undefined);
-      setShowPaymentModal(false);
-      setPayingRequest(null);
-      fetchRequests();
+      setCheckPaymentLoading(true);
+      const res = await moveOutService.checkPaymentStatus(checkingRequest._id);
+      if (res.success && res.data) {
+        setCheckPaymentResult(res.data);
+        // Refetch to get updated status
+        setTimeout(() => {
+          fetchRequests();
+        }, 1500);
+      }
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { message?: string } } };
-      setPaymentError(anyErr?.response?.data?.message || 'Xác nhận thanh toán thất bại');
+      setCheckPaymentResult({
+        error: anyErr?.response?.data?.message || 'Kiểm tra thanh toán thất bại'
+      });
     } finally {
-      setPaymentLoading(false);
+      setCheckPaymentLoading(false);
     }
   };
 
@@ -452,12 +516,12 @@ export default function MoveOutRequestsList() {
                           </button>
                         )}
 
-                        {/* Step 4b: Confirm offline payment */}
+                        {/* Step 3: Check payment status */}
                         {req.status === 'InvoiceReleased' && (
                           <button
                             className="btn-confirm-payment"
-                            title="Xác nhận thanh toán offline"
-                            onClick={() => openPaymentModal(req)}
+                            title="Kiểm tra trạng thái thanh toán"
+                            onClick={() => openCheckPaymentModal(req)}
                           >
                             <Banknote size={15} />
                           </button>
@@ -664,9 +728,9 @@ export default function MoveOutRequestsList() {
                 {selectedRequest.status === 'InvoiceReleased' && (
                   <button
                     className="btn-action-indigo"
-                    onClick={() => { setSelectedRequest(null); openPaymentModal(selectedRequest); }}
+                    onClick={() => { setSelectedRequest(null); openCheckPaymentModal(selectedRequest); }}
                   >
-                    <Banknote size={14} /> Xác nhận thanh toán offline
+                    <Banknote size={14} /> Kiểm tra thanh toán
                   </button>
                 )}
                 {selectedRequest.status === 'Paid' && (
@@ -688,13 +752,10 @@ export default function MoveOutRequestsList() {
         <div className="modal-overlay" onClick={() => setShowReleaseModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Phát hành hóa đơn cuối</h2>
+              <h2>[STEP 2] Phát hành hóa đơn cuối</h2>
               <button className="btn-close" onClick={() => setShowReleaseModal(false)}>×</button>
             </div>
             <div className="modal-body">
-              <div className="info-box info-box--blue">
-                <p>Hệ thống sẽ <strong>tự động tính toán và tạo Hóa đơn cuối (Hóa đơn xuất phòng)</strong> bao gồm cấn trừ tiền thuê phòng, điện, nước và các dịch vụ. Hóa đơn sẽ được chuyển thẳng sang trạng thái <strong>Unpaid</strong> để chờ thanh toán và chốt cọc.</p>
-              </div>
               <div className="detail-grid" style={{ marginBottom: 16 }}>
                 <div className="detail-row">
                   <label>Cư dân:</label>
@@ -709,39 +770,51 @@ export default function MoveOutRequestsList() {
                   <span>{formatDate(releasingRequest.expectedMoveOutDate)}</span>
                 </div>
               </div>
-              <div className="form-group" style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                <div style={{ flex: 1 }}>
-                  <label>Chỉ số điện chốt (tùy chọn):</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={electricIndex}
-                    onChange={(e) => setElectricIndex(e.target.value)}
-                    placeholder="VD: 1540"
-                    min="0"
-                    style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
-                  />
+              <div className="detail-grid" style={{ marginBottom: 16 }}>
+                <div className="detail-row">
+                  <label>Chỉ số điện cũ:</label>
+                  <span>
+                    {oldIndexLoading
+                      ? 'Đang tải...'
+                      : oldElectricIndex
+                        ? `${oldElectricIndex.oldIndex} → ${oldElectricIndex.newIndex}`
+                        : '-'}
+                  </span>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label>Chỉ số nước chốt (tùy chọn):</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={waterIndex}
-                    onChange={(e) => setWaterIndex(e.target.value)}
-                    placeholder="VD: 320"
-                    min="0"
-                    style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
-                  />
+                <div className="detail-row">
+                  <label>Chỉ số nước cũ:</label>
+                  <span>
+                    {oldIndexLoading
+                      ? 'Đang tải...'
+                      : oldWaterIndex
+                        ? `${oldWaterIndex.oldIndex} → ${oldWaterIndex.newIndex}`
+                        : '-'}
+                  </span>
                 </div>
               </div>
-              <div className="form-group">
-                <label>Ghi chú (tùy chọn):</label>
-                <textarea
-                  className="form-textarea"
-                  value={releaseNote}
-                  onChange={(e) => setReleaseNote(e.target.value)}
-                  placeholder="Ghi chú cho cư dân về hóa đơn cuối..."
+              {oldIndexError && <div className="mo-error" style={{ marginBottom: 8 }}>{oldIndexError}</div>}
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label>Chỉ số điện chốt (tùy chọn):</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={electricIndex}
+                  onChange={(e) => setElectricIndex(e.target.value)}
+                  placeholder="VD: 1450"
+                  min="0"
+                  style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label>Chỉ số nước chốt (tùy chọn):</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={waterIndex}
+                  onChange={(e) => setWaterIndex(e.target.value)}
+                  placeholder="VD: 320"
+                  min="0"
+                  style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
                 />
               </div>
               {releaseError && <div className="mo-error" style={{ marginTop: 8 }}>{releaseError}</div>}
@@ -756,50 +829,79 @@ export default function MoveOutRequestsList() {
         </div>
       )}
 
-      {/* ── Confirm Offline Payment Modal ─────────────────────────────────── */}
-      {showPaymentModal && payingRequest && (
-        <div className="modal-overlay" onClick={() => setShowPaymentModal(false)}>
+      {/* ── Check Payment Status Modal ────────────────────────────────────── */}
+      {showCheckPaymentModal && checkingRequest && (
+        <div className="modal-overlay" onClick={() => setShowCheckPaymentModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Xác nhận thanh toán offline</h2>
-              <button className="btn-close" onClick={() => setShowPaymentModal(false)}>×</button>
+              <h2>[STEP 4] Kiểm tra trạng thái thanh toán</h2>
+              <button className="btn-close" onClick={() => setShowCheckPaymentModal(false)}>×</button>
             </div>
             <div className="modal-body">
-              <div className="info-box info-box--green">
-                <p>Xác nhận rằng cư dân đã <strong>thanh toán tiền mặt</strong> đầy đủ cho hóa đơn cuối. Hệ thống sẽ đánh dấu hóa đơn là đã thanh toán và xử lý tiền cọc.</p>
-              </div>
-              <div className="detail-grid" style={{ marginBottom: 16 }}>
-                <div className="detail-row">
-                  <label>Cư dân:</label>
-                  <span>{getTenantFullName(payingRequest)}</span>
+              {!checkPaymentResult ? (
+                <>
+                  <div className="info-box info-box--blue">
+                    <p><strong>Kiểm tra trạng thái thanh toán:</strong></p>
+                    <p style={{ marginTop: 8, fontSize: 13 }}>Hệ thống sẽ kiểm tra xem Tenant đã thanh toán hóa đơn xuất phòng chưa:</p>
+                    <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px', fontSize: 13 }}>
+                      <li><strong>Nếu đã thanh toán:</strong> Trạng thái tự động cập nhật → Paid. Bạn có thể hoàn tất trả phòng.</li>
+                      <li><strong>Nếu chưa:</strong> Vui lòng liên hệ hoặc chờ Tenant thanh toán.</li>
+                    </ul>
+                  </div>
+                  <div className="detail-grid" style={{ marginBottom: 16 }}>
+                    <div className="detail-row">
+                      <label>Cư dân:</label>
+                      <span>{getTenantFullName(checkingRequest)}</span>
+                    </div>
+                    <div className="detail-row">
+                      <label>Phòng:</label>
+                      <span>{getRoomNumber(checkingRequest)}</span>
+                    </div>
+                    <div className="detail-row">
+                      <label>Trạng thái hiện tại:</label>
+                      <span className={`status-badge ${STATUS_BADGE_CLASS[checkingRequest.status] ?? ''}`}>
+                        {STATUS_LABELS[checkingRequest.status] ?? checkingRequest.status}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              ) : checkPaymentResult.error ? (
+                <div className="mo-error">{checkPaymentResult.error}</div>
+              ) : (
+                <div className={checkPaymentResult.isPaid ? 'info-box info-box--green' : 'info-box info-box--orange'}>
+                  <p>
+                    {checkPaymentResult.isPaid
+                      ? `✓ Tenant đã thanh toán hóa đơn. Bạn có thể tiến hành hoàn tất trả phòng.`
+                      : `⏳ Tenant chưa thanh toán. Vui lòng chờ hoặc liên hệ để nhắc nhở.`}
+                  </p>
+                  <div style={{ marginTop: 12, fontSize: 13, color: '#475569' }}>
+                    <div>Hóa đơn: {formatMoney(checkPaymentResult.invoiceAmount)}</div>
+                    <div>Trạng thái HĐ: {checkPaymentResult.invoiceStatus}</div>
+                  </div>
                 </div>
-                <div className="detail-row">
-                  <label>Phòng:</label>
-                  <span>{getRoomNumber(payingRequest)}</span>
-                </div>
-                <div className="detail-row">
-                  <label>Mất cọc:</label>
-                  <span className={payingRequest.isDepositForfeited ? 'text-danger' : 'text-ok'}>
-                    {payingRequest.isDepositForfeited ? '❌ Có' : '✓ Không'}
-                  </span>
-                </div>
-              </div>
-              <div className="form-group">
-                <label>Ghi chú kế toán (tùy chọn):</label>
-                <textarea
-                  className="form-textarea"
-                  value={paymentNote}
-                  onChange={(e) => setPaymentNote(e.target.value)}
-                  placeholder="Ghi chú về việc xác nhận thanh toán..."
-                />
-              </div>
-              {paymentError && <div className="mo-error" style={{ marginTop: 8 }}>{paymentError}</div>}
+              )}
             </div>
             <div className="modal-footer">
-              <button className="btn-cancel" onClick={() => setShowPaymentModal(false)}>Hủy</button>
-              <button className="btn-action-indigo btn-modal-action" onClick={handleConfirmPayment} disabled={paymentLoading}>
-                {paymentLoading ? 'Đang xử lý...' : 'Xác nhận đã thanh toán'}
+              <button
+                className="btn-cancel"
+                onClick={() => {
+                  setShowCheckPaymentModal(false);
+                  setCheckingRequest(null);
+                  setCheckPaymentResult(null);
+                }}
+                disabled={checkPaymentLoading}
+              >
+                {checkPaymentResult ? 'Đóng' : 'Hủy'}
               </button>
+              {!checkPaymentResult && (
+                <button
+                  className="btn-action-indigo btn-modal-action"
+                  onClick={handleCheckPayment}
+                  disabled={checkPaymentLoading}
+                >
+                  {checkPaymentLoading ? 'Đang kiểm tra...' : 'Kiểm tra thanh toán'}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -810,12 +912,12 @@ export default function MoveOutRequestsList() {
         <div className="modal-overlay" onClick={() => setShowCompleteModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Hoàn tất trả phòng</h2>
+              <h2>[STEP 5] Hoàn tất trả phòng</h2>
               <button className="btn-close" onClick={() => setShowCompleteModal(false)}>×</button>
             </div>
             <div className="modal-body">
               <div className="info-box info-box--orange">
-                <p>Hành động này sẽ <strong>kết thúc hợp đồng</strong> và <strong>vô hiệu hóa tài khoản</strong> của cư dân. Vui lòng chắc chắn trước khi tiếp tục.</p>
+                <p>Hành động này sẽ <strong>kết thúc hợp đồng</strong> và <strong>vô hiệu hóa tài khoản</strong> của cư dân. Sau bước này, quy trình trả phòng sẽ hoàn toàn kết thúc.</p>
               </div>
               <div className="detail-grid" style={{ marginBottom: 16 }}>
                 <div className="detail-row">
