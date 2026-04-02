@@ -252,6 +252,11 @@ export default function RepairRequestsList() {
           setSelectedRequest((prev) => (prev ? { ...prev, status: updated.status } : prev));
         }
       }
+
+      setRepairToast({
+        title: 'Thành công',
+        message: 'Cập nhật trạng thái thành công!',
+      });
     } catch (err: any) {
       console.error('Lỗi khi cập nhật trạng thái yêu cầu:', err);
       alert(err?.response?.data?.message || 'Không thể cập nhật trạng thái yêu cầu');
@@ -282,6 +287,10 @@ export default function RepairRequestsList() {
     setShowStatusConfirmModal(false);
     setPendingStatusChange(null);
     await applyStatusUpdate(request, nextStatus);
+    // Hiện toast trước 600ms rồi mới đóng modal chi tiết để user thấy thông báo
+    setTimeout(() => {
+      setSelectedRequest(null);
+    }, 600);
   };
 
   const handleCloseStatusConfirmModal = () => {
@@ -478,6 +487,10 @@ export default function RepairRequestsList() {
         title: 'Thành công',
         message: 'Tạo yêu cầu sửa chữa có phí thành công!',
       });
+      // Hiện toast trước 600ms rồi mới đóng modal chi tiết để user thấy thông báo
+      setTimeout(() => {
+        setSelectedRequest(null);
+      }, 600);
     } catch (err: any) {
       console.error('Lỗi khi hoàn thành yêu cầu:', err);
       alert(err?.response?.data?.message || 'Không thể hoàn thành yêu cầu');
@@ -607,6 +620,10 @@ export default function RepairRequestsList() {
         title: 'Thành công',
         message: 'Tạo yêu cầu sửa chữa miễn phí thành công!',
       });
+      // Hiện toast trước 600ms rồi mới đóng modal chi tiết để user thấy thông báo
+      setTimeout(() => {
+        setSelectedRequest(null);
+      }, 600);
     } catch (err: any) {
       console.error('Lỗi khi hoàn thành yêu cầu (miễn phí):', err);
       alert(err?.response?.data?.message || 'Không thể hoàn thành yêu cầu');
