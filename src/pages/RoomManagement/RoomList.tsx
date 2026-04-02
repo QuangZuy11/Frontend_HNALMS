@@ -160,7 +160,7 @@ export default function RoomList() {
                   isShortTermAvailable = true;
                }
             }
-            if (room.hasFutureInactiveContract) {
+            if (room.hasFutureInactiveContract && !room.hasFloatingDeposit) {
                isShortTermAvailable = true;
             }
 

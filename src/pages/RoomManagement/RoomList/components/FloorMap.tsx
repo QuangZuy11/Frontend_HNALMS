@@ -324,7 +324,8 @@ export default function FloorMap({
               // Inactive contract (>30 days): treat as available, green label, no !
               const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFutureContract) || hasFutureInactiveContract;
               // Visual: show deposit badge if deposited + has floating deposit (NOT for inactive contracts)
-              const showDepositedBadge = isDeposited && !hasMultiOptions && !hasFutureInactiveContract;
+              // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit
+              const showDepositedBadge = (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) || (hasFutureInactiveContract && hasFloatingDeposit);
 
               // Check if highlighted
               const isGhosted =
@@ -364,7 +365,7 @@ export default function FloorMap({
                         </span>
                       )}
                     {/* Inactive contract (>30 days): green label — không hiện khi đang có multi-options */}
-                    {!hasMultiOptions && hasFutureInactiveContract && room.contractStartDate && (
+                    {!hasMultiOptions && hasFutureInactiveContract && !hasFloatingDeposit && room.contractStartDate && (
                       <span className="room-inactive-label">
                         Trống đến → {new Date(room.contractStartDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
                       </span>

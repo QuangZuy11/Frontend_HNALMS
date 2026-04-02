@@ -409,7 +409,8 @@ export default function FloorMapLevel2({
                           const hasFutureInactiveContract = room.hasFutureInactiveContract || false;
                           const hasMultiOptions = isDeposited && hasFutureContract;
                           const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFutureContract) || hasFutureInactiveContract;
-                          const showDepositedBadge = isDeposited && !hasMultiOptions && !hasFutureInactiveContract;
+                          // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit
+                          const showDepositedBadge = (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) || (hasFutureInactiveContract && hasFloatingDeposit);
                           const typeColor = getRoomTypeColor(
                             room.roomTypeId?._id,
                           );
@@ -465,7 +466,7 @@ export default function FloorMapLevel2({
                                     <span>{new Date(room.futureContractStartDate || room.contractStartDate!).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
                                   </span>
                                 )}
-                              {!hasMultiOptions && hasFutureInactiveContract && room.contractStartDate && (
+                              {!hasMultiOptions && hasFutureInactiveContract && !hasFloatingDeposit && room.contractStartDate && (
                                 <span style={{
                                   display: "flex",
                                   flexDirection: "column",
@@ -587,7 +588,8 @@ export default function FloorMapLevel2({
                   const hasFutureInactiveContract = room.hasFutureInactiveContract || false;
                   const hasMultiOptions = isDeposited && hasFutureContract;
                   const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFutureContract) || hasFutureInactiveContract;
-                  const showDepositedBadge = isDeposited && !hasMultiOptions && !hasFutureInactiveContract;
+                  // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit
+                  const showDepositedBadge = (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) || (hasFutureInactiveContract && hasFloatingDeposit);
                   const typeColor = getRoomTypeColor(room.roomTypeId?._id);
                   const isGhosted =
                     highlightedRooms &&
@@ -638,7 +640,7 @@ export default function FloorMapLevel2({
                             <span>{new Date(room.futureContractStartDate || room.contractStartDate!).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
                           </span>
                         )}
-                      {!hasMultiOptions && hasFutureInactiveContract && room.contractStartDate && (
+                      {!hasMultiOptions && hasFutureInactiveContract && !hasFloatingDeposit && room.contractStartDate && (
                         <span style={{
                           display: "flex",
                           flexDirection: "column",

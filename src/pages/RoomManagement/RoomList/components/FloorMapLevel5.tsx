@@ -310,7 +310,8 @@ export default function FloorMapLevel5({
               const hasFutureInactiveContract = room.hasFutureInactiveContract || false;
               const hasMultiOptions = isDeposited && hasFutureContract;
               const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFutureContract) || hasFutureInactiveContract;
-              const showDepositedBadge = isDeposited && !hasMultiOptions && !hasFutureInactiveContract;
+              // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit
+              const showDepositedBadge = (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) || (hasFutureInactiveContract && hasFloatingDeposit);
               const typeColor = getRoomTypeColor(room.roomTypeId?._id);
 
               // Check if highlighted
@@ -349,7 +350,7 @@ export default function FloorMapLevel5({
                           {getComingSoonLabel(room.futureContractStartDate || room.contractStartDate)}
                         </span>
                       )}
-                    {!hasMultiOptions && hasFutureInactiveContract && room.contractStartDate && (
+                    {!hasMultiOptions && hasFutureInactiveContract && !hasFloatingDeposit && room.contractStartDate && (
                       <span style={{ fontSize: "0.6rem", color: "#fff", fontWeight: 700, background: "rgba(16, 185, 129, 0.92)", padding: "2px 4px", borderRadius: "3px", lineHeight: 1.2, whiteSpace: "nowrap" }}>
                         Trống đến → {new Date(room.contractStartDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
                       </span>
