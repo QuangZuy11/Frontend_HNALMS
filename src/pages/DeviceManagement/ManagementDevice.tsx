@@ -309,14 +309,27 @@ const ManagerDevice = () => {
 
         {/* Nhóm Nút chức năng (Bên phải) */}
         {canModify && (
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn btn-outline" onClick={handleDownloadTemplate}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {/* [ĐÃ FIX] Thêm height cố định và whiteSpace nowrap để 3 nút bằng nhau */}
+            <button 
+              className="btn btn-outline" 
+              onClick={handleDownloadTemplate}
+              style={{ height: '40px', display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}
+            >
               <Download size={18} /> Tải mẫu
             </button>
-            <button className="btn btn-success" onClick={() => setShowImportModal(true)}>
+            <button 
+              className="btn btn-success" 
+              onClick={() => setShowImportModal(true)}
+              style={{ height: '40px', display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}
+            >
               <FileSpreadsheet size={18} /> Import
             </button>
-            <button className="btn btn-primary" onClick={handleOpenAdd}>
+            <button 
+              className="btn btn-primary" 
+              onClick={handleOpenAdd}
+              style={{ height: '40px', display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}
+            >
               <Plus size={18} /> Thêm thiết bị
             </button>
           </div>
@@ -427,16 +440,22 @@ const ManagerDevice = () => {
         )}
       </div>
 
+      {/* =========================================================================
+          CÁC MODAL (ĐÃ FIX LỖI TRÀN MÀN HÌNH VÀ ĐỒNG BỘ NÚT BẤM)
+          ========================================================================= */}
+
       {/* --- 1. ADD / EDIT MODAL --- */}
       {canModify && showModal && (
         <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+          {/* [ĐÃ FIX] Thêm maxHeight 90vh và flex column để tự động scroll */}
+          <div className="modal-content" style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ flexShrink: 0 }}>
               <h3>{isEditing ? 'Cập nhật thông tin' : 'Thêm thiết bị mới'}</h3>
               <button className="btn-icon" onClick={() => setShowModal(false)}><X size={20} /></button>
             </div>
-            <form onSubmit={handleSave}>
-              <div className="modal-body">
+            
+            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', margin: 0, padding: 0, flex: 1, overflow: 'hidden' }}>
+              <div className="modal-body" style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
                 <div className="form-grid">
                   <div className="form-group full-width">
                     <label>Tên thiết bị <span style={{color: 'red'}}>*</span></label>
@@ -452,7 +471,6 @@ const ManagerDevice = () => {
                   </div>
                   <div className="form-group">
                     <label>Danh mục</label>
-                    {/* Gợi ý nhập liệu nếu chưa có */}
                     <input type="text" list="category-list" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} placeholder="VD: Điện lạnh, Nội thất..." />
                     <datalist id="category-list">
                       {uniqueCategories.map(cat => <option key={cat} value={cat} />)}
@@ -464,7 +482,6 @@ const ManagerDevice = () => {
                   </div>
                   <div className="form-group full-width">
                     <label>Mô tả chi tiết (Tối đa 100 ký tự)</label>
-                    {/* [SỬA] Giới hạn maxLength = 100 */}
                     <textarea 
                       rows={3} 
                       maxLength={100}
@@ -478,9 +495,27 @@ const ManagerDevice = () => {
                   </div>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-outline" onClick={() => setShowModal(false)}>Hủy</button>
-                <button type="submit" className="btn btn-primary">Lưu lại</button>
+              
+              {/* [ĐÃ FIX] Khu vực nút bấm luôn bám đáy và đồng bộ kích thước 120x42 */}
+              <div 
+                className="modal-footer" 
+                style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', padding: '16px 24px', borderTop: '1px solid #e2e8f0', margin: 0, flexShrink: 0, background: '#fff' }}
+              >
+                <button 
+                  type="button" 
+                  className="btn btn-outline" 
+                  onClick={() => setShowModal(false)}
+                  style={{ width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 0, margin: 0, boxSizing: 'border-box' }}
+                >
+                  Hủy
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  style={{ width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 0, margin: 0, boxSizing: 'border-box' }}
+                >
+                  Lưu lại
+                </button>
               </div>
             </form>
           </div>
@@ -490,12 +525,12 @@ const ManagerDevice = () => {
       {/* --- 2. IMPORT EXCEL MODAL --- */}
       {canModify && showImportModal && (
         <div className="modal-overlay" style={{ zIndex: 1050 }} onClick={() => setShowImportModal(false)}>
-          <div className="modal-content" style={{width: '500px'}} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+          <div className="modal-content" style={{ width: '500px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ flexShrink: 0 }}>
               <h3>Import dữ liệu từ Excel</h3>
               <button className="btn-icon" onClick={() => setShowImportModal(false)}><X size={20} /></button>
             </div>
-            <div className="modal-body">
+            <div className="modal-body" style={{ padding: '24px', overflowY: 'auto' }}>
               <div 
                 className="upload-area"
                 onClick={() => fileInputRef.current?.click()}
@@ -530,13 +565,24 @@ const ManagerDevice = () => {
                 </ul>
               </div>
             </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-outline" onClick={() => setShowImportModal(false)}>Hủy</button>
+            <div 
+              className="modal-footer" 
+              style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', padding: '16px 24px', borderTop: '1px solid #e2e8f0', margin: 0, flexShrink: 0, background: '#fff' }}
+            >
+              <button 
+                type="button" 
+                className="btn btn-outline" 
+                onClick={() => setShowImportModal(false)}
+                style={{ width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 0, margin: 0, boxSizing: 'border-box' }}
+              >
+                Hủy
+              </button>
               <button 
                 type="button" 
                 className="btn btn-primary" 
                 onClick={handleImportSubmit}
                 disabled={!selectedFile || loading}
+                style={{ height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '0 24px', boxSizing: 'border-box' }}
               >
                 {loading ? 'Đang xử lý...' : 'Tiến hành Import'}
               </button>
@@ -563,19 +609,15 @@ const ManagerDevice = () => {
                 type="button"
                 className="btn btn-outline"
                 onClick={() => setConfirmModal({ isOpen: false, action: null, targetDevice: null, message: '' })}
+                style={{ width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', boxSizing: 'border-box' }}
               >
                 Hủy bỏ
               </button>
               <button
                 type="button"
                 style={{
-                  padding: '8px 24px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  border: 'none',
-                  background: '#ef4444',
-                  color: 'white',
+                  width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', boxSizing: 'border-box',
+                  borderRadius: '6px', cursor: 'pointer', fontWeight: 600, border: 'none', background: '#ef4444', color: 'white',
                 }}
                 onClick={executeConfirmAction}
                 disabled={loading}
