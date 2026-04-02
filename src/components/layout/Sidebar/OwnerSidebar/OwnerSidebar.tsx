@@ -92,7 +92,7 @@ const MENU_ITEMS = [
         subItems: [
             { title: "Dòng tiền", path: "/owner/reports/summary", icon: <TrendingUp size={16} /> },
             { title: "Doanh thu", path: "/owner/reports/revenue", icon: <DollarSign size={16} /> },
-            { title: "Hiệu suất", path: "/owner/reports/occupancy", icon: <Activity size={16} /> },
+            { title: "Hiệu suất", path: "/owner/reports/statistics/performance", icon: <Activity size={16} /> },
             { title: "Sửa chữa & Bảo trì", path: "/owner/reports/maintenance", icon: <Wrench size={16} /> },
         ]
     },
