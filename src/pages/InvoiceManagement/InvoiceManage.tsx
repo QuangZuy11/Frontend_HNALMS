@@ -827,16 +827,20 @@ const InvoiceManager = () => {
         </div>
       )}
 
+      {/* =========================================================================
+          CÁC MODAL (ĐÃ FIX LỖI OVERLAY CHE SIDEBAR VÀ FIX LỖI GIAO DIỆN BỊ ÉP)
+          ========================================================================= */}
+
       {/* MODAL 1: NHẬP SỐ ĐIỆN NƯỚC ĐƠN LẺ */}
       {showReadingModal && selectedInvoice && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ width: '600px' }}>
-            <div className="modal-header">
-              <h3>Sửa chỉ số - {getRoomName(selectedInvoice)}</h3>
-              <button onClick={() => setShowReadingModal(false)} className="btn-icon"><X size={20}/></button>
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setShowReadingModal(false)}>
+          <div className="modal-content" style={{ width: '600px', maxWidth: '90vw', background: '#fff', borderRadius: '12px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>Sửa chỉ số - {getRoomName(selectedInvoice)}</h3>
+              <button onClick={() => setShowReadingModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={20}/></button>
             </div>
-            <form onSubmit={handleSaveReading}>
-              <div className="modal-body">
+            <form onSubmit={handleSaveReading} style={{ display: 'flex', flexDirection: 'column', margin: 0, overflow: 'hidden' }}>
+              <div className="modal-body" style={{ padding: '24px', overflowY: 'auto' }}>
                 
                 {/* KHU VỰC ĐIỆN */}
                 {elecServiceInfo && (
@@ -854,23 +858,25 @@ const InvoiceManager = () => {
                       </label>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                      <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label>Chỉ số tháng cũ</label>
-                        <input type="number" disabled value={dualReadingForm.elecOld} style={{ background: '#f1f5f9', cursor: 'not-allowed' }} />
+                      <div className="form-group" style={{ marginBottom: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '14px', fontWeight: 600, color: '#1e293b' }}>Chỉ số tháng cũ</label>
+                        <input type="number" disabled value={dualReadingForm.elecOld} style={{ background: '#f1f5f9', cursor: 'not-allowed', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0' }} />
                       </div>
-                      <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label>Chỉ số tháng này</label>
-                        {/* [SỬA ĐỔI] Validate maxlength 5 chữ số */}
+                      <div className="form-group" style={{ marginBottom: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '14px', fontWeight: 600, color: '#1e293b' }}>Chỉ số tháng này</label>
                         <input type="number" 
                           min={isElecReset ? 0 : dualReadingForm.elecOld} 
-                          max={99999}
                           required 
-                          value={dualReadingForm.elecNew} 
+                          value={dualReadingForm.elecNew.toString()} 
                           onChange={e => {
-                            if (e.target.value.length <= 5) {
-                              setDualReadingForm({...dualReadingForm, elecNew: Number(e.target.value)});
-                            }
-                          }} 
+                            let val = e.target.value.replace(/\D/g, ''); 
+                            if (val.length > 5) val = val.slice(0, 5); 
+                            setDualReadingForm({...dualReadingForm, elecNew: val === '' ? 0 : Number(val)});
+                          }}
+                          onKeyDown={(e) => {
+                            if (['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault();
+                          }}
+                          style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
                         />
                       </div>
                     </div>
@@ -896,23 +902,25 @@ const InvoiceManager = () => {
                       </label>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                      <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label>Chỉ số tháng cũ</label>
-                        <input type="number" disabled value={dualReadingForm.waterOld} style={{ background: '#f1f5f9', cursor: 'not-allowed' }} />
+                      <div className="form-group" style={{ marginBottom: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '14px', fontWeight: 600, color: '#1e293b' }}>Chỉ số tháng cũ</label>
+                        <input type="number" disabled value={dualReadingForm.waterOld} style={{ background: '#f1f5f9', cursor: 'not-allowed', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0' }} />
                       </div>
-                      <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label>Chỉ số tháng này</label>
-                        {/* [SỬA ĐỔI] Validate maxlength 5 chữ số */}
+                      <div className="form-group" style={{ marginBottom: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '14px', fontWeight: 600, color: '#1e293b' }}>Chỉ số tháng này</label>
                         <input type="number" 
                           min={isWaterReset ? 0 : dualReadingForm.waterOld} 
-                          max={99999}
                           required 
-                          value={dualReadingForm.waterNew} 
+                          value={dualReadingForm.waterNew.toString()} 
                           onChange={e => {
-                            if (e.target.value.length <= 5) {
-                              setDualReadingForm({...dualReadingForm, waterNew: Number(e.target.value)});
-                            }
-                          }} 
+                            let val = e.target.value.replace(/\D/g, ''); 
+                            if (val.length > 5) val = val.slice(0, 5); 
+                            setDualReadingForm({...dualReadingForm, waterNew: val === '' ? 0 : Number(val)});
+                          }}
+                          onKeyDown={(e) => {
+                            if (['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault();
+                          }}
+                          style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
                         />
                       </div>
                     </div>
@@ -923,7 +931,7 @@ const InvoiceManager = () => {
                 )}
 
               </div>
-              <div className="modal-footer">
+              <div className="modal-footer" style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                 <button type="button" className="btn btn-outline" onClick={() => setShowReadingModal(false)}>Hủy</button>
                 <button type="submit" className="btn btn-primary">Lưu & Tính tổng tiền</button>
               </div>
@@ -934,58 +942,55 @@ const InvoiceManager = () => {
 
       {/* MODAL 2: CHI TIẾT HÓA ĐƠN */}
       {showDetailModal && selectedInvoice && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ width: '650px' }}>
-            <div className="modal-header">
-              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setShowDetailModal(false)}>
+          <div className="modal-content" style={{ width: '650px', maxWidth: '95vw', background: '#fff', borderRadius: '12px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: '18px', color: '#0f172a' }}>
                 <FileText size={20}/> Chi tiết {selectedInvoice.type === 'Periodic' ? 'Hóa đơn Định kỳ' : 'Hóa đơn Phát sinh'}
               </h3>
-              <button onClick={() => setShowDetailModal(false)} className="btn-icon"><X size={20}/></button>
+              <button onClick={() => setShowDetailModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={20}/></button>
             </div>
-            <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-              <div className="detail-row">
-                <span className="detail-label">Mã hóa đơn:</span>
-                <span className="detail-value text-code">{selectedInvoice.invoiceCode}</span>
+            
+            <div className="modal-body" style={{ padding: '24px', overflowY: 'auto' }}>
+              
+              {/* Dùng Grid Inline thay cho class detail-row để tránh bị ép layout */}
+              <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '12px', marginBottom: '16px', alignItems: 'center' }}>
+                <span style={{ color: '#64748b', fontSize: '14px', fontWeight: 600 }}>Mã hóa đơn:</span>
+                <span style={{ fontFamily: 'monospace', fontSize: '15px', fontWeight: 600, color: '#1e293b' }}>{selectedInvoice.invoiceCode}</span>
               </div>
-              <div className="detail-row">
-                <span className="detail-label">Phòng:</span>
-                <span className="detail-value" style={{ fontWeight: 'bold' }}>
-                  {getRoomName(selectedInvoice)}
-                </span>
+              <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '12px', marginBottom: '16px', alignItems: 'center' }}>
+                <span style={{ color: '#64748b', fontSize: '14px', fontWeight: 600 }}>Phòng:</span>
+                <span style={{ fontSize: '15px', fontWeight: 700, color: '#2563eb' }}>{getRoomName(selectedInvoice)}</span>
               </div>
-              <div className="detail-row">
-                <span className="detail-label">Tiêu đề:</span>
-                <span className="detail-value">{selectedInvoice.title}</span>
+              <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '12px', marginBottom: '16px', alignItems: 'center' }}>
+                <span style={{ color: '#64748b', fontSize: '14px', fontWeight: 600 }}>Tiêu đề:</span>
+                <span style={{ fontSize: '15px', color: '#1e293b' }}>{selectedInvoice.title}</span>
               </div>
-              <div className="detail-row">
-                <span className="detail-label">Hạn thanh toán:</span>
-                <span className="detail-value" style={{ color: '#ef4444' }}>
-                  {formatDate(selectedInvoice.dueDate)}
-                </span>
+              <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '12px', marginBottom: '16px', alignItems: 'center' }}>
+                <span style={{ color: '#64748b', fontSize: '14px', fontWeight: 600 }}>Hạn thanh toán:</span>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: '#ef4444' }}>{formatDate(selectedInvoice.dueDate)}</span>
               </div>
-              <div className="detail-row">
-                <span className="detail-label">Trạng thái:</span>
-                <span className="detail-value" style={{ textAlign: 'left' }}>
-                  {renderStatusBadge(selectedInvoice.status)}
-                </span>
+              <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '12px', marginBottom: '24px', alignItems: 'center' }}>
+                <span style={{ color: '#64748b', fontSize: '14px', fontWeight: 600 }}>Trạng thái:</span>
+                <div>{renderStatusBadge(selectedInvoice.status)}</div>
               </div>
 
               {selectedInvoice.type === 'Periodic' && selectedInvoice.items && selectedInvoice.items.length > 0 && (
-                <div style={{ marginTop: '20px', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
-                  <table className="invoice-table" style={{ margin: 0, width: '100%', fontSize: '14px' }}>
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                     <thead style={{ background: '#f8fafc' }}>
                       <tr>
-                        <th style={{ padding: '10px 12px', textAlign: 'left' }}>Nội dung thu</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'center' }}>Số lượng / Chỉ số</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'right' }}>Đơn giá</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'right' }}>Thành tiền</th>
+                        <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>Nội dung thu</th>
+                        <th style={{ padding: '12px', textAlign: 'center', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>Số lượng / Chỉ số</th>
+                        <th style={{ padding: '12px', textAlign: 'right', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>Đơn giá</th>
+                        <th style={{ padding: '12px', textAlign: 'right', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>Thành tiền</th>
                       </tr>
                     </thead>
                     <tbody>
                       {selectedInvoice.items.map((item, index) => (
-                        <tr key={index} style={{ borderTop: '1px solid #e2e8f0' }}>
-                          <td style={{ padding: '10px 12px' }}>{item.itemName}</td>
-                          <td style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b' }}>
+                        <tr key={index}>
+                          <td style={{ padding: '12px', borderBottom: '1px solid #e2e8f0' }}>{item.itemName}</td>
+                          <td style={{ padding: '12px', textAlign: 'center', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>
                             {item.isIndex === true ? (
                               <span style={{ fontSize: '13px' }}>
                                 Tiêu thụ: <b>{item.usage}</b> <br/> ({item.oldIndex} - {item.newIndex})
@@ -994,10 +999,10 @@ const InvoiceManager = () => {
                               <span>{item.usage}</span>
                             )}
                           </td>
-                          <td style={{ padding: '10px 12px', textAlign: 'right', color: '#64748b' }}>
+                          <td style={{ padding: '12px', textAlign: 'right', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>
                             {formatCurrency(item.unitPrice)}
                           </td>
-                          <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 600, color: '#334155' }}>
+                          <td style={{ padding: '12px', textAlign: 'right', borderBottom: '1px solid #e2e8f0', fontWeight: 600, color: '#334155' }}>
                             {formatCurrency(item.amount)}
                           </td>
                         </tr>
@@ -1022,16 +1027,13 @@ const InvoiceManager = () => {
                 </div>
               )}
               
-              <div className="detail-row" style={{ borderBottom: 'none', marginTop: 12, background: '#f1f5f9', padding: 16, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'nowrap' }}>
-                <span className="detail-label" style={{ fontSize: 16, fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', width: 'auto', marginRight: '20px' }}>
-                  TỔNG CẦN THU:
-                </span>
-                <span className="detail-value text-price" style={{ fontSize: 24, color: '#2563eb', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}>
-                  {formatCurrency(selectedInvoice.totalAmount)}
-                </span>
+              <div style={{ marginTop: '20px', background: '#f1f5f9', padding: '16px 20px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '16px', fontWeight: 600, color: '#0f172a' }}>TỔNG CẦN THU:</span>
+                <span style={{ fontSize: '24px', color: '#2563eb', fontWeight: 700 }}>{formatCurrency(selectedInvoice.totalAmount)}</span>
               </div>
             </div>
-            <div className="modal-footer">
+            
+            <div className="modal-footer" style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end' }}>
               <button className="btn btn-outline" onClick={() => setShowDetailModal(false)}>Đóng lại</button>
             </div>
           </div>
@@ -1040,8 +1042,8 @@ const InvoiceManager = () => {
 
       {/* MODAL 3: XÁC NHẬN CHUYÊN NGHIỆP */}
       {confirmModal.isOpen && (
-        <div className="modal-overlay" style={{ zIndex: 9999 }}>
-          <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }}>
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setConfirmModal({ isOpen: false, action: null, message: '', targetId: undefined, targetType: undefined })}>
+          <div className="modal-content" style={{ width: '400px', maxWidth: '90vw', background: '#fff', borderRadius: '12px', padding: '24px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ marginTop: 0, color: '#1e293b', fontSize: '18px' }}>Xác nhận thao tác</h3>
             <p style={{ color: '#475569', margin: '16px 0 24px 0', lineHeight: '1.5' }}>
               {confirmModal.message}
@@ -1067,24 +1069,24 @@ const InvoiceManager = () => {
 
       {/* MODAL 4: GHI CHỈ SỐ HÀNG LOẠT */}
       {showBulkReadingModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ width: '900px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div className="modal-header">
-              <h3>⚡ Ghi Chỉ Số Điện Nước Hàng Loạt</h3>
-              <button onClick={() => setShowBulkReadingModal(false)} className="btn-icon"><X size={20}/></button>
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setShowBulkReadingModal(false)}>
+          <div className="modal-content" style={{ width: '900px', maxWidth: '95vw', maxHeight: '90vh', background: '#fff', borderRadius: '12px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>⚡ Ghi Chỉ Số Điện Nước Hàng Loạt</h3>
+              <button onClick={() => setShowBulkReadingModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={20}/></button>
             </div>
-            <div className="modal-body" style={{ padding: '0' }}>
+            <div className="modal-body" style={{ padding: '0', overflowY: 'auto' }}>
               <div style={{ padding: '16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '14px' }}>
                 * Hệ thống tự động bỏ qua nếu số mới không thay đổi. Nếu đồng hồ bị quay vòng (nhảy về 0), hãy tick vào ô <b>"Reset"</b>.
               </div>
-              <table className="invoice-table" style={{ margin: 0 }}>
+              <table className="invoice-table" style={{ margin: 0, width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: '#f1f5f9' }}>
-                    <th style={{ width: '20%' }}>Phòng</th>
-                    <th style={{ width: '20%' }}>Điện Cũ</th>
-                    <th style={{ width: '20%' }}>Điện Mới</th>
-                    <th style={{ width: '20%' }}>Nước Cũ</th>
-                    <th style={{ width: '20%' }}>Nước Mới</th>
+                    <th style={{ width: '20%', padding: '12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>Phòng</th>
+                    <th style={{ width: '20%', padding: '12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>Điện Cũ</th>
+                    <th style={{ width: '20%', padding: '12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>Điện Mới</th>
+                    <th style={{ width: '20%', padding: '12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>Nước Cũ</th>
+                    <th style={{ width: '20%', padding: '12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>Nước Mới</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1092,24 +1094,27 @@ const InvoiceManager = () => {
                     const isDone = completedRooms[room._id]; 
 
                     return (
-                      <tr key={room._id} style={{ opacity: isDone ? 0.6 : 1, background: isDone ? '#f8fafc' : 'white' }}>
-                        <td style={{ fontWeight: 'bold', color: '#0f172a', verticalAlign: 'top', paddingTop: '16px' }}>
+                      <tr key={room._id} style={{ opacity: isDone ? 0.6 : 1, background: isDone ? '#f8fafc' : 'white', borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ fontWeight: 'bold', color: '#0f172a', verticalAlign: 'top', padding: '16px 12px' }}>
                           {room.name}
                           {isDone && <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 'normal', marginTop: '4px' }}>✓ Đã chốt</div>}
                         </td>
-                        <td style={{ verticalAlign: 'top', paddingTop: '16px' }}>
+                        <td style={{ verticalAlign: 'top', padding: '16px 12px' }}>
                           <input type="number" disabled value={bulkData[room._id]?.eOld || 0} style={{ width: '80px', padding: '6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 4, cursor: 'not-allowed' }} />
                         </td>
-                        <td style={{ verticalAlign: 'top', paddingTop: '16px' }}>
-                          {/* [SỬA ĐỔI] Validate maxlength 5 chữ số */}
+                        <td style={{ verticalAlign: 'top', padding: '16px 12px' }}>
                           <input type="number" 
                             disabled={isDone} 
                             min={bulkData[room._id]?.eReset ? 0 : (bulkData[room._id]?.eOld || 0)} 
-                            max={99999}
-                            value={bulkData[room._id]?.eNew || 0} 
+                            value={bulkData[room._id]?.eNew?.toString() || '0'} 
                             onChange={(e) => {
-                              if (e.target.value.length <= 5) {
-                                setBulkData({ ...bulkData, [room._id]: { ...bulkData[room._id], eNew: Number(e.target.value) } });
+                              let val = e.target.value.replace(/\D/g, ''); 
+                              if (val.length > 5) val = val.slice(0, 5); 
+                              setBulkData({ ...bulkData, [room._id]: { ...bulkData[room._id], eNew: Number(val) } });
+                            }}
+                            onKeyDown={(e) => {
+                              if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
+                                e.preventDefault();
                               }
                             }}
                             style={{ width: '100px', padding: '6px', border: '1px solid #3b82f6', borderRadius: 4, cursor: isDone ? 'not-allowed' : 'text' }} 
@@ -1121,19 +1126,22 @@ const InvoiceManager = () => {
                             </label>
                           )}
                         </td>
-                        <td style={{ verticalAlign: 'top', paddingTop: '16px' }}>
+                        <td style={{ verticalAlign: 'top', padding: '16px 12px' }}>
                           <input type="number" disabled value={bulkData[room._id]?.wOld || 0} style={{ width: '80px', padding: '6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 4, cursor: 'not-allowed' }} />
                         </td>
-                        <td style={{ verticalAlign: 'top', paddingTop: '16px' }}>
-                          {/* [SỬA ĐỔI] Validate maxlength 5 chữ số */}
+                        <td style={{ verticalAlign: 'top', padding: '16px 12px' }}>
                           <input type="number" 
                             disabled={isDone} 
                             min={bulkData[room._id]?.wReset ? 0 : (bulkData[room._id]?.wOld || 0)} 
-                            max={99999}
-                            value={bulkData[room._id]?.wNew || 0} 
+                            value={bulkData[room._id]?.wNew?.toString() || '0'} 
                             onChange={(e) => {
-                              if (e.target.value.length <= 5) {
-                                setBulkData({ ...bulkData, [room._id]: { ...bulkData[room._id], wNew: Number(e.target.value) } });
+                              let val = e.target.value.replace(/\D/g, ''); 
+                              if (val.length > 5) val = val.slice(0, 5); 
+                              setBulkData({ ...bulkData, [room._id]: { ...bulkData[room._id], wNew: Number(val) } });
+                            }}
+                            onKeyDown={(e) => {
+                              if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
+                                e.preventDefault();
                               }
                             }}
                             style={{ width: '100px', padding: '6px', border: '1px solid #0ea5e9', borderRadius: 4, cursor: isDone ? 'not-allowed' : 'text' }} 
@@ -1151,7 +1159,7 @@ const InvoiceManager = () => {
                 </tbody>
               </table>
             </div>
-            <div className="modal-footer" style={{ borderTop: '1px solid #e2e8f0' }}>
+            <div className="modal-footer" style={{ borderTop: '1px solid #e2e8f0', padding: '16px 24px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
               <button className="btn btn-outline" onClick={() => setShowBulkReadingModal(false)}>Hủy</button>
               <button className="btn btn-primary" onClick={handleSaveBulkReadings} disabled={loading}>
                 {loading ? 'Đang lưu...' : 'Lưu TẤT CẢ chỉ số'}
