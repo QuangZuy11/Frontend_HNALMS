@@ -189,6 +189,11 @@ export default function MaintenanceRequestsList() {
           setSelectedRequest((prev) => (prev ? { ...prev, status: updated.status } : prev));
         }
       }
+
+      setMaintenanceToast({
+        title: 'Thành công',
+        message: 'Cập nhật trạng thái thành công!',
+      });
     } catch (err) {
       console.error('Lỗi khi cập nhật trạng thái yêu cầu:', err);
       alert(
@@ -252,6 +257,10 @@ export default function MaintenanceRequestsList() {
     setShowMaintenanceStatusConfirmModal(false);
     setPendingMaintenanceStatusChange(null);
     await applyMaintenanceStatusUpdate(request, nextStatus);
+    // Hiện toast trước 600ms rồi mới đóng modal chi tiết để user thấy thông báo
+    setTimeout(() => {
+      setSelectedRequest(null);
+    }, 600);
   };
 
   const handleCloseMaintenanceStatusConfirmModal = () => {
@@ -365,6 +374,10 @@ export default function MaintenanceRequestsList() {
         title: 'Thành công',
         message: 'Tạo phiếu chi bảo trì thành công!',
       });
+      // Hiện toast trước 600ms rồi mới đóng modal chi tiết để user thấy thông báo
+      setTimeout(() => {
+        setSelectedRequest(null);
+      }, 600);
     } catch (err) {
       console.error('Lỗi khi hoàn thành yêu cầu bảo trì:', err);
       alert(
