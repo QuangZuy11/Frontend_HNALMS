@@ -319,7 +319,7 @@ export default function FloorMap({
               const hasFutureInactiveContract = room.hasFutureInactiveContract || false;
 
               // Special case: room is Deposited AND has future contract
-              const hasMultiOptions = isDeposited && hasFutureContract;
+              const hasMultiOptions = isDeposited && hasFutureContract && !hasFloatingDeposit;
 
               // Inactive contract (>30 days): treat as available, green label, no !
               const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFutureContract) || hasFutureInactiveContract;
@@ -365,9 +365,9 @@ export default function FloorMap({
                         </span>
                       )}
                     {/* Inactive contract (>30 days): green label — không hiện khi đang có multi-options */}
-                    {!hasMultiOptions && hasFutureInactiveContract && !hasFloatingDeposit && room.contractStartDate && (
+                    {!hasMultiOptions && hasFutureInactiveContract && !hasFloatingDeposit && (room.futureContractStartDate || room.contractStartDate) && (
                       <span className="room-inactive-label">
-                        Trống đến → {new Date(room.contractStartDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                        Trống đến → {new Date((room.futureContractStartDate || room.contractStartDate) as string).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
                       </span>
                     )}
                     {/* Short-term available: show "trống đến → DD/MM/YY" label (KHÔNG khi có inactive contract) */}
@@ -376,12 +376,7 @@ export default function FloorMap({
                         Trống đến → {new Date(room.contractStartDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "2-digit" })}
                       </span>
                     )}
-                    {/* Deposited with future contract → "Trống → DD/MM" */}
-                    {showDepositedBadge && room.contractStartDate && getComingSoonLabel(room.contractStartDate) && (
-                      <span className="room-coming-soon-label" style={{ fontSize: "0.6rem", color: "#fff", fontWeight: 700, lineHeight: 1.2, textAlign: "center", background: "rgba(16, 185, 129, 0.9)", padding: "2px 4px", borderRadius: "3px" }}>
-                        {getComingSoonLabel(room.contractStartDate)}
-                      </span>
-                    )}
+
                     {/* Occupied rooms → normal expiry / contract date range */}
                     {!isDeposited && !room.contractStartDate && getExpiryLabel(room.contractEndDate) && (
                       <span className="room-expiry-label">
