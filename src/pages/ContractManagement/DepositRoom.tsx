@@ -26,6 +26,15 @@ interface Room {
   maxPersons: number;
 }
 
+interface ContractInfo {
+  _id: string;
+  contractCode: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  tenantId: string;
+}
+
 interface Deposit {
   _id: string;
   name: string;
@@ -33,8 +42,11 @@ interface Deposit {
   email: string;
   room: Room;
   amount: number;
-  status: "Held" | "Refunded" | "Forfeited";
+  status: "Pending" | "Held" | "Refunded" | "Forfeited" | "Expired";
+  activationStatus: boolean | null;
+  contractId: ContractInfo | string | null;
   createdDate: string;
+  createdAt?: string;
   refundDate: string | null;
   forfeitedDate: string | null;
 }
@@ -47,9 +59,25 @@ const getStatusColor = (status: string) => {
       return "success";
     case "Forfeited":
       return "error";
+    case "Expired":
+      return "warning";
+    case "Pending":
+      return "info";
     default:
       return "default";
   }
+};
+
+const getActivationColor = (activationStatus: boolean | null) => {
+  if (activationStatus === true) return "success";
+  if (activationStatus === false) return "error";
+  return "warning"; // null = chưa activate
+};
+
+const getActivationLabel = (activationStatus: boolean | null) => {
+  if (activationStatus === true) return "Đã kích hoạt";
+  if (activationStatus === false) return "Bị reset";
+  return "Chưa kích hoạt"; // null
 };
 
 const formatCurrency = (amount: number) => {
@@ -77,6 +105,7 @@ const DepositRoom = () => {
   const [filterContact, setFilterContact] = useState(""); // Phone or Email
   const [filterRoom, setFilterRoom] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterActivation, setFilterActivation] = useState<string>("all");
 
   // Pagination
   const ROWS_PER_PAGE = 13;
@@ -97,7 +126,13 @@ const DepositRoom = () => {
     const matchStatus =
       filterStatus === "all" || deposit.status === filterStatus;
 
-    return matchName && matchContact && matchRoom && matchStatus;
+    const matchActivation =
+      filterActivation === "all" ||
+      (filterActivation === "active" && deposit.activationStatus === true) ||
+      (filterActivation === "inactive" && deposit.activationStatus === null) ||
+      (filterActivation === "reset" && deposit.activationStatus === false);
+
+    return matchName && matchContact && matchRoom && matchStatus && matchActivation;
   });
 
   // Pagination calculations
@@ -113,7 +148,7 @@ const DepositRoom = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterName, filterContact, filterRoom, filterStatus]);
+  }, [filterName, filterContact, filterRoom, filterStatus, filterActivation]);
 
   useEffect(() => {
     const fetchDeposits = async () => {
@@ -229,6 +264,23 @@ const DepositRoom = () => {
               <option value="Held">Đang giữ</option>
               <option value="Refunded">Đã hoàn</option>
               <option value="Forfeited">Đã phạt</option>
+              <option value="Expired">Đã hết hạn</option>
+            </select>
+          </div>
+          <div className="deposit-filter-wrapper">
+            <label htmlFor="deposit-activation" className="deposit-filter-label">
+              Kích hoạt:
+            </label>
+            <select
+              id="deposit-activation"
+              className="deposit-filter-select"
+              value={filterActivation}
+              onChange={(e) => setFilterActivation(e.target.value)}
+            >
+              <option value="all">Tất cả</option>
+              <option value="active">Đã kích hoạt</option>
+              <option value="inactive">Chưa kích hoạt</option>
+              <option value="reset">Bị reset</option>
             </select>
           </div>
         </div>
@@ -311,12 +363,32 @@ const DepositRoom = () => {
                 >
                   Trạng thái
                 </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: "bold",
+                    color: "#1e40af",
+                    fontSize: 15,
+                    border: 0,
+                  }}
+                >
+                  Kích hoạt
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: "bold",
+                    color: "#1e40af",
+                    fontSize: 15,
+                    border: 0,
+                  }}
+                >
+                  Hợp đồng
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {paginatedDeposits.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+                  <TableCell colSpan={9} align="center" sx={{ py: 3 }}>
                     Không có dữ liệu cọc phòng
                   </TableCell>
                 </TableRow>
@@ -366,12 +438,46 @@ const DepositRoom = () => {
                             ? "Đang giữ"
                             : deposit.status === "Refunded"
                               ? "Đã hoàn"
-                              : "Đã phạt"
+                              : deposit.status === "Forfeited"
+                                ? "Đã phạt"
+                                : deposit.status === "Expired"
+                                  ? "Đã hết hạn"
+                                  : "Đang chờ"
                         }
                         color={getStatusColor(deposit.status) as any}
                         size="small"
                         sx={{ fontWeight: "bold" }}
                       />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={getActivationLabel(deposit.activationStatus)}
+                        color={getActivationColor(deposit.activationStatus) as any}
+                        size="small"
+                        variant="outlined"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {deposit.contractId ? (
+                        (typeof deposit.contractId === "object" && deposit.contractId !== null) ? (
+                          <Chip
+                            label={deposit.contractId.contractCode || "Đã gắn"}
+                            color="success"
+                            size="small"
+                            onClick={() => {
+                              const basePath = location.pathname.startsWith("/owner") ? "/owner" : "/manager";
+                              window.open(`${window.location.origin}${basePath}/contracts/${deposit.contractId._id}`, "_blank");
+                            }}
+                            sx={{ cursor: "pointer", fontWeight: "bold" }}
+                          />
+                        ) : (
+                          <Chip label="Đã gắn" color="success" size="small" />
+                        )
+                      ) : (
+                        <Typography variant="caption" color="text.secondary">
+                          Chưa có
+                        </Typography>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))

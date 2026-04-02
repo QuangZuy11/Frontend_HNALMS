@@ -149,11 +149,33 @@
    FLOOR MAP CONTENT
    ============================== */
 .contract-floor-map {
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: visible;
   min-height: 400px;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   background-color: #ffffff;
+  padding-top: 10px;
+}
+
+/* Level maps use overflow:hidden on container/room-node — badges (!, "2") bị cắt */
+.contract-floor-map .floor-map-container.level-2,
+.contract-floor-map .floor-map-container.level-3,
+.contract-floor-map .floor-map-container.level-4 {
+  overflow: visible !important;
+}
+
+.contract-floor-map .floor-map-container.level-2 .room-node,
+.contract-floor-map .floor-map-container.level-3 .room-node,
+.contract-floor-map .floor-map-container.level-4 .room-node {
+  overflow: visible !important;
+}
+
+.contract-floor-map .map-layout-l2,
+.contract-floor-map .map-layout-l3,
+.contract-floor-map .map-layout-l4 {
+  overflow-x: auto;
+  overflow-y: visible !important;
 }
 
 /* ==============================
@@ -345,7 +367,8 @@
   content: "2";
   position: absolute;
   top: -6px;
-  left: -6px;
+  right: -6px;
+  left: auto;
   width: 18px;
   height: 18px;
   border-radius: 50%;
@@ -358,6 +381,15 @@
   justify-content: center;
   border: 2px solid white;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  z-index: 5;
+  z-index: 20;
+}
+
+.contract-floor-map .deposited-badge {
+  z-index: 22;
+}
+
+.contract-floor-map .map-layout {
+  overflow-y: visible;
+  padding-top: 6px;
 }
 
