@@ -319,11 +319,12 @@
 .violation-modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 23, 42, 0.5);
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 50;
+  z-index: 9999;
   animation: fadeInOverlay 0.18s ease-out;
 }
 
@@ -334,9 +335,9 @@
   max-width: 95%;
   max-height: 90vh;
   overflow: hidden;
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   transform-origin: center top;
-  animation: fadeInModal 0.2s ease-out;
+  animation: fadeInModal 0.3s ease;
 }
 
 @keyframes fadeInOverlay {
@@ -345,17 +346,17 @@
 }
 
 @keyframes fadeInModal {
-  from { opacity: 0; transform: translateY(-6px) scale(0.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .violation-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 20px 24px;
   border-bottom: 1px solid #e2e8f0;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: #ffffff;
 }
 
 .violation-modal-header h2 {

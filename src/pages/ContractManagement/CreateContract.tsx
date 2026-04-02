@@ -354,6 +354,8 @@ const CreateContract = () => {
   const ocrFileInputRef = useRef<HTMLInputElement>(null);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedDeposit, setSelectedDeposit] = useState<any>(null);
+  const [isSecondContract, setIsSecondContract] = useState(false);
 
   const {
     control,
@@ -399,6 +401,87 @@ const CreateContract = () => {
       sessionStorage.removeItem("contractFormDraft");
     }
   }, []);
+
+  // Auto-select the correct deposit for the selected room
+  useEffect(() => {
+    if (!selectedRoom || selectedRoom.status !== "Deposited") {
+      setSelectedDeposit(null);
+      return;
+    }
+
+    const fetchDeposit = async () => {
+      try {
+        const [depositsRes, contractsRes] = await Promise.all([
+          axios.get(`${API_URL}/deposits`),
+          axios.get(`${API_URL}/contracts`),
+        ]);
+
+        if (depositsRes.data.success && contractsRes.data.success) {
+          const allDeposits = depositsRes.data.data || [];
+          const allContracts = contractsRes.data.data || [];
+
+          // Find Held deposits for this room
+          const roomDeposits = allDeposits.filter(
+            (d: any) =>
+              (d.room === selectedRoom._id || d.room?._id === selectedRoom._id) &&
+              d.status === "Held"
+          );
+
+          if (roomDeposits.length === 0) {
+            setSelectedDeposit(null);
+            return;
+          }
+
+          // Contracts for this room
+          const roomContracts = allContracts.filter(
+            (c: any) =>
+              (c.roomId === selectedRoom._id || c.roomId?._id === selectedRoom._id)
+          );
+          const takenDepositIds = roomContracts
+            .filter((c: any) => c.depositId)
+            .map((c: any) =>
+              typeof c.depositId === "string" ? c.depositId : c.depositId?._id
+            );
+
+          // Priority 1: activationStatus=null, not taken
+          const newFree = roomDeposits.find(
+            (d: any) =>
+              !takenDepositIds.includes(d._id) && d.activationStatus === null
+          );
+          if (newFree) {
+            setSelectedDeposit(newFree);
+            return;
+          }
+
+          // Priority 2: activationStatus=false, not taken
+          const resetFree = roomDeposits.find(
+            (d: any) =>
+              !takenDepositIds.includes(d._id) && d.activationStatus === false
+          );
+          if (resetFree) {
+            setSelectedDeposit(resetFree);
+            return;
+          }
+
+          // Priority 3: any not taken
+          const anyFree = roomDeposits.find(
+            (d: any) => !takenDepositIds.includes(d._id)
+          );
+          if (anyFree) {
+            setSelectedDeposit(anyFree);
+            return;
+          }
+
+          // All taken - no auto-select
+          setSelectedDeposit(null);
+        }
+      } catch (err) {
+        console.error("Error fetching deposits for room:", err);
+      }
+    };
+
+    fetchDeposit();
+  }, [selectedRoom?._id, selectedRoom?.status]);
 
   // Fetch Rooms and Services on Mount
   useEffect(() => {
@@ -453,6 +536,7 @@ const CreateContract = () => {
 
       setSelectedRoom(fullRoom);
       setValue("roomId", fullRoom._id);
+      setIsSecondContract(!!fullRoom.futureContractStartDate);
 
       // Map devices from API response (read-only display)
       console.log("Room details fetched:", fullRoom);
@@ -476,6 +560,7 @@ const CreateContract = () => {
       setSelectedRoom(roomData);
       setValue("roomId", roomData._id);
       setRoomDevices([]);
+      setIsSecondContract(!!roomData.futureContractStartDate);
     }
   };
 
@@ -506,6 +591,20 @@ const CreateContract = () => {
       }
     }
   }, [selectedRoom, watchStartDate, setValue, getValues]);
+
+  // Auto-adjust prepayMonths default when contract type changes (normal vs gap-fill)
+  useEffect(() => {
+    const current = getValues("prepayMonths");
+    if (isSecondContract) {
+      // Gap-fill contract: default to 1, adjust if current value is invalid
+      const dur = getValues("duration");
+      if (current < 1) setValue("prepayMonths", 1, { shouldValidate: true });
+      if (current > dur) setValue("prepayMonths", Math.min(1, dur), { shouldValidate: true });
+    } else {
+      // Normal contract: ensure min 2
+      if (current < 2) setValue("prepayMonths", 2, { shouldValidate: true });
+    }
+  }, [isSecondContract, setValue, getValues]);
 
   // Helper: determine service category by name
   const getServiceCategory = (serviceName: string): ServiceCategory => {
@@ -783,6 +882,14 @@ const CreateContract = () => {
       return;
     }
 
+    // Validate: phải có deposit được chọn đúng
+    if (!selectedDeposit) {
+      alert(
+        "Không tìm thấy đặt cọc phù hợp cho phòng này. Vui lòng tạo đặt cọc mới trước khi tạo hợp đồng.",
+      );
+      return;
+    }
+
     // Validate: phải có ít nhất 1 ảnh hợp đồng bản cứng
     if (contractImages.length === 0) {
       setImageError(true);
@@ -805,6 +912,7 @@ const CreateContract = () => {
 
       const payload = {
         ...data,
+        depositId: selectedDeposit._id,
         rentPaidUntil,
         contractDetails: {
           startDate: data.startDate,
@@ -1478,7 +1586,13 @@ const CreateContract = () => {
                               "& .MuiInput-root": {
                                 pb: 0,
                               },
-                              "& .MuiFormHelperText-root": { mt: 0, position: "absolute", top: "100%" },
+                              "& .MuiFormHelperText-root": {
+                                mt: 0,
+                                position: "absolute",
+                                top: "100%",
+                                whiteSpace: "nowrap",
+                                maxWidth: 350,
+                              },
                             }}
                             inputProps={{
                               style: {
@@ -1508,9 +1622,9 @@ const CreateContract = () => {
                                     if (contractEnd > futureStart) {
                                       // If duration is 1, and it still exceeds, provide a very clear error message
                                       if (val === 1) {
-                                        return `Ngày bắt đầu quá sát hợp đồng tiếp theo (${futureStart.toLocaleDateString("vi-VN")}). Rút ngắn ngày bắt đầu hoặc chọn tối đa 1 tháng không vượt quá.`;
+                                        return `Ngày bắt đầu quá sát hợp đồng tiếp theo. Vui lòng chọn ngày bắt đầu sớm hơn.`;
                                       }
-                                      return `Tối đa ${val - 1} tháng để trả phòng trước ${futureStart.toLocaleDateString("vi-VN")}`;
+                                      return `Tối đa ${maxDur} tháng để kết thúc trước ngày ${futureStart.toLocaleDateString("vi-VN")}`;
                                     }
                                   }
                                 }
@@ -1600,7 +1714,7 @@ const CreateContract = () => {
                           })()}
                           {selectedRoom?.futureContractStartDate && (
                             <Typography component="div" sx={{ mt: 3, mb: 1, p: 1.5, bgcolor: "#fff3cd", color: "#856404", borderRadius: 1, border: "1px solid #ffeeba", fontSize: "0.95rem", lineHeight: 1.5 }}>
-                              <strong>⚠️ Lấp chỗ trống:</strong> Phòng đã có khách cọc trước và sẽ nhận phòng vào ngày <strong>{new Date(selectedRoom.futureContractStartDate).toLocaleDateString("vi-VN")}</strong>. Hợp đồng ngắn hạn này bị giới hạn tối đa <strong>{maxDur} tháng</strong> tính từ ngày bắt đầu.
+                              <strong>⚠️ Lấp chỗ trống:</strong> Phòng đã có khách cọc trước và sẽ nhận phòng vào ngày <strong>{new Date(selectedRoom.futureContractStartDate).toLocaleDateString("vi-VN")}</strong>. Hợp đồng ngắn hạn này bị giới hạn tối đa <strong>{maxDur} tháng</strong>. Trả trước tối thiểu <strong>1 tháng</strong>.
                             </Typography>
                           )}
                           <br />
@@ -1617,7 +1731,13 @@ const CreateContract = () => {
                                 position: "relative",
                                 top: "-2px",
                               },
-                              "& .MuiFormHelperText-root": { mt: 0, width: 250 },
+                              "& .MuiFormHelperText-root": {
+                                mt: 0,
+                                whiteSpace: "nowrap",
+                                maxWidth: 300,
+                                position: "absolute",
+                                top: "100%",
+                              },
                             }}
                             inputProps={{
                               style: {
@@ -1626,7 +1746,7 @@ const CreateContract = () => {
                                 fontSize: "1rem",
                                 padding: "0 0 2px 0",
                               },
-                              min: 2,
+                              min: isSecondContract ? 1 : 2,
                               max: Number(watch("duration")) || 12,
                             }}
                             {...register("prepayMonths", {
@@ -1635,7 +1755,8 @@ const CreateContract = () => {
                               validate: (value) => {
                                 const val = Number(value);
                                 const dur = Number(watch("duration")) || 12;
-                                if (val < 2) return "Phải trả trước tối thiểu 2 tháng";
+                                if (!isSecondContract && val < 2) return "Phải trả trước tối thiểu 2 tháng";
+                                if (isSecondContract && val < 1) return "Phải trả trước tối thiểu 1 tháng";
                                 if (val > dur) return `Không được vượt quá thời hạn thuê (${dur} tháng)`;
                                 return true;
                               }
@@ -2360,7 +2481,7 @@ const CreateContract = () => {
       <DepositModal
         open={showDepositModal}
         onClose={() => setShowDepositModal(false)}
-        depositId={preFilledDepositId}
+        depositId={selectedDeposit}
         roomId={selectedRoom?._id}
         serifFont={'"Times New Roman", Times, serif'}
       />

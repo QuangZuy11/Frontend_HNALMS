@@ -153,12 +153,15 @@ export default function RoomList() {
             let isShortTermAvailable = false;
             // Check if room is Deposited and has a future contract >= 30 days away
             // AND does NOT have a floating deposit (pending contract signing)
-            // In room.service.js, it attaches contractStartDate to Deposited rooms.
+            // OR: room has a future inactive contract (>30 days) → available to book now
             if (room.status === "Deposited" && room.contractStartDate && !room.hasFloatingDeposit) {
                const daysUntil = Math.ceil((new Date(room.contractStartDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
                if (daysUntil >= 30) {
                   isShortTermAvailable = true;
                }
+            }
+            if (room.hasFutureInactiveContract && !room.hasFloatingDeposit) {
+               isShortTermAvailable = true;
             }
 
             return {
@@ -184,6 +187,7 @@ export default function RoomList() {
               contractStartDate: room.contractStartDate || null,
               hasFloatingDeposit: room.hasFloatingDeposit || false,
               isShortTermAvailable,
+              hasFutureInactiveContract: room.hasFutureInactiveContract || false,
             };
           });
 

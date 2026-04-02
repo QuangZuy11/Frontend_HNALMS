@@ -77,13 +77,19 @@ export default function RoomDetail() {
 
         const futureStart = roomData.futureContractStartDate;
         const hasFloatingDeposit = roomData.hasFloatingDeposit || false;
+        const hasFutureInactiveContract = roomData.hasFutureInactiveContract || false;
         let isShortTermAvailable = false;
-        // Only available for short-term if: Deposited + future contract >= 30 days + NO floating deposit
+        // Available if: Deposited + future active contract >= 30 days
+        // OR: Deposited + future inactive contract (>30 days) → allow booking
         if (roomData.status === "Deposited" && futureStart && !hasFloatingDeposit) {
           const daysUntil = Math.ceil((new Date(futureStart).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
           if (daysUntil >= 30) {
             isShortTermAvailable = true;
           }
+        }
+        
+        if (hasFutureInactiveContract && !hasFloatingDeposit) {
+          isShortTermAvailable = true;
         }
 
         // Transform data to match component expectations
@@ -102,7 +108,8 @@ export default function RoomDetail() {
           assets: roomData.assets || [],
           futureContractStartDate: futureStart,
           hasFloatingDeposit,
-          isShortTermAvailable
+          isShortTermAvailable,
+          hasFutureInactiveContract
         };
 
         console.log("✅ Transformed room price:", transformedRoom.price);
@@ -240,18 +247,27 @@ export default function RoomDetail() {
                     </div>
                   </div>
                   <span
-                    className={`overlay-status ${room.status === "Available" || room.status === "Trống" || (room.status === "Deposited" && room.futureContractStartDate && room.isShortTermAvailable)
+                    className={`overlay-status ${
+                      room.status === "Available" || room.status === "Trống"
                         ? "available"
-                        : room.status === "Deposited"
-                          ? "deposited"
-                          : "occupied"
+                        : room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit
+                          ? "available"
+                          : room.status === "Deposited" && room.futureContractStartDate && room.isShortTermAvailable
+                            ? "available"
+                            : room.status === "Deposited"
+                              ? "deposited"
+                              : "occupied"
                       }`}
                   >
-                    {room.status === "Available" || room.status === "Trống" || (room.status === "Deposited" && room.futureContractStartDate && room.isShortTermAvailable)
+                    {room.status === "Available" || room.status === "Trống"
                       ? "Còn trống"
-                      : room.status === "Deposited"
-                        ? "Đã đặt cọc"
-                        : "Đang thuê"}
+                      : room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit
+                        ? "Còn trống"
+                        : room.status === "Deposited" && room.futureContractStartDate && room.isShortTermAvailable
+                          ? "Còn trống"
+                          : room.status === "Deposited"
+                            ? "Đã đặt cọc"
+                            : "Đang thuê"}
                   </span>
                 </div>
 
@@ -315,7 +331,8 @@ export default function RoomDetail() {
                   </div>
                 </div>
                 <span
-                  className={`overlay-status ${room.status === "Available" || room.status === "Trống"
+                  className={`overlay-status ${
+                    room.status === "Available" || room.status === "Trống" || (room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit)
                       ? "available"
                       : room.status === "Deposited"
                         ? "deposited"
@@ -324,9 +341,11 @@ export default function RoomDetail() {
                 >
                   {room.status === "Available" || room.status === "Trống"
                     ? "Còn trống"
-                    : room.status === "Deposited"
-                      ? "Đã đặt cọc"
-                      : "Đã thuê"}
+                    : room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit
+                      ? "Còn trống"
+                      : room.status === "Deposited"
+                        ? "Đã đặt cọc"
+                        : "Đã thuê"}
                 </span>
               </div>
               <span className="gallery-text">Hình Ảnh Phòng</span>
@@ -462,8 +481,11 @@ export default function RoomDetail() {
                   <p>✓ Giữ phòng trong 7 ngày</p>
                   <p>✓ Hỗ trợ ký hợp đồng</p>
                   <p>✓ Nhân viên sẵn sàng tư vấn</p>
-                  {room.isShortTermAvailable && room.futureContractStartDate && (
+                  {room.isShortTermAvailable && room.futureContractStartDate && !room.hasFutureInactiveContract && (
                      <p style={{ color: "var(--warning)", fontWeight: "bold" }}>⚠ Chỉ thuê đến trước {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}</p>
+                  )}
+                  {room.hasFutureInactiveContract && !room.hasFloatingDeposit && room.futureContractStartDate && (
+                     <p style={{ color: "var(--success, #10b981)", fontWeight: "bold" }}>✓ Phòng hiện trống - Sẽ có Hợp đồng bắt đầu từ {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}</p>
                   )}
                 </div>
 

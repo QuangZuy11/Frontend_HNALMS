@@ -210,6 +210,19 @@ export default function MoveOutRequestsList() {
   useEffect(() => { fetchRequests(); }, [fetchRequests]);
   useEffect(() => { setCurrentPage(1); }, [statusFilter, search]);
 
+  // ─── Control body overflow when modal opens ───────────────────────────────
+  useEffect(() => {
+    const hasOpenModal = selectedRequest || showReleaseModal || showCompleteModal;
+    if (hasOpenModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedRequest, showReleaseModal, showCompleteModal]);
+
   // ─── Event handlers ───────────────────────────────────────────────────────
   const handleSearch = () => setSearch(searchInput);
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

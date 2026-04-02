@@ -64,11 +64,14 @@ export default function BookingPage() {
                     }
                     const futureStart = roomData.futureContractStartDate;
                     let isShortTermAvailable = false;
-                    if (roomData.status === "Deposited" && futureStart) {
+                    if (roomData.status === "Deposited" && futureStart && !roomData.hasFloatingDeposit) {
                         const daysUntil = Math.ceil((new Date(futureStart).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
                         if (daysUntil >= 30) {
                             isShortTermAvailable = true;
                         }
+                    }
+                    if (roomData.hasFutureInactiveContract && !roomData.hasFloatingDeposit) {
+                        isShortTermAvailable = true;
                     }
 
                     setRoom({

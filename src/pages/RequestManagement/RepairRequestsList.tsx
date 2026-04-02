@@ -152,6 +152,19 @@ export default function RepairRequestsList() {
     setCurrentPage(1);
   }, [roomSearch, tenantSearch, statusFilter]);
 
+  // ─── Control body overflow when modal opens ───────────────────────────────
+  useEffect(() => {
+    const hasOpenModal = selectedRequest || showCompleteTypeModal || showCompleteModal || showFreeModal || showStatusConfirmModal || previewImageUrl;
+    if (hasOpenModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedRequest, showCompleteTypeModal, showCompleteModal, showFreeModal, showStatusConfirmModal, previewImageUrl]);
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     if (tableRef.current) {
