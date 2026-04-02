@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Eye, CheckCircle, FileText, Banknote } from 'lucide-react';
+import { Eye, FileText, CheckCircle } from 'lucide-react';
 import { moveOutService } from '../../services/moveOutService';
 import './MoveOutRequestsList.css';
 
@@ -56,6 +56,21 @@ interface DepositVsInvoice {
   remainingToPay: number;
   refundToTenant: number;
   isDepositForfeited: boolean;
+  refundTicket?: {
+    id?: string;
+    amount?: number;
+    status?: string;
+    paymentVoucher?: string;
+  } | null;
+}
+
+interface ReleaseSettlement {
+  depositAmount?: number;
+  invoiceAmount?: number;
+  netInvoiceAmount?: number;
+  recommendedDepositOffset?: number;
+  remainingToPay?: number;
+  refundToTenant?: number;
 }
 
 type StatusFilter = 'ALL' | 'Requested' | 'InvoiceReleased' | 'Paid' | 'Completed' | 'Cancelled';
@@ -86,6 +101,40 @@ const formatDate = (dateStr?: string) => {
 const formatMoney = (amount?: number) => {
   if (amount === undefined || amount === null) return '-';
   return amount.toLocaleString('vi-VN') + ' VND';
+};
+
+const normalizeReleaseSettlement = (
+  settlement: ReleaseSettlement,
+  isDepositForfeited?: boolean
+): ReleaseSettlement => {
+  if (isDepositForfeited) {
+    return {
+      ...settlement,
+      recommendedDepositOffset: settlement.recommendedDepositOffset ?? 0,
+      refundToTenant: 0,
+      netInvoiceAmount: settlement.netInvoiceAmount ?? settlement.invoiceAmount,
+      remainingToPay: settlement.remainingToPay ?? settlement.netInvoiceAmount ?? settlement.invoiceAmount,
+    };
+  }
+
+  const depositAmount = settlement.depositAmount;
+  const invoiceAmount = settlement.invoiceAmount;
+
+  if (typeof depositAmount !== 'number' || typeof invoiceAmount !== 'number') {
+    return settlement;
+  }
+
+  const recommendedDepositOffset = Math.min(Math.max(depositAmount, 0), Math.max(invoiceAmount, 0));
+  const netInvoiceAmount = Math.max(invoiceAmount - recommendedDepositOffset, 0);
+  const refundToTenant = Math.max(depositAmount - invoiceAmount, 0);
+
+  return {
+    ...settlement,
+    recommendedDepositOffset,
+    netInvoiceAmount,
+    remainingToPay: netInvoiceAmount,
+    refundToTenant,
+  };
 };
 
 export default function MoveOutRequestsList() {
@@ -122,17 +171,7 @@ export default function MoveOutRequestsList() {
   const [oldIndexError, setOldIndexError] = useState('');
   const [releaseLoading, setReleaseLoading] = useState(false);
   const [releaseError, setReleaseError] = useState('');
-
-  // ── Check Payment Status modal ────────────────────────────────────────────
-  const [showCheckPaymentModal, setShowCheckPaymentModal] = useState(false);
-  const [checkingRequest, setCheckingRequest] = useState<MoveOutRequestItem | null>(null);
-  const [checkPaymentLoading, setCheckPaymentLoading] = useState(false);
-  const [checkPaymentResult, setCheckPaymentResult] = useState<{
-    isPaid?: boolean;
-    invoiceStatus?: string;
-    invoiceAmount?: number;
-    error?: string;
-  } | null>(null);
+  const [releaseSettlement, setReleaseSettlement] = useState<ReleaseSettlement | null>(null);
 
   // ── Complete modal ────────────────────────────────────────────────────────
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -233,6 +272,7 @@ export default function MoveOutRequestsList() {
     setOldWaterIndex(null);
     setOldIndexError('');
     setReleaseError('');
+    setReleaseSettlement(null);
     setShowReleaseModal(true);
 
     const roomId = getRoomId(req);
@@ -305,44 +345,16 @@ export default function MoveOutRequestsList() {
     try {
       setReleaseLoading(true);
       setReleaseError('');
-      await moveOutService.releaseFinalInvoice(releasingRequest._id, payload);
-      setShowReleaseModal(false);
-      setReleasingRequest(null);
+      const res = await moveOutService.releaseFinalInvoice(releasingRequest._id, payload);
+      if (res.success && res.data?.settlement) {
+        setReleaseSettlement(res.data.settlement);
+      }
       fetchRequests();
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { message?: string } } };
       setReleaseError(anyErr?.response?.data?.message || 'Phát hành hóa đơn thất bại');
     } finally {
       setReleaseLoading(false);
-    }
-  };
-
-  // ── Check Payment Status ──────────────────────────────────────────────────
-  const openCheckPaymentModal = (req: MoveOutRequestItem) => {
-    setCheckingRequest(req);
-    setCheckPaymentResult(null);
-    setShowCheckPaymentModal(true);
-  };
-
-  const handleCheckPayment = async () => {
-    if (!checkingRequest) return;
-    try {
-      setCheckPaymentLoading(true);
-      const res = await moveOutService.checkPaymentStatus(checkingRequest._id);
-      if (res.success && res.data) {
-        setCheckPaymentResult(res.data);
-        // Refetch to get updated status
-        setTimeout(() => {
-          fetchRequests();
-        }, 1500);
-      }
-    } catch (err: unknown) {
-      const anyErr = err as { response?: { data?: { message?: string } } };
-      setCheckPaymentResult({
-        error: anyErr?.response?.data?.message || 'Kiểm tra thanh toán thất bại'
-      });
-    } finally {
-      setCheckPaymentLoading(false);
     }
   };
 
@@ -363,14 +375,20 @@ export default function MoveOutRequestsList() {
       setShowCompleteModal(false);
       setCompletingRequest(null);
       fetchRequests();
-      if (selectedRequest?._id === completingRequest._id) setSelectedRequest(null);
+      if (selectedRequest?._id === completingRequest._id) {
+        setSelectedRequest(null);
+      }
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { message?: string } } };
-      alert(anyErr?.response?.data?.message || 'Xác nhận hoàn thành thất bại');
+      alert(anyErr?.response?.data?.message || 'Hoàn tất trả phòng thất bại');
     } finally {
       setCompleteLoading(false);
     }
   };
+
+  const normalizedReleaseSettlement = releaseSettlement
+    ? normalizeReleaseSettlement(releaseSettlement, releasingRequest?.isDepositForfeited)
+    : null;
 
   // ─── Pagination ───────────────────────────────────────────────────────────
   const renderPagination = () => {
@@ -516,18 +534,6 @@ export default function MoveOutRequestsList() {
                           </button>
                         )}
 
-                        {/* Step 3: Check payment status */}
-                        {req.status === 'InvoiceReleased' && (
-                          <button
-                            className="btn-confirm-payment"
-                            title="Kiểm tra trạng thái thanh toán"
-                            onClick={() => openCheckPaymentModal(req)}
-                          >
-                            <Banknote size={15} />
-                          </button>
-                        )}
-
-                        {/* Step 5: Complete move-out */}
                         {req.status === 'Paid' && (
                           <button
                             className="btn-approve"
@@ -537,6 +543,7 @@ export default function MoveOutRequestsList() {
                             <CheckCircle size={15} />
                           </button>
                         )}
+
                       </div>
                     </td>
                   </tr>
@@ -595,6 +602,24 @@ export default function MoveOutRequestsList() {
               <div className="detail-section">
                 <div className="detail-section-title">Điều kiện cọc</div>
                 <div className="detail-grid">
+                  {comparisonLoading && getInvoiceId(selectedRequest) && (
+                    <div className="detail-row">
+                      <label>Tiền cọc/HĐ:</label>
+                      <span>Đang tải...</span>
+                    </div>
+                  )}
+                  {depositComparison && (
+                    <>
+                      <div className="detail-row">
+                        <label>Tiền cọc hiện giữ:</label>
+                        <span>{formatMoney(depositComparison.depositAmount)}</span>
+                      </div>
+                      <div className="detail-row">
+                        <label>Tiền hóa đơn cuối:</label>
+                        <span>{formatMoney(depositComparison.invoiceAmount)}</span>
+                      </div>
+                    </>
+                  )}
                   <div className="detail-row">
                     <label>Báo gấp (dưới 30 ngày):</label>
                     <span className={selectedRequest.isEarlyNotice ? 'text-danger' : 'text-ok'}>
@@ -642,6 +667,27 @@ export default function MoveOutRequestsList() {
                           <span>Cư dân cần trả thêm:</span>
                           <strong>{formatMoney(depositComparison.remainingToPay)}</strong>
                         </div>
+                      )}
+
+                      {depositComparison.refundTicket && (
+                        <>
+                          <div className="comparison-row">
+                            <span>ID phiếu chi:</span>
+                            <strong>{depositComparison.refundTicket.id ?? '-'}</strong>
+                          </div>
+                          <div className="comparison-row">
+                            <span>Mã phiếu chi hoàn cọc:</span>
+                            <strong>{depositComparison.refundTicket.paymentVoucher ?? '-'}</strong>
+                          </div>
+                          <div className="comparison-row">
+                            <span>Số tiền phiếu chi:</span>
+                            <strong>{formatMoney(depositComparison.refundTicket.amount)}</strong>
+                          </div>
+                          <div className="comparison-row">
+                            <span>Trạng thái phiếu chi:</span>
+                            <strong>{depositComparison.refundTicket.status ?? '-'}</strong>
+                          </div>
+                        </>
                       )}
                     </div>
                   ) : (
@@ -725,14 +771,6 @@ export default function MoveOutRequestsList() {
                     <FileText size={14} /> Phát hành hóa đơn cuối
                   </button>
                 )}
-                {selectedRequest.status === 'InvoiceReleased' && (
-                  <button
-                    className="btn-action-indigo"
-                    onClick={() => { setSelectedRequest(null); openCheckPaymentModal(selectedRequest); }}
-                  >
-                    <Banknote size={14} /> Kiểm tra thanh toán
-                  </button>
-                )}
                 {selectedRequest.status === 'Paid' && (
                   <button
                     className="btn-action-green"
@@ -792,6 +830,53 @@ export default function MoveOutRequestsList() {
                   </span>
                 </div>
               </div>
+              {normalizedReleaseSettlement && (
+                <div className="detail-section" style={{ marginTop: 8 }}>
+                  <div className="detail-section-title">Kết quả cấn trừ cọc</div>
+                  <div className="detail-grid">
+                    {normalizedReleaseSettlement.depositAmount !== undefined && (
+                      <div className="detail-row">
+                        <label>Tiền cọc:</label>
+                        <span>{formatMoney(normalizedReleaseSettlement.depositAmount)}</span>
+                      </div>
+                    )}
+                    {normalizedReleaseSettlement.invoiceAmount !== undefined && (
+                      <div className="detail-row">
+                        <label>Tiền hóa đơn trước cấn trừ:</label>
+                        <span>{formatMoney(normalizedReleaseSettlement.invoiceAmount)}</span>
+                      </div>
+                    )}
+                    {normalizedReleaseSettlement.netInvoiceAmount !== undefined && (
+                      <div className="detail-row">
+                        <label>Tiền hóa đơn sau cấn trừ:</label>
+                        <span>{formatMoney(normalizedReleaseSettlement.netInvoiceAmount)}</span>
+                      </div>
+                    )}
+                    {normalizedReleaseSettlement.recommendedDepositOffset !== undefined && (
+                      <div className="detail-row">
+                        <label>Mức cấn trừ khuyến nghị:</label>
+                        <span>{formatMoney(normalizedReleaseSettlement.recommendedDepositOffset)}</span>
+                      </div>
+                    )}
+                    {normalizedReleaseSettlement.remainingToPay !== undefined && (
+                      <div className="detail-row">
+                        <label>Còn phải trả:</label>
+                        <span className={normalizedReleaseSettlement.remainingToPay > 0 ? 'text-danger' : 'text-ok'}>
+                          {formatMoney(normalizedReleaseSettlement.remainingToPay)}
+                        </span>
+                      </div>
+                    )}
+                    {normalizedReleaseSettlement.refundToTenant !== undefined && (
+                      <div className="detail-row">
+                        <label>Tiền hoàn cọc:</label>
+                        <span className={normalizedReleaseSettlement.refundToTenant > 0 ? 'text-ok' : ''}>
+                          {formatMoney(normalizedReleaseSettlement.refundToTenant)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               {oldIndexError && <div className="mo-error" style={{ marginBottom: 8 }}>{oldIndexError}</div>}
               <div className="form-group" style={{ marginBottom: '16px' }}>
                 <label>Chỉ số điện chốt (tùy chọn):</label>
@@ -820,86 +905,18 @@ export default function MoveOutRequestsList() {
               {releaseError && <div className="mo-error" style={{ marginTop: 8 }}>{releaseError}</div>}
             </div>
             <div className="modal-footer">
-              <button className="btn-cancel" onClick={() => setShowReleaseModal(false)}>Hủy</button>
-              <button className="btn-action-primary btn-modal-action" onClick={handleRelease} disabled={releaseLoading}>
-                {releaseLoading ? 'Đang xử lý...' : 'Phát hành hóa đơn'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Check Payment Status Modal ────────────────────────────────────── */}
-      {showCheckPaymentModal && checkingRequest && (
-        <div className="modal-overlay" onClick={() => setShowCheckPaymentModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>[STEP 4] Kiểm tra trạng thái thanh toán</h2>
-              <button className="btn-close" onClick={() => setShowCheckPaymentModal(false)}>×</button>
-            </div>
-            <div className="modal-body">
-              {!checkPaymentResult ? (
-                <>
-                  <div className="info-box info-box--blue">
-                    <p><strong>Kiểm tra trạng thái thanh toán:</strong></p>
-                    <p style={{ marginTop: 8, fontSize: 13 }}>Hệ thống sẽ kiểm tra xem Tenant đã thanh toán hóa đơn xuất phòng chưa:</p>
-                    <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px', fontSize: 13 }}>
-                      <li><strong>Nếu đã thanh toán:</strong> Trạng thái tự động cập nhật → Paid. Bạn có thể hoàn tất trả phòng.</li>
-                      <li><strong>Nếu chưa:</strong> Vui lòng liên hệ hoặc chờ Tenant thanh toán.</li>
-                    </ul>
-                  </div>
-                  <div className="detail-grid" style={{ marginBottom: 16 }}>
-                    <div className="detail-row">
-                      <label>Cư dân:</label>
-                      <span>{getTenantFullName(checkingRequest)}</span>
-                    </div>
-                    <div className="detail-row">
-                      <label>Phòng:</label>
-                      <span>{getRoomNumber(checkingRequest)}</span>
-                    </div>
-                    <div className="detail-row">
-                      <label>Trạng thái hiện tại:</label>
-                      <span className={`status-badge ${STATUS_BADGE_CLASS[checkingRequest.status] ?? ''}`}>
-                        {STATUS_LABELS[checkingRequest.status] ?? checkingRequest.status}
-                      </span>
-                    </div>
-                  </div>
-                </>
-              ) : checkPaymentResult.error ? (
-                <div className="mo-error">{checkPaymentResult.error}</div>
-              ) : (
-                <div className={checkPaymentResult.isPaid ? 'info-box info-box--green' : 'info-box info-box--orange'}>
-                  <p>
-                    {checkPaymentResult.isPaid
-                      ? `✓ Tenant đã thanh toán hóa đơn. Bạn có thể tiến hành hoàn tất trả phòng.`
-                      : `⏳ Tenant chưa thanh toán. Vui lòng chờ hoặc liên hệ để nhắc nhở.`}
-                  </p>
-                  <div style={{ marginTop: 12, fontSize: 13, color: '#475569' }}>
-                    <div>Hóa đơn: {formatMoney(checkPaymentResult.invoiceAmount)}</div>
-                    <div>Trạng thái HĐ: {checkPaymentResult.invoiceStatus}</div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="modal-footer">
               <button
                 className="btn-cancel"
                 onClick={() => {
-                  setShowCheckPaymentModal(false);
-                  setCheckingRequest(null);
-                  setCheckPaymentResult(null);
+                  setShowReleaseModal(false);
+                  setReleasingRequest(null);
                 }}
-                disabled={checkPaymentLoading}
               >
-                {checkPaymentResult ? 'Đóng' : 'Hủy'}
+                {releaseSettlement ? 'Đóng' : 'Hủy'}
               </button>
-              {!checkPaymentResult && (
-                <button
-                  className="btn-action-indigo btn-modal-action"
-                  onClick={handleCheckPayment}
-                  disabled={checkPaymentLoading}
-                >
-                  {checkPaymentLoading ? 'Đang kiểm tra...' : 'Kiểm tra thanh toán'}
+              {!releaseSettlement && (
+                <button className="btn-action-primary btn-modal-action" onClick={handleRelease} disabled={releaseLoading}>
+                  {releaseLoading ? 'Đang xử lý...' : 'Phát hành hóa đơn'}
                 </button>
               )}
             </div>
@@ -912,12 +929,12 @@ export default function MoveOutRequestsList() {
         <div className="modal-overlay" onClick={() => setShowCompleteModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>[STEP 5] Hoàn tất trả phòng</h2>
+              <h2>[STEP 3] Hoàn tất trả phòng</h2>
               <button className="btn-close" onClick={() => setShowCompleteModal(false)}>×</button>
             </div>
             <div className="modal-body">
               <div className="info-box info-box--orange">
-                <p>Hành động này sẽ <strong>kết thúc hợp đồng</strong> và <strong>vô hiệu hóa tài khoản</strong> của cư dân. Sau bước này, quy trình trả phòng sẽ hoàn toàn kết thúc.</p>
+                <p>Xác nhận hoàn tất sẽ kết thúc quy trình trả phòng cho cư dân này.</p>
               </div>
               <div className="detail-grid" style={{ marginBottom: 16 }}>
                 <div className="detail-row">
@@ -939,12 +956,12 @@ export default function MoveOutRequestsList() {
                   className="form-textarea"
                   value={completionNote}
                   onChange={(e) => setCompletionNote(e.target.value)}
-                  placeholder="Nhập ghi chú hoàn thành (nếu có)..."
+                  placeholder="Nhập ghi chú hoàn tất (nếu có)..."
                 />
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-cancel" onClick={() => setShowCompleteModal(false)}>Hủy</button>
+              <button className="btn-cancel" onClick={() => setShowCompleteModal(false)} disabled={completeLoading}>Hủy</button>
               <button className="btn-action-green btn-modal-action" onClick={handleComplete} disabled={completeLoading}>
                 {completeLoading ? 'Đang xử lý...' : 'Xác nhận hoàn tất'}
               </button>
@@ -952,6 +969,7 @@ export default function MoveOutRequestsList() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

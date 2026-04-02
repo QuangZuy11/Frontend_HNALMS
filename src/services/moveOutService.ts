@@ -87,15 +87,8 @@ export const moveOutService = {
     return response.data;
   },
 
-  // [MANAGER] Kiểm tra trạng thái thanh toán – STEP 4
-  // GET /api/move-outs/:moveOutRequestId/check-payment-status
-  checkPaymentStatus: async (requestId: string) => {
-    const response = await api.get(`/move-outs/${requestId}/check-payment-status`);
-    return response.data;
-  },
-
-  // [MANAGER] Hoàn tất trả phòng – STEP 5
-  // PUT /api/move-outs/:moveOutRequestId/complete
+  // [MANAGER] Hoàn tất trả phòng – STEP 3
+  // PATCH/PUT /api/move-outs/:moveOutRequestId/complete
   // Body: { managerCompletionNotes }
   completeMoveOutRequest: async (
     requestId: string,
@@ -103,7 +96,12 @@ export const moveOutService = {
       managerCompletionNotes?: string;
     }
   ) => {
-    const response = await api.put(`/move-outs/${requestId}/complete`, payload ?? {});
-    return response.data;
+    try {
+      const response = await api.patch(`/move-outs/${requestId}/complete`, payload ?? {});
+      return response.data;
+    } catch {
+      const response = await api.put(`/move-outs/${requestId}/complete`, payload ?? {});
+      return response.data;
+    }
   },
 };
