@@ -4,7 +4,7 @@ import {
   Plus, Search, Edit, Trash2,
   FileSpreadsheet, Upload, Download,
   X, Laptop, Wrench, AlertCircle,
-  Filter, ChevronLeft, ChevronRight, AlertTriangle // Thêm icon AlertTriangle cho Modal lỗi
+  Filter, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import toastr from 'toastr';
 import 'toastr/build/toastr.min.css';
@@ -43,9 +43,6 @@ const ManagerDevice = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
-
-  // [MỚI] State lưu trữ mảng lỗi khi Import Excel để hiển thị lên Custom Modal
-  const [importErrors, setImportErrors] = useState<string[]>([]);
 
   // State cho Modal Xác nhận xóa
   const [confirmModal, setConfirmModal] = useState<{
@@ -189,14 +186,16 @@ const ManagerDevice = () => {
       
       if (successCount > 0) toastr.success(`Đã thêm thành công ${successCount} thiết bị.`);
       
-      // [SỬA ĐỔI] Hiển thị Custom Modal thay vì alert() mặc định
+      // [SỬA ĐỔI] Sử dụng toastr để hiển thị danh sách lỗi thay vì Custom Modal
       if (errorCount > 0) {
-        toastr.warning(`Có ${errorCount} dòng lỗi. Vui lòng kiểm tra lại.`);
-        setImportErrors(errors); // Kích hoạt hiển thị Modal Lỗi
-      } else {
-         setShowImportModal(false); // Chỉ đóng modal Import nếu không có lỗi nào
+        toastr.error(
+          `Có ${errorCount} dòng lỗi:<br/>- ${errors.join('<br/>- ')}`, 
+          "Lỗi Import", 
+          { timeOut: 10000, escapeHtml: false } // escapeHtml: false để render thẻ <br/>
+        );
       }
 
+      setShowImportModal(false);
       setSelectedFile(null); // Reset file đã chọn
       fetchDevices();
     } catch (error: any) {
@@ -501,7 +500,7 @@ const ManagerDevice = () => {
               
               <div 
                 className="modal-footer" 
-                style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', margin: 0, flexShrink: 0, background: '#fff', display: 'flex', justifyContent: 'flex-end', gap: '16px' }}
+                style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', padding: '16px 24px', borderTop: '1px solid #e2e8f0', margin: 0, flexShrink: 0, background: '#fff' }}
               >
                 <button 
                   type="button" 
@@ -593,41 +592,6 @@ const ManagerDevice = () => {
         </div>
       )}
 
-      {/* --- [MỚI] 2.1 CUSTOM MODAL THÔNG BÁO LỖI IMPORT --- */}
-      {importErrors.length > 0 && (
-        <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={() => setImportErrors([])}>
-          <div className="modal-content" style={{ width: '500px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header" style={{ flexShrink: 0, borderBottom: '1px solid #fee2e2', paddingBottom: '16px' }}>
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#dc2626', margin: 0 }}>
-                <AlertTriangle size={24} /> Có lỗi xảy ra khi Import
-              </h3>
-              <button className="btn-icon" onClick={() => setImportErrors([])}><X size={20} /></button>
-            </div>
-            <div className="modal-body" style={{ padding: '24px', overflowY: 'auto', flex: 1, backgroundColor: '#fef2f2' }}>
-              <p style={{ color: '#b91c1c', fontWeight: 600, marginBottom: '12px' }}>Vui lòng kiểm tra và sửa lại các lỗi sau trong file Excel:</p>
-              <ul style={{ color: '#991b1b', fontSize: '14px', lineHeight: '1.6', paddingLeft: '20px', margin: 0 }}>
-                {importErrors.map((err, idx) => (
-                  <li key={idx} style={{ marginBottom: '8px' }}>{err}</li>
-                ))}
-              </ul>
-            </div>
-            <div 
-              className="modal-footer" 
-              style={{ display: 'flex', justifyContent: 'flex-end', padding: '16px 24px', borderTop: '1px solid #e2e8f0', margin: 0, flexShrink: 0, background: '#fff' }}
-            >
-              <button 
-                type="button" 
-                className="btn btn-secondary" 
-                onClick={() => setImportErrors([])}
-                style={{ width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 0, margin: 0, boxSizing: 'border-box' }}
-              >
-                Đóng lại
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* --- 3. MODAL XÁC NHẬN XÓA --- */}
       {canModify && confirmModal.isOpen && (
         <div className="modal-overlay" style={{ zIndex: 9999 }} onClick={() => setConfirmModal({ isOpen: false, action: null, targetDevice: null, message: '' })}>
@@ -659,7 +623,7 @@ const ManagerDevice = () => {
                 onClick={executeConfirmAction}
                 disabled={loading}
               >
-                {loading ? 'Đang xử lý...' : 'Đồng ý'}
+                {loading ? 'Đang xử lý...' : 'Đồng ý xóa'}
               </button>
             </div>
           </div>
