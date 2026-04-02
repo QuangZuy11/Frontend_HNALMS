@@ -26,6 +26,15 @@ interface Room {
   maxPersons: number;
 }
 
+interface ContractInfo {
+  _id: string;
+  contractCode: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  tenantId: string;
+}
+
 interface Deposit {
   _id: string;
   name: string;
@@ -35,6 +44,7 @@ interface Deposit {
   amount: number;
   status: "Pending" | "Held" | "Refunded" | "Forfeited" | "Expired";
   activationStatus: boolean | null;
+  contractId: ContractInfo | string | null;
   createdDate: string;
   createdAt?: string;
   refundDate: string | null;
@@ -363,12 +373,22 @@ const DepositRoom = () => {
                 >
                   Kích hoạt
                 </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: "bold",
+                    color: "#1e40af",
+                    fontSize: 15,
+                    border: 0,
+                  }}
+                >
+                  Hợp đồng
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {paginatedDeposits.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 3 }}>
+                  <TableCell colSpan={9} align="center" sx={{ py: 3 }}>
                     Không có dữ liệu cọc phòng
                   </TableCell>
                 </TableRow>
@@ -436,6 +456,28 @@ const DepositRoom = () => {
                         size="small"
                         variant="outlined"
                       />
+                    </TableCell>
+                    <TableCell>
+                      {deposit.contractId ? (
+                        (typeof deposit.contractId === "object" && deposit.contractId !== null) ? (
+                          <Chip
+                            label={deposit.contractId.contractCode || "Đã gắn"}
+                            color="success"
+                            size="small"
+                            onClick={() => {
+                              const basePath = location.pathname.startsWith("/owner") ? "/owner" : "/manager";
+                              window.open(`${window.location.origin}${basePath}/contracts/${deposit.contractId._id}`, "_blank");
+                            }}
+                            sx={{ cursor: "pointer", fontWeight: "bold" }}
+                          />
+                        ) : (
+                          <Chip label="Đã gắn" color="success" size="small" />
+                        )
+                      ) : (
+                        <Typography variant="caption" color="text.secondary">
+                          Chưa có
+                        </Typography>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))

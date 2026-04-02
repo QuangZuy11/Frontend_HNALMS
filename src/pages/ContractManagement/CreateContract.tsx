@@ -354,6 +354,7 @@ const CreateContract = () => {
   const ocrFileInputRef = useRef<HTMLInputElement>(null);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedDeposit, setSelectedDeposit] = useState<any>(null);
 
   const {
     control,
@@ -399,6 +400,87 @@ const CreateContract = () => {
       sessionStorage.removeItem("contractFormDraft");
     }
   }, []);
+
+  // Auto-select the correct deposit for the selected room
+  useEffect(() => {
+    if (!selectedRoom || selectedRoom.status !== "Deposited") {
+      setSelectedDeposit(null);
+      return;
+    }
+
+    const fetchDeposit = async () => {
+      try {
+        const [depositsRes, contractsRes] = await Promise.all([
+          axios.get(`${API_URL}/deposits`),
+          axios.get(`${API_URL}/contracts`),
+        ]);
+
+        if (depositsRes.data.success && contractsRes.data.success) {
+          const allDeposits = depositsRes.data.data || [];
+          const allContracts = contractsRes.data.data || [];
+
+          // Find Held deposits for this room
+          const roomDeposits = allDeposits.filter(
+            (d: any) =>
+              (d.room === selectedRoom._id || d.room?._id === selectedRoom._id) &&
+              d.status === "Held"
+          );
+
+          if (roomDeposits.length === 0) {
+            setSelectedDeposit(null);
+            return;
+          }
+
+          // Contracts for this room
+          const roomContracts = allContracts.filter(
+            (c: any) =>
+              (c.roomId === selectedRoom._id || c.roomId?._id === selectedRoom._id)
+          );
+          const takenDepositIds = roomContracts
+            .filter((c: any) => c.depositId)
+            .map((c: any) =>
+              typeof c.depositId === "string" ? c.depositId : c.depositId?._id
+            );
+
+          // Priority 1: activationStatus=null, not taken
+          const newFree = roomDeposits.find(
+            (d: any) =>
+              !takenDepositIds.includes(d._id) && d.activationStatus === null
+          );
+          if (newFree) {
+            setSelectedDeposit(newFree);
+            return;
+          }
+
+          // Priority 2: activationStatus=false, not taken
+          const resetFree = roomDeposits.find(
+            (d: any) =>
+              !takenDepositIds.includes(d._id) && d.activationStatus === false
+          );
+          if (resetFree) {
+            setSelectedDeposit(resetFree);
+            return;
+          }
+
+          // Priority 3: any not taken
+          const anyFree = roomDeposits.find(
+            (d: any) => !takenDepositIds.includes(d._id)
+          );
+          if (anyFree) {
+            setSelectedDeposit(anyFree);
+            return;
+          }
+
+          // All taken - no auto-select
+          setSelectedDeposit(null);
+        }
+      } catch (err) {
+        console.error("Error fetching deposits for room:", err);
+      }
+    };
+
+    fetchDeposit();
+  }, [selectedRoom?._id, selectedRoom?.status]);
 
   // Fetch Rooms and Services on Mount
   useEffect(() => {
@@ -783,6 +865,14 @@ const CreateContract = () => {
       return;
     }
 
+    // Validate: phải có deposit được chọn đúng
+    if (!selectedDeposit) {
+      alert(
+        "Không tìm thấy đặt cọc phù hợp cho phòng này. Vui lòng tạo đặt cọc mới trước khi tạo hợp đồng.",
+      );
+      return;
+    }
+
     // Validate: phải có ít nhất 1 ảnh hợp đồng bản cứng
     if (contractImages.length === 0) {
       setImageError(true);
@@ -805,6 +895,7 @@ const CreateContract = () => {
 
       const payload = {
         ...data,
+        depositId: selectedDeposit._id,
         rentPaidUntil,
         contractDetails: {
           startDate: data.startDate,
@@ -2360,7 +2451,7 @@ const CreateContract = () => {
       <DepositModal
         open={showDepositModal}
         onClose={() => setShowDepositModal(false)}
-        depositId={preFilledDepositId}
+        depositId={selectedDeposit}
         roomId={selectedRoom?._id}
         serifFont={'"Times New Roman", Times, serif'}
       />
