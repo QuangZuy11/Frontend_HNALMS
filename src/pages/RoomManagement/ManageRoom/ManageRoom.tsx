@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import axios from "axios";
 import { Building as BuildingIcon } from "lucide-react";
 
-// [MỚI] Import toastr và CSS của toastr
 import toastr from "toastr";
 import "toastr/build/toastr.min.css";
 
@@ -48,7 +47,6 @@ interface Room {
   isActive: boolean;
 }
 
-// Props interface để phân quyền (Vẫn giữ lại prop này nếu project của bạn có dùng)
 interface ManageRoomProps {
   readOnly?: boolean; 
 }
@@ -76,7 +74,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const [showModal, setShowModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
-  // State cho Modal Xác nhận
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     action: 'TOGGLE_ACTIVE' | 'DELETE' | null;
@@ -104,16 +101,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     isActive: true,
   });
 
-  // ==========================================
-  // [MỚI] LOGIC PHÂN QUYỀN TỪ LOCAL STORAGE
-  // ==========================================
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const userRole = currentUser?.role || ''; 
-  
-  // CHỈ CHO PHÉP 'owner' ĐƯỢC QUYỀN CHỈNH SỬA (THÊM, SỬA, XÓA, IMPORT EXCEL)
-  // Kết hợp thêm prop readOnly (nếu có) để đảm bảo an toàn kép
   const canModify = userRole === 'owner' && !readOnly;
-  // ==========================================
 
   // --- FETCH DATA ---
   const fetchData = async () => {
@@ -213,12 +203,10 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     });
   }, [rooms, roomTypes, floors]);
 
-  // --- TÍNH TOÁN THỐNG KÊ ---
   const totalFloors = floors.length;
   const totalRooms = rooms.length;
   const totalTypes = roomTypes.length;
 
-  // --- HANDLERS ---
   const toggleFloor = (floorId: string) => {
     setExpandedFloors((prev) =>
       prev.includes(floorId)
@@ -242,8 +230,18 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     }).format(value);
   };
 
-  const renderStatus = (status: string) => {
-    switch (status) {
+  // [SỬA ĐỔI] Truyền cả object room vào để kiểm tra isActive
+  const renderStatus = (room: Room) => {
+    // Ưu tiên hiển thị trạng thái "Vô hiệu hóa" nếu phòng không Active
+    if (!room.isActive) {
+      return (
+        <span className="status-badge" style={{ backgroundColor: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 600 }}>
+          <Power size={12} /> Vô hiệu hóa
+        </span>
+      );
+    }
+
+    switch (room.status) {
       case "Available":
         return (
           <span className="status-badge available">
@@ -263,11 +261,10 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
           </span>
         );
       default:
-        return <span>{status}</span>;
+        return <span>{room.status}</span>;
     }
   };
 
-  // --- HANDLERS EXCEL ---
   const handleDownloadTemplate = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/excel/template`, {
@@ -325,7 +322,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     }
   };
 
-  // --- CRUD HANDLERS ---
   const handleOpenAdd = () => {
     if (floors.length === 0 || roomTypes.length === 0) {
       toastr.warning(
@@ -408,11 +404,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     setPrepaidInvoice(null);
     setSelectedContractId(null);
     
-    // Get all relevant contracts for the room
     const roomContracts = contracts.filter(
       (c: any) => (c.status === "active" || c.status === "Pending") && (c.roomId?._id === room._id || c.roomId === room._id)
     );
-    // Sort so active is first, or by startDate
     roomContracts.sort((a, b) => {
       if (a.status === "active" && b.status !== "active") return -1;
       if (b.status === "active" && a.status !== "active") return 1;
@@ -593,7 +587,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         </div>
 
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          {/* [PHÂN QUYỀN] Chỉ render nút Tải mẫu, Nhập file, Thêm phòng khi là Owner */}
           {canModify && (
             <>
               <button className="btn-secondary" onClick={handleDownloadTemplate}>
@@ -681,13 +674,10 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                             const typeDetail = getRoomTypeDetail(
                               room.roomTypeId,
                             );
-                            const rowOpacity = room.isActive ? 1 : 0.5;
 
                             return (
-                              <tr
-                                key={room._id}
-                                style={{ opacity: rowOpacity }}
-                              >
+                              // [SỬA ĐỔI] Xóa bỏ style={{ opacity: rowOpacity }} để không làm mờ hàng nữa
+                              <tr key={room._id}>
                                 <td
                                   style={{
                                     fontFamily: "monospace",
@@ -714,7 +704,8 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                                     : "---"}
                                 </td>
 
-                                <td>{renderStatus(room.status)}</td>
+                                {/* [SỬA ĐỔI] Gọi hàm renderStatus truyền cả room vào */}
+                                <td>{renderStatus(room)}</td>
 
                                 <td className="text-desc">
                                   {room.description || (
@@ -726,7 +717,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
 
                                 <td>
                                   <div className="action-group">
-                                    {/* [PHÂN QUYỀN] Chỉ render nút Tắt/Bật khi có quyền */}
                                     {canModify && (
                                       <button
                                         className={`btn-icon-sm power ${room.isActive ? "active" : "inactive"}`}
@@ -749,7 +739,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                                       <Eye size={16} />
                                     </button>
 
-                                    {/* [PHÂN QUYỀN] Chỉ render nút Sửa/Xóa khi có quyền */}
                                     {canModify && (
                                       <>
                                         <button
@@ -879,11 +868,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         </div>
       )}
 
-      {/* =========================================================================
-          CÁC MODAL ĐÃ ĐƯỢC TỐI ƯU HÓA: CÓ THỂ CLICK RA NGOÀI ĐỂ ĐÓNG 
-          ========================================================================= */}
-
-      {/* 1. Modal Xác Nhận Xóa/Kích hoạt */}
+      {/* Modal Xác Nhận Xóa/Kích hoạt */}
       {confirmModal.isOpen && (
         <div className="modal-overlay" style={{ zIndex: 9999 }} onClick={() => setConfirmModal({ isOpen: false, action: null, targetRoom: null, message: '' })}>
           <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }} onClick={(e) => e.stopPropagation()}>
@@ -930,7 +915,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         </div>
       )}
 
-      {/* 2. Modal Thêm/Sửa Phòng */}
+      {/* Modal Thêm/Sửa Phòng */}
       {canModify && showModal && (
         <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -1058,7 +1043,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         </div>
       )}
 
-      {/* 3. Modal Xem Chi Tiết Phòng */}
+      {/* Modal Xem Chi Tiết Phòng */}
       {showDetailModal &&
         viewingRoom &&
         (() => {
@@ -1085,10 +1070,13 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                         <label>Mã phòng:</label>
                         <span>{viewingRoom.roomCode || "---"}</span>
                       </div>
+                      
+                      {/* [SỬA ĐỔI] Gọi hàm renderStatus truyền cả object viewingRoom vào */}
                       <div className="rd-field">
                         <label>Trạng thái:</label>
-                        <span>{renderStatus(viewingRoom.status)}</span>
+                        <span>{renderStatus(viewingRoom)}</span>
                       </div>
+
                       <div className="rd-field">
                         <label>Kích hoạt:</label>
                         <span

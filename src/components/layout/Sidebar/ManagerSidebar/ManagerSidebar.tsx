@@ -45,7 +45,7 @@ const MENU_ITEMS = [
     path: "/manager",
     subItems: [
       { title: "Danh Sách Phòng", path: "/manager/rooms", icon: <DoorOpen size={16} /> },
-      { title: "Loại Phòng", path: "/manager/rooms/types", icon: <ChartBarStacked size={16} /> },
+      { title: "Loại Phòng", path: "/manager/building-config", icon: <ChartBarStacked size={16} /> },
     ]
   },
   {
