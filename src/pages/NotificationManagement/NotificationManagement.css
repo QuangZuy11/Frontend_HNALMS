@@ -306,12 +306,12 @@
 .notification-modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(2px);
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999;
   animation: fadeInOverlay 0.2s ease-out;
 }
 
@@ -325,7 +325,7 @@
   flex-direction: column;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   transform-origin: center center;
-  animation: scaleInModal 0.2s ease-out;
+  animation: scaleInModal 0.3s ease;
 }
 
 .notification-modal.modal-lg {

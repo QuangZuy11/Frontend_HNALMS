@@ -324,6 +324,14 @@ export default function ViolationList() {
     setCurrentPage(1);
   }, [statusFilter, roomSearch, tenantSearch]);
 
+  // ─── Control body overflow when modal opens ───────────────────────────────
+  useEffect(() => {
+    document.body.style.overflow = '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
