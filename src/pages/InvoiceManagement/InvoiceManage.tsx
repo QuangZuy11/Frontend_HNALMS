@@ -177,7 +177,6 @@ const InvoiceManager = () => {
           const reading = resE.data.data;
           const createdDate = new Date(reading.createdAt);
           
-          // [ĐÃ FIX] Kiểm tra xem chỉ số này có phải vừa nhập trong tháng này không
           if (createdDate.getMonth() === currentMonthIndex && createdDate.getFullYear() === currentYearIndex) {
             eOld = reading.oldIndex;
             eCurrent = reading.newIndex; 
@@ -197,7 +196,6 @@ const InvoiceManager = () => {
           const reading = resW.data.data;
           const createdDate = new Date(reading.createdAt);
           
-          // [ĐÃ FIX] Tương tự với Nước
           if (createdDate.getMonth() === currentMonthIndex && createdDate.getFullYear() === currentYearIndex) {
             wOld = reading.oldIndex;
             wCurrent = reading.newIndex; 
@@ -307,7 +305,6 @@ const InvoiceManager = () => {
         let eDone = false;
         let wDone = false;
 
-        // [ĐÃ FIX LỖI SỐ CŨ CHO GHI HÀNG LOẠT]
         if (elecService) {
           try {
             const res = await axios.get(`${API_BASE_URL}/meter-readings/latest?roomId=${room._id}&utilityId=${elecService._id}`);
@@ -863,11 +860,17 @@ const InvoiceManager = () => {
                       </div>
                       <div className="form-group" style={{ marginBottom: 0 }}>
                         <label>Chỉ số tháng này</label>
+                        {/* [SỬA ĐỔI] Validate maxlength 5 chữ số */}
                         <input type="number" 
                           min={isElecReset ? 0 : dualReadingForm.elecOld} 
+                          max={99999}
                           required 
                           value={dualReadingForm.elecNew} 
-                          onChange={e => setDualReadingForm({...dualReadingForm, elecNew: Number(e.target.value)})} 
+                          onChange={e => {
+                            if (e.target.value.length <= 5) {
+                              setDualReadingForm({...dualReadingForm, elecNew: Number(e.target.value)});
+                            }
+                          }} 
                         />
                       </div>
                     </div>
@@ -899,11 +902,17 @@ const InvoiceManager = () => {
                       </div>
                       <div className="form-group" style={{ marginBottom: 0 }}>
                         <label>Chỉ số tháng này</label>
+                        {/* [SỬA ĐỔI] Validate maxlength 5 chữ số */}
                         <input type="number" 
                           min={isWaterReset ? 0 : dualReadingForm.waterOld} 
+                          max={99999}
                           required 
                           value={dualReadingForm.waterNew} 
-                          onChange={e => setDualReadingForm({...dualReadingForm, waterNew: Number(e.target.value)})} 
+                          onChange={e => {
+                            if (e.target.value.length <= 5) {
+                              setDualReadingForm({...dualReadingForm, waterNew: Number(e.target.value)});
+                            }
+                          }} 
                         />
                       </div>
                     </div>
@@ -1092,11 +1101,17 @@ const InvoiceManager = () => {
                           <input type="number" disabled value={bulkData[room._id]?.eOld || 0} style={{ width: '80px', padding: '6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 4, cursor: 'not-allowed' }} />
                         </td>
                         <td style={{ verticalAlign: 'top', paddingTop: '16px' }}>
+                          {/* [SỬA ĐỔI] Validate maxlength 5 chữ số */}
                           <input type="number" 
                             disabled={isDone} 
                             min={bulkData[room._id]?.eReset ? 0 : (bulkData[room._id]?.eOld || 0)} 
+                            max={99999}
                             value={bulkData[room._id]?.eNew || 0} 
-                            onChange={(e) => setBulkData({ ...bulkData, [room._id]: { ...bulkData[room._id], eNew: Number(e.target.value) } })}
+                            onChange={(e) => {
+                              if (e.target.value.length <= 5) {
+                                setBulkData({ ...bulkData, [room._id]: { ...bulkData[room._id], eNew: Number(e.target.value) } });
+                              }
+                            }}
                             style={{ width: '100px', padding: '6px', border: '1px solid #3b82f6', borderRadius: 4, cursor: isDone ? 'not-allowed' : 'text' }} 
                           />
                           {!isDone && (
@@ -1110,11 +1125,17 @@ const InvoiceManager = () => {
                           <input type="number" disabled value={bulkData[room._id]?.wOld || 0} style={{ width: '80px', padding: '6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 4, cursor: 'not-allowed' }} />
                         </td>
                         <td style={{ verticalAlign: 'top', paddingTop: '16px' }}>
+                          {/* [SỬA ĐỔI] Validate maxlength 5 chữ số */}
                           <input type="number" 
                             disabled={isDone} 
                             min={bulkData[room._id]?.wReset ? 0 : (bulkData[room._id]?.wOld || 0)} 
+                            max={99999}
                             value={bulkData[room._id]?.wNew || 0} 
-                            onChange={(e) => setBulkData({ ...bulkData, [room._id]: { ...bulkData[room._id], wNew: Number(e.target.value) } })}
+                            onChange={(e) => {
+                              if (e.target.value.length <= 5) {
+                                setBulkData({ ...bulkData, [room._id]: { ...bulkData[room._id], wNew: Number(e.target.value) } });
+                              }
+                            }}
                             style={{ width: '100px', padding: '6px', border: '1px solid #0ea5e9', borderRadius: 4, cursor: isDone ? 'not-allowed' : 'text' }} 
                           />
                           {!isDone && (
