@@ -3,7 +3,8 @@ import axios from 'axios';
 import {
   Plus, Search, Edit, Trash2,
   FileSpreadsheet, Upload, Download,
-  X, Laptop, Wrench, AlertCircle
+  X, Laptop, Wrench, AlertCircle,
+  Filter, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import toastr from 'toastr';
 import 'toastr/build/toastr.min.css';
@@ -27,7 +28,15 @@ const ManagerDevice = () => {
   // --- States ---
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // Filter States
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('ALL');
+  const [filterPrice, setFilterPrice] = useState('ALL');
+  
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Modal States
   const [showModal, setShowModal] = useState(false);
@@ -43,7 +52,7 @@ const ManagerDevice = () => {
     message: string;
   }>({ isOpen: false, action: null, targetDevice: null, message: '' });
 
-  // Form Data
+  // Form Data (Mặc định unit là 'Cái')
   const [formData, setFormData] = useState<Partial<Device>>({
     name: '', brand: '', model: '', category: '', unit: 'Cái', price: 0, description: ''
   });
@@ -53,12 +62,10 @@ const ManagerDevice = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // ==========================================
-  // [MỚI] LOGIC PHÂN QUYỀN TỪ LOCAL STORAGE
+  // LOGIC PHÂN QUYỀN TỪ LOCAL STORAGE
   // ==========================================
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const userRole = currentUser?.role || ''; 
-  
-  // CHỈ CHO PHÉP 'owner' ĐƯỢC QUYỀN CHỈNH SỬA (THÊM, SỬA, XÓA, EXCEL)
   const canModify = userRole === 'owner';
   // ==========================================
 
@@ -72,6 +79,12 @@ const ManagerDevice = () => {
     };
     fetchDevices();
   }, []);
+
+  // --- Lấy danh sách danh mục duy nhất từ data để làm Filter ---
+  const uniqueCategories = useMemo(() => {
+    const cats = new Set(devices.map(d => d.category || 'Chung'));
+    return Array.from(cats);
+  }, [devices]);
 
   // --- API Actions ---
 
@@ -104,6 +117,12 @@ const ManagerDevice = () => {
       try {
         await axios.delete(`${API_BASE_URL}/devices/${confirmModal.targetDevice._id}`);
         toastr.success("Xóa thiết bị thành công!");
+        
+        // Nếu xóa phần tử cuối cùng của trang, lùi lại 1 trang
+        if (currentItems.length === 1 && currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+        
         fetchDevices();
       } catch (error) {
         toastr.error("Lỗi khi xóa thiết bị");
@@ -116,11 +135,14 @@ const ManagerDevice = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Ép cứng đơn vị tính là "Cái" trước khi gửi lên server
+      const payload = { ...formData, unit: 'Cái' };
+
       if (isEditing && currentId) {
-        await axios.put(`${API_BASE_URL}/devices/${currentId}`, formData);
+        await axios.put(`${API_BASE_URL}/devices/${currentId}`, payload);
         toastr.success("Cập nhật thiết bị thành công!");
       } else {
-        await axios.post(`${API_BASE_URL}/devices`, formData);
+        await axios.post(`${API_BASE_URL}/devices`, payload);
         toastr.success("Thêm mới thiết bị thành công!");
       }
       setShowModal(false);
@@ -194,13 +216,38 @@ const ManagerDevice = () => {
     setShowModal(true);
   };
 
+  // Reset page về 1 mỗi khi đổi filter
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterCategory, filterPrice]);
+
+  // Logic Lọc (Filter & Search)
   const filteredDevices = useMemo(() => {
-    return devices.filter(d => 
+    let result = devices.filter(d => 
       d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       d.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
       d.brand.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [devices, searchTerm]);
+
+    if (filterCategory !== 'ALL') {
+      result = result.filter(d => (d.category || 'Chung') === filterCategory);
+    }
+
+    if (filterPrice !== 'ALL') {
+      if (filterPrice === 'under1m') result = result.filter(d => d.price < 1000000);
+      else if (filterPrice === '1m-5m') result = result.filter(d => d.price >= 1000000 && d.price <= 5000000);
+      else if (filterPrice === 'over5m') result = result.filter(d => d.price > 5000000);
+    }
+
+    return result;
+  }, [devices, searchTerm, filterCategory, filterPrice]);
+
+  // Logic Phân trang
+  const totalPages = Math.ceil(filteredDevices.length / itemsPerPage);
+  const currentItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredDevices.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredDevices, currentPage]);
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
 
@@ -215,27 +262,59 @@ const ManagerDevice = () => {
         </div>
       </div>
 
-      {/* TOOLBAR */}
-      <div className="actions-bar">
-        <div className="search-box">
-          <Search size={18} className="search-icon" />
-          <input 
-            type="text" 
-            className="search-input" 
-            placeholder="Tìm theo tên, model, hãng..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      {/* TOOLBAR LỌC & TÌM KIẾM */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '24px', backgroundColor: '#fff', padding: '16px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        
+        {/* Nhóm Lọc (Bên trái) */}
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', flex: 1 }}>
+          <div className="search-box" style={{ minWidth: '250px', flex: 1 }}>
+            <Search size={18} className="search-icon" />
+            <input 
+              type="text" 
+              className="search-input" 
+              placeholder="Tìm theo tên, model, hãng..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Filter size={16} color="#64748b" />
+            <select 
+              value={filterCategory} 
+              onChange={(e) => setFilterCategory(e.target.value)}
+              style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', color: '#334155' }}
+            >
+              <option value="ALL">Tất cả danh mục</option>
+              {uniqueCategories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <select 
+              value={filterPrice} 
+              onChange={(e) => setFilterPrice(e.target.value)}
+              style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', color: '#334155' }}
+            >
+              <option value="ALL">Tất cả mức giá</option>
+              <option value="under1m">Dưới 1 triệu</option>
+              <option value="1m-5m">Từ 1 - 5 triệu</option>
+              <option value="over5m">Trên 5 triệu</option>
+            </select>
+          </div>
         </div>
 
-        {/* [PHÂN QUYỀN] Chỉ hiển thị các nút thao tác Excel và Thêm mới nếu là Owner */}
+        {/* Nhóm Nút chức năng (Bên phải) */}
         {canModify && (
-          <div className="button-group">
+          <div style={{ display: 'flex', gap: '8px' }}>
             <button className="btn btn-outline" onClick={handleDownloadTemplate}>
-              <Download size={18} /> Tải mẫu Excel
+              <Download size={18} /> Tải mẫu
             </button>
             <button className="btn btn-success" onClick={() => setShowImportModal(true)}>
-              <FileSpreadsheet size={18} /> Import Excel
+              <FileSpreadsheet size={18} /> Import
             </button>
             <button className="btn btn-primary" onClick={handleOpenAdd}>
               <Plus size={18} /> Thêm thiết bị
@@ -249,38 +328,48 @@ const ManagerDevice = () => {
         <table className="device-table">
           <thead>
             <tr>
-              <th style={{width: '25%'}}>Tên thiết bị</th>
+              <th style={{width: '5%', textAlign: 'center'}}>STT</th>
+              <th style={{width: '25%'}}>Tên thiết bị & Mô tả</th>
               <th style={{width: '15%'}}>Model / Hãng</th>
               <th style={{width: '15%'}}>Danh mục</th>
-              <th style={{width: '10%'}}>Đơn vị</th>
-              <th style={{width: '15%'}}>Giá niêm yết</th>
-              {/* [PHÂN QUYỀN] Ẩn cột Thao tác nếu không phải Owner */}
+              <th style={{width: '15%', textAlign: 'right'}}>Giá niêm yết</th>
               {canModify && (
                 <th style={{ textAlign: 'center', width: '15%' }}>Thao tác</th> 
               )}
             </tr>
           </thead>
           <tbody>
-            {filteredDevices.length > 0 ? (
-              filteredDevices.map((device) => (
+            {currentItems.length > 0 ? (
+              currentItems.map((device, index) => (
                 <tr key={device._id}>
-                  <td>
-                    <div style={{fontWeight: 600}}>{device.name}</div>
-                    <div style={{fontSize: 12, color: '#94a3b8', marginTop: 4}}>{device.description}</div>
+                  {/* Cột STT tính toán dựa trên trang hiện tại */}
+                  <td style={{ textAlign: 'center', fontWeight: 600, color: '#64748b' }}>
+                    {(currentPage - 1) * itemsPerPage + index + 1}
                   </td>
+                  
                   <td>
-                    <div>{device.model || '--'}</div>
+                    <div style={{fontWeight: 600, color: '#1e293b'}}>{device.name}</div>
+                    {/* Giới hạn hiển thị mô tả, tự động xuống dòng */}
+                    <div style={{fontSize: 12, color: '#64748b', marginTop: 4, wordBreak: 'break-word', lineHeight: '1.4'}}>
+                      {device.description || <span style={{fontStyle: 'italic', opacity: 0.7}}>Chưa có mô tả</span>}
+                    </div>
+                  </td>
+                  
+                  <td>
+                    <div style={{color: '#334155'}}>{device.model || '--'}</div>
                     <div style={{fontSize: 12, color: '#64748b'}}>{device.brand}</div>
                   </td>
+                  
                   <td>
                     <span style={{background: '#e0f2fe', color: '#0284c7', padding: '4px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600}}>
                       {device.category || 'Chung'}
                     </span>
                   </td>
-                  <td>{device.unit}</td>
-                  <td className="text-price">{formatCurrency(device.price)}</td>
                   
-                  {/* [PHÂN QUYỀN] Ẩn nút Sửa/Xóa nếu không phải Owner */}
+                  <td className="text-price" style={{ textAlign: 'right' }}>
+                    {formatCurrency(device.price)}
+                  </td>
+                  
                   {canModify && (
                     <td style={{ textAlign: 'center' }}>
                       <div className="action-buttons" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
@@ -298,17 +387,45 @@ const ManagerDevice = () => {
             ) : (
               <tr>
                 <td colSpan={canModify ? 6 : 5} style={{textAlign: 'center', padding: '40px', color: '#94a3b8'}}>
-                  {loading ? 'Đang tải dữ liệu...' : 'Không tìm thấy thiết bị nào.'}
+                  {loading ? 'Đang tải dữ liệu...' : 'Không tìm thấy thiết bị nào phù hợp.'}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-      </div>
 
-      {/* =========================================================================
-          CÁC MODAL ĐÃ ĐƯỢC CẬP NHẬT: Thêm z-index và tính năng click ra ngoài để đóng 
-          ========================================================================= */}
+        {/* PHÂN TRANG (PAGINATION) */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
+            <div style={{ fontSize: '14px', color: '#64748b' }}>
+              Hiển thị <span style={{ fontWeight: 600, color: '#0f172a' }}>{(currentPage - 1) * itemsPerPage + 1}</span> đến <span style={{ fontWeight: 600, color: '#0f172a' }}>{Math.min(currentPage * itemsPerPage, filteredDevices.length)}</span> trong tổng số <span style={{ fontWeight: 600, color: '#0f172a' }}>{filteredDevices.length}</span> thiết bị
+            </div>
+            
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                style={{ padding: '6px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: currentPage === 1 ? '#f1f5f9' : '#fff', color: currentPage === 1 ? '#94a3b8' : '#334155', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                <ChevronLeft size={16} /> Trước
+              </button>
+              
+              {/* Hiển thị số trang */}
+              <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontWeight: 600, color: '#0f172a' }}>
+                Trang {currentPage} / {totalPages}
+              </div>
+
+              <button 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                style={{ padding: '6px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: currentPage === totalPages ? '#f1f5f9' : '#fff', color: currentPage === totalPages ? '#94a3b8' : '#334155', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                Sau <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* --- 1. ADD / EDIT MODAL --- */}
       {canModify && showModal && (
@@ -335,19 +452,29 @@ const ManagerDevice = () => {
                   </div>
                   <div className="form-group">
                     <label>Danh mục</label>
-                    <input type="text" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} placeholder="VD: Điện lạnh" />
-                  </div>
-                  <div className="form-group">
-                    <label>Đơn vị tính</label>
-                    <input type="text" value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} />
+                    {/* Gợi ý nhập liệu nếu chưa có */}
+                    <input type="text" list="category-list" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} placeholder="VD: Điện lạnh, Nội thất..." />
+                    <datalist id="category-list">
+                      {uniqueCategories.map(cat => <option key={cat} value={cat} />)}
+                    </datalist>
                   </div>
                   <div className="form-group full-width">
                     <label>Giá tiền (VNĐ) <span style={{color: 'red'}}>*</span></label>
                     <input required type="number" min="0" value={formData.price} onChange={e => setFormData({...formData, price: Number(e.target.value)})} />
                   </div>
                   <div className="form-group full-width">
-                    <label>Mô tả chi tiết</label>
-                    <textarea rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Thông số kỹ thuật, ghi chú..." />
+                    <label>Mô tả chi tiết (Tối đa 100 ký tự)</label>
+                    {/* [SỬA] Giới hạn maxLength = 100 */}
+                    <textarea 
+                      rows={3} 
+                      maxLength={100}
+                      value={formData.description} 
+                      onChange={e => setFormData({...formData, description: e.target.value})} 
+                      placeholder="Thông số kỹ thuật, ghi chú (Tối đa 100 ký tự)..." 
+                    />
+                    <div style={{ textAlign: 'right', fontSize: '12px', color: (formData.description?.length || 0) === 100 ? '#ef4444' : '#94a3b8' }}>
+                      {formData.description?.length || 0}/100
+                    </div>
                   </div>
                 </div>
               </div>
@@ -398,6 +525,7 @@ const ManagerDevice = () => {
                 <ul style={{paddingLeft: 20, marginTop: 4}}>
                   <li>Sử dụng đúng file mẫu đã tải về.</li>
                   <li>Cột <b>Tên thiết bị</b> là bắt buộc.</li>
+                  <li>Cột <b>Đơn vị</b> (nếu có trong mẫu) sẽ tự động được gán là "Cái" trên hệ thống.</li>
                   <li>Dữ liệu sẽ được thêm mới vào hệ thống.</li>
                 </ul>
               </div>
@@ -422,11 +550,7 @@ const ManagerDevice = () => {
         <div className="modal-overlay" style={{ zIndex: 9999 }} onClick={() => setConfirmModal({ isOpen: false, action: null, targetDevice: null, message: '' })}>
           <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-              <div style={{ 
-                background: '#fee2e2', 
-                padding: '12px', 
-                borderRadius: '50%' 
-              }}>
+              <div style={{ background: '#fee2e2', padding: '12px', borderRadius: '50%' }}>
                 <AlertCircle size={32} color="#ef4444" />
               </div>
             </div>

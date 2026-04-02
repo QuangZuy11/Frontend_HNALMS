@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import {
-  Plus, Search, Edit, Trash2,
-  Package, Zap, X,
-  Filter, ArrowUpDown,
-  History, CalendarClock,
-  AlertTriangle,
-  CheckCircle2, XCircle // Icon trạng thái
+  Plus, Search, Edit, Trash2, X,
+  Filter, ArrowUpDown, History, CalendarClock,
+  AlertTriangle, CheckCircle2, XCircle,
+  ChevronLeft, ChevronRight // [MỚI] Icon phân trang
 } from 'lucide-react';
 import './ManageService.css';
 
@@ -36,10 +34,18 @@ interface Service {
 const ManageService = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // --- Filter & Sort States ---
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('ALL');
+  const [filterPrice, setFilterPrice] = useState('ALL'); // [MỚI] State lọc theo giá
   const [sortOption, setSortOption] = useState('newest');
 
+  // --- Pagination States ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // --- Modal States ---
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
@@ -80,14 +86,29 @@ const ManageService = () => {
     }
   };
 
+  // Reset trang về 1 khi thay đổi bộ lọc
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterType, filterPrice, sortOption]);
+
   const processedServices = useMemo(() => {
     let result = [...services];
+    
+    // 1. Lọc theo Tên/Mô tả & Loại
     result = result.filter(s => {
       const matchSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchType = filterType === 'ALL' || s.type === filterType;
       return matchSearch && matchType;
     });
 
+    // 2. Lọc theo Khoảng Giá
+    if (filterPrice !== 'ALL') {
+      if (filterPrice === 'under50k') result = result.filter(s => s.currentPrice < 50000);
+      else if (filterPrice === '50k-100k') result = result.filter(s => s.currentPrice >= 50000 && s.currentPrice <= 100000);
+      else if (filterPrice === 'over100k') result = result.filter(s => s.currentPrice > 100000);
+    }
+
+    // 3. Sắp xếp
     switch (sortOption) {
       case 'price-asc': result.sort((a, b) => a.currentPrice - b.currentPrice); break;
       case 'price-desc': result.sort((a, b) => b.currentPrice - a.currentPrice); break;
@@ -95,7 +116,14 @@ const ManageService = () => {
       case 'newest': default: break;
     }
     return result;
-  }, [services, searchTerm, filterType, sortOption]);
+  }, [services, searchTerm, filterType, filterPrice, sortOption]);
+
+  // Phân trang
+  const totalPages = Math.ceil(processedServices.length / itemsPerPage);
+  const currentItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return processedServices.slice(startIndex, startIndex + itemsPerPage);
+  }, [processedServices, currentPage]);
 
   const handleOpenAdd = () => {
     setIsEditing(false);
@@ -131,6 +159,12 @@ const ManageService = () => {
     try { 
       await axios.delete(`${API_BASE_URL}/services/${itemToDelete}`); 
       toastr.success("Xóa dịch vụ thành công!", "Thành công");
+      
+      // Chuyển trang nếu xóa phần tử cuối cùng của trang
+      if (currentItems.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
+
       fetchServices();
       setShowDeleteModal(false);
       setItemToDelete(null);
@@ -191,29 +225,29 @@ const ManageService = () => {
         )}
       </div>
 
-      {/* TOOLBAR */}
-      <div className="service-toolbar-wrapper">
-        <div className="toolbar-left">
-          <div className="search-container">
-            <Search className="search-icon" size={18} />
+      {/* TOOLBAR LỌC & TÌM KIẾM */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '24px', backgroundColor: '#fff', padding: '16px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', flex: 1 }}>
+          <div className="search-box" style={{ minWidth: '250px', flex: 1 }}>
+            <Search size={18} className="search-icon" />
             <input
               type="text"
               className="search-input"
               placeholder="Tìm kiếm tên dịch vụ..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ width: '100%' }}
             />
           </div>
-        </div>
 
-        <div className="toolbar-right">
-          <div className="control-group">
-            <Filter size={16} className="text-gray-400" />
-            <span className="control-label">Lọc:</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Filter size={16} color="#64748b" />
             <select
               className="custom-select"
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
+              style={{ padding: '8px 32px 8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', color: '#334155' }}
             >
               <option value="ALL">Tất cả loại</option>
               <option value="Fixed">Cố định (Fixed)</option>
@@ -221,20 +255,35 @@ const ManageService = () => {
             </select>
           </div>
 
-          <div className="control-group">
-            <ArrowUpDown size={16} className="text-gray-400" />
-            <span className="control-label">Xếp:</span>
+          {/* Lọc theo giá */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <select
               className="custom-select"
-              value={sortOption}
-              onChange={(e) => setSortOption(e.target.value)}
+              value={filterPrice}
+              onChange={(e) => setFilterPrice(e.target.value)}
+              style={{ padding: '8px 32px 8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', color: '#334155' }}
             >
-              <option value="newest">Mới nhất</option>
-              <option value="price-asc">Giá: Thấp đến Cao</option>
-              <option value="price-desc">Giá: Cao đến Thấp</option>
-              <option value="name-asc">Tên: A - Z</option>
+              <option value="ALL">Tất cả mức giá</option>
+              <option value="under50k">Dưới 50.000đ</option>
+              <option value="50k-100k">50.000đ - 100.000đ</option>
+              <option value="over100k">Trên 100.000đ</option>
             </select>
           </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ArrowUpDown size={16} color="#64748b" />
+          <select
+            className="custom-select"
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+            style={{ padding: '8px 32px 8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', color: '#334155' }}
+          >
+            <option value="newest">Mới nhất</option>
+            <option value="price-asc">Giá: Thấp đến Cao</option>
+            <option value="price-desc">Giá: Cao đến Thấp</option>
+            <option value="name-asc">Tên: A - Z</option>
+          </select>
         </div>
       </div>
 
@@ -243,73 +292,115 @@ const ManageService = () => {
         <table className="service-table">
           <thead>
             <tr>
-              <th style={{ width: '40px' }}></th>
-              <th>Tên dịch vụ</th>
-              <th>Loại dịch vụ</th>
-              <th style={{ textAlign: 'right' }}>Giá hiện tại</th>
-              <th style={{ width: '30%' }}>Mô tả</th>
-              <th style={{ textAlign: 'center' }}>Trạng thái</th>
-              <th style={{ textAlign: 'right' }}>Thao tác</th>
+              <th style={{ width: '5%', textAlign: 'center' }}>STT</th>
+              <th style={{ width: '20%', textAlign: 'left' }}>Tên dịch vụ</th>
+              <th style={{ width: '15%', textAlign: 'center' }}>Loại dịch vụ</th>
+              <th style={{ width: '15%', textAlign: 'right' }}>Giá hiện tại</th>
+              <th style={{ width: '25%', textAlign: 'left' }}>Mô tả</th>
+              <th style={{ width: '10%', textAlign: 'center' }}>Trạng thái</th>
+              <th style={{ width: '10%', textAlign: 'center' }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>
-            {processedServices.map(service => (
-              <tr key={service._id} className={!service.isActive ? 'inactive-row' : ''}>
-                <td style={{ textAlign: 'center' }}>
-                  <div className={`table-icon ${service.type === 'Fixed' ? 'icon-fixed' : 'icon-extension'}`}>
-                    {service.type === 'Fixed' ? <Package size={18} /> : <Zap size={18} />}
-                  </div>
-                </td>
-                <td style={{ fontWeight: 600, color: '#1e293b' }}>{service.name}</td>
-                <td>
-                  <span className={`type-badge ${service.type === 'Fixed' ? 'badge-fixed' : 'badge-extension'}`}>
-                    {service.type === 'Fixed' ? 'Cố định / Tháng' : 'Phụ trội'}
-                  </span>
-                </td>
-                <td style={{ textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>
-                  {formatCurrency(service.currentPrice)}
-                </td>
-                <td style={{ color: '#64748b', fontSize: '13px' }}>
-                  {service.description || <span style={{ fontStyle: 'italic', color: '#cbd5e1' }}>Không có mô tả</span>}
-                </td>
-                <td style={{ textAlign: 'center' }}>
-                  {service.isActive ? (
-                    <span className="status-badge active"><CheckCircle2 size={14}/> Hoạt động</span>
-                  ) : (
-                    <span className="status-badge inactive"><XCircle size={14}/> Tạm ngưng</span>
-                  )}
-                </td>
-                <td style={{ textAlign: 'right' }}>
-                  <div className="table-actions">
-                    <button className="btn-icon btn-history" onClick={() => handleViewHistory(service)} title="Lịch sử giá">
-                      <History size={16} />
-                    </button> 
-                    {canModify && (
-                      <>
-                        <button className="btn-icon btn-edit" onClick={() => handleOpenEdit(service)} title="Sửa">
-                          <Edit size={16} />
-                        </button>
-                        <button className="btn-icon btn-delete" onClick={() => handleDeleteClick(service._id)} title="Xóa">
-                          <Trash2 size={16} />
-                        </button>
-                      </>
-                    )}
-                  </div>
+            {currentItems.length > 0 ? (
+              currentItems.map((service, index) => (
+                <tr key={service._id} className={!service.isActive ? 'inactive-row' : ''}>
+                  {/* STT */}
+                  <td style={{ textAlign: 'center', fontWeight: 600, color: '#64748b' }}>
+                    {(currentPage - 1) * itemsPerPage + index + 1}
+                  </td>
+                  
+                  <td style={{ fontWeight: 600, color: '#1e293b', textAlign: 'left' }}>
+                    {service.name}
+                  </td>
+                  
+                  <td style={{ textAlign: 'center' }}>
+                    <span className={`type-badge ${service.type === 'Fixed' ? 'badge-fixed' : 'badge-extension'}`}>
+                      {service.type === 'Fixed' ? 'Cố định / Tháng' : 'Phụ trội'}
+                    </span>
+                  </td>
+                  
+                  <td style={{ textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>
+                    {formatCurrency(service.currentPrice)}
+                  </td>
+                  
+                  <td style={{ color: '#64748b', fontSize: '13px', textAlign: 'left', wordBreak: 'break-word', whiteSpace: 'normal', lineHeight: '1.4' }}>
+                    {service.description || <span style={{ fontStyle: 'italic', color: '#cbd5e1' }}>Không có mô tả</span>}
+                  </td>
+                  
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      {service.isActive ? (
+                        <span className="status-badge active"><CheckCircle2 size={14}/> Hoạt động</span>
+                      ) : (
+                        <span className="status-badge inactive"><XCircle size={14}/> Tạm ngưng</span>
+                      )}
+                    </div>
+                  </td>
+                  
+                  <td style={{ textAlign: 'center' }}>
+                    <div className="table-actions" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                      <button className="btn-icon btn-history" onClick={() => handleViewHistory(service)} title="Lịch sử giá">
+                        <History size={16} />
+                      </button> 
+                      {canModify && (
+                        <>
+                          <button className="btn-icon btn-edit" onClick={() => handleOpenEdit(service)} title="Sửa">
+                            <Edit size={16} />
+                          </button>
+                          <button className="btn-icon btn-delete" onClick={() => handleDeleteClick(service._id)} title="Xóa">
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={7} style={{textAlign: 'center', padding: '40px', color: '#94a3b8'}}>
+                  {loading ? 'Đang tải dữ liệu...' : 'Không tìm thấy dịch vụ nào phù hợp.'}
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
 
-        {processedServices.length === 0 && !loading && (
-          <div className="empty-state">
-            <p style={{ fontSize: 16, fontWeight: 500, color: '#64748b' }}>Không tìm thấy dịch vụ nào.</p>
+        {/* PHÂN TRANG (PAGINATION) */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
+            <div style={{ fontSize: '14px', color: '#64748b' }}>
+              Hiển thị <span style={{ fontWeight: 600, color: '#0f172a' }}>{(currentPage - 1) * itemsPerPage + 1}</span> đến <span style={{ fontWeight: 600, color: '#0f172a' }}>{Math.min(currentPage * itemsPerPage, processedServices.length)}</span> trong tổng số <span style={{ fontWeight: 600, color: '#0f172a' }}>{processedServices.length}</span> dịch vụ
+            </div>
+            
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                style={{ padding: '6px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: currentPage === 1 ? '#f1f5f9' : '#fff', color: currentPage === 1 ? '#94a3b8' : '#334155', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                <ChevronLeft size={16} /> Trước
+              </button>
+              
+              <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontWeight: 600, color: '#0f172a' }}>
+                Trang {currentPage} / {totalPages}
+              </div>
+
+              <button 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                style={{ padding: '6px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: currentPage === totalPages ? '#f1f5f9' : '#fff', color: currentPage === totalPages ? '#94a3b8' : '#334155', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                Sau <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
         )}
       </div>
 
       {/* =========================================================================
-          CÁC MODAL ĐÃ ĐƯỢC CẬP NHẬT: Thêm z-index và tính năng click ra ngoài để đóng 
+          CÁC MODAL 
           ========================================================================= */}
 
       {/* 1. Modal Thêm/Sửa Dịch vụ */}
@@ -360,12 +451,17 @@ const ManageService = () => {
               </div>
 
               <div className="form-group">
-                <label>Mô tả</label>
+                <label>Mô tả (Tối đa 100 ký tự)</label>
                 <textarea 
                   rows={3} 
+                  maxLength={100}
                   value={formData.description} 
                   onChange={e => setFormData({ ...formData, description: e.target.value })} 
+                  placeholder="Nhập mô tả ngắn gọn..."
                 />
+                <div style={{ textAlign: 'right', fontSize: '12px', color: (formData.description?.length || 0) === 100 ? '#ef4444' : '#94a3b8' }}>
+                  {formData.description?.length || 0}/100
+                </div>
               </div>
 
               <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -381,9 +477,9 @@ const ManageService = () => {
                 </label>
               </div>
 
-              <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Hủy</button>
-                <button type="submit" className="btn-primary">Lưu thông tin</button>
+              <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', paddingTop: '20px', borderTop: '1px solid #e2e8f0', margin: 0 }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)} style={{ width: '120px', padding: '10px 0', textAlign: 'center' }}>Hủy</button>
+                <button type="submit" className="btn-primary" style={{ width: '120px', padding: '10px 0', textAlign: 'center', justifyContent: 'center' }}>Lưu thông tin</button>
               </div>
             </form>
           </div>
@@ -402,7 +498,7 @@ const ManageService = () => {
               <button onClick={() => setShowHistoryModal(false)}><X size={20} /></button>
             </div>
 
-            <div className="detail-body" style={{ padding: '24px 32px', overflowY: 'auto' }}>
+            <div className="detail-body" style={{ padding: '24px 32px', overflowY: 'auto', maxHeight: '60vh' }}>
               {viewingHistoryService.histories && viewingHistoryService.histories.length > 0 ? (
                 <div className="history-list" style={{ border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
                   <div className="history-header-row" style={{ 
@@ -442,8 +538,8 @@ const ManageService = () => {
               )}
             </div>
 
-            <div className="modal-actions">
-              <button type="button" className="btn-secondary" onClick={() => setShowHistoryModal(false)}>Đóng</button>
+            <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '20px', borderTop: '1px solid #e2e8f0' }}>
+              <button type="button" className="btn-secondary" onClick={() => setShowHistoryModal(false)} style={{ width: '120px', padding: '10px 0', textAlign: 'center' }}>Đóng</button>
             </div>
           </div>
         </div>
@@ -463,8 +559,8 @@ const ManageService = () => {
                 Bạn có chắc chắn muốn xóa dịch vụ này không? Hành động này không thể hoàn tác.
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <button className="btn-secondary" onClick={() => { setShowDeleteModal(false); setItemToDelete(null); }} style={{ width: '100px' }}>Hủy</button>
-              <button className="btn-primary" onClick={handleConfirmDelete} style={{ backgroundColor: '#ef4444', borderColor: '#ef4444', width: '100px', justifyContent: 'center' }}>Xóa</button>
+              <button className="btn-secondary" onClick={() => { setShowDeleteModal(false); setItemToDelete(null); }} style={{ width: '120px' }}>Hủy</button>
+              <button className="btn-primary" onClick={handleConfirmDelete} style={{ backgroundColor: '#ef4444', borderColor: '#ef4444', width: '120px', justifyContent: 'center' }}>Xóa</button>
             </div>
           </div>
         </div>

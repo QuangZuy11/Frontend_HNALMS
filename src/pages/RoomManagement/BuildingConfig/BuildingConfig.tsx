@@ -85,6 +85,16 @@ const BuildingConfig = () => {
 
   const [imageSlots, setImageSlots] = useState<Array<{ file?: File, preview?: string, url?: string } | null>>(Array(7).fill(null));
 
+  // ==========================================
+  // [MỚI] LOGIC PHÂN QUYỀN TỪ LOCAL STORAGE
+  // ==========================================
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const userRole = currentUser?.role || ''; 
+  
+  // CHỈ CHO PHÉP 'owner' ĐƯỢC QUYỀN CHỈNH SỬA (THÊM, SỬA, XÓA TẦNG VÀ LOẠI PHÒNG)
+  const canModify = userRole === 'owner';
+  // ==========================================
+
   useEffect(() => {
     toastr.options = {
       closeButton: true,
@@ -415,9 +425,12 @@ const BuildingConfig = () => {
               <Layers className="section-icon" size={20} />
               <h3>Danh sách Tầng</h3>
             </div>
-            <button className="btn-primary" onClick={() => handleOpenFloorModal()}>
-              <Plus size={16} /> Thêm tầng
-            </button>
+            {/* [PHÂN QUYỀN] Chỉ render nút thêm nếu là Owner */}
+            {canModify && (
+              <button className="btn-primary" onClick={() => handleOpenFloorModal()}>
+                <Plus size={16} /> Thêm tầng
+              </button>
+            )}
           </div>
           
           <div className="table-wrapper">
@@ -427,7 +440,10 @@ const BuildingConfig = () => {
                   <th>Tên tầng</th>
                   <th>Số phòng</th>
                   <th>Mô tả</th>
-                  <th style={{ width: "160px", textAlign: "center" }}>Thao tác</th> 
+                  {/* [PHÂN QUYỀN] Ẩn cột Thao tác nếu không có quyền */}
+                  {canModify && (
+                    <th style={{ width: "160px", textAlign: "center" }}>Thao tác</th> 
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -450,16 +466,20 @@ const BuildingConfig = () => {
                     <td className="text-muted">
                       {floor.description || <span style={{ fontStyle: 'italic', color: '#cbd5e1' }}>Không có mô tả</span>}
                     </td>
-                    <td>
-                      <div className="action-group">
-                        <button className="btn-icon-sm edit" onClick={() => handleOpenFloorModal(floor)} title="Sửa">
-                          <Edit size={16} />
-                        </button>
-                        <button className="btn-icon-sm delete" onClick={() => handleOpenDeleteFloorConfirm(floor._id, floor.name)} title="Xóa">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
+                    
+                    {/* [PHÂN QUYỀN] Ẩn nút Sửa/Xóa nếu không có quyền */}
+                    {canModify && (
+                      <td>
+                        <div className="action-group">
+                          <button className="btn-icon-sm edit" onClick={() => handleOpenFloorModal(floor)} title="Sửa">
+                            <Edit size={16} />
+                          </button>
+                          <button className="btn-icon-sm delete" onClick={() => handleOpenDeleteFloorConfirm(floor._id, floor.name)} title="Xóa">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -478,9 +498,12 @@ const BuildingConfig = () => {
               <LayoutTemplate className="section-icon" size={20} />
               <h3>Danh sách Loại phòng</h3>
             </div>
-            <button className="btn-primary" onClick={() => handleOpenTypeModal()}>
-              <Plus size={16} /> Thêm loại phòng
-            </button>
+            {/* [PHÂN QUYỀN] Chỉ render nút thêm nếu là Owner */}
+            {canModify && (
+              <button className="btn-primary" onClick={() => handleOpenTypeModal()}>
+                <Plus size={16} /> Thêm loại phòng
+              </button>
+            )}
           </div>
 
           <div className="table-wrapper">
@@ -514,12 +537,18 @@ const BuildingConfig = () => {
                         <button className="btn-icon-sm history" onClick={() => handleViewHistory(type)} title="Lịch sử giá">
                           <History size={16} />
                         </button>
-                        <button className="btn-icon-sm edit" onClick={() => handleOpenTypeModal(type)} title="Sửa">
-                          <Edit size={16} />
-                        </button>
-                        <button className="btn-icon-sm delete" onClick={() => handleOpenDeleteTypeConfirm(type._id, type.typeName)} title="Xóa">
-                          <Trash2 size={16} />
-                        </button>
+
+                        {/* [PHÂN QUYỀN] Ẩn nút Sửa/Xóa nếu không có quyền */}
+                        {canModify && (
+                          <>
+                            <button className="btn-icon-sm edit" onClick={() => handleOpenTypeModal(type)} title="Sửa">
+                              <Edit size={16} />
+                            </button>
+                            <button className="btn-icon-sm delete" onClick={() => handleOpenDeleteTypeConfirm(type._id, type.typeName)} title="Xóa">
+                              <Trash2 size={16} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -540,7 +569,7 @@ const BuildingConfig = () => {
           ========================================================================= */}
 
       {/* 1. Modal Thêm/Sửa Tầng */}
-      {showFloorModal && (
+      {canModify && showFloorModal && (
         <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => setShowFloorModal(false)}>
           <div className="modal-content" style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header" style={{ flexShrink: 0 }}>
@@ -594,8 +623,8 @@ const BuildingConfig = () => {
         </div>
       )}
 
-      {/* 2. Modal Thêm/Sửa Loại Phòng (ĐÃ FIX LỖI MẤT NÚT LƯU) */}
-      {showTypeModal && (
+      {/* 2. Modal Thêm/Sửa Loại Phòng */}
+      {canModify && showTypeModal && (
         <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => setShowTypeModal(false)}>
           <div className="modal-content" style={{ maxWidth: '800px', width: '90%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header" style={{ flexShrink: 0 }}>
@@ -742,7 +771,10 @@ const BuildingConfig = () => {
                 </div>
               </div>
 
-              <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', padding: '16px 24px', borderTop: '1px solid #e2e8f0', margin: 0, flexShrink: 0, background: '#fff' }}>
+              <div 
+                className="modal-actions" 
+                style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', padding: '16px 24px', borderTop: '1px solid #e2e8f0', margin: 0, flexShrink: 0, background: '#fff' }}
+              >
                 <button 
                   type="button" 
                   className="btn-secondary" 
@@ -856,14 +888,18 @@ const BuildingConfig = () => {
               >
                 Đóng
               </button>
-              <button 
-                type="button" 
-                className="btn-primary" 
-                onClick={() => { setShowDetailModal(false); handleOpenTypeModal(viewingType); }}
-                style={{ width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', padding: 0, margin: 0, boxSizing: 'border-box' }}
-              >
-                <Edit size={16} /> Chỉnh sửa
-              </button>
+              
+              {/* [PHÂN QUYỀN] Chỉ render nút Sửa nếu là Owner */}
+              {canModify && (
+                <button 
+                  type="button" 
+                  className="btn-primary" 
+                  onClick={() => { setShowDetailModal(false); handleOpenTypeModal(viewingType); }}
+                  style={{ width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', padding: 0, margin: 0, boxSizing: 'border-box' }}
+                >
+                  <Edit size={16} /> Chỉnh sửa
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -927,7 +963,7 @@ const BuildingConfig = () => {
       )}
 
       {/* 6. Modal Hộp Thoại Xác Nhận Xóa */}
-      {confirmModal.isOpen && (
+      {canModify && confirmModal.isOpen && (
         <div className="modal-overlay" style={{ zIndex: 9999 }} onClick={() => setConfirmModal({ isOpen: false, action: null, targetId: null, message: '' })}>
           <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>

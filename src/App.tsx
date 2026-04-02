@@ -303,6 +303,7 @@ function LayoutWrapper() {
           <Route path="violations" element={<ViolationList />} />
           <Route path="statistics/performance" element={<ReportPerformance />} />
           <Route path="statistics/repairs" element={<ReportRepairMaintenance />} />
+          <Route path="building-config" element={<BuildingConfig />} />
           {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
         </Route>
 
