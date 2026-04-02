@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Eye, CheckCircle, FileText, Banknote } from 'lucide-react';
+import { Eye, FileText, CheckCircle } from 'lucide-react';
 import { moveOutService } from '../../services/moveOutService';
 import './MoveOutRequestsList.css';
 
@@ -13,7 +13,7 @@ interface MoveOutRequestItem {
       _id: string;
       name?: string;
       roomCode?: string;
-    } | null;
+    } | string | null;
   } | string | null;
   tenantId?: {
     _id: string;
@@ -56,6 +56,21 @@ interface DepositVsInvoice {
   remainingToPay: number;
   refundToTenant: number;
   isDepositForfeited: boolean;
+  refundTicket?: {
+    id?: string;
+    amount?: number;
+    status?: string;
+    paymentVoucher?: string;
+  } | null;
+}
+
+interface ReleaseSettlement {
+  depositAmount?: number;
+  invoiceAmount?: number;
+  netInvoiceAmount?: number;
+  recommendedDepositOffset?: number;
+  remainingToPay?: number;
+  refundToTenant?: number;
 }
 
 type StatusFilter = 'ALL' | 'Requested' | 'InvoiceReleased' | 'Paid' | 'Completed' | 'Cancelled';
@@ -88,6 +103,40 @@ const formatMoney = (amount?: number) => {
   return amount.toLocaleString('vi-VN') + ' VND';
 };
 
+const normalizeReleaseSettlement = (
+  settlement: ReleaseSettlement,
+  isDepositForfeited?: boolean
+): ReleaseSettlement => {
+  if (isDepositForfeited) {
+    return {
+      ...settlement,
+      recommendedDepositOffset: settlement.recommendedDepositOffset ?? 0,
+      refundToTenant: 0,
+      netInvoiceAmount: settlement.netInvoiceAmount ?? settlement.invoiceAmount,
+      remainingToPay: settlement.remainingToPay ?? settlement.netInvoiceAmount ?? settlement.invoiceAmount,
+    };
+  }
+
+  const depositAmount = settlement.depositAmount;
+  const invoiceAmount = settlement.invoiceAmount;
+
+  if (typeof depositAmount !== 'number' || typeof invoiceAmount !== 'number') {
+    return settlement;
+  }
+
+  const recommendedDepositOffset = Math.min(Math.max(depositAmount, 0), Math.max(invoiceAmount, 0));
+  const netInvoiceAmount = Math.max(invoiceAmount - recommendedDepositOffset, 0);
+  const refundToTenant = Math.max(depositAmount - invoiceAmount, 0);
+
+  return {
+    ...settlement,
+    recommendedDepositOffset,
+    netInvoiceAmount,
+    remainingToPay: netInvoiceAmount,
+    refundToTenant,
+  };
+};
+
 export default function MoveOutRequestsList() {
   const [requests, setRequests] = useState<MoveOutRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,18 +163,15 @@ export default function MoveOutRequestsList() {
   // ── Release Invoice modal ─────────────────────────────────────────────────
   const [showReleaseModal, setShowReleaseModal] = useState(false);
   const [releasingRequest, setReleasingRequest] = useState<MoveOutRequestItem | null>(null);
-  const [releaseNote, setReleaseNote] = useState('');
   const [electricIndex, setElectricIndex] = useState<string>('');
   const [waterIndex, setWaterIndex] = useState<string>('');
+  const [oldElectricIndex, setOldElectricIndex] = useState<{ oldIndex: number; newIndex: number } | null>(null);
+  const [oldWaterIndex, setOldWaterIndex] = useState<{ oldIndex: number; newIndex: number } | null>(null);
+  const [oldIndexLoading, setOldIndexLoading] = useState(false);
+  const [oldIndexError, setOldIndexError] = useState('');
   const [releaseLoading, setReleaseLoading] = useState(false);
   const [releaseError, setReleaseError] = useState('');
-
-  // ── Confirm Payment Offline modal ─────────────────────────────────────────
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [payingRequest, setPayingRequest] = useState<MoveOutRequestItem | null>(null);
-  const [paymentNote, setPaymentNote] = useState('');
-  const [paymentLoading, setPaymentLoading] = useState(false);
-  const [paymentError, setPaymentError] = useState('');
+  const [releaseSettlement, setReleaseSettlement] = useState<ReleaseSettlement | null>(null);
 
   // ── Complete modal ────────────────────────────────────────────────────────
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -179,9 +225,19 @@ export default function MoveOutRequestsList() {
 
   const getRoomNumber = (req: MoveOutRequestItem) => {
     if (req.contractId && typeof req.contractId === 'object') {
-      return req.contractId.roomId?.name || req.contractId.roomId?.roomCode || '-';
+      if (req.contractId.roomId && typeof req.contractId.roomId === 'object') {
+        return req.contractId.roomId.name || req.contractId.roomId.roomCode || '-';
+      }
     }
     return '-';
+  };
+
+  const getRoomId = (req: MoveOutRequestItem): string | null => {
+    if (!req.contractId || typeof req.contractId !== 'object') return null;
+    const roomRef = req.contractId.roomId;
+    if (!roomRef) return null;
+    if (typeof roomRef === 'string') return roomRef;
+    return roomRef._id ?? null;
   };
 
   const getInvoiceId = (req: MoveOutRequestItem): string | null => {
@@ -199,32 +255,76 @@ export default function MoveOutRequestsList() {
         setComparisonLoading(true);
         const res = await moveOutService.getDepositVsInvoice(req._id);
         if (res.success && res.data) setDepositComparison(res.data);
-      } catch (_) { /* not critical */ } finally {
+      } catch {
+        /* not critical */
+      } finally {
         setComparisonLoading(false);
       }
     }
   };
 
   // ── Release Invoice ───────────────────────────────────────────────────────
-  const openReleaseModal = (req: MoveOutRequestItem) => {
+  const openReleaseModal = async (req: MoveOutRequestItem) => {
     setReleasingRequest(req);
-    setReleaseNote('');
     setElectricIndex('');
     setWaterIndex('');
+    setOldElectricIndex(null);
+    setOldWaterIndex(null);
+    setOldIndexError('');
     setReleaseError('');
+    setReleaseSettlement(null);
     setShowReleaseModal(true);
+
+    const roomId = getRoomId(req);
+    if (!roomId) {
+      setOldIndexError('Không xác định được phòng để tải chỉ số cũ.');
+      return;
+    }
+
+    try {
+      setOldIndexLoading(true);
+      const servicesRes = await moveOutService.getUtilityServices();
+      const serviceList = Array.isArray(servicesRes?.data) ? servicesRes.data : [];
+
+      const electricService = serviceList.find((s: { _id?: string; name?: string; serviceName?: string }) =>
+        ['điện', 'dien'].includes((s.name || s.serviceName || '').trim().toLowerCase())
+      );
+      const waterService = serviceList.find((s: { _id?: string; name?: string; serviceName?: string }) =>
+        ['nước', 'nuoc'].includes((s.name || s.serviceName || '').trim().toLowerCase())
+      );
+
+      const [electricReadingRes, waterReadingRes] = await Promise.all([
+        electricService?._id
+          ? moveOutService.getLatestMeterReading(roomId, electricService._id).catch(() => null)
+          : Promise.resolve(null),
+        waterService?._id
+          ? moveOutService.getLatestMeterReading(roomId, waterService._id).catch(() => null)
+          : Promise.resolve(null),
+      ]);
+
+      const electricReading = electricReadingRes?.data;
+      const waterReading = waterReadingRes?.data;
+
+      if (electricReading && typeof electricReading.oldIndex === 'number' && typeof electricReading.newIndex === 'number') {
+        setOldElectricIndex({ oldIndex: electricReading.oldIndex, newIndex: electricReading.newIndex });
+      }
+      if (waterReading && typeof waterReading.oldIndex === 'number' && typeof waterReading.newIndex === 'number') {
+        setOldWaterIndex({ oldIndex: waterReading.oldIndex, newIndex: waterReading.newIndex });
+      }
+    } catch {
+      setOldIndexError('Không tải được chỉ số điện nước cũ.');
+    } finally {
+      setOldIndexLoading(false);
+    }
   };
 
   const handleRelease = async () => {
     if (!releasingRequest) return;
 
     const payload: {
-      managerInvoiceNotes?: string;
       electricIndex?: number;
       waterIndex?: number;
     } = {};
-
-    if (releaseNote) payload.managerInvoiceNotes = releaseNote;
     if (electricIndex !== '') {
       const ei = Number(electricIndex);
       if (isNaN(ei) || ei < 0) {
@@ -245,40 +345,16 @@ export default function MoveOutRequestsList() {
     try {
       setReleaseLoading(true);
       setReleaseError('');
-      await moveOutService.releaseFinalInvoice(releasingRequest._id, payload);
-      setShowReleaseModal(false);
-      setReleasingRequest(null);
+      const res = await moveOutService.releaseFinalInvoice(releasingRequest._id, payload);
+      if (res.success && res.data?.settlement) {
+        setReleaseSettlement(res.data.settlement);
+      }
       fetchRequests();
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { message?: string } } };
       setReleaseError(anyErr?.response?.data?.message || 'Phát hành hóa đơn thất bại');
     } finally {
       setReleaseLoading(false);
-    }
-  };
-
-  // ── Confirm Offline Payment ───────────────────────────────────────────────
-  const openPaymentModal = (req: MoveOutRequestItem) => {
-    setPayingRequest(req);
-    setPaymentNote('');
-    setPaymentError('');
-    setShowPaymentModal(true);
-  };
-
-  const handleConfirmPayment = async () => {
-    if (!payingRequest) return;
-    try {
-      setPaymentLoading(true);
-      setPaymentError('');
-      await moveOutService.confirmPaymentOffline(payingRequest._id, paymentNote || undefined);
-      setShowPaymentModal(false);
-      setPayingRequest(null);
-      fetchRequests();
-    } catch (err: unknown) {
-      const anyErr = err as { response?: { data?: { message?: string } } };
-      setPaymentError(anyErr?.response?.data?.message || 'Xác nhận thanh toán thất bại');
-    } finally {
-      setPaymentLoading(false);
     }
   };
 
@@ -299,14 +375,20 @@ export default function MoveOutRequestsList() {
       setShowCompleteModal(false);
       setCompletingRequest(null);
       fetchRequests();
-      if (selectedRequest?._id === completingRequest._id) setSelectedRequest(null);
+      if (selectedRequest?._id === completingRequest._id) {
+        setSelectedRequest(null);
+      }
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { message?: string } } };
-      alert(anyErr?.response?.data?.message || 'Xác nhận hoàn thành thất bại');
+      alert(anyErr?.response?.data?.message || 'Hoàn tất trả phòng thất bại');
     } finally {
       setCompleteLoading(false);
     }
   };
+
+  const normalizedReleaseSettlement = releaseSettlement
+    ? normalizeReleaseSettlement(releaseSettlement, releasingRequest?.isDepositForfeited)
+    : null;
 
   // ─── Pagination ───────────────────────────────────────────────────────────
   const renderPagination = () => {
@@ -452,18 +534,6 @@ export default function MoveOutRequestsList() {
                           </button>
                         )}
 
-                        {/* Step 4b: Confirm offline payment */}
-                        {req.status === 'InvoiceReleased' && (
-                          <button
-                            className="btn-confirm-payment"
-                            title="Xác nhận thanh toán offline"
-                            onClick={() => openPaymentModal(req)}
-                          >
-                            <Banknote size={15} />
-                          </button>
-                        )}
-
-                        {/* Step 5: Complete move-out */}
                         {req.status === 'Paid' && (
                           <button
                             className="btn-approve"
@@ -473,6 +543,7 @@ export default function MoveOutRequestsList() {
                             <CheckCircle size={15} />
                           </button>
                         )}
+
                       </div>
                     </td>
                   </tr>
@@ -531,6 +602,24 @@ export default function MoveOutRequestsList() {
               <div className="detail-section">
                 <div className="detail-section-title">Điều kiện cọc</div>
                 <div className="detail-grid">
+                  {comparisonLoading && getInvoiceId(selectedRequest) && (
+                    <div className="detail-row">
+                      <label>Tiền cọc/HĐ:</label>
+                      <span>Đang tải...</span>
+                    </div>
+                  )}
+                  {depositComparison && (
+                    <>
+                      <div className="detail-row">
+                        <label>Tiền cọc hiện giữ:</label>
+                        <span>{formatMoney(depositComparison.depositAmount)}</span>
+                      </div>
+                      <div className="detail-row">
+                        <label>Tiền hóa đơn cuối:</label>
+                        <span>{formatMoney(depositComparison.invoiceAmount)}</span>
+                      </div>
+                    </>
+                  )}
                   <div className="detail-row">
                     <label>Báo gấp (dưới 30 ngày):</label>
                     <span className={selectedRequest.isEarlyNotice ? 'text-danger' : 'text-ok'}>
@@ -578,6 +667,27 @@ export default function MoveOutRequestsList() {
                           <span>Cư dân cần trả thêm:</span>
                           <strong>{formatMoney(depositComparison.remainingToPay)}</strong>
                         </div>
+                      )}
+
+                      {depositComparison.refundTicket && (
+                        <>
+                          <div className="comparison-row">
+                            <span>ID phiếu chi:</span>
+                            <strong>{depositComparison.refundTicket.id ?? '-'}</strong>
+                          </div>
+                          <div className="comparison-row">
+                            <span>Mã phiếu chi hoàn cọc:</span>
+                            <strong>{depositComparison.refundTicket.paymentVoucher ?? '-'}</strong>
+                          </div>
+                          <div className="comparison-row">
+                            <span>Số tiền phiếu chi:</span>
+                            <strong>{formatMoney(depositComparison.refundTicket.amount)}</strong>
+                          </div>
+                          <div className="comparison-row">
+                            <span>Trạng thái phiếu chi:</span>
+                            <strong>{depositComparison.refundTicket.status ?? '-'}</strong>
+                          </div>
+                        </>
                       )}
                     </div>
                   ) : (
@@ -661,14 +771,6 @@ export default function MoveOutRequestsList() {
                     <FileText size={14} /> Phát hành hóa đơn cuối
                   </button>
                 )}
-                {selectedRequest.status === 'InvoiceReleased' && (
-                  <button
-                    className="btn-action-indigo"
-                    onClick={() => { setSelectedRequest(null); openPaymentModal(selectedRequest); }}
-                  >
-                    <Banknote size={14} /> Xác nhận thanh toán offline
-                  </button>
-                )}
                 {selectedRequest.status === 'Paid' && (
                   <button
                     className="btn-action-green"
@@ -688,13 +790,10 @@ export default function MoveOutRequestsList() {
         <div className="modal-overlay" onClick={() => setShowReleaseModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Phát hành hóa đơn cuối</h2>
+              <h2>[STEP 2] Phát hành hóa đơn cuối</h2>
               <button className="btn-close" onClick={() => setShowReleaseModal(false)}>×</button>
             </div>
             <div className="modal-body">
-              <div className="info-box info-box--blue">
-                <p>Hệ thống sẽ <strong>tự động tính toán và tạo Hóa đơn cuối (Hóa đơn xuất phòng)</strong> bao gồm cấn trừ tiền thuê phòng, điện, nước và các dịch vụ. Hóa đơn sẽ được chuyển thẳng sang trạng thái <strong>Unpaid</strong> để chờ thanh toán và chốt cọc.</p>
-              </div>
               <div className="detail-grid" style={{ marginBottom: 16 }}>
                 <div className="detail-row">
                   <label>Cư dân:</label>
@@ -709,97 +808,117 @@ export default function MoveOutRequestsList() {
                   <span>{formatDate(releasingRequest.expectedMoveOutDate)}</span>
                 </div>
               </div>
-              <div className="form-group" style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                <div style={{ flex: 1 }}>
-                  <label>Chỉ số điện chốt (tùy chọn):</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={electricIndex}
-                    onChange={(e) => setElectricIndex(e.target.value)}
-                    placeholder="VD: 1540"
-                    min="0"
-                    style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
-                  />
+              <div className="detail-grid" style={{ marginBottom: 16 }}>
+                <div className="detail-row">
+                  <label>Chỉ số điện cũ:</label>
+                  <span>
+                    {oldIndexLoading
+                      ? 'Đang tải...'
+                      : oldElectricIndex
+                        ? `${oldElectricIndex.oldIndex} → ${oldElectricIndex.newIndex}`
+                        : '-'}
+                  </span>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label>Chỉ số nước chốt (tùy chọn):</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={waterIndex}
-                    onChange={(e) => setWaterIndex(e.target.value)}
-                    placeholder="VD: 320"
-                    min="0"
-                    style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
-                  />
+                <div className="detail-row">
+                  <label>Chỉ số nước cũ:</label>
+                  <span>
+                    {oldIndexLoading
+                      ? 'Đang tải...'
+                      : oldWaterIndex
+                        ? `${oldWaterIndex.oldIndex} → ${oldWaterIndex.newIndex}`
+                        : '-'}
+                  </span>
                 </div>
               </div>
-              <div className="form-group">
-                <label>Ghi chú (tùy chọn):</label>
-                <textarea
-                  className="form-textarea"
-                  value={releaseNote}
-                  onChange={(e) => setReleaseNote(e.target.value)}
-                  placeholder="Ghi chú cho cư dân về hóa đơn cuối..."
+              {normalizedReleaseSettlement && (
+                <div className="detail-section" style={{ marginTop: 8 }}>
+                  <div className="detail-section-title">Kết quả cấn trừ cọc</div>
+                  <div className="detail-grid">
+                    {normalizedReleaseSettlement.depositAmount !== undefined && (
+                      <div className="detail-row">
+                        <label>Tiền cọc:</label>
+                        <span>{formatMoney(normalizedReleaseSettlement.depositAmount)}</span>
+                      </div>
+                    )}
+                    {normalizedReleaseSettlement.invoiceAmount !== undefined && (
+                      <div className="detail-row">
+                        <label>Tiền hóa đơn trước cấn trừ:</label>
+                        <span>{formatMoney(normalizedReleaseSettlement.invoiceAmount)}</span>
+                      </div>
+                    )}
+                    {normalizedReleaseSettlement.netInvoiceAmount !== undefined && (
+                      <div className="detail-row">
+                        <label>Tiền hóa đơn sau cấn trừ:</label>
+                        <span>{formatMoney(normalizedReleaseSettlement.netInvoiceAmount)}</span>
+                      </div>
+                    )}
+                    {normalizedReleaseSettlement.recommendedDepositOffset !== undefined && (
+                      <div className="detail-row">
+                        <label>Mức cấn trừ khuyến nghị:</label>
+                        <span>{formatMoney(normalizedReleaseSettlement.recommendedDepositOffset)}</span>
+                      </div>
+                    )}
+                    {normalizedReleaseSettlement.remainingToPay !== undefined && (
+                      <div className="detail-row">
+                        <label>Còn phải trả:</label>
+                        <span className={normalizedReleaseSettlement.remainingToPay > 0 ? 'text-danger' : 'text-ok'}>
+                          {formatMoney(normalizedReleaseSettlement.remainingToPay)}
+                        </span>
+                      </div>
+                    )}
+                    {normalizedReleaseSettlement.refundToTenant !== undefined && (
+                      <div className="detail-row">
+                        <label>Tiền hoàn cọc:</label>
+                        <span className={normalizedReleaseSettlement.refundToTenant > 0 ? 'text-ok' : ''}>
+                          {formatMoney(normalizedReleaseSettlement.refundToTenant)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {oldIndexError && <div className="mo-error" style={{ marginBottom: 8 }}>{oldIndexError}</div>}
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label>Chỉ số điện chốt (tùy chọn):</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={electricIndex}
+                  onChange={(e) => setElectricIndex(e.target.value)}
+                  placeholder="VD: 1450"
+                  min="0"
+                  style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label>Chỉ số nước chốt (tùy chọn):</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={waterIndex}
+                  onChange={(e) => setWaterIndex(e.target.value)}
+                  placeholder="VD: 320"
+                  min="0"
+                  style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
                 />
               </div>
               {releaseError && <div className="mo-error" style={{ marginTop: 8 }}>{releaseError}</div>}
             </div>
             <div className="modal-footer">
-              <button className="btn-cancel" onClick={() => setShowReleaseModal(false)}>Hủy</button>
-              <button className="btn-action-primary btn-modal-action" onClick={handleRelease} disabled={releaseLoading}>
-                {releaseLoading ? 'Đang xử lý...' : 'Phát hành hóa đơn'}
+              <button
+                className="btn-cancel"
+                onClick={() => {
+                  setShowReleaseModal(false);
+                  setReleasingRequest(null);
+                }}
+              >
+                {releaseSettlement ? 'Đóng' : 'Hủy'}
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Confirm Offline Payment Modal ─────────────────────────────────── */}
-      {showPaymentModal && payingRequest && (
-        <div className="modal-overlay" onClick={() => setShowPaymentModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Xác nhận thanh toán offline</h2>
-              <button className="btn-close" onClick={() => setShowPaymentModal(false)}>×</button>
-            </div>
-            <div className="modal-body">
-              <div className="info-box info-box--green">
-                <p>Xác nhận rằng cư dân đã <strong>thanh toán tiền mặt</strong> đầy đủ cho hóa đơn cuối. Hệ thống sẽ đánh dấu hóa đơn là đã thanh toán và xử lý tiền cọc.</p>
-              </div>
-              <div className="detail-grid" style={{ marginBottom: 16 }}>
-                <div className="detail-row">
-                  <label>Cư dân:</label>
-                  <span>{getTenantFullName(payingRequest)}</span>
-                </div>
-                <div className="detail-row">
-                  <label>Phòng:</label>
-                  <span>{getRoomNumber(payingRequest)}</span>
-                </div>
-                <div className="detail-row">
-                  <label>Mất cọc:</label>
-                  <span className={payingRequest.isDepositForfeited ? 'text-danger' : 'text-ok'}>
-                    {payingRequest.isDepositForfeited ? '❌ Có' : '✓ Không'}
-                  </span>
-                </div>
-              </div>
-              <div className="form-group">
-                <label>Ghi chú kế toán (tùy chọn):</label>
-                <textarea
-                  className="form-textarea"
-                  value={paymentNote}
-                  onChange={(e) => setPaymentNote(e.target.value)}
-                  placeholder="Ghi chú về việc xác nhận thanh toán..."
-                />
-              </div>
-              {paymentError && <div className="mo-error" style={{ marginTop: 8 }}>{paymentError}</div>}
-            </div>
-            <div className="modal-footer">
-              <button className="btn-cancel" onClick={() => setShowPaymentModal(false)}>Hủy</button>
-              <button className="btn-action-indigo btn-modal-action" onClick={handleConfirmPayment} disabled={paymentLoading}>
-                {paymentLoading ? 'Đang xử lý...' : 'Xác nhận đã thanh toán'}
-              </button>
+              {!releaseSettlement && (
+                <button className="btn-action-primary btn-modal-action" onClick={handleRelease} disabled={releaseLoading}>
+                  {releaseLoading ? 'Đang xử lý...' : 'Phát hành hóa đơn'}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -810,12 +929,12 @@ export default function MoveOutRequestsList() {
         <div className="modal-overlay" onClick={() => setShowCompleteModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Hoàn tất trả phòng</h2>
+              <h2>[STEP 3] Hoàn tất trả phòng</h2>
               <button className="btn-close" onClick={() => setShowCompleteModal(false)}>×</button>
             </div>
             <div className="modal-body">
               <div className="info-box info-box--orange">
-                <p>Hành động này sẽ <strong>kết thúc hợp đồng</strong> và <strong>vô hiệu hóa tài khoản</strong> của cư dân. Vui lòng chắc chắn trước khi tiếp tục.</p>
+                <p>Xác nhận hoàn tất sẽ kết thúc quy trình trả phòng cho cư dân này.</p>
               </div>
               <div className="detail-grid" style={{ marginBottom: 16 }}>
                 <div className="detail-row">
@@ -837,12 +956,12 @@ export default function MoveOutRequestsList() {
                   className="form-textarea"
                   value={completionNote}
                   onChange={(e) => setCompletionNote(e.target.value)}
-                  placeholder="Nhập ghi chú hoàn thành (nếu có)..."
+                  placeholder="Nhập ghi chú hoàn tất (nếu có)..."
                 />
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-cancel" onClick={() => setShowCompleteModal(false)}>Hủy</button>
+              <button className="btn-cancel" onClick={() => setShowCompleteModal(false)} disabled={completeLoading}>Hủy</button>
               <button className="btn-action-green btn-modal-action" onClick={handleComplete} disabled={completeLoading}>
                 {completeLoading ? 'Đang xử lý...' : 'Xác nhận hoàn tất'}
               </button>
@@ -850,6 +969,7 @@ export default function MoveOutRequestsList() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
