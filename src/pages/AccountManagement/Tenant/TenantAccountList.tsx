@@ -1,32 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  FormControl,
-  IconButton,
-  InputAdornment,
-  MenuItem,
-  Paper,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-} from "@mui/material";
-import {
-  Search as SearchIcon,
-  Clear as ClearIcon,
   Visibility as VisibilityIcon,
   NavigateBefore as PrevIcon,
   NavigateNext as NextIcon,
   FirstPage as FirstPageIcon,
   LastPage as LastPageIcon,
+  Person as PersonIcon,
+  ContactPhone as ContactPhoneIcon,
+  Badge as BadgeIcon,
+  Gavel as GavelIcon,
+  Lock as LockIcon,
+  LockOpen as LockOpenIcon,
+  Search as SearchIcon,
+  Clear as ClearIcon,
+  Groups as GroupsIcon,
 } from "@mui/icons-material";
 import { accountService } from "../../../services/accountService";
 import {
@@ -37,17 +24,6 @@ import {
 } from "../constants";
 import useAuth from "../../../hooks/useAuth";
 import "../account-management.css";
-
-const getStatusColor = (status: string): "success" | "warning" | "default" => {
-  switch (status) {
-    case "active":
-      return "success";
-    case "suspended":
-      return "warning";
-    default:
-      return "default";
-  }
-};
 
 export default function TenantAccountList() {
   const [accounts, setAccounts] = useState<AccountItem[]>([]);
@@ -212,366 +188,433 @@ export default function TenantAccountList() {
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-        <CircularProgress />
-      </Box>
+      <div className="tenant-account-list-page">
+        <div className="tenant-account-list-card">
+          <div className="tenant-account-list-loading">
+            <div className="tenant-account-list-loading-spinner" />
+            <span className="tenant-account-list-loading-text">Đang tải dữ liệu...</span>
+          </div>
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ mt: 4, textAlign: "center", color: "error.main" }}>
-        <Typography variant="h6">Lỗi tải danh sách cư dân</Typography>
-        <Typography variant="body1" sx={{ mb: 2 }}>
-          {error}
-        </Typography>
-        <Button variant="outlined" onClick={fetchAccounts}>
-          Thử lại
-        </Button>
-      </Box>
+      <div className="tenant-account-list-page">
+        <div className="tenant-account-list-card">
+          <div className="tenant-account-list-error">
+            <div className="tenant-account-list-error-icon">!</div>
+            <h3>Lỗi tải danh sách</h3>
+            <p>{error}</p>
+            <button type="button" className="tenant-account-list-btn-retry" onClick={fetchAccounts}>
+              Thử lại
+            </button>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box
-      sx={{
-        p: 4,
-        display: "flex",
-        flexDirection: "column",
-        minHeight: "calc(100vh - 64px)",
-        fontFamily: "system-ui, Avenir, Helvetica, Arial, sans-serif",
-        "& .MuiTypography-root, & .MuiTableCell-root, & .MuiInputBase-root, & .MuiButton-root, & .MuiChip-root, & .MuiMenuItem-root": {
-          fontFamily: "system-ui, Avenir, Helvetica, Arial, sans-serif",
-        },
-      }}
-    >
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 4,
-        }}
-      >
-        <Typography variant="h5" sx={{ fontWeight: "bold", color: "#000000" }}>
-          Danh sách cư dân
-        </Typography>
-      </Box>
-
-      <Box
-        sx={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 1.5,
-          mb: 2.5,
-          justifyContent: "flex-end",
-          alignItems: "center",
-          p: 1.75,
-          borderRadius: 2.5,
-          background: "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
-          border: "1px solid #dbe4ee",
-          boxShadow: "0 4px 14px rgba(15, 23, 42, 0.04)",
-        }}
-      >
-        <TextField
-          size="small"
-          placeholder="Tên..."
-          value={searchName}
-          onChange={(e) => setSearchName(e.target.value)}
-          sx={{
-            width: 220,
-            "& .MuiInputBase-input": { py: 1.05, fontSize: 14 },
-            "& .MuiOutlinedInput-root": {
-              borderRadius: 2,
-              backgroundColor: "#ffffff",
-            },
-          }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: "#94a3b8", fontSize: 18 }} />
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
-
-        <TextField
-          size="small"
-          placeholder="SĐT/Email"
-          value={searchContact}
-          onChange={(e) => setSearchContact(e.target.value)}
-          sx={{
-            width: 240,
-            "& .MuiInputBase-input": { py: 1.05, fontSize: 14 },
-            "& .MuiOutlinedInput-root": {
-              borderRadius: 2,
-              backgroundColor: "#ffffff",
-            },
-          }}
-        />
-
-        <FormControl size="small" sx={{ minWidth: 170 }}>
-          <Select
-            value={filterStatus}
-            displayEmpty
-            renderValue={(selected) => {
-              if (selected === "all") return "Trạng thái";
-              return selected === "active" ? "Hoạt động" : "Không hoạt động";
-            }}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            sx={{
-              fontSize: 14,
-              "& .MuiSelect-select": { py: 1.05 },
-              borderRadius: 2,
-              backgroundColor: "#ffffff",
-            }}
-          >
-            <MenuItem value="active" sx={{ fontSize: 14 }}>
-              Hoạt động
-            </MenuItem>
-            <MenuItem value="inactive" sx={{ fontSize: 14 }}>
-              Không hoạt động
-            </MenuItem>
-          </Select>
-        </FormControl>
-
-        {(searchName || searchContact || filterStatus !== "all") && (
-          <Button
-            size="small"
-            onClick={() => {
-              setSearchName("");
-              setSearchContact("");
-              setFilterStatus("all");
-            }}
-            sx={{ minWidth: "auto", p: 0.5, color: "#94a3b8" }}
-          >
-            <ClearIcon sx={{ fontSize: 18 }} />
-          </Button>
-        )}
-      </Box>
-
-      <TableContainer
-        component={Paper}
-        elevation={3}
-        sx={{ borderRadius: 2, overflow: "hidden", flex: 1 }}
-      >
-        <Table sx={{ minWidth: 650 }}>
-          <TableHead sx={{ bgcolor: "#f5f5f5" }}>
-            <TableRow>
-              <TableCell sx={{ fontWeight: "bold" }}>STT</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Họ và tên</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Phòng</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>SĐT / Email</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Trạng thái</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Ngày tạo</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Thao tác</TableCell>
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {paginatedAccounts.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
-                  Không có dữ liệu cư dân
-                </TableCell>
-              </TableRow>
-            ) : (
-              paginatedAccounts.map((acc, index) => (
-                <TableRow
-                  key={acc._id}
-                  sx={{
-                    "&:last-child td, &:last-child th": { border: 0 },
-                    "&:hover": { bgcolor: "#f9f9f9" },
-                  }}
-                >
-                  <TableCell>{(page - 1) * ROWS_PER_PAGE + index + 1}</TableCell>
-                  <TableCell>{acc.fullname || "-"}</TableCell>
-                  <TableCell>{acc.roomName || "-"}</TableCell>
-                  <TableCell>
-                    {acc.phoneNumber || "-"}
-                    <br />
-                    <Typography variant="caption" color="text.secondary">
-                      {acc.email}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={STATUS_LABELS[acc.status] || acc.status}
-                      color={getStatusColor(acc.status)}
-                      size="small"
-                      sx={{ fontWeight: "bold" }}
-                    />
-                  </TableCell>
-                  <TableCell>{formatAccountDate(acc.createdAt)}</TableCell>
-                  <TableCell>
-                    <IconButton
-                      color="primary"
-                      size="small"
-                      onClick={() => handleViewDetail(acc._id)}
-                    >
-                      <VisibilityIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: 1,
-          py: 2,
-          mt: "auto",
-        }}
-      >
-        <Typography variant="body2" color="text.secondary" sx={{ mr: 2 }}>
-          Tổng: {filteredAccounts.length} bản ghi | Trang {page}/{totalPages}
-        </Typography>
-
-        <Button
-          size="small"
-          variant="outlined"
-          disabled={page === 1}
-          onClick={() => setPage(1)}
-          sx={{ minWidth: 36, p: 0.5 }}
-        >
-          <FirstPageIcon fontSize="small" />
-        </Button>
-        <Button
-          size="small"
-          variant="outlined"
-          disabled={page === 1}
-          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-          sx={{ minWidth: 36, p: 0.5 }}
-        >
-          <PrevIcon fontSize="small" />
-        </Button>
-
-        {getVisiblePages().map((pageNumber) => (
-          <Button
-            key={pageNumber}
-            size="small"
-            variant={pageNumber === page ? "contained" : "outlined"}
-            onClick={() => setPage(pageNumber)}
-            sx={{
-              minWidth: 36,
-              p: 0.5,
-              ...(pageNumber === page && {
-                bgcolor: "#1a237e",
-                "&:hover": { bgcolor: "#303f9f" },
-              }),
-            }}
-          >
-            {pageNumber}
-          </Button>
-        ))}
-
-        <Button
-          size="small"
-          variant="outlined"
-          disabled={page === totalPages}
-          onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-          sx={{ minWidth: 36, p: 0.5 }}
-        >
-          <NextIcon fontSize="small" />
-        </Button>
-        <Button
-          size="small"
-          variant="outlined"
-          disabled={page === totalPages}
-          onClick={() => setPage(totalPages)}
-          sx={{ minWidth: 36, p: 0.5 }}
-        >
-          <LastPageIcon fontSize="small" />
-        </Button>
-      </Box>
-
-      {showDetailModal && (
-        <div className="create-account-modal-overlay" onClick={() => setShowDetailModal(false)}>
-          <div className="account-detail-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="create-account-modal-header">
-              <h2>Chi tiết cư dân</h2>
-              <button type="button" className="modal-close-btn" onClick={() => setShowDetailModal(false)} aria-label="Đóng">×</button>
+    <div className="tenant-account-list-page">
+      <div className="tenant-account-list-card">
+        {/* Page Header */}
+        <div className="tenant-account-list-header">
+          <div className="tenant-account-list-header-left">
+            <div className="tenant-account-list-header-icon">
+              <GroupsIcon sx={{ fontSize: 22 }} />
             </div>
-            <div className="account-detail-modal-body">
+            <div>
+              <h1 className="tenant-account-list-title">Danh sách cư dân</h1>
+              <p className="tenant-account-list-subtitle">Quản lý thông tin cư dân trong tòa nhà</p>
+            </div>
+          </div>
+          <div className="tenant-account-list-stats">
+            <span className="tenant-account-list-stats-count">
+              {filteredAccounts.length} cư dân
+            </span>
+          </div>
+        </div>
+
+        {/* Toolbar */}
+        <div className="tenant-account-list-toolbar">
+          <div className="tenant-account-list-search-wrap">
+            <SearchIcon className="tenant-account-list-search-icon" />
+            <input
+              type="text"
+              className="tenant-account-list-search-input"
+              placeholder="Tìm theo tên..."
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+            />
+            {searchName && (
+              <button
+                type="button"
+                className="tenant-account-list-search-clear"
+                onClick={() => setSearchName("")}
+              >
+                <ClearIcon sx={{ fontSize: 16 }} />
+              </button>
+            )}
+          </div>
+
+          <div className="tenant-account-list-search-wrap">
+            <ContactPhoneIcon className="tenant-account-list-search-icon" />
+            <input
+              type="text"
+              className="tenant-account-list-search-input"
+              placeholder="SĐT / Email..."
+              value={searchContact}
+              onChange={(e) => setSearchContact(e.target.value)}
+            />
+            {searchContact && (
+              <button
+                type="button"
+                className="tenant-account-list-search-clear"
+                onClick={() => setSearchContact("")}
+              >
+                <ClearIcon sx={{ fontSize: 16 }} />
+              </button>
+            )}
+          </div>
+
+          <div className="tenant-account-list-filter-group">
+            <select
+              className="tenant-account-list-filter-select"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="all">Tất cả trạng thái</option>
+              <option value="active">Hoạt động</option>
+              <option value="inactive">Không hoạt động</option>
+            </select>
+          </div>
+
+          {(searchName || searchContact || filterStatus !== "all") && (
+            <button
+              type="button"
+              className="tenant-account-list-btn-clear-filter"
+              onClick={() => {
+                setSearchName("");
+                setSearchContact("");
+                setFilterStatus("all");
+              }}
+            >
+              <ClearIcon sx={{ fontSize: 14 }} />
+              Xóa lọc
+            </button>
+          )}
+        </div>
+
+        {/* Table */}
+        {paginatedAccounts.length === 0 ? (
+          <div className="tenant-account-list-empty">
+            <div className="tenant-account-list-empty-icon">
+              <GroupsIcon sx={{ fontSize: 48, color: "#cbd5e1" }} />
+            </div>
+            <h3>Chưa có cư dân nào</h3>
+            <p>
+              {searchName || searchContact || filterStatus !== "all"
+                ? "Không tìm thấy cư dân phù hợp với bộ lọc."
+                : "Danh sách cư dân đang trống."}
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="tenant-account-list-table-wrap">
+              <table className="tenant-account-list-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: "5%" }}>STT</th>
+                    <th style={{ width: "16%" }}>Họ và tên</th>
+                    <th style={{ width: "10%" }}>Phòng</th>
+                    <th style={{ width: "22%" }}>SĐT / Email</th>
+                    <th style={{ width: "12%" }}>Trạng thái</th>
+                    <th style={{ width: "12%" }}>Ngày tạo</th>
+                    <th style={{ width: "8%" }}>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedAccounts.map((acc, index) => (
+                    <tr key={acc._id}>
+                      <td className="tenant-account-list-td-center">
+                        {(page - 1) * ROWS_PER_PAGE + index + 1}
+                      </td>
+                      <td>
+                        <span className="tenant-account-list-tenant-name">
+                          {acc.fullname || "-"}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="tenant-account-list-room-badge">
+                          {acc.roomName || "-"}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="tenant-account-list-contact-cell">
+                          <span className="tenant-account-list-contact-phone">
+                            {acc.phoneNumber || "-"}
+                          </span>
+                          <span className="tenant-account-list-contact-email">
+                            {acc.email || "-"}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`tenant-account-list-status-badge tenant-account-list-status-${acc.status}`}>
+                          <span className="tenant-account-list-status-dot" />
+                          {STATUS_LABELS[acc.status] || acc.status}
+                        </span>
+                      </td>
+                      <td>{formatAccountDate(acc.createdAt)}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="tenant-account-list-btn-view"
+                          onClick={() => handleViewDetail(acc._id)}
+                          title="Xem chi tiết"
+                        >
+                          <VisibilityIcon sx={{ fontSize: 16 }} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="tenant-account-list-pagination">
+              <span className="tenant-account-list-pagination-info">
+                Tổng: <strong>{filteredAccounts.length}</strong> bản ghi · Trang <strong>{page}</strong>/<strong>{totalPages}</strong>
+              </span>
+              <div className="tenant-account-list-pagination-controls">
+                <button
+                  type="button"
+                  className="tenant-account-list-pagination-btn"
+                  disabled={page === 1}
+                  onClick={() => setPage(1)}
+                  title="Trang đầu"
+                >
+                  <FirstPageIcon sx={{ fontSize: 16 }} />
+                </button>
+                <button
+                  type="button"
+                  className="tenant-account-list-pagination-btn"
+                  disabled={page === 1}
+                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                  title="Trang trước"
+                >
+                  <PrevIcon sx={{ fontSize: 16 }} />
+                </button>
+
+                {getVisiblePages().map((pageNumber) => (
+                  <button
+                    key={pageNumber}
+                    type="button"
+                    className={`tenant-account-list-pagination-btn ${pageNumber === page ? "active" : ""}`}
+                    onClick={() => setPage(pageNumber)}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  className="tenant-account-list-pagination-btn"
+                  disabled={page === totalPages}
+                  onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                  title="Trang sau"
+                >
+                  <NextIcon sx={{ fontSize: 16 }} />
+                </button>
+                <button
+                  type="button"
+                  className="tenant-account-list-pagination-btn"
+                  disabled={page === totalPages}
+                  onClick={() => setPage(totalPages)}
+                  title="Trang cuối"
+                >
+                  <LastPageIcon sx={{ fontSize: 16 }} />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Detail Modal */}
+      {showDetailModal && (
+        <div className="tenant-detail-overlay" onClick={() => setShowDetailModal(false)}>
+          <div className="tenant-detail-modal" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="tenant-detail-header">
+              <div className="tenant-detail-header-title">
+                <div className="tenant-detail-header-icon">
+                  <PersonIcon sx={{ fontSize: 20 }} />
+                </div>
+                Chi tiết cư dân
+              </div>
+              <button
+                type="button"
+                className="tenant-detail-close-btn"
+                onClick={() => setShowDetailModal(false)}
+                aria-label="Đóng"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="tenant-detail-body">
               {detailLoading ? (
-                <div className="detail-loading"><div className="spinner" /><p>Đang tải...</p></div>
+                <div className="tenant-detail-loading">
+                  <div className="tenant-detail-loading-spinner" />
+                  <span className="tenant-detail-loading-text">Đang tải thông tin...</span>
+                </div>
               ) : detailAccount ? (
-                <div className="detail-content detail-content-manager">
-                  <div className="detail-section-divider">Thông tin tài khoản</div>
-                  <div className="detail-section-block">
-                    <div className="detail-row detail-row-tight">
-                      <span className="detail-label">Username:</span>
-                      <span className="detail-value detail-value-black">{detailAccount.username}</span>
+                <>
+                  {/* Profile strip */}
+                  <div className="tenant-detail-profile-strip">
+                    <div className="tenant-detail-avatar">
+                      {detailAccount.fullname
+                        ? detailAccount.fullname.split(" ").pop()?.charAt(0).toUpperCase() || "?"
+                        : detailAccount.username?.charAt(0).toUpperCase() || "?"}
                     </div>
-                    <div className="detail-row detail-row-tight">
-                      <span className="detail-label">Trạng thái:</span>
-                      <span className={`status-badge status-${detailAccount.status}`}>{STATUS_LABELS[detailAccount.status] || detailAccount.status}</span>
-                    </div>
-                  </div>
-                  <div className="detail-section-divider">Thông tin liên hệ</div>
-                  <div className="detail-section-block">
-                    <div className="detail-row detail-row-tight"><span className="detail-label">Email:</span><span className="detail-value detail-value-black">{detailAccount.email}</span></div>
-                    <div className="detail-row detail-row-tight"><span className="detail-label">Số điện thoại:</span><span className="detail-value detail-value-black">{detailAccount.phoneNumber || "-"}</span></div>
-                  </div>
-                  <div className="detail-section-divider">Thông tin cá nhân</div>
-                  <div className="detail-section-block">
-                    <div className="detail-row detail-row-tight"><span className="detail-label">Họ và tên:</span><span className="detail-value detail-value-black">{detailAccount.fullname || "-"}</span></div>
-                    <div className="detail-row detail-row-tight"><span className="detail-label">Giới tính:</span><span className="detail-value detail-value-black">
-                      {detailAccount.gender === "Male" ? "Nam" : detailAccount.gender === "Female" ? "Nữ" : detailAccount.gender === "Other" ? "Khác" : "-"}
-                    </span></div>
-                    <div className="detail-row detail-row-tight"><span className="detail-label">Ngày sinh:</span><span className="detail-value detail-value-black">{detailAccount.dob ? formatAccountDate(detailAccount.dob) : "-"}</span></div>
-                    <div className="detail-row detail-row-tight"><span className="detail-label">Địa chỉ:</span><span className="detail-value detail-value-black">{detailAccount.address || "-"}</span></div>
-                  </div>
-                  <div className="detail-section-divider">Thông tin pháp lý</div>
-                  <div className="detail-section-block">
-                    <div className="detail-row detail-row-tight">
-                      <span className="detail-label">CCCD:</span>
-                      <span className="detail-value detail-value-black">
-                        {detailAccount.cccd || "-"}
-                      </span>
+                    <div className="tenant-detail-profile-info">
+                      <div className="tenant-detail-profile-name">
+                        {detailAccount.fullname || "—"}
+                      </div>
+                      <div className="tenant-detail-profile-meta">
+                        <span className="tenant-detail-username-tag">
+                          @{detailAccount.username}
+                        </span>
+                        {detailAccount.status === "active" ? (
+                          <span className="tenant-detail-status-active">
+                            <span className="tenant-detail-status-dot" />
+                            Hoạt động
+                          </span>
+                        ) : (
+                          <span className="tenant-detail-status-inactive">
+                            <span className="tenant-detail-status-dot" />
+                            Không hoạt động
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
+
+                  {/* Contact info */}
+                  <div className="tenant-detail-section">
+                    <div className="tenant-detail-section-title">
+                      <ContactPhoneIcon className="tenant-detail-section-title-icon" sx={{ fontSize: 15 }} />
+                      Thông tin liên hệ
+                    </div>
+                    <div className="tenant-detail-rows">
+                      <div className="tenant-detail-row">
+                        <span className="tenant-detail-label">Email</span>
+                        <span className="tenant-detail-value">
+                          {detailAccount.email || <span className="tenant-detail-value-empty">—</span>}
+                        </span>
+                      </div>
+                      <div className="tenant-detail-row">
+                        <span className="tenant-detail-label">SĐT</span>
+                        <span className="tenant-detail-value">
+                          {detailAccount.phoneNumber || <span className="tenant-detail-value-empty">—</span>}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Personal info */}
+                  <div className="tenant-detail-section">
+                    <div className="tenant-detail-section-title">
+                      <BadgeIcon className="tenant-detail-section-title-icon" sx={{ fontSize: 15 }} />
+                      Thông tin cá nhân
+                    </div>
+                    <div className="tenant-detail-rows">
+                      <div className="tenant-detail-row">
+                        <span className="tenant-detail-label">Họ và tên</span>
+                        <span className="tenant-detail-value">
+                          {detailAccount.fullname || <span className="tenant-detail-value-empty">—</span>}
+                        </span>
+                      </div>
+                      <div className="tenant-detail-row">
+                        <span className="tenant-detail-label">Giới tính</span>
+                        <span className="tenant-detail-value">
+                          {detailAccount.gender === "Male"
+                            ? "Nam"
+                            : detailAccount.gender === "Female"
+                            ? "Nữ"
+                            : detailAccount.gender === "Other"
+                            ? "Khác"
+                            : <span className="tenant-detail-value-empty">—</span>}
+                        </span>
+                      </div>
+                      <div className="tenant-detail-row">
+                        <span className="tenant-detail-label">Ngày sinh</span>
+                        <span className="tenant-detail-value">
+                          {detailAccount.dob ? formatAccountDate(detailAccount.dob) : <span className="tenant-detail-value-empty">—</span>}
+                        </span>
+                      </div>
+                      <div className="tenant-detail-row">
+                        <span className="tenant-detail-label">Địa chỉ</span>
+                        <span className="tenant-detail-value">
+                          {detailAccount.address || <span className="tenant-detail-value-empty">—</span>}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Legal info */}
+                  <div className="tenant-detail-section">
+                    <div className="tenant-detail-section-title">
+                      <GavelIcon className="tenant-detail-section-title-icon" sx={{ fontSize: 15 }} />
+                      Thông tin pháp lý
+                    </div>
+                    <div className="tenant-detail-rows">
+                      <div className="tenant-detail-row">
+                        <span className="tenant-detail-label">CCCD / CMND</span>
+                        <span className="tenant-detail-value">
+                          {detailAccount.cccd || <span className="tenant-detail-value-empty">—</span>}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
                   {!isOwner && (
-                    <div className="detail-actions">
+                    <div className="tenant-detail-actions">
                       {detailAccount.status === "active" ? (
                         <button
                           type="button"
-                          className="btn-disable"
+                          className="tenant-detail-btn-disable"
                           onClick={() => handleDisable(detailAccount._id)}
                           disabled={disablingId === detailAccount._id}
                         >
-                          {disablingId === detailAccount._id
-                            ? "Đang xử lý..."
-                            : "Đóng tài khoản"}
+                          <LockIcon sx={{ fontSize: 16 }} />
+                          {disablingId === detailAccount._id ? "Đang xử lý..." : "Đóng tài khoản"}
                         </button>
                       ) : (
                         <button
                           type="button"
-                          className="btn-enable"
+                          className="tenant-detail-btn-enable"
                           onClick={() => handleEnable(detailAccount._id)}
                           disabled={disablingId === detailAccount._id}
                         >
-                          {disablingId === detailAccount._id
-                            ? "Đang xử lý..."
-                            : "Mở lại tài khoản"}
+                          <LockOpenIcon sx={{ fontSize: 16 }} />
+                          {disablingId === detailAccount._id ? "Đang xử lý..." : "Mở lại tài khoản"}
                         </button>
                       )}
                     </div>
                   )}
-                </div>
+                </>
               ) : null}
             </div>
           </div>
         </div>
       )}
-    </Box>
+    </div>
   );
 }
