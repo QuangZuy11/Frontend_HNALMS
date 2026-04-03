@@ -27,6 +27,12 @@ import {
   NavigateNext as NextIcon,
   FirstPage as FirstPageIcon,
   LastPage as LastPageIcon,
+  Person as PersonIcon,
+  ContactPhone as ContactPhoneIcon,
+  Badge as BadgeIcon,
+  Gavel as GavelIcon,
+  Lock as LockIcon,
+  LockOpen as LockOpenIcon,
 } from "@mui/icons-material";
 import { accountService } from "../../../services/accountService";
 import {
@@ -494,79 +500,170 @@ export default function TenantAccountList() {
       </Box>
 
       {showDetailModal && (
-        <div className="create-account-modal-overlay" onClick={() => setShowDetailModal(false)}>
-          <div className="account-detail-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="create-account-modal-header">
-              <h2>Chi tiết cư dân</h2>
-              <button type="button" className="modal-close-btn" onClick={() => setShowDetailModal(false)} aria-label="Đóng">×</button>
+        <div className="tenant-detail-overlay" onClick={() => setShowDetailModal(false)}>
+          <div className="tenant-detail-modal" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="tenant-detail-header">
+              <div className="tenant-detail-header-title">
+                <div className="tenant-detail-header-icon">
+                  <PersonIcon sx={{ fontSize: 20 }} />
+                </div>
+                Chi tiết cư dân
+              </div>
+              <button
+                type="button"
+                className="tenant-detail-close-btn"
+                onClick={() => setShowDetailModal(false)}
+                aria-label="Đóng"
+              >
+                ×
+              </button>
             </div>
-            <div className="account-detail-modal-body">
+
+            {/* Body */}
+            <div className="tenant-detail-body">
               {detailLoading ? (
-                <div className="detail-loading"><div className="spinner" /><p>Đang tải...</p></div>
+                <div className="tenant-detail-loading">
+                  <div className="tenant-detail-loading-spinner" />
+                  <span className="tenant-detail-loading-text">Đang tải thông tin...</span>
+                </div>
               ) : detailAccount ? (
-                <div className="detail-content detail-content-manager">
-                  <div className="detail-section-divider">Thông tin tài khoản</div>
-                  <div className="detail-section-block">
-                    <div className="detail-row detail-row-tight">
-                      <span className="detail-label">Username:</span>
-                      <span className="detail-value detail-value-black">{detailAccount.username}</span>
+                <>
+                  {/* Profile strip */}
+                  <div className="tenant-detail-profile-strip">
+                    <div className="tenant-detail-avatar">
+                      {detailAccount.fullname
+                        ? detailAccount.fullname.split(" ").pop()?.charAt(0).toUpperCase() || "?"
+                        : detailAccount.username?.charAt(0).toUpperCase() || "?"}
                     </div>
-                    <div className="detail-row detail-row-tight">
-                      <span className="detail-label">Trạng thái:</span>
-                      <span className={`status-badge status-${detailAccount.status}`}>{STATUS_LABELS[detailAccount.status] || detailAccount.status}</span>
-                    </div>
-                  </div>
-                  <div className="detail-section-divider">Thông tin liên hệ</div>
-                  <div className="detail-section-block">
-                    <div className="detail-row detail-row-tight"><span className="detail-label">Email:</span><span className="detail-value detail-value-black">{detailAccount.email}</span></div>
-                    <div className="detail-row detail-row-tight"><span className="detail-label">Số điện thoại:</span><span className="detail-value detail-value-black">{detailAccount.phoneNumber || "-"}</span></div>
-                  </div>
-                  <div className="detail-section-divider">Thông tin cá nhân</div>
-                  <div className="detail-section-block">
-                    <div className="detail-row detail-row-tight"><span className="detail-label">Họ và tên:</span><span className="detail-value detail-value-black">{detailAccount.fullname || "-"}</span></div>
-                    <div className="detail-row detail-row-tight"><span className="detail-label">Giới tính:</span><span className="detail-value detail-value-black">
-                      {detailAccount.gender === "Male" ? "Nam" : detailAccount.gender === "Female" ? "Nữ" : detailAccount.gender === "Other" ? "Khác" : "-"}
-                    </span></div>
-                    <div className="detail-row detail-row-tight"><span className="detail-label">Ngày sinh:</span><span className="detail-value detail-value-black">{detailAccount.dob ? formatAccountDate(detailAccount.dob) : "-"}</span></div>
-                    <div className="detail-row detail-row-tight"><span className="detail-label">Địa chỉ:</span><span className="detail-value detail-value-black">{detailAccount.address || "-"}</span></div>
-                  </div>
-                  <div className="detail-section-divider">Thông tin pháp lý</div>
-                  <div className="detail-section-block">
-                    <div className="detail-row detail-row-tight">
-                      <span className="detail-label">CCCD:</span>
-                      <span className="detail-value detail-value-black">
-                        {detailAccount.cccd || "-"}
-                      </span>
+                    <div className="tenant-detail-profile-info">
+                      <div className="tenant-detail-profile-name">
+                        {detailAccount.fullname || "—"}
+                      </div>
+                      <div className="tenant-detail-profile-meta">
+                        <span className="tenant-detail-username-tag">
+                          @{detailAccount.username}
+                        </span>
+                        {detailAccount.status === "active" ? (
+                          <span className="tenant-detail-status-active">
+                            <span className="tenant-detail-status-dot" />
+                            Hoạt động
+                          </span>
+                        ) : (
+                          <span className="tenant-detail-status-inactive">
+                            <span className="tenant-detail-status-dot" />
+                            Không hoạt động
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
+
+                  {/* Contact info */}
+                  <div className="tenant-detail-section">
+                    <div className="tenant-detail-section-title">
+                      <ContactPhoneIcon className="tenant-detail-section-title-icon" sx={{ fontSize: 15 }} />
+                      Thông tin liên hệ
+                    </div>
+                    <div className="tenant-detail-rows">
+                      <div className="tenant-detail-row">
+                        <span className="tenant-detail-label">Email</span>
+                        <span className="tenant-detail-value">
+                          {detailAccount.email || <span className="tenant-detail-value-empty">—</span>}
+                        </span>
+                      </div>
+                      <div className="tenant-detail-row">
+                        <span className="tenant-detail-label">SĐT</span>
+                        <span className="tenant-detail-value">
+                          {detailAccount.phoneNumber || <span className="tenant-detail-value-empty">—</span>}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Personal info */}
+                  <div className="tenant-detail-section">
+                    <div className="tenant-detail-section-title">
+                      <BadgeIcon className="tenant-detail-section-title-icon" sx={{ fontSize: 15 }} />
+                      Thông tin cá nhân
+                    </div>
+                    <div className="tenant-detail-rows">
+                      <div className="tenant-detail-row">
+                        <span className="tenant-detail-label">Họ và tên</span>
+                        <span className="tenant-detail-value">
+                          {detailAccount.fullname || <span className="tenant-detail-value-empty">—</span>}
+                        </span>
+                      </div>
+                      <div className="tenant-detail-row">
+                        <span className="tenant-detail-label">Giới tính</span>
+                        <span className="tenant-detail-value">
+                          {detailAccount.gender === "Male"
+                            ? "Nam"
+                            : detailAccount.gender === "Female"
+                            ? "Nữ"
+                            : detailAccount.gender === "Other"
+                            ? "Khác"
+                            : <span className="tenant-detail-value-empty">—</span>}
+                        </span>
+                      </div>
+                      <div className="tenant-detail-row">
+                        <span className="tenant-detail-label">Ngày sinh</span>
+                        <span className="tenant-detail-value">
+                          {detailAccount.dob ? formatAccountDate(detailAccount.dob) : <span className="tenant-detail-value-empty">—</span>}
+                        </span>
+                      </div>
+                      <div className="tenant-detail-row">
+                        <span className="tenant-detail-label">Địa chỉ</span>
+                        <span className="tenant-detail-value">
+                          {detailAccount.address || <span className="tenant-detail-value-empty">—</span>}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Legal info */}
+                  <div className="tenant-detail-section">
+                    <div className="tenant-detail-section-title">
+                      <GavelIcon className="tenant-detail-section-title-icon" sx={{ fontSize: 15 }} />
+                      Thông tin pháp lý
+                    </div>
+                    <div className="tenant-detail-rows">
+                      <div className="tenant-detail-row">
+                        <span className="tenant-detail-label">CCCD / CMND</span>
+                        <span className="tenant-detail-value">
+                          {detailAccount.cccd || <span className="tenant-detail-value-empty">—</span>}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
                   {!isOwner && (
-                    <div className="detail-actions">
+                    <div className="tenant-detail-actions">
                       {detailAccount.status === "active" ? (
                         <button
                           type="button"
-                          className="btn-disable"
+                          className="tenant-detail-btn-disable"
                           onClick={() => handleDisable(detailAccount._id)}
                           disabled={disablingId === detailAccount._id}
                         >
-                          {disablingId === detailAccount._id
-                            ? "Đang xử lý..."
-                            : "Đóng tài khoản"}
+                          <LockIcon sx={{ fontSize: 16 }} />
+                          {disablingId === detailAccount._id ? "Đang xử lý..." : "Đóng tài khoản"}
                         </button>
                       ) : (
                         <button
                           type="button"
-                          className="btn-enable"
+                          className="tenant-detail-btn-enable"
                           onClick={() => handleEnable(detailAccount._id)}
                           disabled={disablingId === detailAccount._id}
                         >
-                          {disablingId === detailAccount._id
-                            ? "Đang xử lý..."
-                            : "Mở lại tài khoản"}
+                          <LockOpenIcon sx={{ fontSize: 16 }} />
+                          {disablingId === detailAccount._id ? "Đang xử lý..." : "Mở lại tài khoản"}
                         </button>
                       )}
                     </div>
                   )}
-                </div>
+                </>
               ) : null}
             </div>
           </div>
