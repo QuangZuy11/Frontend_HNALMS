@@ -77,7 +77,7 @@ const getActivationColor = (activationStatus: boolean | null) => {
 const getActivationLabel = (activationStatus: boolean | null) => {
   if (activationStatus === true) return "Đã kích hoạt";
   if (activationStatus === false) return "Bị reset";
-  return "Chưa kích hoạt"; // null
+  return "HĐ Chưa kích hoạt"; // null
 };
 
 const formatCurrency = (amount: number) => {
@@ -102,10 +102,9 @@ const DepositRoom = () => {
 
   // Filter states
   const [filterName, setFilterName] = useState("");
-  const [filterContact, setFilterContact] = useState(""); // Phone or Email
+  const [filterContact, setFilterContact] = useState("");
   const [filterRoom, setFilterRoom] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [filterActivation, setFilterActivation] = useState<string>("all");
 
   // Pagination
   const ROWS_PER_PAGE = 13;
@@ -126,13 +125,7 @@ const DepositRoom = () => {
     const matchStatus =
       filterStatus === "all" || deposit.status === filterStatus;
 
-    const matchActivation =
-      filterActivation === "all" ||
-      (filterActivation === "active" && deposit.activationStatus === true) ||
-      (filterActivation === "inactive" && deposit.activationStatus === null) ||
-      (filterActivation === "reset" && deposit.activationStatus === false);
-
-    return matchName && matchContact && matchRoom && matchStatus && matchActivation;
+    return matchName && matchContact && matchRoom && matchStatus;
   });
 
   // Pagination calculations
@@ -148,7 +141,7 @@ const DepositRoom = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterName, filterContact, filterRoom, filterStatus, filterActivation]);
+  }, [filterName, filterContact, filterRoom, filterStatus]);
 
   useEffect(() => {
     const fetchDeposits = async () => {
@@ -192,15 +185,15 @@ const DepositRoom = () => {
   }
 
   return (
-    <div className="deposit-page">
-      <div className="deposit-card">
-        <div className="deposit-header">
+    <div className="dr-page">
+      <div className="dr-card">
+        <div className="dr-header">
           <div>
             <h2>Danh sách tiền cọc</h2>
             <p className="subtitle">Quản lý tiền cọc phòng tại tòa nhà</p>
           </div>
           <button
-            className="deposit-header-btn"
+            className="dr-header-btn"
             onClick={() => navigate(`${basePath}/deposits/floor-map`)}
           >
             <AddIcon style={{ fontSize: 20 }} />
@@ -209,54 +202,54 @@ const DepositRoom = () => {
         </div>
 
         {/* Filter Section */}
-        <div className="deposit-filters" style={{ marginBottom: 20 }}>
-          <div className="deposit-filter-wrapper">
-            <label htmlFor="deposit-name" className="deposit-filter-label">
+        <div className="dr-filters" style={{ marginBottom: 20 }}>
+          <div className="dr-filter-wrapper">
+            <label htmlFor="deposit-name" className="dr-filter-label">
               Tên:
             </label>
             <input
               type="text"
               id="deposit-name"
-              className="deposit-filter-input"
+              className="dr-filter-input"
               placeholder="Nhập tên người cọc"
               value={filterName}
               onChange={(e) => setFilterName(e.target.value)}
             />
           </div>
-          <div className="deposit-filter-wrapper">
-            <label htmlFor="deposit-contact" className="deposit-filter-label">
+          <div className="dr-filter-wrapper">
+            <label htmlFor="deposit-contact" className="dr-filter-label">
               SĐT/Email:
             </label>
             <input
               type="text"
               id="deposit-contact"
-              className="deposit-filter-input"
+              className="dr-filter-input"
               placeholder="Nhập SĐT hoặc Email"
               value={filterContact}
               onChange={(e) => setFilterContact(e.target.value)}
             />
           </div>
-          <div className="deposit-filter-wrapper">
-            <label htmlFor="deposit-room" className="deposit-filter-label">
+          <div className="dr-filter-wrapper">
+            <label htmlFor="deposit-room" className="dr-filter-label">
               Phòng:
             </label>
             <input
               type="text"
               id="deposit-room"
-              className="deposit-filter-input"
+              className="dr-filter-input"
               placeholder="Nhập số phòng"
               value={filterRoom}
               onChange={(e) => setFilterRoom(e.target.value)}
               style={{ minWidth: 120 }}
             />
           </div>
-          <div className="deposit-filter-wrapper">
-            <label htmlFor="deposit-status" className="deposit-filter-label">
+          <div className="dr-filter-wrapper">
+            <label htmlFor="deposit-status" className="dr-filter-label">
               Trạng thái:
             </label>
             <select
               id="deposit-status"
-              className="deposit-filter-select"
+              className="dr-filter-select"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -265,22 +258,6 @@ const DepositRoom = () => {
               <option value="Refunded">Đã hoàn</option>
               <option value="Forfeited">Đã phạt</option>
               <option value="Expired">Đã hết hạn</option>
-            </select>
-          </div>
-          <div className="deposit-filter-wrapper">
-            <label htmlFor="deposit-activation" className="deposit-filter-label">
-              Kích hoạt:
-            </label>
-            <select
-              id="deposit-activation"
-              className="deposit-filter-select"
-              value={filterActivation}
-              onChange={(e) => setFilterActivation(e.target.value)}
-            >
-              <option value="all">Tất cả</option>
-              <option value="active">Đã kích hoạt</option>
-              <option value="inactive">Chưa kích hoạt</option>
-              <option value="reset">Bị reset</option>
             </select>
           </div>
         </div>
@@ -363,32 +340,12 @@ const DepositRoom = () => {
                 >
                   Trạng thái
                 </TableCell>
-                <TableCell
-                  sx={{
-                    fontWeight: "bold",
-                    color: "#1e40af",
-                    fontSize: 15,
-                    border: 0,
-                  }}
-                >
-                  Kích hoạt
-                </TableCell>
-                <TableCell
-                  sx={{
-                    fontWeight: "bold",
-                    color: "#1e40af",
-                    fontSize: 15,
-                    border: 0,
-                  }}
-                >
-                  Hợp đồng
-                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {paginatedDeposits.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} align="center" sx={{ py: 3 }}>
+                  <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
                     Không có dữ liệu cọc phòng
                   </TableCell>
                 </TableRow>
@@ -421,63 +378,50 @@ const DepositRoom = () => {
                     <TableCell>
                       {deposit.createdDate
                         ? format(
-                          new Date(deposit.createdDate),
-                          "dd/MM/yyyy HH:mm",
-                        )
-                        : deposit.createdAt
-                          ? format(
-                            new Date(deposit.createdAt),
+                            new Date(deposit.createdDate),
                             "dd/MM/yyyy HH:mm",
                           )
+                        : deposit.createdAt
+                          ? format(
+                              new Date(deposit.createdAt),
+                              "dd/MM/yyyy HH:mm",
+                            )
                           : "N/A"}
                     </TableCell>
                     <TableCell>
-                      <Chip
-                        label={
-                          deposit.status === "Held"
-                            ? "Đang giữ"
-                            : deposit.status === "Refunded"
-                              ? "Đã hoàn"
-                              : deposit.status === "Forfeited"
-                                ? "Đã phạt"
-                                : deposit.status === "Expired"
-                                  ? "Đã hết hạn"
-                                  : "Đang chờ"
-                        }
-                        color={getStatusColor(deposit.status) as any}
-                        size="small"
-                        sx={{ fontWeight: "bold" }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={getActivationLabel(deposit.activationStatus)}
-                        color={getActivationColor(deposit.activationStatus) as any}
-                        size="small"
-                        variant="outlined"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {deposit.contractId ? (
-                        (typeof deposit.contractId === "object" && deposit.contractId !== null) ? (
-                          <Chip
-                            label={deposit.contractId.contractCode || "Đã gắn"}
-                            color="success"
-                            size="small"
-                            onClick={() => {
-                              const basePath = location.pathname.startsWith("/owner") ? "/owner" : "/manager";
-                              window.open(`${window.location.origin}${basePath}/contracts/${deposit.contractId._id}`, "_blank");
-                            }}
-                            sx={{ cursor: "pointer", fontWeight: "bold" }}
-                          />
-                        ) : (
-                          <Chip label="Đã gắn" color="success" size="small" />
-                        )
-                      ) : (
-                        <Typography variant="caption" color="text.secondary">
-                          Chưa có
-                        </Typography>
-                      )}
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 4,
+                        }}
+                      >
+                        <Chip
+                          label={
+                            deposit.status === "Held"
+                              ? "Đang giữ"
+                              : deposit.status === "Refunded"
+                                ? "Đã hoàn"
+                                : deposit.status === "Forfeited"
+                                  ? "Đã phạt"
+                                  : deposit.status === "Expired"
+                                    ? "Đã hết hạn"
+                                    : "Đang chờ"
+                          }
+                          color={getStatusColor(deposit.status) as any}
+                          size="small"
+                          sx={{ fontWeight: "bold", fontSize: "0.7rem" }}
+                        />
+                        <Chip
+                          label={getActivationLabel(deposit.activationStatus)}
+                          color={
+                            getActivationColor(deposit.activationStatus) as any
+                          }
+                          size="small"
+                          variant="outlined"
+                          sx={{ fontSize: "0.65rem", height: 20 }}
+                        />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -487,13 +431,14 @@ const DepositRoom = () => {
         </TableContainer>
 
         {/* Pagination */}
-        <div className="deposit-pagination">
-          <span className="deposit-pagination-info">
-            Tổng: <strong>{filteredDeposits.length}</strong> bản ghi &nbsp;|&nbsp; Trang <strong>{currentPage}</strong>/{totalPages}
+        <div className="dr-pagination">
+          <span className="dr-pagination-info">
+            Tổng: <strong>{filteredDeposits.length}</strong> bản ghi
+            &nbsp;|&nbsp; Trang <strong>{currentPage}</strong>/{totalPages}
           </span>
-          <div className="deposit-pagination-controls">
+          <div className="dr-pagination-controls">
             <button
-              className="deposit-page-btn deposit-page-arrow"
+              className="dr-page-btn dr-page-arrow"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(1)}
               title="Trang đầu"
@@ -501,7 +446,7 @@ const DepositRoom = () => {
               «
             </button>
             <button
-              className="deposit-page-btn deposit-page-arrow"
+              className="dr-page-btn dr-page-arrow"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               title="Trang trước"
@@ -529,7 +474,7 @@ const DepositRoom = () => {
             })()}
 
             <button
-              className="deposit-page-btn deposit-page-arrow"
+              className="dr-page-btn dr-page-arrow"
               disabled={currentPage === totalPages}
               onClick={() =>
                 setCurrentPage((prev) => Math.min(prev + 1, totalPages))
@@ -539,7 +484,7 @@ const DepositRoom = () => {
               ›
             </button>
             <button
-              className="deposit-page-btn deposit-page-arrow"
+              className="dr-page-btn dr-page-arrow"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(totalPages)}
               title="Trang cuối"

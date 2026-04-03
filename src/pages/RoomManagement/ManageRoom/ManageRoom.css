@@ -1,6 +1,6 @@
 /* --- Base Styles --- */
 .room-container {
-  padding: 32px 40px;
+  padding: 32px -40px;
   background-color: #ffffff;
   min-height: 100%;
   font-family: "Inter", sans-serif;
