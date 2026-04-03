@@ -262,8 +262,8 @@ export default function OwnerAccountList() {
                 <GroupsIcon sx={{ fontSize: 22 }} />
               </div>
               <div>
-                <h1 className="admin-accounts-title">Danh sach Chu nha</h1>
-                <p className="admin-accounts-subtitle">Quan ly tai khoan Chu nha trong he thong</p>
+                <h1 className="admin-accounts-title">Danh sách chủ nhà</h1>
+                <p className="admin-accounts-subtitle">Quản lý tài khoản Chủ nhà trong hệ thống</p>
               </div>
             </div>
             <button
@@ -272,7 +272,7 @@ export default function OwnerAccountList() {
               onClick={openCreateModal}
             >
               <PersonAddIcon sx={{ fontSize: 18 }} />
-              Tao tai khoan
+              Tạo tài khoản
             </button>
           </div>
 
