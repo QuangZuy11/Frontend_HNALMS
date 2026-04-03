@@ -409,13 +409,8 @@ const CreateContract = () => {
     }
   }, []);
 
-  // Auto-select the correct deposit for the selected room
+  // Auto-select the correct deposit for the selected room or use preFilledDepositId
   useEffect(() => {
-    if (!selectedRoom || selectedRoom.status !== "Deposited") {
-      setSelectedDeposit(null);
-      return;
-    }
-
     const fetchDeposit = async () => {
       try {
         const [depositsRes, contractsRes] = await Promise.all([
@@ -426,6 +421,32 @@ const CreateContract = () => {
         if (depositsRes.data.success && contractsRes.data.success) {
           const allDeposits = depositsRes.data.data || [];
           const allContracts = contractsRes.data.data || [];
+
+          // Nếu có preFilledDepositId, tìm và chọn cọc đó
+          if (preFilledDepositId) {
+            const depositIdStr = typeof preFilledDepositId === "string"
+              ? preFilledDepositId
+              : preFilledDepositId._id;
+            const deposit = allDeposits.find((d: any) => d._id === depositIdStr);
+            if (deposit) {
+              setSelectedDeposit(deposit);
+              // Nếu có room gắn với cọc, tự chọn phòng đó
+              if (deposit.room && !selectedRoom) {
+                const room = rooms.find((r: any) =>
+                  r._id === deposit.room || r._id === deposit.room?._id
+                );
+                if (room) {
+                  setValue("roomId", room._id);
+                }
+              }
+              return;
+            }
+          }
+
+          if (!selectedRoom || selectedRoom.status !== "Deposited") {
+            setSelectedDeposit(null);
+            return;
+          }
 
           // Find Held deposits for this room
           const roomDeposits = allDeposits.filter(
@@ -462,17 +483,7 @@ const CreateContract = () => {
             return;
           }
 
-          // Priority 2: activationStatus=false, not taken
-          const resetFree = roomDeposits.find(
-            (d: any) =>
-              !takenDepositIds.includes(d._id) && d.activationStatus === false,
-          );
-          if (resetFree) {
-            setSelectedDeposit(resetFree);
-            return;
-          }
-
-          // Priority 3: any not taken
+          // Priority 2: any unclaimed deposit
           const anyFree = roomDeposits.find(
             (d: any) => !takenDepositIds.includes(d._id),
           );
@@ -481,16 +492,20 @@ const CreateContract = () => {
             return;
           }
 
-          // All taken - no auto-select
-          setSelectedDeposit(null);
+          setSelectedDeposit(roomDeposits[0]);
         }
       } catch (err) {
         console.error("Error fetching deposits for room:", err);
       }
     };
 
-    fetchDeposit();
-  }, [selectedRoom?._id, selectedRoom?.status]);
+    // Nếu có preFilledDepositId, gọi fetchDeposit ngay
+    if (preFilledDepositId) {
+      fetchDeposit();
+    } else if (selectedRoom) {
+      fetchDeposit();
+    }
+  }, [selectedRoom, rooms, preFilledDepositId]);
 
   // Fetch Rooms and Services on Mount
   useEffect(() => {
