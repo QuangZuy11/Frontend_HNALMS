@@ -25,6 +25,8 @@ import {
   FirstPage as FirstPageIcon,
   LastPage as LastPageIcon,
   Person as PersonIcon,
+  PersonAdd as PersonAddIcon,
+  Group as GroupsIcon,
   VpnKey as VpnKeyIcon,
   Badge as BadgeIcon,
   Lock as LockIcon,
@@ -38,6 +40,7 @@ import {
   type AccountDetail,
 } from '../constants';
 import '../account-management.css';
+import '../OwnerAccountList.css';
 
 interface CreateFormData {
   username: string;
@@ -250,292 +253,198 @@ export default function OwnerAccountList() {
 
   return (
     <>
-      <Box
-        sx={{
-          p: 4,
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 'calc(100vh - 64px)',
-          background: 'linear-gradient(180deg, #f8fbff 0%, #f3f7fc 100%)',
-          fontFamily: 'system-ui, Avenir, Helvetica, Arial, sans-serif',
-          '& .MuiTypography-root, & .MuiTableCell-root, & .MuiInputBase-root, & .MuiButton-root, & .MuiChip-root, & .MuiMenuItem-root': {
-            fontFamily: 'system-ui, Avenir, Helvetica, Arial, sans-serif',
-          },
-        }}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mb: 4,
-            gap: 2,
-            flexWrap: 'wrap',
-          }}
-        >
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: 800,
-              color: '#1a237e',
-              letterSpacing: '0.2px',
-              textShadow: '0 1px 0 rgba(255,255,255,0.7)',
-            }}
-          >
-            Danh sách Chủ nhà
-          </Typography>
-
-          <Button variant="contained" onClick={openCreateModal} sx={{ bgcolor: '#1a237e' }}>
-            + Tạo Tài Khoản
-          </Button>
-        </Box>
-
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 1.5,
-            mb: 2.5,
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            p: 1.75,
-            borderRadius: 2.5,
-            background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
-            border: '1px solid #dbe4ee',
-            boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)',
-          }}
-        >
-          <TextField
-            size="small"
-            placeholder="Tìm theo tên đăng nhập..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{
-              width: 280,
-              '& .MuiInputBase-input': { py: 1.05, fontSize: 14 },
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                backgroundColor: '#ffffff',
-              },
-            }}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: '#94a3b8', fontSize: 18 }} />
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
-
-          {searchTerm && (
-            <Button
-              size="small"
-              onClick={() => setSearchTerm('')}
-              sx={{
-                minWidth: 'auto',
-                p: 0.75,
-                color: '#64748b',
-                borderRadius: 2,
-                bgcolor: '#ffffff',
-                border: '1px solid #dbe4ee',
-                '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' },
-              }}
+      <div className="admin-accounts-page">
+        <div className="admin-accounts-card">
+          {/* Page Header */}
+          <div className="admin-accounts-header">
+            <div className="admin-accounts-header-left">
+              <div className="admin-accounts-header-icon">
+                <GroupsIcon sx={{ fontSize: 22 }} />
+              </div>
+              <div>
+                <h1 className="admin-accounts-title">Danh sach Chu nha</h1>
+                <p className="admin-accounts-subtitle">Quan ly tai khoan Chu nha trong he thong</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="admin-accounts-btn-create"
+              onClick={openCreateModal}
             >
-              <ClearIcon sx={{ fontSize: 18 }} />
-            </Button>
-          )}
-        </Box>
+              <PersonAddIcon sx={{ fontSize: 18 }} />
+              Tao tai khoan
+            </button>
+          </div>
 
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : error ? (
-          <Box sx={{ mt: 4, textAlign: 'center', color: 'error.main' }}>
-            <Typography variant="h6">Lỗi tải danh sách Chủ nhà</Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {error}
-            </Typography>
-            <Button variant="outlined" onClick={fetchAccounts}>
-              Thử lại
-            </Button>
-          </Box>
-        ) : filteredAccounts.length === 0 ? (
-          <TableContainer
-            component={Paper}
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              overflow: 'hidden',
-              flex: 1,
-              border: '1px solid #dbe4ee',
-              boxShadow: '0 10px 24px rgba(15, 23, 42, 0.08)',
-              backgroundColor: '#ffffff',
-            }}
-          >
-            <Table>
-              <TableBody>
-                <TableRow>
-                  <TableCell align="center" sx={{ py: 3 }}>
-                    {searchTerm
-                      ? 'Không tìm thấy tài khoản phù hợp với từ khóa tìm kiếm.'
-                      : 'Chưa có tài khoản Chủ nhà nào.'}
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </TableContainer>
-        ) : (
-          <>
-            <TableContainer
-              component={Paper}
-              elevation={0}
-              sx={{
-                borderRadius: 3,
-                overflow: 'hidden',
-                flex: 1,
-                border: '1px solid #dbe4ee',
-                boxShadow: '0 10px 24px rgba(15, 23, 42, 0.08)',
-                backgroundColor: '#ffffff',
-              }}
-            >
-              <Table sx={{ minWidth: 650 }}>
-                <TableHead sx={{ bgcolor: '#f1f5f9' }}>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 700, color: '#334155', py: 1.6 }}>STT</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: '#334155', py: 1.6 }}>
-                      Tên đăng nhập
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: '#334155', py: 1.6 }}>Email</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: '#334155', py: 1.6 }}>
-                      Số điện thoại
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: '#334155', py: 1.6 }}>
-                      Trạng thái
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: '#334155', py: 1.6 }}>
-                      Ngày tạo
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: '#334155', py: 1.6 }}>
-                      Thao tác
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredAccounts.map((acc, index) => (
-                    <TableRow
-                      key={acc._id}
-                      sx={{
-                        '& td': { py: 1.35 },
-                        transition: 'background-color 0.18s ease',
-                        '&:nth-of-type(even)': { bgcolor: '#fcfdff' },
-                        '&:hover': { bgcolor: '#eef6ff' },
-                      }}
-                    >
-                      <TableCell>{(page - 1) * limit + index + 1}</TableCell>
-                      <TableCell>{acc.username}</TableCell>
-                      <TableCell>{acc.email}</TableCell>
-                      <TableCell>{acc.phoneNumber || '-'}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={STATUS_LABELS[acc.status] || acc.status}
-                          color={getStatusColor(acc.status)}
-                          size="small"
-                          sx={{ fontWeight: 'bold' }}
-                        />
-                      </TableCell>
-                      <TableCell>{formatAccountDate(acc.createdAt)}</TableCell>
-                      <TableCell>
-                        <IconButton
-                          color="primary"
-                          size="small"
-                          onClick={() => handleViewDetail(acc._id)}
-                        >
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: 1,
-                py: 2,
-                mt: 'auto',
-              }}
-            >
-              <Typography variant="body2" color="text.secondary" sx={{ mr: 2 }}>
-                Tổng: {total} bản ghi | Trang {page}/{totalPages}
-              </Typography>
-
-              <Button
-                size="small"
-                variant="outlined"
-                disabled={page === 1}
-                onClick={() => setPage(1)}
-                sx={{ minWidth: 36, p: 0.5 }}
-              >
-                <FirstPageIcon fontSize="small" />
-              </Button>
-              <Button
-                size="small"
-                variant="outlined"
-                disabled={page === 1}
-                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                sx={{ minWidth: 36, p: 0.5 }}
-              >
-                <PrevIcon fontSize="small" />
-              </Button>
-
-              {getVisiblePages().map((pageNumber) => (
-                <Button
-                  key={pageNumber}
-                  size="small"
-                  variant={pageNumber === page ? 'contained' : 'outlined'}
-                  onClick={() => setPage(pageNumber)}
-                  sx={{
-                    minWidth: 36,
-                    p: 0.5,
-                    ...(pageNumber === page && {
-                      bgcolor: '#1a237e',
-                      '&:hover': { bgcolor: '#303f9f' },
-                    }),
-                  }}
+          {/* Toolbar */}
+          <div className="admin-accounts-toolbar">
+            <div className="admin-accounts-search-wrap">
+              <SearchIcon className="admin-accounts-search-icon" />
+              <input
+                type="text"
+                className="admin-accounts-search-input"
+                placeholder="Tim theo ten dang nhap..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  className="admin-accounts-search-clear"
+                  onClick={() => setSearchTerm('')}
                 >
-                  {pageNumber}
-                </Button>
-              ))}
+                  <ClearIcon sx={{ fontSize: 16 }} />
+                </button>
+              )}
+            </div>
 
-              <Button
-                size="small"
-                variant="outlined"
-                disabled={page === totalPages}
-                onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                sx={{ minWidth: 36, p: 0.5 }}
-              >
-                <NextIcon fontSize="small" />
-              </Button>
-              <Button
-                size="small"
-                variant="outlined"
-                disabled={page === totalPages}
-                onClick={() => setPage(totalPages)}
-                sx={{ minWidth: 36, p: 0.5 }}
-              >
-                <LastPageIcon fontSize="small" />
-              </Button>
-            </Box>
-          </>
-        )}
-      </Box>
+            <div className="admin-accounts-stats">
+              <span className="admin-accounts-stats-count">
+                {filteredAccounts.length} tai khoan
+              </span>
+            </div>
+          </div>
+
+          {/* Table */}
+          {loading ? (
+            <div className="admin-accounts-loading">
+              <div className="admin-accounts-loading-spinner" />
+              <span className="admin-accounts-loading-text">Dang tai du lieu...</span>
+            </div>
+          ) : error ? (
+            <div className="admin-accounts-error">
+              <div className="admin-accounts-error-icon">!</div>
+              <h3>Loi tai danh sach</h3>
+              <p>{error}</p>
+              <button type="button" className="admin-accounts-btn-retry" onClick={fetchAccounts}>
+                Thu lai
+              </button>
+            </div>
+          ) : filteredAccounts.length === 0 ? (
+            <div className="admin-accounts-empty">
+              <div className="admin-accounts-empty-icon">
+                <GroupsIcon sx={{ fontSize: 48, color: '#cbd5e1' }} />
+              </div>
+              <h3>Chua co tai khoan nao</h3>
+              <p>
+                {searchTerm
+                  ? 'Khong tim thay tai khoan phu hop voi tu khoa tim kiem.'
+                  : 'Nhan "Tao tai khoan" de them Chu nha moi.'}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="admin-accounts-table-wrap">
+                <table className="admin-accounts-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '5%' }}>STT</th>
+                      <th style={{ width: '15%' }}>Tên Đăng Nhập</th>
+                      <th style={{ width: '24%' }}>Email</th>
+                      <th style={{ width: '14%' }}>Số Điện Thoại</th>
+                      <th style={{ width: '12%' }}>Trang Thái</th>
+                      <th style={{ width: '12%' }}>Ngày Tạo</th>
+                      <th style={{ width: '8%' }}>Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAccounts.map((acc, index) => (
+                      <tr key={acc._id}>
+                        <td className="admin-accounts-td-center">
+                          {(page - 1) * limit + index + 1}
+                        </td>
+                        <td>
+                          <span className="admin-accounts-username">
+                            {acc.username || '-'}
+                          </span>
+                        </td>
+                        <td className="admin-accounts-td-email">
+                          {acc.email || '-'}
+                        </td>
+                        <td>{acc.phoneNumber || '-'}</td>
+                        <td>
+                          <span className={`admin-accounts-status-badge admin-accounts-status-${acc.status}`}>
+                            <span className="admin-accounts-status-dot" />
+                            {STATUS_LABELS[acc.status] || acc.status}
+                          </span>
+                        </td>
+                        <td>{formatAccountDate(acc.createdAt)}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="admin-accounts-btn-view"
+                            onClick={() => handleViewDetail(acc._id)}
+                            title="Xem chi tiet"
+                          >
+                            <VisibilityIcon sx={{ fontSize: 16 }} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              <div className="admin-accounts-pagination">
+                <span className="admin-accounts-pagination-info">
+                  Tong: <strong>{total}</strong> ban ghi - Trang <strong>{page}</strong>/<strong>{totalPages}</strong>
+                </span>
+                <div className="admin-accounts-pagination-controls">
+                  <button
+                    type="button"
+                    className="admin-accounts-pagination-btn"
+                    disabled={page === 1}
+                    onClick={() => setPage(1)}
+                    title="Trang dau"
+                  >
+                    <FirstPageIcon sx={{ fontSize: 16 }} />
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-accounts-pagination-btn"
+                    disabled={page === 1}
+                    onClick={() => setPage(Math.max(page - 1, 1))}
+                    title="Trang truoc"
+                  >
+                    <PrevIcon sx={{ fontSize: 16 }} />
+                  </button>
+
+                  {getVisiblePages().map((pageNumber) => (
+                    <button
+                      key={pageNumber}
+                      type="button"
+                      className={`admin-accounts-pagination-btn ${pageNumber === page ? 'active' : ''}`}
+                      onClick={() => setPage(pageNumber)}
+                    >
+                      {pageNumber}
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    className="admin-accounts-pagination-btn"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage(Math.min(page + 1, totalPages))}
+                    title="Trang sau"
+                  >
+                    <NextIcon sx={{ fontSize: 16 }} />
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-accounts-pagination-btn"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage(totalPages)}
+                    title="Trang cuoi"
+                  >
+                    <LastPageIcon sx={{ fontSize: 16 }} />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
 
       {showDetailModal && (
         <div className="owner-account-detail-overlay" onClick={() => setShowDetailModal(false)}>
@@ -691,35 +600,35 @@ export default function OwnerAccountList() {
       )}
 
       {showCreateModal && (
-        <div className="create-account-modal-overlay" onClick={closeCreateModal}>
-          <div className="create-account-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="create-account-modal-header">
+        <div className="admin-accounts-create-modal-overlay" onClick={closeCreateModal}>
+          <div className="admin-accounts-create-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-accounts-create-modal-header">
               <h2>Tạo tài khoản Chủ nhà</h2>
-              <button type="button" className="modal-close-btn" onClick={closeCreateModal} aria-label="Đóng">×</button>
+              <button type="button" className="owner-account-detail-close-btn" onClick={closeCreateModal} aria-label="Đóng">×</button>
             </div>
-            <div className="create-account-modal-body">
-              {createError && <div className="form-error"><p>{createError}</p></div>}
-              {createSuccess && <div className="form-success"><p>{createSuccess}</p></div>}
-              <form onSubmit={handleCreateSubmit} className="create-account-form">
-                <div className="form-group">
+            <div className="admin-accounts-create-modal-body">
+              {createError && <div className="admin-accounts-create-error"><p>{createError}</p></div>}
+              {createSuccess && <div className="admin-accounts-create-success"><p>{createSuccess}</p></div>}
+              <form onSubmit={handleCreateSubmit} className="admin-accounts-create-form">
+                <div className="admin-accounts-create-field">
                   <label htmlFor="create-username">Tên đăng nhập *</label>
                   <input type="text" id="create-username" name="username" value={createFormData.username} onChange={handleCreateChange} required minLength={3} />
                 </div>
-                <div className="form-group">
+                <div className="admin-accounts-create-field">
                   <label htmlFor="create-phoneNumber">Số điện thoại *</label>
                   <input type="tel" id="create-phoneNumber" name="phoneNumber" value={createFormData.phoneNumber} onChange={handleCreateChange} placeholder="Số điện thoại bắt đầu bằng số 0" required />
                 </div>
-                <div className="form-group">
+                <div className="admin-accounts-create-field">
                   <label htmlFor="create-email">Email *</label>
                   <input type="email" id="create-email" name="email" value={createFormData.email} onChange={handleCreateChange} placeholder="email@example.com" required />
                 </div>
-                <div className="form-group">
+                <div className="admin-accounts-create-field">
                   <label htmlFor="create-password">Mật khẩu *</label>
                   <input type="password" id="create-password" name="password" value={createFormData.password} onChange={handleCreateChange} placeholder="Ít nhất 6 ký tự" required minLength={6} />
                 </div>
-                <div className="form-actions">
-                  <button type="button" onClick={closeCreateModal} className="btn-secondary" disabled={createSaving}>Hủy</button>
-                  <button type="submit" className="btn-primary" disabled={createSaving}>{createSaving ? 'Đang tạo...' : 'Tạo tài khoản'}</button>
+                <div className="admin-accounts-create-actions">
+                  <button type="button" onClick={closeCreateModal} className="admin-accounts-create-btn-cancel" disabled={createSaving}>Hủy</button>
+                  <button type="submit" className="admin-accounts-create-btn-submit" disabled={createSaving}>{createSaving ? 'Đang tạo...' : 'Tạo tài khoản'}</button>
                 </div>
               </form>
             </div>
