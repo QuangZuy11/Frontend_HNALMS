@@ -27,6 +27,11 @@ import {
   NavigateNext as NextIcon,
   FirstPage as FirstPageIcon,
   LastPage as LastPageIcon,
+  Person as PersonIcon,
+  VpnKey as VpnKeyIcon,
+  Badge as BadgeIcon,
+  Lock as LockIcon,
+  LockOpen as LockOpenIcon,
 } from '@mui/icons-material';
 import { accountService } from '../../../services/accountService';
 import {
@@ -567,40 +572,154 @@ export default function ManagerAccountList() {
       </Box>
 
       {showDetailModal && (
-        <div className="create-account-modal-overlay" onClick={() => setShowDetailModal(false)}>
-          <div className="account-detail-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="create-account-modal-header">
-              <h2>Chi tiết tài khoản</h2>
-              <button type="button" className="modal-close-btn" onClick={() => setShowDetailModal(false)} aria-label="Đóng">×</button>
+        <div className="manager-account-detail-overlay" onClick={() => setShowDetailModal(false)}>
+          <div className="manager-account-detail-modal" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="manager-account-detail-header">
+              <div className="manager-account-detail-header-title">
+                <div className="manager-account-detail-header-icon">
+                  <PersonIcon sx={{ fontSize: 20 }} />
+                </div>
+                Chi tiết tài khoản
+              </div>
+              <button
+                type="button"
+                className="manager-account-detail-close-btn"
+                onClick={() => setShowDetailModal(false)}
+                aria-label="Đóng"
+              >
+                ×
+              </button>
             </div>
-            <div className="account-detail-modal-body">
+
+            {/* Body */}
+            <div className="manager-account-detail-body">
               {detailLoading ? (
-                <div className="detail-loading"><div className="spinner" /><p>Đang tải...</p></div>
+                <div className="manager-account-detail-loading">
+                  <div className="manager-account-detail-loading-spinner" />
+                  <span className="manager-account-detail-loading-text">Đang tải thông tin...</span>
+                </div>
               ) : detailAccount ? (
-                <div className="detail-content">
-                  <div className="detail-section">
-                    <h3>Thông tin đăng nhập</h3>
-                    <div className="detail-row"><span className="detail-label">Tên đăng nhập:</span><span className="detail-value">{detailAccount.username}</span></div>
-                    <div className="detail-row"><span className="detail-label">Email:</span><span className="detail-value detail-value-email">{detailAccount.email}</span></div>
-                    <div className="detail-row"><span className="detail-label">Số điện thoại:</span><span className={`detail-value ${!detailAccount.phoneNumber ? 'detail-value-empty' : ''}`}>{detailAccount.phoneNumber || 'Chưa cập nhật'}</span></div>
-                    <div className="detail-row detail-row-inline-badge"><span className="detail-label">Vai trò:</span><span className="role-badge">{ROLE_LABELS[detailAccount.role] || detailAccount.role}</span></div>
-                    <div className="detail-row detail-row-inline-badge"><span className="detail-label">Trạng thái:</span><span className={`status-badge status-${detailAccount.status}`}>{STATUS_LABELS[detailAccount.status] || detailAccount.status}</span></div>
-                    <div className="detail-row"><span className="detail-label">Ngày tạo:</span><span className="detail-value">{formatAccountDate(detailAccount.createdAt)}</span></div>
+                <>
+                  {/* Profile strip */}
+                  <div className="manager-account-detail-profile-strip">
+                    <div className="manager-account-detail-avatar">
+                      {detailAccount.username?.charAt(0).toUpperCase() || '?'}
+                    </div>
+                    <div className="manager-account-detail-profile-info">
+                      <div className="manager-account-detail-profile-name">
+                        {detailAccount.fullname || '—'}
+                      </div>
+                      <div className="manager-account-detail-profile-meta">
+                        <span className="manager-account-detail-username-tag">
+                          @{detailAccount.username}
+                        </span>
+                        <span className="manager-account-detail-role-badge">
+                          {ROLE_LABELS[detailAccount.role] || detailAccount.role}
+                        </span>
+                        {detailAccount.status === 'active' ? (
+                          <span className="manager-account-detail-status-active">
+                            <span className="manager-account-detail-status-dot" />
+                            Hoạt động
+                          </span>
+                        ) : (
+                          <span className="manager-account-detail-status-inactive">
+                            <span className="manager-account-detail-status-dot" />
+                            Không hoạt động
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="detail-section">
-                    <h3>Thông tin cá nhân</h3>
-                    <div className="detail-row"><span className={`detail-label ${!detailAccount.fullname ? 'detail-label-empty' : ''}`}>Họ và tên:</span><span className={`detail-value ${!detailAccount.fullname ? 'detail-value-empty' : ''}`}>{detailAccount.fullname || 'Chưa cập nhật'}</span></div>
-                    <div className="detail-row"><span className={`detail-label ${!detailAccount.cccd ? 'detail-label-empty' : ''}`}>CCCD:</span><span className={`detail-value ${!detailAccount.cccd ? 'detail-value-empty' : ''}`}>{detailAccount.cccd || 'Chưa cập nhật'}</span></div>
-                    <div className="detail-row"><span className={`detail-label ${!detailAccount.address ? 'detail-label-empty' : ''}`}>Địa chỉ:</span><span className={`detail-value ${!detailAccount.address ? 'detail-value-empty' : ''}`}>{detailAccount.address || 'Chưa cập nhật'}</span></div>
+
+                  {/* Two-column panels */}
+                  <div className="manager-account-detail-panels">
+                    {/* Left: Account info */}
+                    <div className="manager-account-detail-panel">
+                      <div className="manager-account-detail-panel-title">
+                        <VpnKeyIcon className="manager-account-detail-panel-title-icon" sx={{ fontSize: 15 }} />
+                        Thông tin đăng nhập
+                      </div>
+                      <div className="manager-account-detail-rows">
+                        <div className="manager-account-detail-row">
+                          <span className="manager-account-detail-label">Tên đăng nhập</span>
+                          <span className="manager-account-detail-value">{detailAccount.username}</span>
+                        </div>
+                        <div className="manager-account-detail-row">
+                          <span className="manager-account-detail-label">Email</span>
+                          <span className="manager-account-detail-value">
+                            {detailAccount.email || <span className="manager-account-detail-value-empty">—</span>}
+                          </span>
+                        </div>
+                        <div className="manager-account-detail-row">
+                          <span className="manager-account-detail-label">SĐT</span>
+                          <span className="manager-account-detail-value">
+                            {detailAccount.phoneNumber || <span className="manager-account-detail-value-empty">—</span>}
+                          </span>
+                        </div>
+                        <div className="manager-account-detail-row">
+                          <span className="manager-account-detail-label">Ngày tạo</span>
+                          <span className="manager-account-detail-value">
+                            {formatAccountDate(detailAccount.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Personal info */}
+                    <div className="manager-account-detail-panel">
+                      <div className="manager-account-detail-panel-title">
+                        <BadgeIcon className="manager-account-detail-panel-title-icon" sx={{ fontSize: 15 }} />
+                        Thông tin cá nhân
+                      </div>
+                      <div className="manager-account-detail-rows">
+                        <div className="manager-account-detail-row">
+                          <span className="manager-account-detail-label">Họ và tên</span>
+                          <span className="manager-account-detail-value">
+                            {detailAccount.fullname || <span className="manager-account-detail-value-empty">—</span>}
+                          </span>
+                        </div>
+                        <div className="manager-account-detail-row">
+                          <span className="manager-account-detail-label">CCCD / CMND</span>
+                          <span className="manager-account-detail-value">
+                            {detailAccount.cccd || <span className="manager-account-detail-value-empty">—</span>}
+                          </span>
+                        </div>
+                        <div className="manager-account-detail-row">
+                          <span className="manager-account-detail-label">Địa chỉ</span>
+                          <span className="manager-account-detail-value">
+                            {detailAccount.address || <span className="manager-account-detail-value-empty">—</span>}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="detail-actions">
+
+                  {/* Actions */}
+                  <div className="manager-account-detail-actions">
                     {detailAccount.status === 'active' ? (
-                      <button type="button" className="btn-disable" onClick={() => handleDisable(detailAccount._id)} disabled={disablingId === detailAccount._id}>Đóng tài khoản</button>
+                      <button
+                        type="button"
+                        className="manager-account-detail-btn-disable"
+                        onClick={() => handleDisable(detailAccount._id)}
+                        disabled={disablingId === detailAccount._id}
+                      >
+                        <LockIcon sx={{ fontSize: 16 }} />
+                        {disablingId === detailAccount._id ? 'Đang xử lý...' : 'Đóng tài khoản'}
+                      </button>
                     ) : (
-                      <button type="button" className="btn-enable" onClick={() => handleEnable(detailAccount._id)} disabled={disablingId === detailAccount._id}>Mở lại</button>
+                      <button
+                        type="button"
+                        className="manager-account-detail-btn-enable"
+                        onClick={() => handleEnable(detailAccount._id)}
+                        disabled={disablingId === detailAccount._id}
+                      >
+                        <LockOpenIcon sx={{ fontSize: 16 }} />
+                        {disablingId === detailAccount._id ? 'Đang xử lý...' : 'Mở lại tài khoản'}
+                      </button>
                     )}
                   </div>
-                </div>
+                </>
               ) : null}
             </div>
           </div>
