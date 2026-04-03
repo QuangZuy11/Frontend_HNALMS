@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 import {
-  Plus, Search, Droplet, Send, FileText, X, Edit3, Wrench
+  Plus, Search, Droplet, Send, FileText, X, Edit3, Wrench,
+  ChevronLeft, ChevronRight, Filter
 } from 'lucide-react';
 
 import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
@@ -41,6 +42,8 @@ interface Invoice {
 }
 
 const ITEMS_PER_PAGE = 15; 
+const BULK_ITEMS_PER_PAGE = 10; 
+const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
 const InvoiceManager = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -65,6 +68,12 @@ const InvoiceManager = () => {
   const [bulkData, setBulkData] = useState<Record<string, { eOld: number, eNew: number, wOld: number, wNew: number, eReset: boolean, wReset: boolean }>>({});
   const [occupiedRooms, setOccupiedRooms] = useState<any[]>([]);
   const [completedRooms, setCompletedRooms] = useState<Record<string, boolean>>({});
+
+  // Các state hỗ trợ cho Modal Ghi điện nước hàng loạt
+  const [bulkSearchTerm, setBulkSearchTerm] = useState('');
+  const [bulkFilterStatus, setBulkFilterStatus] = useState('ALL'); 
+  const [bulkFilterFloor, setBulkFilterFloor] = useState('ALL'); // [MỚI] Lọc theo tầng
+  const [bulkCurrentPage, setBulkCurrentPage] = useState(1);
 
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -109,6 +118,11 @@ const InvoiceManager = () => {
     setCurrentPage(1);
     setSelectedInvoiceIds([]); 
   }, [searchTerm, filterStatus, filterType, sortConfig]);
+
+  // Reset trang khi thay đổi bộ lọc trong modal bulk
+  useEffect(() => {
+    setBulkCurrentPage(1);
+  }, [bulkSearchTerm, bulkFilterStatus, bulkFilterFloor]);
 
   const fetchServices = async () => {
     try {
@@ -166,9 +180,6 @@ const InvoiceManager = () => {
 
     let eOld = 0, wOld = 0;
     let eCurrent = 0, wCurrent = 0;
-    
-    const currentMonthIndex = new Date().getMonth();
-    const currentYearIndex = new Date().getFullYear();
 
     if (elecService && rId) {
       try {
@@ -177,7 +188,7 @@ const InvoiceManager = () => {
           const reading = resE.data.data;
           const createdDate = new Date(reading.createdAt);
           
-          if (createdDate.getMonth() === currentMonthIndex && createdDate.getFullYear() === currentYearIndex) {
+          if ((Date.now() - createdDate.getTime()) < TWENTY_FOUR_HOURS) {
             eOld = reading.oldIndex;
             eCurrent = reading.newIndex; 
             setIsElecReset(reading.isReset || false);
@@ -196,7 +207,7 @@ const InvoiceManager = () => {
           const reading = resW.data.data;
           const createdDate = new Date(reading.createdAt);
           
-          if (createdDate.getMonth() === currentMonthIndex && createdDate.getFullYear() === currentYearIndex) {
+          if ((Date.now() - createdDate.getTime()) < TWENTY_FOUR_HOURS) {
             wOld = reading.oldIndex;
             wCurrent = reading.newIndex; 
             setIsWaterReset(reading.isReset || false);
@@ -256,6 +267,12 @@ const InvoiceManager = () => {
 
   const handleOpenBulkReading = async () => {
     try {
+      // Khi mở Modal, reset bộ lọc về rỗng và ưu tiên hiện phòng Chưa chốt (PENDING)
+      setBulkSearchTerm('');
+      setBulkFilterStatus('PENDING');
+      setBulkFilterFloor('ALL');
+      setBulkCurrentPage(1);
+
       const draftRoomIds = invoices
         .filter(inv => inv.status === 'Draft' && inv.type === 'Periodic')
         .map(inv => getRoomIdStr(inv))
@@ -298,8 +315,6 @@ const InvoiceManager = () => {
 
       const updatedData = { ...initialData };
       const newCompletedStatus: Record<string, boolean> = {}; 
-      const currentMonthIndex = new Date().getMonth();
-      const currentYearIndex = new Date().getFullYear();
 
       await Promise.all(activeRooms.map(async (room: any) => {
         let eDone = false;
@@ -312,7 +327,7 @@ const InvoiceManager = () => {
               const reading = res.data.data;
               const createdDate = new Date(reading.createdAt);
               
-              if (createdDate.getMonth() === currentMonthIndex && createdDate.getFullYear() === currentYearIndex) {
+              if ((Date.now() - createdDate.getTime()) < TWENTY_FOUR_HOURS) {
                 updatedData[room._id].eOld = reading.oldIndex;
                 updatedData[room._id].eNew = reading.newIndex; 
                 updatedData[room._id].eReset = reading.isReset || false;
@@ -332,7 +347,7 @@ const InvoiceManager = () => {
               const reading = res.data.data;
               const createdDate = new Date(reading.createdAt);
               
-              if (createdDate.getMonth() === currentMonthIndex && createdDate.getFullYear() === currentYearIndex) {
+              if ((Date.now() - createdDate.getTime()) < TWENTY_FOUR_HOURS) {
                 updatedData[room._id].wOld = reading.oldIndex;
                 updatedData[room._id].wNew = reading.newIndex;
                 updatedData[room._id].wReset = reading.isReset || false;
@@ -559,9 +574,6 @@ const InvoiceManager = () => {
     );
   };
 
-  const elecServiceInfo = services.find(s => ['điện', 'dien'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
-  const waterServiceInfo = services.find(s => ['nước', 'nuoc'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
-
   const renderStatusBadge = (status: string) => {
     let bgColor = '';
     let textColor = '';
@@ -633,6 +645,53 @@ const InvoiceManager = () => {
       </th>
     );
   };
+
+  // ==============================================================
+  // [MỚI] TẠO DANH SÁCH TẦNG TỪ CÁC PHÒNG CHO VÀO FILTER
+  // ==============================================================
+  const bulkFloors = useMemo(() => {
+    const floorsMap = new Map();
+    occupiedRooms.forEach(room => {
+      if (room.floorId) {
+        if (typeof room.floorId === 'object') {
+          floorsMap.set(room.floorId._id, room.floorId.name || 'Tầng không tên');
+        } else {
+          floorsMap.set(room.floorId, `Tầng ${room.floorId}`);
+        }
+      }
+    });
+    return Array.from(floorsMap.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [occupiedRooms]);
+
+  // ==============================================================
+  // LOGIC PHÂN TRANG CHO MODAL GHI ĐIỆN NƯỚC HÀNG LOẠT (ĐÃ KÈM LỌC TẦNG)
+  // ==============================================================
+  const filteredBulkRooms = useMemo(() => {
+    return occupiedRooms.filter(room => {
+      const matchSearch = room.name.toLowerCase().includes(bulkSearchTerm.toLowerCase());
+      const isDone = completedRooms[room._id];
+      const matchStatus = bulkFilterStatus === 'ALL' 
+        ? true 
+        : bulkFilterStatus === 'DONE' ? isDone : !isDone;
+      
+      // Lọc theo tầng
+      let matchFloor = true;
+      if (bulkFilterFloor !== 'ALL') {
+        const rFloorId = typeof room.floorId === 'object' ? room.floorId?._id : room.floorId;
+        matchFloor = rFloorId === bulkFilterFloor;
+      }
+
+      return matchSearch && matchStatus && matchFloor;
+    });
+  }, [occupiedRooms, bulkSearchTerm, bulkFilterStatus, bulkFilterFloor, completedRooms]);
+
+  const bulkTotalPages = Math.ceil(filteredBulkRooms.length / BULK_ITEMS_PER_PAGE) || 1;
+  const paginatedBulkRooms = useMemo(() => {
+    const startIndex = (bulkCurrentPage - 1) * BULK_ITEMS_PER_PAGE;
+    return filteredBulkRooms.slice(startIndex, startIndex + BULK_ITEMS_PER_PAGE);
+  }, [filteredBulkRooms, bulkCurrentPage]);
 
   return (
     <div className="invoice-container">
@@ -827,10 +886,6 @@ const InvoiceManager = () => {
         </div>
       )}
 
-      {/* =========================================================================
-          CÁC MODAL (ĐÃ FIX LỖI OVERLAY CHE SIDEBAR VÀ FIX LỖI GIAO DIỆN BỊ ÉP)
-          ========================================================================= */}
-
       {/* MODAL 1: NHẬP SỐ ĐIỆN NƯỚC ĐƠN LẺ */}
       {showReadingModal && selectedInvoice && (
         <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setShowReadingModal(false)}>
@@ -953,7 +1008,6 @@ const InvoiceManager = () => {
             
             <div className="modal-body" style={{ padding: '24px', overflowY: 'auto' }}>
               
-              {/* Dùng Grid Inline thay cho class detail-row để tránh bị ép layout */}
               <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '12px', marginBottom: '16px', alignItems: 'center' }}>
                 <span style={{ color: '#64748b', fontSize: '14px', fontWeight: 600 }}>Mã hóa đơn:</span>
                 <span style={{ fontFamily: 'monospace', fontSize: '15px', fontWeight: 600, color: '#1e293b' }}>{selectedInvoice.invoiceCode}</span>
@@ -1067,18 +1121,55 @@ const InvoiceManager = () => {
         </div>
       )}
 
-      {/* MODAL 4: GHI CHỈ SỐ HÀNG LOẠT */}
+      {/* MODAL 4: GHI CHỈ SỐ HÀNG LOẠT VỚI PHÂN TRANG & TÌM KIẾM */}
       {showBulkReadingModal && (
         <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setShowBulkReadingModal(false)}>
           <div className="modal-content" style={{ width: '900px', maxWidth: '95vw', maxHeight: '90vh', background: '#fff', borderRadius: '12px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
+            
             <div className="modal-header" style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>⚡ Ghi Chỉ Số Điện Nước Hàng Loạt</h3>
               <button onClick={() => setShowBulkReadingModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={20}/></button>
             </div>
-            <div className="modal-body" style={{ padding: '0', overflowY: 'auto' }}>
-              <div style={{ padding: '16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '14px' }}>
-                * Hệ thống tự động bỏ qua nếu số mới không thay đổi. Nếu đồng hồ bị quay vòng (nhảy về 0), hãy tick vào ô <b>"Reset"</b>.
+
+            {/* THANH CÔNG CỤ TRONG MODAL [ĐÃ ĐƯỢC CHUẨN HÓA GRID ĐỂ KHÔNG BAO GIỜ BỊ XÔ LỆCH] */}
+            <div style={{ padding: '16px 24px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px', alignItems: 'center' }}>
+                <div style={{ position: 'relative', width: '100%' }}>
+                  <Search size={16} style={{ position: 'absolute', left: 10, top: 10, color: '#64748b' }} />
+                  <input 
+                    type="text" 
+                    placeholder="Tìm tên phòng..." 
+                    value={bulkSearchTerm}
+                    onChange={(e) => setBulkSearchTerm(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px 8px 32px', borderRadius: 6, border: '1px solid #cbd5e1', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <select 
+                  value={bulkFilterFloor}
+                  onChange={(e) => setBulkFilterFloor(e.target.value)}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', outline: 'none', color: '#334155', boxSizing: 'border-box' }}
+                >
+                  <option value="ALL">Tất cả tầng</option>
+                  {bulkFloors.map(f => (
+                    <option key={f.id} value={f.id}>{f.name}</option>
+                  ))}
+                </select>
+                <select 
+                  value={bulkFilterStatus}
+                  onChange={(e) => setBulkFilterStatus(e.target.value)}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', outline: 'none', color: '#334155', boxSizing: 'border-box' }}
+                >
+                  <option value="ALL">Tất cả trạng thái</option>
+                  <option value="PENDING">Chưa chốt</option>
+                  <option value="DONE">Đã chốt</option>
+                </select>
               </div>
+              <div style={{ fontSize: '13px', color: '#64748b' }}>
+                * Bỏ qua nếu số mới không đổi. Chọn <b>"Reset"</b> nếu đồng hồ quay vòng.
+              </div>
+            </div>
+
+            <div className="modal-body" style={{ padding: '0', overflowY: 'auto', flex: 1 }}>
               <table className="invoice-table" style={{ margin: 0, width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: '#f1f5f9' }}>
@@ -1090,77 +1181,108 @@ const InvoiceManager = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {occupiedRooms.map(room => {
-                    const isDone = completedRooms[room._id]; 
+                  {paginatedBulkRooms.length > 0 ? (
+                    paginatedBulkRooms.map(room => {
+                      const isDone = completedRooms[room._id]; 
 
-                    return (
-                      <tr key={room._id} style={{ opacity: isDone ? 0.6 : 1, background: isDone ? '#f8fafc' : 'white', borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ fontWeight: 'bold', color: '#0f172a', verticalAlign: 'top', padding: '16px 12px' }}>
-                          {room.name}
-                          {isDone && <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 'normal', marginTop: '4px' }}>✓ Đã chốt</div>}
-                        </td>
-                        <td style={{ verticalAlign: 'top', padding: '16px 12px' }}>
-                          <input type="number" disabled value={bulkData[room._id]?.eOld || 0} style={{ width: '80px', padding: '6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 4, cursor: 'not-allowed' }} />
-                        </td>
-                        <td style={{ verticalAlign: 'top', padding: '16px 12px' }}>
-                          <input type="number" 
-                            disabled={isDone} 
-                            min={bulkData[room._id]?.eReset ? 0 : (bulkData[room._id]?.eOld || 0)} 
-                            value={bulkData[room._id]?.eNew?.toString() || '0'} 
-                            onChange={(e) => {
-                              let val = e.target.value.replace(/\D/g, ''); 
-                              if (val.length > 5) val = val.slice(0, 5); 
-                              setBulkData({ ...bulkData, [room._id]: { ...bulkData[room._id], eNew: Number(val) } });
-                            }}
-                            onKeyDown={(e) => {
-                              if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
-                                e.preventDefault();
-                              }
-                            }}
-                            style={{ width: '100px', padding: '6px', border: '1px solid #3b82f6', borderRadius: 4, cursor: isDone ? 'not-allowed' : 'text' }} 
-                          />
-                          {!isDone && (
-                            <label style={{ fontSize: '11px', color: '#dc2626', cursor: 'pointer', display: 'flex', alignItems: 'center', marginTop: '8px' }}>
-                              <input type="checkbox" checked={bulkData[room._id]?.eReset} onChange={e => setBulkData({...bulkData, [room._id]: {...bulkData[room._id], eReset: e.target.checked}})} style={{ width: '13px', height: '13px', margin: 0, marginRight: '6px' }} />
-                              Reset
-                            </label>
-                          )}
-                        </td>
-                        <td style={{ verticalAlign: 'top', padding: '16px 12px' }}>
-                          <input type="number" disabled value={bulkData[room._id]?.wOld || 0} style={{ width: '80px', padding: '6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 4, cursor: 'not-allowed' }} />
-                        </td>
-                        <td style={{ verticalAlign: 'top', padding: '16px 12px' }}>
-                          <input type="number" 
-                            disabled={isDone} 
-                            min={bulkData[room._id]?.wReset ? 0 : (bulkData[room._id]?.wOld || 0)} 
-                            value={bulkData[room._id]?.wNew?.toString() || '0'} 
-                            onChange={(e) => {
-                              let val = e.target.value.replace(/\D/g, ''); 
-                              if (val.length > 5) val = val.slice(0, 5); 
-                              setBulkData({ ...bulkData, [room._id]: { ...bulkData[room._id], wNew: Number(val) } });
-                            }}
-                            onKeyDown={(e) => {
-                              if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
-                                e.preventDefault();
-                              }
-                            }}
-                            style={{ width: '100px', padding: '6px', border: '1px solid #0ea5e9', borderRadius: 4, cursor: isDone ? 'not-allowed' : 'text' }} 
-                          />
-                          {!isDone && (
-                            <label style={{ fontSize: '11px', color: '#dc2626', cursor: 'pointer', display: 'flex', alignItems: 'center', marginTop: '8px' }}>
-                              <input type="checkbox" checked={bulkData[room._id]?.wReset} onChange={e => setBulkData({...bulkData, [room._id]: {...bulkData[room._id], wReset: e.target.checked}})} style={{ width: '13px', height: '13px', margin: 0, marginRight: '6px' }} />
-                              Reset
-                            </label>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                      return (
+                        <tr key={room._id} style={{ opacity: isDone ? 0.6 : 1, background: isDone ? '#f8fafc' : 'white', borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ fontWeight: 'bold', color: '#0f172a', verticalAlign: 'top', padding: '16px 12px' }}>
+                            {room.name}
+                            {isDone && <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 'normal', marginTop: '4px' }}>✓ Đã chốt</div>}
+                          </td>
+                          <td style={{ verticalAlign: 'top', padding: '16px 12px' }}>
+                            <input type="number" disabled value={bulkData[room._id]?.eOld || 0} style={{ width: '80px', padding: '6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 4, cursor: 'not-allowed' }} />
+                          </td>
+                          <td style={{ verticalAlign: 'top', padding: '16px 12px' }}>
+                            <input type="number" 
+                              disabled={isDone} 
+                              min={bulkData[room._id]?.eReset ? 0 : (bulkData[room._id]?.eOld || 0)} 
+                              value={bulkData[room._id]?.eNew?.toString() || '0'} 
+                              onChange={(e) => {
+                                let val = e.target.value.replace(/\D/g, ''); 
+                                if (val.length > 5) val = val.slice(0, 5); 
+                                setBulkData({ ...bulkData, [room._id]: { ...bulkData[room._id], eNew: Number(val) } });
+                              }}
+                              onKeyDown={(e) => {
+                                if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
+                                  e.preventDefault();
+                                }
+                              }}
+                              style={{ width: '100px', padding: '6px', border: '1px solid #3b82f6', borderRadius: 4, cursor: isDone ? 'not-allowed' : 'text' }} 
+                            />
+                            {!isDone && (
+                              <label style={{ fontSize: '11px', color: '#dc2626', cursor: 'pointer', display: 'flex', alignItems: 'center', marginTop: '8px' }}>
+                                <input type="checkbox" checked={bulkData[room._id]?.eReset} onChange={e => setBulkData({...bulkData, [room._id]: {...bulkData[room._id], eReset: e.target.checked}})} style={{ width: '13px', height: '13px', margin: 0, marginRight: '6px' }} />
+                                Reset
+                              </label>
+                            )}
+                          </td>
+                          <td style={{ verticalAlign: 'top', padding: '16px 12px' }}>
+                            <input type="number" disabled value={bulkData[room._id]?.wOld || 0} style={{ width: '80px', padding: '6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 4, cursor: 'not-allowed' }} />
+                          </td>
+                          <td style={{ verticalAlign: 'top', padding: '16px 12px' }}>
+                            <input type="number" 
+                              disabled={isDone} 
+                              min={bulkData[room._id]?.wReset ? 0 : (bulkData[room._id]?.wOld || 0)} 
+                              value={bulkData[room._id]?.wNew?.toString() || '0'} 
+                              onChange={(e) => {
+                                let val = e.target.value.replace(/\D/g, ''); 
+                                if (val.length > 5) val = val.slice(0, 5); 
+                                setBulkData({ ...bulkData, [room._id]: { ...bulkData[room._id], wNew: Number(val) } });
+                              }}
+                              onKeyDown={(e) => {
+                                if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
+                                  e.preventDefault();
+                                }
+                              }}
+                              style={{ width: '100px', padding: '6px', border: '1px solid #0ea5e9', borderRadius: 4, cursor: isDone ? 'not-allowed' : 'text' }} 
+                            />
+                            {!isDone && (
+                              <label style={{ fontSize: '11px', color: '#dc2626', cursor: 'pointer', display: 'flex', alignItems: 'center', marginTop: '8px' }}>
+                                <input type="checkbox" checked={bulkData[room._id]?.wReset} onChange={e => setBulkData({...bulkData, [room._id]: {...bulkData[room._id], wReset: e.target.checked}})} style={{ width: '13px', height: '13px', margin: 0, marginRight: '6px' }} />
+                                Reset
+                              </label>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={5} style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                        Không có phòng nào cần ghi chỉ số theo bộ lọc hiện tại.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
+
+            {/* PHÂN TRANG TRONG MODAL */}
+            {bulkTotalPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                <span style={{ fontSize: '13px', color: '#64748b' }}>
+                  Đang xem <b>{(bulkCurrentPage - 1) * BULK_ITEMS_PER_PAGE + 1}</b> - <b>{Math.min(bulkCurrentPage * BULK_ITEMS_PER_PAGE, filteredBulkRooms.length)}</b> / {filteredBulkRooms.length} phòng
+                </span>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button 
+                    onClick={() => setBulkCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={bulkCurrentPage === 1}
+                    style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', background: bulkCurrentPage === 1 ? '#f1f5f9' : '#fff', cursor: bulkCurrentPage === 1 ? 'not-allowed' : 'pointer' }}
+                  ><ChevronLeft size={16}/></button>
+                  <span style={{ fontSize: '13px', fontWeight: 600 }}>Trang {bulkCurrentPage}/{bulkTotalPages}</span>
+                  <button 
+                    onClick={() => setBulkCurrentPage(p => Math.min(bulkTotalPages, p + 1))}
+                    disabled={bulkCurrentPage === bulkTotalPages}
+                    style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', background: bulkCurrentPage === bulkTotalPages ? '#f1f5f9' : '#fff', cursor: bulkCurrentPage === bulkTotalPages ? 'not-allowed' : 'pointer' }}
+                  ><ChevronRight size={16}/></button>
+                </div>
+              </div>
+            )}
+
             <div className="modal-footer" style={{ borderTop: '1px solid #e2e8f0', padding: '16px 24px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button className="btn btn-outline" onClick={() => setShowBulkReadingModal(false)}>Hủy</button>
+              <button className="btn btn-outline" onClick={() => setShowBulkReadingModal(false)}>Đóng tạm</button>
               <button className="btn btn-primary" onClick={handleSaveBulkReadings} disabled={loading}>
                 {loading ? 'Đang lưu...' : 'Lưu TẤT CẢ chỉ số'}
               </button>
