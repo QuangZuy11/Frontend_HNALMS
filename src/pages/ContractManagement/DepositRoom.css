@@ -12,15 +12,28 @@
   font-family: inherit;
 }
 
-.deposit-card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 28px;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
-  flex: 1;
+.dr-page {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 64px);
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
 
-.deposit-header {
+.dr-page *,
+.dr-page *::before,
+.dr-page *::after {
+  font-family: inherit;
+}
+
+.dr-card {
+ padding: 32px -40px;
+  background-color: #ffffff;
+  min-height: 100%;
+  font-family: "Inter", sans-serif;
+  color: #1e293b;
+}
+.dr-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -29,7 +42,7 @@
   flex-wrap: wrap;
 }
 
-.deposit-header h1 {
+.dr-header h1 {
   font-size: 34px;
   margin: 0;
   font-weight: 800;
@@ -38,13 +51,13 @@
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
-.deposit-header .subtitle {
+.dr-header .subtitle {
   margin-top: 4px;
   color: #64748b;
   font-size: 14px;
 }
 
-.deposit-header-btn {
+.dr-header-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -59,11 +72,11 @@
   transition: background 0.2s;
 }
 
-.deposit-header-btn:hover {
+.dr-header-btn:hover {
   background: #303f9f;
 }
 
-.deposit-filters {
+.dr-filters {
   display: flex;
   gap: 12px;
   align-items: center;
@@ -76,20 +89,20 @@
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
 }
 
-.deposit-filter-wrapper {
+.dr-filter-wrapper {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.deposit-filter-label {
+.dr-filter-label {
   font-size: 14px;
   color: #475569;
   white-space: nowrap;
   font-weight: 600;
 }
 
-.deposit-filter-input {
+.dr-filter-input {
   height: 40px;
   padding: 0 12px;
   border-radius: 10px;
@@ -102,13 +115,13 @@
     box-shadow 0.2s;
 }
 
-.deposit-filter-input:focus {
+.dr-filter-input:focus {
   outline: none;
   border-color: #3579c6;
   box-shadow: 0 0 0 2px rgba(53, 121, 198, 0.15);
 }
 
-.deposit-filter-select {
+.dr-filter-select {
   height: 40px;
   padding: 0 12px;
   border-radius: 10px;
@@ -122,14 +135,14 @@
     box-shadow 0.2s;
 }
 
-.deposit-filter-select:focus {
+.dr-filter-select:focus {
   outline: none;
   border-color: #3579c6;
   box-shadow: 0 0 0 2px rgba(53, 121, 198, 0.15);
 }
 
 /* ── Pagination ── */
-.deposit-pagination {
+.dr-pagination {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -141,23 +154,23 @@
   border-top: 1px solid #f3f4f6;
 }
 
-.deposit-pagination-info {
+.dr-pagination-info {
   font-size: 0.875rem;
   color: #6b7280;
 }
 
-.deposit-pagination-info strong {
+.dr-pagination-info strong {
   font-weight: 600;
   color: #111827;
 }
 
-.deposit-pagination-controls {
+.dr-pagination-controls {
   display: flex;
   align-items: center;
   gap: 0.35rem;
 }
 
-.deposit-page-btn {
+.dr-page-btn {
   width: 34px;
   height: 34px;
   border-radius: 999px;
@@ -173,17 +186,17 @@
   transition: all 0.15s ease;
 }
 
-.deposit-page-btn:hover:not(:disabled):not(.deposit-page-active) {
+.dr-page-btn:hover:not(:disabled):not(.dr-page-active) {
   background: #f3f4f6;
   border-color: #9ca3af;
 }
 
-.deposit-page-btn:disabled {
+.dr-page-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
 
-.deposit-page-active {
+.dr-page-active {
   background: #1a237e;
   color: #fff;
   border-color: #1a237e;
@@ -191,12 +204,12 @@
   cursor: default;
 }
 
-.deposit-page-active:hover {
+.dr-page-active:hover {
   background: #303f9f;
   border-color: #303f9f;
 }
 
-.deposit-page-arrow {
+.dr-page-arrow {
   font-size: 1.1rem;
   font-weight: 700;
 }
