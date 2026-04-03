@@ -82,11 +82,18 @@ function DepositModal({
             if (heldDeposits.length > 1) {
               // If multiple, find the one NOT used by any active contract
               axios.get(`${API_URL}/contracts`).then((cRes) => {
-                const activeContracts = cRes.data.data.filter((c: any) =>
-                  (c.roomId === roomId || c.roomId?._id === roomId) && c.status === "active"
+                const activeContracts = cRes.data.data.filter(
+                  (c: any) =>
+                    (c.roomId === roomId || c.roomId?._id === roomId) &&
+                    c.status === "active",
                 );
-                const freeDeposit = heldDeposits.find((d: any) =>
-                  !activeContracts.some((c: any) => c.depositId && (c.depositId === d._id || c.depositId._id === d._id))
+                const freeDeposit = heldDeposits.find(
+                  (d: any) =>
+                    !activeContracts.some(
+                      (c: any) =>
+                        c.depositId &&
+                        (c.depositId === d._id || c.depositId._id === d._id),
+                    ),
                 );
                 setDeposit(freeDeposit || heldDeposits[0]);
               });
@@ -252,12 +259,12 @@ function DepositModal({
               <Typography sx={{ fontFamily: serifFont }}>
                 {deposit.createdAt
                   ? new Date(deposit.createdAt).toLocaleDateString("vi-VN", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
                   : "—"}
               </Typography>
             </Box>
@@ -423,8 +430,9 @@ const CreateContract = () => {
           // Find Held deposits for this room
           const roomDeposits = allDeposits.filter(
             (d: any) =>
-              (d.room === selectedRoom._id || d.room?._id === selectedRoom._id) &&
-              d.status === "Held"
+              (d.room === selectedRoom._id ||
+                d.room?._id === selectedRoom._id) &&
+              d.status === "Held",
           );
 
           if (roomDeposits.length === 0) {
@@ -435,18 +443,19 @@ const CreateContract = () => {
           // Contracts for this room
           const roomContracts = allContracts.filter(
             (c: any) =>
-              (c.roomId === selectedRoom._id || c.roomId?._id === selectedRoom._id)
+              c.roomId === selectedRoom._id ||
+              c.roomId?._id === selectedRoom._id,
           );
           const takenDepositIds = roomContracts
             .filter((c: any) => c.depositId)
             .map((c: any) =>
-              typeof c.depositId === "string" ? c.depositId : c.depositId?._id
+              typeof c.depositId === "string" ? c.depositId : c.depositId?._id,
             );
 
           // Priority 1: activationStatus=null, not taken
           const newFree = roomDeposits.find(
             (d: any) =>
-              !takenDepositIds.includes(d._id) && d.activationStatus === null
+              !takenDepositIds.includes(d._id) && d.activationStatus === null,
           );
           if (newFree) {
             setSelectedDeposit(newFree);
@@ -456,7 +465,7 @@ const CreateContract = () => {
           // Priority 2: activationStatus=false, not taken
           const resetFree = roomDeposits.find(
             (d: any) =>
-              !takenDepositIds.includes(d._id) && d.activationStatus === false
+              !takenDepositIds.includes(d._id) && d.activationStatus === false,
           );
           if (resetFree) {
             setSelectedDeposit(resetFree);
@@ -465,7 +474,7 @@ const CreateContract = () => {
 
           // Priority 3: any not taken
           const anyFree = roomDeposits.find(
-            (d: any) => !takenDepositIds.includes(d._id)
+            (d: any) => !takenDepositIds.includes(d._id),
           );
           if (anyFree) {
             setSelectedDeposit(anyFree);
@@ -578,12 +587,14 @@ const CreateContract = () => {
       const start = watchStartDate ? new Date(watchStartDate) : new Date();
       const future = new Date(selectedRoom.futureContractStartDate);
       if (start < future) {
-        let months = (future.getFullYear() - start.getFullYear()) * 12 + (future.getMonth() - start.getMonth());
+        let months =
+          (future.getFullYear() - start.getFullYear()) * 12 +
+          (future.getMonth() - start.getMonth());
         if (future.getDate() < start.getDate()) {
           months -= 1;
         }
         const maxDur = Math.max(1, months);
-        
+
         const currentDuration = getValues("duration");
         if (currentDuration > maxDur || currentDuration === 12) {
           setValue("duration", maxDur, { shouldValidate: true });
@@ -599,7 +610,8 @@ const CreateContract = () => {
       // Gap-fill contract: default to 1, adjust if current value is invalid
       const dur = getValues("duration");
       if (current < 1) setValue("prepayMonths", 1, { shouldValidate: true });
-      if (current > dur) setValue("prepayMonths", Math.min(1, dur), { shouldValidate: true });
+      if (current > dur)
+        setValue("prepayMonths", Math.min(1, dur), { shouldValidate: true });
     } else {
       // Normal contract: ensure min 2
       if (current < 2) setValue("prepayMonths", 2, { shouldValidate: true });
@@ -814,13 +826,15 @@ const CreateContract = () => {
         }
         toastr.success("Đã nhận diện và điền tự động dữ liệu CCCD thành công!");
       } else {
-        toastr.warning("Không thể nhận diện CCCD. Vui lòng thử lại với ảnh rõ nét hơn.");
+        toastr.warning(
+          "Không thể nhận diện CCCD. Vui lòng thử lại với ảnh rõ nét hơn.",
+        );
       }
     } catch (err: any) {
       console.error("OCR Error:", err);
       toastr.error(
         "Lỗi khi kết nối tới FPT.AI: " +
-        (err.response?.data?.errorMessage || err.message),
+          (err.response?.data?.errorMessage || err.message),
       );
     } finally {
       setOcrLoading(false);
@@ -906,8 +920,15 @@ const CreateContract = () => {
       let rentPaidUntil = null;
       if (data.prepayMonths) {
         const start = new Date(data.startDate);
-        const monthsToAdd = data.prepayMonths === "all" ? Number(data.duration) : Number(data.prepayMonths);
-        rentPaidUntil = new Date(start.getFullYear(), start.getMonth() + 1 + monthsToAdd, 0).toISOString();
+        const monthsToAdd =
+          data.prepayMonths === "all"
+            ? Number(data.duration)
+            : Number(data.prepayMonths);
+        rentPaidUntil = new Date(
+          start.getFullYear(),
+          start.getMonth() + 1 + monthsToAdd,
+          0,
+        ).toISOString();
       }
 
       const payload = {
@@ -952,7 +973,10 @@ const CreateContract = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <fieldset disabled={submitting} style={{ border: "none", margin: 0, padding: 0 }}>
+        <fieldset
+          disabled={submitting}
+          style={{ border: "none", margin: 0, padding: 0 }}
+        >
           <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
             {/* CONTRACT DETAILS */}
             <Box>
@@ -985,11 +1009,18 @@ const CreateContract = () => {
                   </Typography>
                   <Typography
                     variant="h4"
-                    sx={{ mt: 3, fontWeight: "bold", textTransform: "uppercase" }}
+                    sx={{
+                      mt: 3,
+                      fontWeight: "bold",
+                      textTransform: "uppercase",
+                    }}
                   >
                     HỢP ĐỒNG THUÊ NHÀ
                   </Typography>
-                  <Typography variant="body1" sx={{ fontStyle: "italic", mt: 1 }}>
+                  <Typography
+                    variant="body1"
+                    sx={{ fontStyle: "italic", mt: 1 }}
+                  >
                     (Số: {selectedRoom ? `HĐ-${selectedRoom.name}` : "..."}/...)
                   </Typography>
                 </Box>
@@ -1102,7 +1133,9 @@ const CreateContract = () => {
                             rules={{ required: "Ngày sinh là bắt buộc" }}
                             render={({ field }) => (
                               <DatePicker
-                                value={field.value ? new Date(field.value) : null}
+                                value={
+                                  field.value ? new Date(field.value) : null
+                                }
                                 onChange={(date) => {
                                   if (date && !isNaN(date.getTime())) {
                                     field.onChange(
@@ -1168,7 +1201,8 @@ const CreateContract = () => {
                               required: "Số điện thoại là bắt buộc",
                               pattern: {
                                 value: /^0[0-9]{9}$/,
-                                message: "SĐT phải gồm 10 chữ số, bắt đầu bằng 0",
+                                message:
+                                  "SĐT phải gồm 10 chữ số, bắt đầu bằng 0",
                               },
                             })}
                             error={!!errors.tenantInfo?.phone}
@@ -1255,24 +1289,26 @@ const CreateContract = () => {
                       >
                         <Box component="thead">
                           <Box component="tr">
-                            {["STT", "Họ và tên", "Số CCCD/CMND", ""].map((h) => (
-                              <Box
-                                component="th"
-                                key={h || "action"}
-                                sx={{
-                                  border: h ? "1px solid #333" : "none",
-                                  py: 0.8,
-                                  px: 1.5,
-                                  textAlign: "center",
-                                  fontWeight: "bold",
-                                  bgcolor: h ? "#fafafa" : "transparent",
-                                  fontFamily: '"Times New Roman", serif',
-                                  width: h === "" ? "40px" : "auto",
-                                }}
-                              >
-                                {h}
-                              </Box>
-                            ))}
+                            {["STT", "Họ và tên", "Số CCCD/CMND", ""].map(
+                              (h) => (
+                                <Box
+                                  component="th"
+                                  key={h || "action"}
+                                  sx={{
+                                    border: h ? "1px solid #333" : "none",
+                                    py: 0.8,
+                                    px: 1.5,
+                                    textAlign: "center",
+                                    fontWeight: "bold",
+                                    bgcolor: h ? "#fafafa" : "transparent",
+                                    fontFamily: '"Times New Roman", serif',
+                                    width: h === "" ? "40px" : "auto",
+                                  }}
+                                >
+                                  {h}
+                                </Box>
+                              ),
+                            )}
                           </Box>
                         </Box>
                         <Box component="tbody">
@@ -1308,7 +1344,9 @@ const CreateContract = () => {
                                     `coResidents.${index}.fullName` as const,
                                     { required: "Bắt buộc" },
                                   )}
-                                  error={!!errors.coResidents?.[index]?.fullName}
+                                  error={
+                                    !!errors.coResidents?.[index]?.fullName
+                                  }
                                   helperText={
                                     errors.coResidents?.[index]?.fullName
                                       ?.message as string
@@ -1351,8 +1389,13 @@ const CreateContract = () => {
                                           message: "CCCD phải gồm 12 chữ số",
                                         },
                                         validate: (value) => {
-                                          const tenantCccd = watch("tenantInfo.cccd");
-                                          if (value && tenantCccd && value === tenantCccd) {
+                                          const tenantCccd =
+                                            watch("tenantInfo.cccd");
+                                          if (
+                                            value &&
+                                            tenantCccd &&
+                                            value === tenantCccd
+                                          ) {
                                             return "CCCD người ở cùng không được trùng với CCCD bên B";
                                           }
                                           return true;
@@ -1425,8 +1468,8 @@ const CreateContract = () => {
                                       } catch (err: any) {
                                         toastr.error(
                                           "Lỗi khi kết nối tới FPT.AI: " +
-                                          (err.response?.data?.errorMessage ||
-                                            err.message),
+                                            (err.response?.data?.errorMessage ||
+                                              err.message),
                                         );
                                       }
                                       // Reset file input
@@ -1529,17 +1572,17 @@ const CreateContract = () => {
                       </Button>
                       {coResidentFields.length + 1 >=
                         (selectedRoom?.roomTypeId?.personMax || 1) && (
-                          <Typography
-                            sx={{
-                              fontStyle: "italic",
-                              fontFamily: '"Times New Roman", serif',
-                              fontSize: "0.9rem",
-                              color: "#999",
-                            }}
-                          >
-                            (Đã đạt giới hạn số người cho loại phòng này)
-                          </Typography>
-                        )}
+                        <Typography
+                          sx={{
+                            fontStyle: "italic",
+                            fontFamily: '"Times New Roman", serif',
+                            fontSize: "0.9rem",
+                            color: "#999",
+                          }}
+                        >
+                          (Đã đạt giới hạn số người cho loại phòng này)
+                        </Typography>
+                      )}
                     </Box>
                   </Box>
 
@@ -1548,10 +1591,14 @@ const CreateContract = () => {
                     const getMaxDuration = () => {
                       if (selectedRoom?.futureContractStartDate) {
                         const start = watchSd ? new Date(watchSd) : new Date();
-                        const future = new Date(selectedRoom.futureContractStartDate);
+                        const future = new Date(
+                          selectedRoom.futureContractStartDate,
+                        );
                         if (start >= future) return 1; // Fallback for invalid state
 
-                        let months = (future.getFullYear() - start.getFullYear()) * 12 + (future.getMonth() - start.getMonth());
+                        let months =
+                          (future.getFullYear() - start.getFullYear()) * 12 +
+                          (future.getMonth() - start.getMonth());
                         // If the start day is strictly after the future day, you have less than a full month segment
                         if (future.getDate() < start.getDate()) {
                           months -= 1;
@@ -1566,12 +1613,13 @@ const CreateContract = () => {
                       <>
                         {/* Agreement */}
                         <Typography paragraph>
-                          Hai bên cùng thỏa thuận ký kết hợp đồng thuê nhà với các điều
-                          khoản sau:
+                          Hai bên cùng thỏa thuận ký kết hợp đồng thuê nhà với
+                          các điều khoản sau:
                         </Typography>
 
                         <Typography component="div" sx={{ mb: 2 }}>
-                          <strong>Điều 1:</strong> Bên A đồng ý cho Bên B thuê phòng số{" "}
+                          <strong>Điều 1:</strong> Bên A đồng ý cho Bên B thuê
+                          phòng số{" "}
                           <strong>{selectedRoom?.name || "..."}</strong>.
                           <br />
                           - Thời hạn thuê:
@@ -1601,22 +1649,32 @@ const CreateContract = () => {
                                 fontSize: "1rem",
                                 padding: "0 0 2px 0",
                               },
-                              min: selectedRoom?.futureContractStartDate ? 1 : 6,
+                              min: selectedRoom?.futureContractStartDate
+                                ? 1
+                                : 6,
                               max: maxDur,
                             }}
                             {...register("duration", {
                               required: "Bắt buộc",
                               validate: (value) => {
                                 const val = Number(value);
-                                if (!selectedRoom?.futureContractStartDate && val < 6) return "Tối thiểu 6 tháng";
+                                if (
+                                  !selectedRoom?.futureContractStartDate &&
+                                  val < 6
+                                )
+                                  return "Tối thiểu 6 tháng";
 
                                 if (selectedRoom?.futureContractStartDate) {
                                   const startStr = getValues("startDate");
                                   if (startStr) {
                                     const contractStart = new Date(startStr);
                                     const contractEnd = new Date(contractStart);
-                                    contractEnd.setMonth(contractEnd.getMonth() + val);
-                                    const futureStart = new Date(selectedRoom.futureContractStartDate);
+                                    contractEnd.setMonth(
+                                      contractEnd.getMonth() + val,
+                                    );
+                                    const futureStart = new Date(
+                                      selectedRoom.futureContractStartDate,
+                                    );
 
                                     // It's acceptable for contractEnd to equal futureStart (meaning they check out the day the next person checks in).
                                     if (contractEnd > futureStart) {
@@ -1642,28 +1700,39 @@ const CreateContract = () => {
                             rules={{
                               required: "Ngày bắt đầu là bắt buộc",
                               validate: (value) => {
-                                if (selectedRoom?.futureContractStartDate && value) {
+                                if (
+                                  selectedRoom?.futureContractStartDate &&
+                                  value
+                                ) {
                                   const selectedDate = new Date(value);
-                                  const futureDate = new Date(selectedRoom.futureContractStartDate);
+                                  const futureDate = new Date(
+                                    selectedRoom.futureContractStartDate,
+                                  );
                                   if (selectedDate >= futureDate) {
                                     return `Phải trước ngày ${futureDate.toLocaleDateString("vi-VN")}`;
                                   }
-                                  
+
                                   const minEndDate = new Date(selectedDate);
-                                  minEndDate.setMonth(minEndDate.getMonth() + 1);
+                                  minEndDate.setMonth(
+                                    minEndDate.getMonth() + 1,
+                                  );
                                   if (minEndDate > futureDate) {
                                     return `Không đủ 1 tháng`;
                                   }
                                 }
                                 return true;
-                              }
+                              },
                             }}
                             render={({ field }) => (
                               <DatePicker
-                                value={field.value ? new Date(field.value) : null}
+                                value={
+                                  field.value ? new Date(field.value) : null
+                                }
                                 onChange={(date) => {
                                   if (date && !isNaN(date.getTime())) {
-                                    field.onChange(formatDate(date, "yyyy-MM-dd"));
+                                    field.onChange(
+                                      formatDate(date, "yyyy-MM-dd"),
+                                    );
                                   } else {
                                     field.onChange("");
                                   }
@@ -1680,7 +1749,12 @@ const CreateContract = () => {
                                       "& .MuiInput-root": {
                                         pb: 0,
                                       },
-                                      "& .MuiFormHelperText-root": { mt: 0, position: "absolute", top: "100%", width: "max-content" },
+                                      "& .MuiFormHelperText-root": {
+                                        mt: 0,
+                                        position: "absolute",
+                                        top: "100%",
+                                        width: "max-content",
+                                      },
                                     },
                                     inputProps: {
                                       style: {
@@ -1691,7 +1765,8 @@ const CreateContract = () => {
                                       },
                                     },
                                     error: !!errors.startDate,
-                                    helperText: errors.startDate?.message as string,
+                                    helperText: errors.startDate
+                                      ?.message as string,
                                   },
                                 }}
                               />
@@ -1705,16 +1780,47 @@ const CreateContract = () => {
                               eDate.setMonth(eDate.getMonth() + Number(d));
                               // In ra ngày kết thúc. Nếu có lỗi về ngày do duration vượt quá, nó vẫn in ra để người dùng thấy sai.
                               return (
-                                <Typography component="span" sx={{ ml: 1, whiteSpace: "nowrap" }}>
-                                  đến ngày <strong style={{ textDecoration: "underline" }}>{eDate.toLocaleDateString("vi-VN")}</strong>.
+                                <Typography
+                                  component="span"
+                                  sx={{ ml: 1, whiteSpace: "nowrap" }}
+                                >
+                                  đến ngày{" "}
+                                  <strong
+                                    style={{ textDecoration: "underline" }}
+                                  >
+                                    {eDate.toLocaleDateString("vi-VN")}
+                                  </strong>
+                                  .
                                 </Typography>
                               );
                             }
                             return ".";
                           })()}
                           {selectedRoom?.futureContractStartDate && (
-                            <Typography component="div" sx={{ mt: 3, mb: 1, p: 1.5, bgcolor: "#fff3cd", color: "#856404", borderRadius: 1, border: "1px solid #ffeeba", fontSize: "0.95rem", lineHeight: 1.5 }}>
-                              <strong>⚠️ Lấp chỗ trống:</strong> Phòng đã có khách cọc trước và sẽ nhận phòng vào ngày <strong>{new Date(selectedRoom.futureContractStartDate).toLocaleDateString("vi-VN")}</strong>. Hợp đồng ngắn hạn này bị giới hạn tối đa <strong>{maxDur} tháng</strong>. Trả trước tối thiểu <strong>1 tháng</strong>.
+                            <Typography
+                              component="div"
+                              sx={{
+                                mt: 3,
+                                mb: 1,
+                                p: 1.5,
+                                bgcolor: "#fff3cd",
+                                color: "#856404",
+                                borderRadius: 1,
+                                border: "1px solid #ffeeba",
+                                fontSize: "0.95rem",
+                                lineHeight: 1.5,
+                              }}
+                            >
+                              <strong>⚠️ Lấp chỗ trống:</strong> Phòng đã có
+                              khách cọc trước và sẽ nhận phòng vào ngày{" "}
+                              <strong>
+                                {new Date(
+                                  selectedRoom.futureContractStartDate,
+                                ).toLocaleDateString("vi-VN")}
+                              </strong>
+                              . Hợp đồng ngắn hạn này bị giới hạn tối đa{" "}
+                              <strong>{maxDur} tháng</strong>. Trả trước tối
+                              thiểu <strong>1 tháng</strong>.
                             </Typography>
                           )}
                           <br />
@@ -1755,18 +1861,33 @@ const CreateContract = () => {
                               validate: (value) => {
                                 const val = Number(value);
                                 const dur = Number(watch("duration")) || 12;
-                                if (!isSecondContract && val < 2) return "Phải trả trước tối thiểu 2 tháng";
-                                if (isSecondContract && val < 1) return "Phải trả trước tối thiểu 1 tháng";
-                                if (val > dur) return `Không được vượt quá thời hạn thuê (${dur} tháng)`;
+                                if (!isSecondContract && val < 2)
+                                  return "Phải trả trước tối thiểu 2 tháng";
+                                if (isSecondContract && val < 1)
+                                  return "Phải trả trước tối thiểu 1 tháng";
+                                if (val > dur)
+                                  return `Không được vượt quá thời hạn thuê (${dur} tháng)`;
                                 return true;
-                              }
+                              },
                             })}
                             error={!!errors.prepayMonths}
                             helperText={errors.prepayMonths?.message as string}
                           />
                           tháng. <br />
-                          <Typography component="span" sx={{ fontStyle: "italic", fontSize: "0.9rem", color: "#666", ml: 2, display: "inline-block", mt: 0.5 }}>
-                            *Lưu ý: Thời hạn tính tiền phòng đã trả sẽ bắt đầu từ ngày đầu tiên của tháng tiếp theo (nếu tạo hợp đồng vào ngày lẻ trong tháng).
+                          <Typography
+                            component="span"
+                            sx={{
+                              fontStyle: "italic",
+                              fontSize: "0.9rem",
+                              color: "#666",
+                              ml: 2,
+                              display: "inline-block",
+                              mt: 0.5,
+                            }}
+                          >
+                            *Lưu ý: Thời hạn tính tiền phòng đã trả sẽ bắt đầu
+                            từ ngày đầu tiên của tháng tiếp theo (nếu tạo hợp
+                            đồng vào ngày lẻ trong tháng).
                           </Typography>
                           <br />
                           - Giá thuê phòng là:
@@ -1796,8 +1917,8 @@ const CreateContract = () => {
                             InputProps={{ readOnly: true }}
                             value={Number(
                               selectedRoom?.roomTypeId?.currentPrice ||
-                              selectedRoom?.price ||
-                              0,
+                                selectedRoom?.price ||
+                                0,
                             ).toLocaleString()}
                           />
                           VNĐ/tháng. (Giá này cố định theo loại phòng).
@@ -1829,8 +1950,8 @@ const CreateContract = () => {
                                 InputProps={{ readOnly: true }}
                                 value={Number(
                                   selectedRoom?.roomTypeId?.currentPrice ||
-                                  selectedRoom?.price ||
-                                  0,
+                                    selectedRoom?.price ||
+                                    0,
                                 ).toLocaleString()}
                               />
                               VNĐ (Tương đương 01 tháng tiền phòng).
@@ -1909,7 +2030,9 @@ const CreateContract = () => {
                               </Button>
                             </>
                           ) : (
-                            <span style={{ fontStyle: "italic", marginLeft: 4 }}>
+                            <span
+                              style={{ fontStyle: "italic", marginLeft: 4 }}
+                            >
                               Chọn phòng để hiển thị
                             </span>
                           )}
@@ -1926,8 +2049,8 @@ const CreateContract = () => {
                       fontSize: "1.1rem",
                     }}
                   >
-                    <strong>Điều 2:</strong> Các trang thiết bị, tài sản bàn giao
-                    kèm theo phòng:
+                    <strong>Điều 2:</strong> Các trang thiết bị, tài sản bàn
+                    giao kèm theo phòng:
                   </Typography>
                   <Box sx={{ pl: 3 }}>
                     {roomDevices.length > 0 ? (
@@ -2067,7 +2190,8 @@ const CreateContract = () => {
                           const fixedServices = availableServices
                             .filter(
                               (s) =>
-                                getServiceCategory(s.name) === "fixed_monthly" &&
+                                getServiceCategory(s.name) ===
+                                  "fixed_monthly" &&
                                 !isServiceExcludedForRoom(s.name),
                             )
                             .sort(
@@ -2369,8 +2493,8 @@ const CreateContract = () => {
                         mb: 1.5,
                       }}
                     >
-                      Vui lòng tải lên ít nhất 1 ảnh hợp đồng bản cứng (đã ký) để
-                      tạo hợp đồng.
+                      Vui lòng tải lên ít nhất 1 ảnh hợp đồng bản cứng (đã ký)
+                      để tạo hợp đồng.
                     </Typography>
                   )}
 
