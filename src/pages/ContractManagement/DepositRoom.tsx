@@ -431,14 +431,14 @@ const DepositRoom = () => {
         </TableContainer>
 
         {/* Pagination */}
-        <div className="dr-pagination">
-          <span className="dr-pagination-info">
+        <div className="drlist-pagination">
+          <span className="drlist-pagination-info">
             Tổng: <strong>{filteredDeposits.length}</strong> bản ghi
             &nbsp;|&nbsp; Trang <strong>{currentPage}</strong>/{totalPages}
           </span>
-          <div className="dr-pagination-controls">
+          <div className="drlist-pagination-controls">
             <button
-              className="dr-page-btn dr-page-arrow"
+              className="drlist-page-btn drlist-page-arrow"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(1)}
               title="Trang đầu"
@@ -446,7 +446,7 @@ const DepositRoom = () => {
               «
             </button>
             <button
-              className="dr-page-btn dr-page-arrow"
+              className="drlist-page-btn drlist-page-arrow"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               title="Trang trước"
@@ -465,7 +465,7 @@ const DepositRoom = () => {
               return pages.map((page) => (
                 <button
                   key={page}
-                  className={`deposit-page-btn ${page === currentPage ? "deposit-page-active" : ""}`}
+                  className={`drlist-page-btn${currentPage === page ? " drlist-page-active" : ""}`}
                   onClick={() => setCurrentPage(page)}
                 >
                   {page}
@@ -474,7 +474,7 @@ const DepositRoom = () => {
             })()}
 
             <button
-              className="dr-page-btn dr-page-arrow"
+              className="drlist-page-btn drlist-page-arrow"
               disabled={currentPage === totalPages}
               onClick={() =>
                 setCurrentPage((prev) => Math.min(prev + 1, totalPages))
@@ -484,7 +484,7 @@ const DepositRoom = () => {
               ›
             </button>
             <button
-              className="dr-page-btn dr-page-arrow"
+              className="drlist-page-btn drlist-page-arrow"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(totalPages)}
               title="Trang cuối"

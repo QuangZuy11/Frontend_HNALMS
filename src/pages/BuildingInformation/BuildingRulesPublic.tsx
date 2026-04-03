@@ -21,6 +21,8 @@ import {
   deleteBuildingRules,
 } from "../../services/buildingService";
 import "./BuildingRulesPublic.css";
+import toastr from "toastr";
+import "toastr/build/toastr.min.css";
 
 // Mapping icon từ tên string sang component
 const iconMap = {
@@ -92,10 +94,10 @@ const BuildingRulesPublic = () => {
       }
       setIsEditing(false);
       fetchRules();
-      alert("Lưu nội quy thành công!");
+      toastr.success("Lưu nội quy thành công!");
     } catch (err) {
       console.error("Error saving rules:", err);
-      alert("Không thể lưu nội quy. Vui lòng thử lại.");
+      toastr.error("Không thể lưu nội quy. Vui lòng thử lại.");
     }
   };
 
@@ -128,8 +130,8 @@ const BuildingRulesPublic = () => {
         setRulesData(updatedData);
         await fetchRules(); // Reload data từ server
       } catch (err) {
-        console.error("Error deleting category:", err);
-        alert("Không thể xóa danh mục. Vui lòng thử lại.");
+      console.error("Error deleting category:", err);
+      toastr.error("Không thể xóa danh mục. Vui lòng thử lại.");
       }
     }
   };
@@ -165,7 +167,7 @@ const BuildingRulesPublic = () => {
       await fetchRules(); // Reload data từ server
     } catch (err) {
       console.error("Error saving category:", err);
-      alert("Không thể lưu danh mục. Vui lòng thử lại.");
+      toastr.error("Không thể lưu danh mục. Vui lòng thử lại.");
     }
   };
 
@@ -198,8 +200,8 @@ const BuildingRulesPublic = () => {
         setRulesData(updatedData);
         await fetchRules(); // Reload data từ server
       } catch (err) {
-        console.error("Error deleting guideline:", err);
-        alert("Không thể xóa hướng dẫn. Vui lòng thử lại.");
+      console.error("Error deleting guideline:", err);
+      toastr.error("Không thể xóa hướng dẫn. Vui lòng thử lại.");
       }
     }
   };
@@ -233,7 +235,7 @@ const BuildingRulesPublic = () => {
       await fetchRules(); // Reload data từ server
     } catch (err) {
       console.error("Error saving guideline:", err);
-      alert("Không thể lưu hướng dẫn. Vui lòng thử lại.");
+      toastr.error("Không thể lưu hướng dẫn. Vui lòng thử lại.");
     }
   };
 
