@@ -116,6 +116,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   );
   const [selectedDepositId, setSelectedDepositId] = useState<string | null>(null);
   const [availableContracts, setAvailableContracts] = useState<any[]>([]);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   // State cho dropdown chọn hiển thị (hợp đồng/cọc)
   const [displayMode, setDisplayMode] = useState<"active" | "inactive" | "deposit">("active");
@@ -1688,6 +1689,31 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                             Chưa đăng ký dịch vụ nào
                           </p>
                         )}
+
+                        {/* Ảnh hợp đồng bản cứng */}
+                        {roomContract?.images && roomContract.images.length > 0 && (
+                          <>
+                            <div
+                              className="rd-section-title"
+                              style={{ marginTop: 16 }}
+                            >
+                              <FileText size={16} />
+                              <span>Ảnh hợp đồng bản cứng ({roomContract.images.length})</span>
+                            </div>
+                            <div className="rd-images-grid">
+                              {roomContract.images.map((url: string, idx: number) => (
+                                <div
+                                  key={idx}
+                                  className="rd-image-item"
+                                  onClick={() => setLightboxImage(url)}
+                                >
+                                  <img src={url} alt={`Hợp đồng ${idx + 1}`} />
+                                  <span className="rd-image-label">Ảnh {idx + 1}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
                       </>
                     ) : (
                       <div className="rd-empty-contract">
@@ -1697,6 +1723,23 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                     )}
                   </div>
                 </div>
+
+                {/* Lightbox xem ảnh phóng to */}
+                {lightboxImage && (
+                  <div className="rd-lightbox" onClick={() => setLightboxImage(null)}>
+                    <button
+                      className="rd-lightbox-close"
+                      onClick={() => setLightboxImage(null)}
+                    >
+                      <X size={24} />
+                    </button>
+                    <img
+                      src={lightboxImage}
+                      alt="Ảnh phóng to"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                )}
 
                 <div className="rd-actions">
                   <button
