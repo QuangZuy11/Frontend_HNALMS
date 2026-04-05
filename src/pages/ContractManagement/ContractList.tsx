@@ -358,8 +358,12 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
                 </div>
               </button>
             ))}
-            {/* Option tạo hợp đồng mới khi không có cọc lẻ */}
-            {actionPopup.deposits.length === 0 && (
+            {/* Option tạo hợp đồng mới - chỉ hiện khi KHÔNG có active/pending contract VÀ KHÔNG có cọc lẻ */}
+            {actionPopup.deposits.length === 0 && !actionPopup.contracts.some((c: any) => {
+              const isActive = c.status === "active" && new Date(c.startDate) <= new Date();
+              const isPending = c.status === "active" && new Date(c.startDate) > new Date();
+              return isActive || isPending;
+            }) && (
               <button
                 className="popup-option option-create-new"
                 onClick={handleCreateNewContract}

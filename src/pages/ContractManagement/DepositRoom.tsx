@@ -75,9 +75,9 @@ const getActivationColor = (activationStatus: boolean | null) => {
 };
 
 const getActivationLabel = (activationStatus: boolean | null) => {
-  if (activationStatus === true) return "Đã kích hoạt";
+  if (activationStatus === true) return "Hợp đồng đã kích hoạt";
   if (activationStatus === false) return "Bị reset";
-  return "HĐ Chưa kích hoạt"; // null
+  return "Hợp đồng Chưa kích hoạt"; // null
 };
 
 const formatCurrency = (amount: number) => {
@@ -412,15 +412,7 @@ const DepositRoom = () => {
                           size="small"
                           sx={{ fontWeight: "bold", fontSize: "0.7rem" }}
                         />
-                        <Chip
-                          label={getActivationLabel(deposit.activationStatus)}
-                          color={
-                            getActivationColor(deposit.activationStatus) as any
-                          }
-                          size="small"
-                          variant="outlined"
-                          sx={{ fontSize: "0.65rem", height: 20 }}
-                        />
+                       
                       </div>
                     </TableCell>
                   </TableRow>
