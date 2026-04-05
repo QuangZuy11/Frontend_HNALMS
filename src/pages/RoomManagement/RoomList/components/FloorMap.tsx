@@ -51,6 +51,7 @@ const ROOM_TYPE_COLORS = [
 const getExpiryLabel = (contractEndDate?: string): string | null => {
   if (!contractEndDate) return null;
   const endDate = new Date(contractEndDate);
+  // endDate = ngày hết hạn HP - 1 (vd: 04/04/2027), nên phòng trống từ 05/04/2027
   const vacantDate = new Date(endDate);
   vacantDate.setDate(vacantDate.getDate() + 1);
   const day = vacantDate.getDate().toString().padStart(2, "0");

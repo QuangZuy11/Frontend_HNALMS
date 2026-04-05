@@ -1687,6 +1687,7 @@ const CreateContract = () => {
                                     contractEnd.setMonth(
                                       contractEnd.getMonth() + val,
                                     );
+                                    contractEnd.setDate(contractEnd.getDate() - 1);
                                     const futureStart = new Date(
                                       selectedRoom.futureContractStartDate,
                                     );
@@ -1822,6 +1823,7 @@ const CreateContract = () => {
                             if (st && d) {
                               const eDate = new Date(st);
                               eDate.setMonth(eDate.getMonth() + Number(d));
+                              eDate.setDate(eDate.getDate() - 1);
                               // In ra ngày kết thúc. Nếu có lỗi về ngày do duration vượt quá, nó vẫn in ra để người dùng thấy sai.
                               return (
                                 <Typography
