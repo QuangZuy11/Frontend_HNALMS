@@ -2115,7 +2115,6 @@ const CreateContract = () => {
                               "Tên thiết bị",
                               "Số lượng",
                               "Đơn vị",
-                              "Tình trạng",
                             ].map((h) => (
                               <Box
                                 component="th"
@@ -2186,18 +2185,6 @@ const CreateContract = () => {
                                 }}
                               >
                                 {device.unit || "cái"}
-                              </Box>
-                              <Box
-                                component="td"
-                                sx={{
-                                  border: "1px solid #333",
-                                  py: 0.5,
-                                  px: 1.5,
-                                  textAlign: "center",
-                                  fontFamily: '"Times New Roman", serif',
-                                }}
-                              >
-                                {device.condition}
                               </Box>
                             </Box>
                           ))}
