@@ -412,15 +412,7 @@ const DepositRoom = () => {
                           size="small"
                           sx={{ fontWeight: "bold", fontSize: "0.7rem" }}
                         />
-                        <Chip
-                          label={getActivationLabel(deposit.activationStatus)}
-                          color={
-                            getActivationColor(deposit.activationStatus) as any
-                          }
-                          size="small"
-                          variant="outlined"
-                          sx={{ fontSize: "0.65rem", height: 20 }}
-                        />
+                       
                       </div>
                     </TableCell>
                   </TableRow>

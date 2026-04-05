@@ -154,9 +154,40 @@ const DepositFloorMap = () => {
         // Phòng Deposited nhưng chưa ký hợp đồng (đang chờ ký)
         toastr.warning("Phòng này đã có tiền cọc và đang chờ ký hợp đồng.");
       }
+    } else if (room.status === "Occupied") {
+      // Kiểm tra nếu có hợp đồng tương lai (chưa active) thì cho phép cọc
+      if (room.contractStartDate) {
+        const futureStartDate = new Date(room.contractStartDate);
+        const today = new Date();
+        const daysUntilFutureContract = Math.ceil(
+          (futureStartDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        if (daysUntilFutureContract >= 30) {
+          // Hợp đồng tương lai còn xa, cho phép cọc giai đoạn ngắn hạn
+          const futureDate = futureStartDate.toLocaleDateString("vi-VN");
+          toastr.info(
+            `Phòng này có hợp đồng tương lai từ ngày ${futureDate}. Bạn có thể đặt cọc cho giai đoạn ngắn hạn trước đó.`
+          );
+          navigate(`${basePath}/deposits/create/${room._id}`);
+        } else if (daysUntilFutureContract > 0) {
+          // Hợp đồng sắp tới nhưng chưa active, cho phép cọc ngắn hạn
+          const futureDate = futureStartDate.toLocaleDateString("vi-VN");
+          toastr.info(
+            `Phòng có hợp đồng sắp tới từ ngày ${futureDate}. Bạn có thể đặt cọc cho giai đoạn ngắn hạn trước đó.`
+          );
+          navigate(`${basePath}/deposits/create/${room._id}`);
+        } else {
+          // Hợp đồng đã active rồi, không cho cọc
+          toastr.error("Phòng này đã có hợp đồng đang active. Không thể tạo cọc mới.");
+        }
+      } else {
+        // Occupied nhưng không có contractStartDate -> hợp đồng đang active
+        toastr.error("Phòng này đã có hợp đồng đang active. Không thể tạo cọc mới.");
+      }
     } else {
-      // Room is occupied
-      toastr.error("Phòng này đã có hợp đồng. Vui lòng chọn phòng trống để tạo cọc.");
+      // Các trạng thái khác không xác định
+      toastr.error("Không thể tạo cọc cho phòng ở trạng thái này.");
     }
   };
 

@@ -242,7 +242,7 @@ export default function BookingPage() {
 
                                     <div className="terms-box">
                                         <p>✓ Sau khi đặt cọc thành công, bạn sẽ nhận được email xác nhận</p>
-                                        <p>✓ Phòng sẽ được giữ lại trong vòng 7 ngày</p>
+                                        <p>✓ Phòng sẽ được giữ lại trong vòng 30 ngày</p>
                                         <p>✓ Vui lòng ký hợp đồng trong thời gian này</p>
                                     </div>
 
@@ -289,7 +289,7 @@ export default function BookingPage() {
                                         </div>
                                         <div className="payment-info-row">
                                             <span className="payment-info-label">Thời gian giữ phòng:</span>
-                                            <span className="payment-info-value">7 ngày</span>
+                                            <span className="payment-info-value">30 ngày</span>
                                         </div>
                                         <div className="payment-info-row">
                                             <span className="payment-info-label">Trạng thái:</span>
@@ -301,7 +301,7 @@ export default function BookingPage() {
                                         <p>📋 Thông tin cần biết:</p>
                                         <ul>
                                             <li>• Email xác nhận đã được gửi tới email của bạn</li>
-                                            <li>• Vui lòng liên hệ để ký hợp đồng trong vòng 7 ngày</li>
+                                            <li>• Vui lòng liên hệ để ký hợp đồng trong vòng 30 ngày</li>
                                             <li>• Hotline: (028) 1234 5678</li>
                                             <li>• Zalo: @hoangnambuilding</li>
                                         </ul>
@@ -358,7 +358,7 @@ export default function BookingPage() {
                                 <ul className="sidebar-terms-list">
                                     <li>
                                         <span className="check">✓</span>
-                                        <span>Giữ phòng 7 ngày</span>
+                                        <span>Giữ phòng 30 ngày</span>
                                     </li>
                                     <li>
                                         <span className="check">✓</span>
@@ -366,7 +366,7 @@ export default function BookingPage() {
                                     </li>
                                     <li>
                                         <span className="check">✓</span>
-                                        <span>Phải ký HĐ trong 7 ngày</span>
+                                        <span>Phải ký HĐ trong 30 ngày</span>
                                     </li>
                                     {room.isShortTermAvailable && room.futureContractStartDate && (
                                         <li>

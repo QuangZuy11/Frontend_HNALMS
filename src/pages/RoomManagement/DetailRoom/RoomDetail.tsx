@@ -478,7 +478,7 @@ export default function RoomDetail() {
                 </div>
 
                 <div className="benefits-list">
-                  <p>✓ Giữ phòng trong 7 ngày</p>
+                  <p>✓ Giữ phòng trong 30 ngày</p>
                   <p>✓ Hỗ trợ ký hợp đồng</p>
                   <p>✓ Nhân viên sẵn sàng tư vấn</p>
                   {room.isShortTermAvailable && room.futureContractStartDate && !room.hasFutureInactiveContract && (

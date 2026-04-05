@@ -133,6 +133,11 @@ export default function CreateDeposit() {
 
     setIsSubmitting(true);
     try {
+      // Tính expireAt: 30 ngày sau, cuối ngày (23:59:59)
+      const expireDate = new Date();
+      expireDate.setDate(expireDate.getDate() + 30);
+      expireDate.setHours(23, 59, 59, 999);
+
       // Call API to create deposit
       const response = await axios.post(
         "http://localhost:9999/api/deposits",
@@ -144,6 +149,7 @@ export default function CreateDeposit() {
           amount: room.price,
           status: "Held",
           createdDate: new Date().toISOString(),
+          expireAt: expireDate.toISOString(),
         },
         { withCredentials: true },
       );
@@ -277,7 +283,7 @@ export default function CreateDeposit() {
 
                   <div className="terms-box">
                     <p>✓ Sau khi tạo cọc, hệ thống sẽ ghi nhận thông tin</p>
-                    <p>✓ Phòng sẽ được giữ trong vòng 7 ngày</p>
+                    <p>✓ Phòng sẽ được giữ trong vòng 30 ngày</p>
                     <p>✓ Khách hàng cần ký hợp đồng trong thời gian này</p>
                     {room.futureContractStartDate && (
                       <p style={{ color: "#d97706", fontWeight: 500 }}>
@@ -356,7 +362,7 @@ export default function CreateDeposit() {
                       <span className="payment-info-label">
                         Thời gian giữ phòng:
                       </span>
-                      <span className="payment-info-value">7 ngày</span>
+                      <span className="payment-info-value">30 ngày</span>
                     </div>
                     <div className="payment-info-row">
                       <span className="payment-info-label">Trạng thái:</span>
@@ -461,7 +467,7 @@ export default function CreateDeposit() {
                 <ul className="sidebar-terms-list">
                   <li>
                     <span className="check">✓</span>
-                    <span>Giữ phòng 7 ngày</span>
+                    <span>Giữ phòng 30 ngày</span>
                   </li>
                   <li>
                     <span className="check">✓</span>
@@ -469,7 +475,7 @@ export default function CreateDeposit() {
                   </li>
                   <li>
                     <span className="check">✓</span>
-                    <span>Phải ký HĐ trong 7 ngày</span>
+                    <span>Phải ký HĐ trong 30 ngày</span>
                   </li>
                 </ul>
                 {room.futureContractStartDate && (
