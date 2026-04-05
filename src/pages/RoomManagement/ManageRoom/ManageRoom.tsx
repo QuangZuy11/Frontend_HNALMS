@@ -1301,7 +1301,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                         onChange={handleContractSelectChange}
                         className="rd-display-select"
                       >
-                        <option value="">-- Chọn hợp đồng --</option>
                         {activeContracts.length > 0 && (
                           <optgroup label="Hợp đồng đang hiệu lực">
                             {activeContracts.map((contract: any) => (
