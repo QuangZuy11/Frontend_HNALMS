@@ -1715,77 +1715,106 @@ const CreateContract = () => {
                             rules={{
                               required: "Ngày bắt đầu là bắt buộc",
                               validate: (value) => {
-                                if (
-                                  selectedRoom?.futureContractStartDate &&
-                                  value
-                                ) {
+                                if (value) {
                                   const selectedDate = new Date(value);
-                                  const futureDate = new Date(
-                                    selectedRoom.futureContractStartDate,
-                                  );
-                                  if (selectedDate >= futureDate) {
-                                    return `Phải trước ngày ${futureDate.toLocaleDateString("vi-VN")}`;
+                                  selectedDate.setHours(0, 0, 0, 0);
+
+                                  if (selectedRoom?.futureContractStartDate) {
+                                    const futureDate = new Date(
+                                      selectedRoom.futureContractStartDate,
+                                    );
+                                    if (selectedDate >= futureDate) {
+                                      return `Phải trước ngày ${futureDate.toLocaleDateString("vi-VN")}`;
+                                    }
+
+                                    const minEndDate = new Date(selectedDate);
+                                    minEndDate.setMonth(
+                                      minEndDate.getMonth() + 1,
+                                    );
+                                    if (minEndDate > futureDate) {
+                                      return `Không đủ 1 tháng`;
+                                    }
                                   }
 
-                                  const minEndDate = new Date(selectedDate);
-                                  minEndDate.setMonth(
-                                    minEndDate.getMonth() + 1,
-                                  );
-                                  if (minEndDate > futureDate) {
-                                    return `Không đủ 1 tháng`;
+                                  if (selectedDeposit?.createdAt) {
+                                    const depositDate = new Date(selectedDeposit.createdAt);
+                                    depositDate.setHours(0, 0, 0, 0);
+                                    if (selectedDate < depositDate) {
+                                      return `Không được trước ngày cọc (${depositDate.toLocaleDateString("vi-VN")})`;
+                                    }
+                                    const maxD = new Date(depositDate);
+                                    maxD.setMonth(maxD.getMonth() + 6);
+                                    if (selectedDate > maxD) {
+                                      return `Tối đa 6 tháng sau ngày cọc (đến ${maxD.toLocaleDateString("vi-VN")})`;
+                                    }
                                   }
                                 }
                                 return true;
                               },
                             }}
-                            render={({ field }) => (
-                              <DatePicker
-                                value={
-                                  field.value ? new Date(field.value) : null
-                                }
-                                onChange={(date) => {
-                                  if (date && !isNaN(date.getTime())) {
-                                    field.onChange(
-                                      formatDate(date, "yyyy-MM-dd"),
-                                    );
-                                  } else {
-                                    field.onChange("");
+                            render={({ field }) => {
+                              const minDate = selectedDeposit?.createdAt
+                                ? new Date(selectedDeposit.createdAt)
+                                : undefined;
+                              const maxDate = selectedDeposit?.createdAt
+                                ? (() => {
+                                    const d = new Date(selectedDeposit.createdAt);
+                                    d.setMonth(d.getMonth() + 6);
+                                    return d;
+                                  })()
+                                : undefined;
+
+                              return (
+                                <DatePicker
+                                  value={
+                                    field.value ? new Date(field.value) : null
                                   }
-                                }}
-                                format="dd/MM/yyyy"
-                                slotProps={{
-                                  textField: {
-                                    variant: "standard",
-                                    sx: {
-                                      width: 140,
-                                      minWidth: 140,
-                                      mx: 1,
-                                      verticalAlign: "middle",
-                                      "& .MuiInput-root": {
-                                        pb: 0,
+                                  onChange={(date) => {
+                                    if (date && !isNaN(date.getTime())) {
+                                      field.onChange(
+                                        formatDate(date, "yyyy-MM-dd"),
+                                      );
+                                    } else {
+                                      field.onChange("");
+                                    }
+                                  }}
+                                  format="dd/MM/yyyy"
+                                  minDate={minDate}
+                                  maxDate={maxDate}
+                                  slotProps={{
+                                    textField: {
+                                      variant: "standard",
+                                      sx: {
+                                        width: 140,
+                                        minWidth: 140,
+                                        mx: 1,
+                                        verticalAlign: "middle",
+                                        "& .MuiInput-root": {
+                                          pb: 0,
+                                        },
+                                        "& .MuiFormHelperText-root": {
+                                          mt: 0,
+                                          position: "absolute",
+                                          top: "100%",
+                                          width: "max-content",
+                                        },
                                       },
-                                      "& .MuiFormHelperText-root": {
-                                        mt: 0,
-                                        position: "absolute",
-                                        top: "100%",
-                                        width: "max-content",
+                                      inputProps: {
+                                        style: {
+                                          fontSize: "1rem",
+                                          padding: "0 0 2px 0",
+                                          textAlign: "center",
+                                          whiteSpace: "nowrap",
+                                        },
                                       },
+                                      error: !!errors.startDate,
+                                      helperText: errors.startDate
+                                        ?.message as string,
                                     },
-                                    inputProps: {
-                                      style: {
-                                        fontSize: "1rem",
-                                        padding: "0 0 2px 0",
-                                        textAlign: "center",
-                                        whiteSpace: "nowrap",
-                                      },
-                                    },
-                                    error: !!errors.startDate,
-                                    helperText: errors.startDate
-                                      ?.message as string,
-                                  },
-                                }}
-                              />
-                            )}
+                                  }}
+                                />
+                              );
+                            }}
                           />
                           {(() => {
                             const st = watch("startDate");
