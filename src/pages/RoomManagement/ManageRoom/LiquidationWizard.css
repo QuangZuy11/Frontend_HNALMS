@@ -1,0 +1,636 @@
+/* =====================================================
+   LiquidationWizard.css — Popup 2-step thanh lý HĐ
+   ===================================================== */
+
+/* ── Overlay ── */
+.liq-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+  animation: liq-fade-in 0.2s ease;
+}
+
+@keyframes liq-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Modal box ── */
+.liq-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 680px;
+  max-width: 96vw;
+  max-height: 92vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
+  animation: liq-slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes liq-slide-up {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── Header ── */
+.liq-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.liq-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.liq-header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.liq-header-icon.force { background: #dbeafe; color: #2563eb; }
+.liq-header-icon.violation { background: #fee2e2; color: #dc2626; }
+
+.liq-header-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.liq-header-subtitle {
+  font-size: 12.5px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.liq-close-btn {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  transition: background 0.15s;
+}
+.liq-close-btn:hover { background: #e2e8f0; color: #1e293b; }
+
+/* ── Type Badge ── */
+.liq-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.liq-type-badge.force {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.liq-type-badge.violation {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* ── Stepper ── */
+.liq-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 16px 24px 12px;
+}
+
+.liq-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.liq-step-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  border: 2px solid #e2e8f0;
+  background: #fff;
+  color: #94a3b8;
+  transition: all 0.2s;
+}
+
+.liq-step.active .liq-step-circle {
+  border-color: #3b82f6;
+  background: #3b82f6;
+  color: #fff;
+}
+
+.liq-step.done .liq-step-circle {
+  border-color: #10b981;
+  background: #10b981;
+  color: #fff;
+}
+
+.liq-step-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+.liq-step.active .liq-step-label { color: #1e293b; }
+.liq-step.done .liq-step-label   { color: #10b981; }
+
+.liq-step-connector {
+  width: 48px;
+  height: 2px;
+  background: #e2e8f0;
+  margin: 0 4px;
+}
+.liq-step-connector.done { background: #10b981; }
+
+/* ── Body ── */
+.liq-body {
+  padding: 16px 24px 24px;
+  flex: 1;
+}
+
+/* ── Form Groups ── */
+.liq-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.liq-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.liq-form-group.full {
+  grid-column: 1 / -1;
+}
+
+.liq-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.liq-label span {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
+.liq-input,
+.liq-textarea,
+.liq-select {
+  padding: 8px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #1e293b;
+  background: #fff;
+  transition: border-color 0.15s;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.liq-input:focus,
+.liq-textarea:focus,
+.liq-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.liq-textarea {
+  resize: vertical;
+  font-family: inherit;
+  min-height: 80px;
+}
+
+/* ── Image Upload ── */
+.liq-upload-zone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #f8fafc;
+}
+
+.liq-upload-zone:hover,
+.liq-upload-zone.dragging {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.liq-upload-zone input[type="file"] {
+  display: none;
+}
+
+.liq-upload-icon {
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.liq-upload-text {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.liq-upload-text strong {
+  color: #3b82f6;
+}
+
+.liq-image-previews {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.liq-image-preview-item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  aspect-ratio: 1;
+  background: #f1f5f9;
+}
+
+.liq-image-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.liq-image-remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.liq-upload-spinner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #3b82f6;
+  margin-top: 8px;
+  justify-content: center;
+}
+
+/* ── Section separator ── */
+.liq-section-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 16px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.liq-section-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+/* ── Meter Reading ── */
+.liq-meter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.liq-meter-card {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.liq-meter-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 10px;
+}
+
+.liq-meter-icon-elec { color: #f59e0b; }
+.liq-meter-icon-water { color: #3b82f6; }
+
+.liq-meter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.liq-meter-row-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.liq-meter-row-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+/* ── Financial Preview ── */
+.liq-financial-preview {
+  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+  border: 1.5px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 14px;
+}
+
+.liq-financial-preview.violation {
+  background: linear-gradient(135deg, #fff1f2, #ffe4e6);
+  border-color: #fecaca;
+}
+
+.liq-financial-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #065f46;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.liq-financial-preview.violation .liq-financial-title {
+  color: #991b1b;
+}
+
+.liq-financial-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 13px;
+  border-bottom: 1px dashed #d1fae5;
+}
+
+.liq-financial-preview.violation .liq-financial-item {
+  border-bottom-color: #fecaca;
+}
+
+.liq-financial-item:last-child {
+  border-bottom: none;
+}
+
+.liq-financial-item-label {
+  color: #374151;
+}
+
+.liq-financial-item-value {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.liq-financial-item-value.positive { color: #059669; }
+.liq-financial-item-value.negative { color: #dc2626; }
+
+.liq-financial-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 2px solid #6ee7b7;
+}
+
+.liq-financial-preview.violation .liq-financial-total {
+  border-top-color: #f87171;
+}
+
+.liq-financial-total-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #065f46;
+}
+
+.liq-financial-preview.violation .liq-financial-total-label {
+  color: #991b1b;
+}
+
+.liq-financial-total-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: #059669;
+}
+
+.liq-financial-preview.violation .liq-financial-total-value {
+  color: #dc2626;
+}
+
+/* ── Footer Actions ── */
+.liq-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid #f1f5f9;
+  gap: 12px;
+}
+
+.liq-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+}
+
+.liq-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.liq-btn-secondary {
+  background: #f1f5f9;
+  color: #475569;
+}
+.liq-btn-secondary:hover:not(:disabled) { background: #e2e8f0; }
+
+.liq-btn-primary {
+  background: #3b82f6;
+  color: #fff;
+}
+.liq-btn-primary:hover:not(:disabled) { background: #2563eb; }
+
+.liq-btn-danger {
+  background: #ef4444;
+  color: #fff;
+}
+.liq-btn-danger:hover:not(:disabled) { background: #dc2626; }
+
+/* ── Error message ── */
+.liq-error {
+  background: #fef2f2;
+  border: 1.5px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #dc2626;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Type Selector ── */
+.liq-type-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 8px 24px 24px;
+}
+
+.liq-type-card {
+  border: 2.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.liq-type-card:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.liq-type-card.selected-force {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.liq-type-card.selected-violation {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.liq-type-card-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+
+.liq-type-card.selected-force .liq-type-card-icon {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.liq-type-card.selected-force:not(.selected-force) .liq-type-card-icon {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.liq-type-card.selected-violation .liq-type-card-icon {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.liq-type-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #1e293b;
+}
+
+.liq-type-card-desc {
+  font-size: 12.5px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.liq-type-selector-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+  padding: 16px 24px 8px;
+  text-align: center;
+}
+
+/* ── Info hint ── */
+.liq-hint {
+  font-size: 11.5px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+/* ── Spinner ── */
+@keyframes liq-spin {
+  to { transform: rotate(360deg); }
+}
+
+.liq-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.6);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: liq-spin 0.7s linear infinite;
+  display: inline-block;
+}
