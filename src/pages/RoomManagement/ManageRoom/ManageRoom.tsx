@@ -16,9 +16,10 @@ import {
   Plus, Edit, Trash2, Eye, ChevronDown, ChevronRight, CheckCircle,
   AlertCircle, Banknote, X, Building, Home, Tag, Power, Download,
   FileSpreadsheet, List as ListIcon, Map as MapIcon, User, Users,
-  FileText, Phone, Mail, CreditCard, Zap,
+  FileText, Phone, Mail, CreditCard, Zap, Gavel,
 } from "lucide-react";
 import "./ManageRoom.css";
+import LiquidationWizard from "./LiquidationWizard";
 
 const API_BASE_URL = "http://localhost:9999/api";
 
@@ -99,6 +100,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const [allRoomContracts, setAllRoomContracts] = useState<any[]>([]);
   const [roomDeposits, setRoomDeposits] = useState<any[]>([]);
 
+  // State cho Liquidation Wizard
+  const [showLiquidationWizard, setShowLiquidationWizard] = useState(false);
+
   // Form Data
   const [formData, setFormData] = useState({
     roomCode: "",
@@ -113,6 +117,8 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const userRole = currentUser?.role || '';
   const canModify = userRole === 'owner' && !readOnly;
+  // Manager và Owner đều có thể thanh lý hợp đồng
+  const canLiquidate = userRole === 'manager' || userRole === 'owner';
 
   // --- FETCH DATA ---
   const fetchData = async () => {
@@ -1693,11 +1699,86 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                       <Edit size={16} /> Chỉnh sửa
                     </button>
                   )}
+                  {/* Nút Thanh lý — hiện cho cả manager và owner khi hợp đồng đang active */}
+                  {canLiquidate && selectedContractId && (() => {
+                    const selContract = availableContracts.find(
+                      (c: any) => c._id === selectedContractId
+                    );
+                    if (selContract?.status === "active") {
+                      return (
+                        <button
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "8px 16px",
+                            borderRadius: 8,
+                            border: "none",
+                            background: "#ef4444",
+                            color: "#fff",
+                            fontWeight: 700,
+                            fontSize: 14,
+                            cursor: "pointer",
+                          }}
+                          onClick={() => setShowLiquidationWizard(true)}
+                        >
+                          <Gavel size={16} /> Thanh lý HĐ
+                        </button>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               </div>
             </div>
           );
         })()}
+
+      {/* ── Liquidation Wizard ── */}
+      {showLiquidationWizard && selectedContractId && (() => {
+        const selContract = availableContracts.find(
+          (c: any) => c._id === selectedContractId
+        );
+        if (!selContract) return null;
+
+        // Lấy giá phòng từ roomType
+        let roomPriceNum = 0;
+        if (viewingRoom) {
+          const rType = getRoomTypeDetail(viewingRoom.roomTypeId);
+          if (rType) {
+            const cp = (rType as any).currentPrice;
+            roomPriceNum = typeof cp === "object" && cp?.$numberDecimal
+              ? parseFloat(cp.$numberDecimal)
+              : Number(cp) || 0;
+          }
+        }
+
+        // Lấy số tiền cọc
+        let depositAmt = 0;
+        if (selContract.depositId) {
+          const dep = typeof selContract.depositId === "object"
+            ? selContract.depositId
+            : roomDeposits.find((d: any) => d._id === selContract.depositId);
+          depositAmt = dep?.amount ? Number(dep.amount) : 0;
+        }
+
+        return (
+          <LiquidationWizard
+            contract={selContract}
+            roomPrice={roomPriceNum}
+            depositAmount={depositAmt}
+            onClose={() => setShowLiquidationWizard(false)}
+            onSuccess={() => {
+              setShowLiquidationWizard(false);
+              setShowDetailModal(false);
+              setAllRoomContracts([]);
+              setRoomDeposits([]);
+              toastr.success("Thanh lý hợp đồng thành công! Phòng đã được giải phóng.");
+              fetchData();
+            }}
+          />
+        );
+      })()}
     </div>
   );
 };
