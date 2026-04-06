@@ -37,6 +37,7 @@ interface MoveOutRequestItem {
   isEarlyNotice?: boolean;
   isUnderMinStay?: boolean;
   isDepositForfeited?: boolean;
+  isGapContract?: boolean;
   managerInvoiceNotes?: string;
   paymentMethod?: string;
   paymentDate?: string;
@@ -52,9 +53,7 @@ interface DepositVsInvoice {
   depositId?: string | null;
   depositAmount: number;
   invoiceAmount: number;
-  depositCoversInvoice: boolean;
-  remainingToPay: number;
-  refundToTenant: number;
+  depositRefundAmount: number;
   isDepositForfeited: boolean;
   refundTicket?: {
     id?: string;
@@ -67,10 +66,15 @@ interface DepositVsInvoice {
 interface ReleaseSettlement {
   depositAmount?: number;
   invoiceAmount?: number;
-  netInvoiceAmount?: number;
-  recommendedDepositOffset?: number;
+  depositRefundAmount?: number;
   remainingToPay?: number;
-  refundToTenant?: number;
+  isDepositForfeited?: boolean;
+  refundTicket?: {
+    id?: string;
+    amount?: number;
+    status?: string;
+    paymentVoucher?: string;
+  } | null;
 }
 
 type StatusFilter = 'ALL' | 'Requested' | 'InvoiceReleased' | 'Paid' | 'Completed' | 'Cancelled';
@@ -105,35 +109,14 @@ const formatMoney = (amount?: number) => {
 
 const normalizeReleaseSettlement = (
   settlement: ReleaseSettlement,
-  isDepositForfeited?: boolean
+  _isDepositForfeited?: boolean
 ): ReleaseSettlement => {
-  if (isDepositForfeited) {
-    return {
-      ...settlement,
-      recommendedDepositOffset: settlement.recommendedDepositOffset ?? 0,
-      refundToTenant: 0,
-      netInvoiceAmount: settlement.netInvoiceAmount ?? settlement.invoiceAmount,
-      remainingToPay: settlement.remainingToPay ?? settlement.netInvoiceAmount ?? settlement.invoiceAmount,
-    };
-  }
-
-  const depositAmount = settlement.depositAmount;
-  const invoiceAmount = settlement.invoiceAmount;
-
-  if (typeof depositAmount !== 'number' || typeof invoiceAmount !== 'number') {
-    return settlement;
-  }
-
-  const recommendedDepositOffset = Math.min(Math.max(depositAmount, 0), Math.max(invoiceAmount, 0));
-  const netInvoiceAmount = Math.max(invoiceAmount - recommendedDepositOffset, 0);
-  const refundToTenant = Math.max(depositAmount - invoiceAmount, 0);
-
+  // Backend mới KHÔNG cấn trừ cọc nữa — tenant thanh toán hóa đơn riêng,
+  // hoàn cọc xử lý riêng. Chỉ cần pass-through và tính remainingToPay = invoiceAmount.
+  const invoiceAmount = settlement.invoiceAmount ?? 0;
   return {
     ...settlement,
-    recommendedDepositOffset,
-    netInvoiceAmount,
-    remainingToPay: netInvoiceAmount,
-    refundToTenant,
+    remainingToPay: invoiceAmount,
   };
 };
 
@@ -341,7 +324,7 @@ export default function MoveOutRequestsList() {
     if (electricIndex !== '') {
       const ei = Number(electricIndex);
       if (isNaN(ei) || ei < 0) {
-        setReleaseError('Chỉ số điện không hợp lệ');
+        setReleaseError('Chỉ số điện phải là số không âm');
         return;
       }
       payload.electricIndex = ei;
@@ -349,7 +332,7 @@ export default function MoveOutRequestsList() {
     if (waterIndex !== '') {
       const wi = Number(waterIndex);
       if (isNaN(wi) || wi < 0) {
-        setReleaseError('Chỉ số nước không hợp lệ');
+        setReleaseError('Chỉ số nước phải là số không âm');
         return;
       }
       payload.waterIndex = wi;
@@ -651,6 +634,12 @@ export default function MoveOutRequestsList() {
                       {selectedRequest.isDepositForfeited ? '❌ Mất cọc' : '✓ Được hoàn cọc'}
                     </span>
                   </div>
+                  {selectedRequest.isGapContract && (
+                    <div className="detail-row">
+                      <label>Gap Contract:</label>
+                      <span className="text-ok">✓ Luôn được hoàn cọc</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -670,17 +659,18 @@ export default function MoveOutRequestsList() {
                         <span>Hóa đơn cuối:</span>
                         <strong>{formatMoney(depositComparison.invoiceAmount)}</strong>
                       </div>
-                      {depositComparison.depositCoversInvoice ? (
-                        <div className="comparison-row text-ok">
-                          <span>Hoàn lại cho cư dân:</span>
-                          <strong>{formatMoney(depositComparison.isDepositForfeited ? 0 : depositComparison.refundToTenant)}</strong>
-                        </div>
-                      ) : (
-                        <div className="comparison-row text-danger">
-                          <span>Cư dân cần trả thêm:</span>
-                          <strong>{formatMoney(depositComparison.remainingToPay)}</strong>
-                        </div>
-                      )}
+                      <div className="comparison-row">
+                        <span>Tiền cọc hoàn riêng:</span>
+                        <strong className={depositComparison.isDepositForfeited ? 'text-danger' : 'text-ok'}>
+                          {depositComparison.isDepositForfeited
+                            ? 'Không hoàn (mất cọc)'
+                            : formatMoney(depositComparison.depositRefundAmount)}
+                        </strong>
+                      </div>
+                      <div className="comparison-row text-danger">
+                        <span>Tiền cọc hiện giữ:</span>
+                        <strong>{formatMoney(depositComparison.depositAmount)}</strong>
+                      </div>
 
                       {depositComparison.refundTicket && (
                         <>
@@ -855,35 +845,15 @@ export default function MoveOutRequestsList() {
                     )}
                     {normalizedReleaseSettlement.invoiceAmount !== undefined && (
                       <div className="detail-row">
-                        <label>Tiền hóa đơn trước cấn trừ:</label>
+                        <label>Hóa đơn cuối (tiền tenant trả):</label>
                         <span>{formatMoney(normalizedReleaseSettlement.invoiceAmount)}</span>
-                      </div>
-                    )}
-                    {normalizedReleaseSettlement.netInvoiceAmount !== undefined && (
-                      <div className="detail-row">
-                        <label>Tiền hóa đơn sau cấn trừ:</label>
-                        <span>{formatMoney(normalizedReleaseSettlement.netInvoiceAmount)}</span>
-                      </div>
-                    )}
-                    {normalizedReleaseSettlement.recommendedDepositOffset !== undefined && (
-                      <div className="detail-row">
-                        <label>Mức cấn trừ khuyến nghị:</label>
-                        <span>{formatMoney(normalizedReleaseSettlement.recommendedDepositOffset)}</span>
                       </div>
                     )}
                     {normalizedReleaseSettlement.remainingToPay !== undefined && (
                       <div className="detail-row">
-                        <label>Còn phải trả:</label>
+                        <label>Hóa đơn cần thanh toán:</label>
                         <span className={normalizedReleaseSettlement.remainingToPay > 0 ? 'text-danger' : 'text-ok'}>
                           {formatMoney(normalizedReleaseSettlement.remainingToPay)}
-                        </span>
-                      </div>
-                    )}
-                    {normalizedReleaseSettlement.refundToTenant !== undefined && (
-                      <div className="detail-row">
-                        <label>Tiền hoàn cọc:</label>
-                        <span className={normalizedReleaseSettlement.refundToTenant > 0 ? 'text-ok' : ''}>
-                          {formatMoney(normalizedReleaseSettlement.refundToTenant)}
                         </span>
                       </div>
                     )}
