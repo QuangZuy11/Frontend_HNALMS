@@ -3068,7 +3068,7 @@
   border-radius: 16px;
   border: 1px solid #dbe4f0;
   box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18), 0 4px 8px rgba(15, 23, 42, 0.06);
-  max-width: 660px;
+  max-width: 800px;
   width: 100%;
   max-height: 88vh;
   overflow: hidden;
@@ -3142,6 +3142,7 @@
   display: flex;
   flex-direction: column;
   gap: 0;
+  align-content: flex-start;
 }
 
 /* Profile strip */
@@ -3239,6 +3240,8 @@
   gap: 0.5rem;
   padding: 0.52rem 0;
   border-bottom: 1px dashed #f1f5f9;
+  min-width: 0;
+  width: 100%;
 }
 
 .tenant-detail-row:last-child {
@@ -3251,6 +3254,7 @@
   color: #94a3b8;
   white-space: nowrap;
   min-width: 110px;
+  max-width: 110px;
   flex-shrink: 0;
   padding-top: 0.05rem;
   line-height: 1.4;
@@ -3264,6 +3268,7 @@
   flex: 1;
   min-width: 0;
   word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .tenant-detail-value-empty {
@@ -3408,7 +3413,48 @@
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* Two-column layout for detail modal */
+.tenant-detail-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.tenant-detail-col-left,
+.tenant-detail-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.tenant-detail-col-left .tenant-detail-section,
+.tenant-detail-col-right .tenant-detail-section {
+  flex: 1;
+  margin-bottom: 0.85rem;
+}
+
+.tenant-detail-col-left .tenant-detail-section:last-child,
+.tenant-detail-col-right .tenant-detail-section:last-child {
+  margin-bottom: 0;
+}
+
 /* Responsive */
+@media (max-width: 900px) {
+  .tenant-detail-modal {
+    max-width: 95vw;
+  }
+  .tenant-detail-label {
+    min-width: 80px;
+    max-width: 80px;
+    font-size: 0.83rem;
+  }
+  .tenant-detail-value {
+    font-size: 0.86rem;
+  }
+}
+
 @media (max-width: 600px) {
   .tenant-detail-modal {
     max-width: 100%;
@@ -3417,12 +3463,20 @@
   .tenant-detail-header { padding: 0.9rem 1rem; }
   .tenant-detail-body { padding: 0.85rem 0.9rem 1rem; }
   .tenant-detail-profile-strip { padding: 0.75rem 0.9rem; }
-  .tenant-detail-label { min-width: 90px; font-size: 0.83rem; }
-  .tenant-detail-value { font-size: 0.86rem; }
+  .tenant-detail-two-col {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .tenant-detail-label {
+    min-width: 80px;
+    max-width: 80px;
+    font-size: 0.8rem;
+  }
+  .tenant-detail-value { font-size: 0.84rem; }
 }
 
 @media (max-width: 420px) {
-  .tenant-detail-label { min-width: 80px; }
+  .tenant-detail-label { min-width: 70px; max-width: 70px; }
   .tenant-detail-profile-name { font-size: 0.95rem; }
 }
 

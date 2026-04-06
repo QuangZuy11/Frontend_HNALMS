@@ -505,80 +505,89 @@ export default function TenantAccountList() {
                     </div>
                   </div>
 
-                  {/* Contact info */}
-                  <div className="tenant-detail-section">
-                    <div className="tenant-detail-section-title">
-                      <ContactPhoneIcon className="tenant-detail-section-title-icon" sx={{ fontSize: 15 }} />
-                      Thông tin liên hệ
-                    </div>
-                    <div className="tenant-detail-rows">
-                      <div className="tenant-detail-row">
-                        <span className="tenant-detail-label">Email</span>
-                        <span className="tenant-detail-value">
-                          {detailAccount.email || <span className="tenant-detail-value-empty">—</span>}
-                        </span>
+                  {/* Two-column layout */}
+                  <div className="tenant-detail-two-col">
+                    {/* Left column */}
+                    <div className="tenant-detail-col-left">
+                      {/* Contact info */}
+                      <div className="tenant-detail-section">
+                        <div className="tenant-detail-section-title">
+                          <ContactPhoneIcon className="tenant-detail-section-title-icon" sx={{ fontSize: 15 }} />
+                          Thông tin liên hệ
+                        </div>
+                        <div className="tenant-detail-rows">
+                          <div className="tenant-detail-row">
+                            <span className="tenant-detail-label">Email</span>
+                            <span className="tenant-detail-value">
+                              {detailAccount.email || <span className="tenant-detail-value-empty">—</span>}
+                            </span>
+                          </div>
+                          <div className="tenant-detail-row">
+                            <span className="tenant-detail-label">SĐT</span>
+                            <span className="tenant-detail-value">
+                              {detailAccount.phoneNumber || <span className="tenant-detail-value-empty">—</span>}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="tenant-detail-row">
-                        <span className="tenant-detail-label">SĐT</span>
-                        <span className="tenant-detail-value">
-                          {detailAccount.phoneNumber || <span className="tenant-detail-value-empty">—</span>}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Personal info */}
-                  <div className="tenant-detail-section">
-                    <div className="tenant-detail-section-title">
-                      <BadgeIcon className="tenant-detail-section-title-icon" sx={{ fontSize: 15 }} />
-                      Thông tin cá nhân
-                    </div>
-                    <div className="tenant-detail-rows">
-                      <div className="tenant-detail-row">
-                        <span className="tenant-detail-label">Họ và tên</span>
-                        <span className="tenant-detail-value">
-                          {detailAccount.fullname || <span className="tenant-detail-value-empty">—</span>}
-                        </span>
-                      </div>
-                      <div className="tenant-detail-row">
-                        <span className="tenant-detail-label">Giới tính</span>
-                        <span className="tenant-detail-value">
-                          {detailAccount.gender === "Male"
-                            ? "Nam"
-                            : detailAccount.gender === "Female"
-                            ? "Nữ"
-                            : detailAccount.gender === "Other"
-                            ? "Khác"
-                            : <span className="tenant-detail-value-empty">—</span>}
-                        </span>
-                      </div>
-                      <div className="tenant-detail-row">
-                        <span className="tenant-detail-label">Ngày sinh</span>
-                        <span className="tenant-detail-value">
-                          {detailAccount.dob ? formatAccountDate(detailAccount.dob) : <span className="tenant-detail-value-empty">—</span>}
-                        </span>
-                      </div>
-                      <div className="tenant-detail-row">
-                        <span className="tenant-detail-label">Địa chỉ</span>
-                        <span className="tenant-detail-value">
-                          {detailAccount.address || <span className="tenant-detail-value-empty">—</span>}
-                        </span>
+                      {/* Legal info */}
+                      <div className="tenant-detail-section">
+                        <div className="tenant-detail-section-title">
+                          <GavelIcon className="tenant-detail-section-title-icon" sx={{ fontSize: 15 }} />
+                          Thông tin pháp lý
+                        </div>
+                        <div className="tenant-detail-rows">
+                          <div className="tenant-detail-row">
+                            <span className="tenant-detail-label">CCCD / CMND</span>
+                            <span className="tenant-detail-value">
+                              {detailAccount.cccd || <span className="tenant-detail-value-empty">—</span>}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Legal info */}
-                  <div className="tenant-detail-section">
-                    <div className="tenant-detail-section-title">
-                      <GavelIcon className="tenant-detail-section-title-icon" sx={{ fontSize: 15 }} />
-                      Thông tin pháp lý
-                    </div>
-                    <div className="tenant-detail-rows">
-                      <div className="tenant-detail-row">
-                        <span className="tenant-detail-label">CCCD / CMND</span>
-                        <span className="tenant-detail-value">
-                          {detailAccount.cccd || <span className="tenant-detail-value-empty">—</span>}
-                        </span>
+                    {/* Right column */}
+                    <div className="tenant-detail-col-right">
+                      {/* Personal info */}
+                      <div className="tenant-detail-section">
+                        <div className="tenant-detail-section-title">
+                          <BadgeIcon className="tenant-detail-section-title-icon" sx={{ fontSize: 15 }} />
+                          Thông tin cá nhân
+                        </div>
+                        <div className="tenant-detail-rows">
+                          <div className="tenant-detail-row">
+                            <span className="tenant-detail-label">Họ và tên</span>
+                            <span className="tenant-detail-value">
+                              {detailAccount.fullname || <span className="tenant-detail-value-empty">—</span>}
+                            </span>
+                          </div>
+                          <div className="tenant-detail-row">
+                            <span className="tenant-detail-label">Giới tính</span>
+                            <span className="tenant-detail-value">
+                              {detailAccount.gender === "Male"
+                                ? "Nam"
+                                : detailAccount.gender === "Female"
+                                ? "Nữ"
+                                : detailAccount.gender === "Other"
+                                ? "Khác"
+                                : <span className="tenant-detail-value-empty">—</span>}
+                            </span>
+                          </div>
+                          <div className="tenant-detail-row">
+                            <span className="tenant-detail-label">Ngày sinh</span>
+                            <span className="tenant-detail-value">
+                              {detailAccount.dob ? formatAccountDate(detailAccount.dob) : <span className="tenant-detail-value-empty">—</span>}
+                            </span>
+                          </div>
+                          <div className="tenant-detail-row">
+                            <span className="tenant-detail-label">Địa chỉ</span>
+                            <span className="tenant-detail-value">
+                              {detailAccount.address || <span className="tenant-detail-value-empty">—</span>}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
