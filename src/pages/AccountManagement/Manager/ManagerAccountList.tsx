@@ -256,9 +256,9 @@ export default function ManagerAccountList() {
       });
 
       setCreateSuccess('Tạo tài khoản thành công!');
-      setCreateFormData({ username: '', phoneNumber: '', email: '', password: '', role: 'manager' });
+      setShowCreateModal(false);
       fetchAccounts();
-      setTimeout(() => closeCreateModal(), 1200);
+      setTimeout(() => setCreateSuccess(null), 4000);
     } catch (err: unknown) {
       const errObj = err as { response?: { data?: { message?: string } } };
       setCreateError(errObj?.response?.data?.message || 'Không thể tạo tài khoản');
@@ -643,6 +643,20 @@ export default function ManagerAccountList() {
       )}
 
       {/* Create Modal */}
+      {createSuccess && (
+        <div className="manager-account-list-toast">
+          <div className="manager-account-list-toast-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div>
+            <div className="manager-account-list-toast-title">Thành công</div>
+            <div className="manager-account-list-toast-msg">{createSuccess}</div>
+          </div>
+        </div>
+      )}
+
       {showCreateModal && (
         <div className="manager-account-list-create-overlay" onClick={closeCreateModal}>
           <div className="manager-account-list-create-modal" onClick={(e) => e.stopPropagation()}>
@@ -664,11 +678,6 @@ export default function ManagerAccountList() {
               {createError && (
                 <div className="manager-account-list-create-error">
                   <p>{createError}</p>
-                </div>
-              )}
-              {createSuccess && (
-                <div className="manager-account-list-create-success">
-                  <p>{createSuccess}</p>
                 </div>
               )}
               <form onSubmit={handleCreateSubmit} className="manager-account-list-create-form">

@@ -238,11 +238,9 @@ export default function OwnerAccountList() {
         password: createFormData.password,
       });
       setCreateSuccess('Tạo tài khoản Chủ nhà thành công!');
-      setCreateFormData({ username: '', phoneNumber: '', email: '', password: '' });
+      setShowCreateModal(false);
       fetchAccounts();
-      setTimeout(() => {
-        closeCreateModal();
-      }, 1200);
+      setTimeout(() => setCreateSuccess(null), 4000);
     } catch (err: unknown) {
       const errObj = err as { response?: { data?: { message?: string } } };
       setCreateError(errObj?.response?.data?.message || 'Không thể tạo tài khoản');
@@ -599,6 +597,20 @@ export default function OwnerAccountList() {
         </div>
       )}
 
+      {createSuccess && (
+        <div className="admin-accounts-toast">
+          <div className="admin-accounts-toast-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div>
+            <div className="admin-accounts-toast-title">Thành công</div>
+            <div className="admin-accounts-toast-msg">{createSuccess}</div>
+          </div>
+        </div>
+      )}
+
       {showCreateModal && (
         <div className="admin-accounts-create-modal-overlay" onClick={closeCreateModal}>
           <div className="admin-accounts-create-modal" onClick={(e) => e.stopPropagation()}>
@@ -608,7 +620,6 @@ export default function OwnerAccountList() {
             </div>
             <div className="admin-accounts-create-modal-body">
               {createError && <div className="admin-accounts-create-error"><p>{createError}</p></div>}
-              {createSuccess && <div className="admin-accounts-create-success"><p>{createSuccess}</p></div>}
               <form onSubmit={handleCreateSubmit} className="admin-accounts-create-form">
                 <div className="admin-accounts-create-field">
                   <label htmlFor="create-username">Tên đăng nhập *</label>
