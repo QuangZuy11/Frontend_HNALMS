@@ -96,10 +96,10 @@
   height: 3px;
 }
 
-.rrm-card.rrm-card-total::before { background: #1976D2; }
-.rrm-card.rrm-card-repairs::before { background: #ef6c00; }
-.rrm-card.rrm-card-maintenance::before { background: #2e7d32; }
-.rrm-card.rrm-card-peak::before { background: #7b1fa2; }
+.rrm-card.rrm-card-total::before { background: #2e69b1; }
+.rrm-card.rrm-card-repairs::before { background: #2e69b1; }
+.rrm-card.rrm-card-maintenance::before { background: #2e69b1; }
+.rrm-card.rrm-card-peak::before { background: #2e69b1; }
 
 .rrm-card-icon {
   display: flex;
@@ -111,10 +111,10 @@
   margin-bottom: 12px;
 }
 
-.rrm-card.rrm-card-total .rrm-card-icon { background: rgba(25, 118, 210, 0.1); }
-.rrm-card.rrm-card-repairs .rrm-card-icon { background: rgba(239, 108, 0, 0.1); }
-.rrm-card.rrm-card-maintenance .rrm-card-icon { background: rgba(46, 125, 50, 0.1); }
-.rrm-card.rrm-card-peak .rrm-card-icon { background: rgba(123, 31, 162, 0.1); }
+.rrm-card.rrm-card-total .rrm-card-icon { background: rgba(46, 105, 177, 0.1); }
+.rrm-card.rrm-card-repairs .rrm-card-icon { background: rgba(46, 105, 177, 0.1); }
+.rrm-card.rrm-card-maintenance .rrm-card-icon { background: rgba(46, 105, 177, 0.1); }
+.rrm-card.rrm-card-peak .rrm-card-icon { background: rgba(46, 105, 177, 0.1); }
 
 .rrm-card-label {
   font-size: 13px;
@@ -330,39 +330,31 @@
   font-weight: 600;
 }
 
-.rrm-badge-total { background: rgba(25, 118, 210, 0.1); color: #1976D2; }
-.rrm-badge-repairs { background: rgba(239, 108, 0, 0.1); color: #ef6c00; }
-.rrm-badge-maintenance { background: rgba(46, 125, 50, 0.1); color: #2e7d32; }
-.rrm-badge-peak { background: rgba(123, 31, 162, 0.1); color: #7b1fa2; }
+.rrm-badge-total { background: rgba(46, 105, 177, 0.1); color: #2e69b1; }
+.rrm-badge-repairs { background: rgba(46, 105, 177, 0.1); color: #2e69b1; }
+.rrm-badge-maintenance { background: rgba(46, 105, 177, 0.1); color: #2e69b1; }
+.rrm-badge-peak { background: rgba(46, 105, 177, 0.1); color: #2e69b1; }
 
 /* Peak Month Card */
 .rrm-peak-card {
-  background: linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%);
-  color: #fff;
+  background: #fff;
+  color: #1a202c;
 }
 
 .rrm-peak-card .rrm-card-label {
-  color: rgba(255,255,255,0.7);
+  color: #718096;
 }
 
 .rrm-peak-card .rrm-card-value {
-  color: #fff;
+  color: #2e69b1;
 }
 
 .rrm-peak-card .rrm-card-sub {
-  color: rgba(255,255,255,0.6);
+  color: #a0aec0;
 }
 
 .rrm-peak-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  background: rgba(255,255,255,0.2);
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  margin-top: 4px;
+  display: none;
 }
 
 /* Empty state */

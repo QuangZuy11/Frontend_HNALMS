@@ -1,7 +1,7 @@
 /* Created Accounts List Page */
 .created-accounts-page {
-  --primary: #3579C6;
-  --primary-hover: #2b6bb0;
+  --primary: #2e69b1;
+  --primary-hover: #245a90;
   min-height: 60vh;
   padding: 2rem 2.5rem;
   width: 100%;
@@ -88,7 +88,7 @@
 
 .btn-create:hover {
   background: var(--primary-hover);
-  box-shadow: 0 2px 8px rgba(53, 121, 198, 0.3);
+  box-shadow: 0 2px 8px rgba(46, 105, 177, 0.3);
 }
 
 .created-accounts-loading {
@@ -172,7 +172,7 @@
 
 .btn-primary:hover:not(:disabled) {
   background: var(--primary-hover);
-  box-shadow: 0 2px 8px rgba(53, 121, 198, 0.3);
+  box-shadow: 0 2px 8px rgba(46, 105, 177, 0.3);
 }
 
 /* Table */

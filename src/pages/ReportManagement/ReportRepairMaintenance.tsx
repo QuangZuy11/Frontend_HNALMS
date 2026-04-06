@@ -38,8 +38,8 @@ const MONTH_NAMES = [
   "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12",
 ];
 
-const PIE_COLORS = ["#ef6c00", "#2e7d32"];
-const TYPE_COLORS = ["#ef6c00", "#2e7d32"];
+const PIE_COLORS = ["#2e69b1", "#2e7d32"];
+const TYPE_COLORS = ["#2e69b1", "#2e7d32"];
 
 const formatMonth = (monthStr: string) => {
   const [year, mon] = monthStr.split("-");
@@ -180,7 +180,7 @@ export default function ReportRepairMaintenance() {
             {/* Tổng số */}
             <div className="rrm-card rrm-card-total">
               <div className="rrm-card-icon">
-                <Activity size={20} color="#1976D2" />
+                <Activity size={20} color="#2e69b1" />
               </div>
               <div className="rrm-card-label">Tổng yêu cầu</div>
               <div className="rrm-card-value">{snapshot?.total ?? 0}</div>
@@ -192,7 +192,7 @@ export default function ReportRepairMaintenance() {
             {/* Sửa chữa */}
             <div className="rrm-card rrm-card-repairs">
               <div className="rrm-card-icon">
-                <Wrench size={20} color="#ef6c00" />
+                <Wrench size={20} color="#2e69b1" />
               </div>
               <div className="rrm-card-label">Sửa chữa</div>
               <div className="rrm-card-value">{snapshot?.repairs ?? 0}</div>
@@ -204,7 +204,7 @@ export default function ReportRepairMaintenance() {
             {/* Bảo trì */}
             <div className="rrm-card rrm-card-maintenance">
               <div className="rrm-card-icon">
-                <HardHat size={20} color="#2e7d32" />
+                <HardHat size={20} color="#2e69b1" />
               </div>
               <div className="rrm-card-label">Bảo trì</div>
               <div className="rrm-card-value">{snapshot?.maintenance ?? 0}</div>
@@ -216,7 +216,7 @@ export default function ReportRepairMaintenance() {
             {/* Tháng cao điểm */}
             <div className="rrm-card rrm-card-peak rrm-peak-card">
               <div className="rrm-card-icon">
-                <TrendingUp size={20} color="#fff" />
+                <TrendingUp size={20} color="#2e69b1" />
               </div>
               <div className="rrm-card-label">Tháng cao điểm</div>
               <div className="rrm-card-value">
@@ -257,10 +257,10 @@ export default function ReportRepairMaintenance() {
                             <p style={{ margin: "0 0 6px", fontWeight: 600, fontSize: 13 }}>
                               {formatMonth(String(label ?? ""))}
                             </p>
-                            <p style={{ margin: "0 0 3px", fontSize: 12, color: "#1976D2" }}>
+                            <p style={{ margin: "0 0 3px", fontSize: 12, color: "#2e69b1" }}>
                               Tổng: {pTotal?.value ?? 0} yêu cầu
                             </p>
-                            <p style={{ margin: "0 0 3px", fontSize: 12, color: "#ef6c00" }}>
+                            <p style={{ margin: "0 0 3px", fontSize: 12, color: "#2e69b1" }}>
                               Sửa chữa: {pRepairs?.value ?? 0}
                             </p>
                             <p style={{ margin: 0, fontSize: 12, color: "#2e7d32" }}>
@@ -345,16 +345,16 @@ export default function ReportRepairMaintenance() {
                       Trạng thái tháng này
                     </h4>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                      <div style={{ background: "#fff8e1", padding: "8px 10px", borderRadius: 8, textAlign: "center" }}>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: "#f57f17" }}>{snapshot.pending}</div>
+                      <div style={{ background: "rgba(46, 105, 177, 0.1)", padding: "8px 10px", borderRadius: 8, textAlign: "center" }}>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: "#2e69b1" }}>{snapshot.pending}</div>
                         <div style={{ fontSize: 11, color: "#888" }}>Chờ xử lý</div>
                       </div>
-                      <div style={{ background: "#e3f2fd", padding: "8px 10px", borderRadius: 8, textAlign: "center" }}>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: "#1976D2" }}>{snapshot.processing}</div>
+                      <div style={{ background: "rgba(46, 105, 177, 0.1)", padding: "8px 10px", borderRadius: 8, textAlign: "center" }}>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: "#2e69b1" }}>{snapshot.processing}</div>
                         <div style={{ fontSize: 11, color: "#888" }}>Đang xử lý</div>
                       </div>
-                      <div style={{ background: "#e8f5e9", padding: "8px 10px", borderRadius: 8, textAlign: "center" }}>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: "#2e7d32" }}>{snapshot.done + snapshot.paid}</div>
+                      <div style={{ background: "rgba(46, 105, 177, 0.1)", padding: "8px 10px", borderRadius: 8, textAlign: "center" }}>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: "#2e69b1" }}>{snapshot.done + snapshot.paid}</div>
                         <div style={{ fontSize: 11, color: "#888" }}>Hoàn thành</div>
                       </div>
                     </div>
