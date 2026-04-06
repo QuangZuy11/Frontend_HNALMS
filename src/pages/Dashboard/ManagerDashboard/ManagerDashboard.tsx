@@ -191,10 +191,10 @@ export default function ManagerDashboard() {
 
   const quickActions = [
     { title: "Quản Lý Phòng", href: "/manager/rooms", icon: DoorOpen },
-    { title: "Sơ Đồ Tầng", href: "/manager/floor-map", icon: MapPin },
-    { title: "Quản Lý Cư Dân", href: "/manager/tenants", icon: Users },
+    //{ title: "Sơ Đồ Tầng", href: "/manager/floor-map", icon: MapPin },
+    { title: "Quản Lý Cư Dân", href: "/manager/residents", icon: Users },
     { title: "Hợp Đồng", href: "/manager/contracts", icon: FileText },
-    { title: "Yêu Cầu", href: "/manager/requests", icon: MessageSquare },
+    { title: "Yêu Cầu", href: "/manager/requests/repairs", icon: MessageSquare },
   ];
 
   const roomStatusData = [
