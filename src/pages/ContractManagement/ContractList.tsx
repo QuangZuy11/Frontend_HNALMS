@@ -17,19 +17,23 @@ interface RoomActionPopup {
   show: boolean;
   room: any;
   position: { x: number; y: number };
-  futureContractId?: string;
+  contracts: any[];      // Danh sách hợp đồng của phòng
+  deposits: any[];       // Danh sách cọc lẻ (chưa gắn HĐ)
 }
 
 const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
   const navigate = useNavigate();
   const [rooms, setRooms] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
+  const [deposits, setDeposits] = useState<any[]>([]);
   const [floors, setFloors] = useState<any[]>([]);
   const [activeFloorTab, setActiveFloorTab] = useState(0);
   const [actionPopup, setActionPopup] = useState<RoomActionPopup>({
     show: false,
     room: null,
     position: { x: 0, y: 0 },
+    contracts: [],
+    deposits: [],
   });
   const popupRef = useRef<HTMLDivElement>(null);
 
@@ -47,15 +51,17 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
   }, [actionPopup.show]);
 
   useEffect(() => {
-    // Fetch rooms, contracts, and floors in parallel
+    // Fetch rooms, contracts, deposits, and floors in parallel
     Promise.all([
       axios.get(`${API_URL}/rooms`),
       axios.get(`${API_URL}/contracts`),
+      axios.get(`${API_URL}/deposits`),
       axios.get(`${API_URL}/floors`),
     ])
-      .then(([roomsRes, contractsRes, floorsRes]) => {
+      .then(([roomsRes, contractsRes, depositsRes, floorsRes]) => {
         const rawRooms = roomsRes.data.data || [];
         const allContracts = contractsRes.data.data || [];
+        const allDeposits = depositsRes.data.data || depositsRes.data || [];
 
         const mappedRooms = rawRooms.map((room: any) => {
           let priceNum = 0;
@@ -101,6 +107,8 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
           setContracts(allContracts);
         }
 
+        setDeposits(allDeposits);
+
         const rawFloors = floorsRes.data.data || floorsRes.data || [];
         setFloors(rawFloors);
       })
@@ -117,12 +125,32 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
   });
 
   // When a room is clicked:
-  // - Deposited + future contract → show popup with options
+  // - Has contracts or deposits → show popup with options
   // - Has active contract → go to contract detail
   // - Available/Deposited → go to create contract
   const handleRoomSelect = (room: any, event?: React.MouseEvent) => {
-    // Case 1: Room is Deposited AND has future contract → show popup with 2 options
-    if (room.status === "Deposited" && room.futureContractId) {
+    // Lấy tất cả hợp đồng của phòng này
+    const roomContracts = contracts.filter((c: any) => {
+      const roomId = c.roomId?._id || c.roomId;
+      return roomId === room._id;
+    });
+
+    // Lấy tất cả cọc lẻ của phòng này (cọc có status "Held" và không gắn với hợp đồng nào trong danh sách)
+    const contractIds = roomContracts.map((c: any) => c._id);
+    const roomDeposits = deposits.filter((d: any) => {
+      const depositRoomId = d.room?._id || d.room;
+      // Cọc thuộc phòng này
+      if (depositRoomId !== room._id) return false;
+      // Cọc phải đang được giữ
+      if (d.status !== "Held") return false;
+      // Cọc không gắn với hợp đồng nào trong danh sách (cọc lẻ)
+      if (!d.contractId) return true;
+      const cid = typeof d.contractId === "object" ? d.contractId._id : d.contractId;
+      return !contractIds.includes(cid);
+    });
+
+    // Nếu có hợp đồng hoặc cọc lẻ → hiện popup
+    if (roomContracts.length > 0 || roomDeposits.length > 0) {
       const rect = (event?.currentTarget as HTMLElement)?.getBoundingClientRect();
       const x = rect ? rect.left + rect.width / 2 : event?.clientX || 200;
       const y = rect ? rect.top : event?.clientY || 200;
@@ -131,36 +159,45 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
         show: true,
         room,
         position: { x, y },
-        futureContractId: room.futureContractId,
+        contracts: roomContracts,
+        deposits: roomDeposits,
       });
       return;
     }
 
-    // Case 2: Room is Deposited or Available → go to create contract
-    if (!readOnly && (room.status === "Available" || room.status === "Deposited")) {
+    // Case: Room is Available → go to create contract
+    if (!readOnly && room.status === "Available") {
       navigate("create", { state: { roomId: room._id } });
       return;
     }
 
-    // Case 3: Room has active contract (currently running) → view it
+    // Case: Room has active contract (currently running) → view it
     const contractId = roomContractMap[room._id];
     if (contractId) {
       navigate(`${contractId}`);
     }
   };
 
-  const handleViewFutureContract = () => {
-    if (actionPopup.futureContractId) {
-      navigate(`${actionPopup.futureContractId}`);
-    }
-    setActionPopup({ show: false, room: null, position: { x: 0, y: 0 } });
+  // Xem chi tiết hợp đồng
+  const handleViewContract = (contractId: string) => {
+    navigate(`${contractId}`);
+    setActionPopup({ show: false, room: null, position: { x: 0, y: 0 }, contracts: [], deposits: [] });
   };
 
+  // Tạo hợp đồng mới cho cọc lẻ
+  const handleCreateFromDeposit = (depositId: string) => {
+    if (actionPopup.room) {
+      navigate("create", { state: { roomId: actionPopup.room._id, depositId } });
+    }
+    setActionPopup({ show: false, room: null, position: { x: 0, y: 0 }, contracts: [], deposits: [] });
+  };
+
+  // Tạo hợp đồng mới (không có cọc)
   const handleCreateNewContract = () => {
     if (actionPopup.room) {
       navigate("create", { state: { roomId: actionPopup.room._id } });
     }
-    setActionPopup({ show: false, room: null, position: { x: 0, y: 0 } });
+    setActionPopup({ show: false, room: null, position: { x: 0, y: 0 }, contracts: [], deposits: [] });
   };
 
   const activeContracts = contracts.filter(
@@ -271,33 +308,73 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
           <div className="popup-arrow"></div>
           <div className="popup-header">
             <span className="popup-room-name">{actionPopup.room.name}</span>
-            <span className="popup-badge">2 lựa chọn</span>
+            <span className="popup-badge">
+              {actionPopup.contracts.length + actionPopup.deposits.length} lựa chọn
+            </span>
           </div>
           <div className="popup-options">
-            <button
-              className="popup-option option-view"
-              onClick={handleViewFutureContract}
-            >
-              <Eye size={16} />
-              <div className="option-text">
-                <span className="option-title">Xem hợp đồng đã ký</span>
-                <span className="option-desc">
-                  Chưa đến ngày sử dụng ({actionPopup.room.futureContractStartDate
-                    ? new Date(actionPopup.room.futureContractStartDate).toLocaleDateString("vi-VN")
-                    : "N/A"})
-                </span>
-              </div>
-            </button>
-            <button
-              className="popup-option option-create"
-              onClick={handleCreateNewContract}
-            >
-              <PlusCircle size={16} />
-              <div className="option-text">
-                <span className="option-title">Ký hợp đồng mới</span>
-                <span className="option-desc">Cho khách cọc chưa có hợp đồng</span>
-              </div>
-            </button>
+            {/* Hiện các hợp đồng */}
+            {actionPopup.contracts.map((contract: any) => {
+              const isActive = contract.status === "active" && new Date(contract.startDate) <= new Date();
+              const isPending = contract.status === "active" && new Date(contract.startDate) > new Date();
+              return (
+                <button
+                  key={contract._id}
+                  className={`popup-option ${isActive ? "option-view-active" : "option-view"}`}
+                  onClick={() => handleViewContract(contract._id)}
+                >
+                  <FileText size={16} />
+                  <div className="option-text">
+                    <span className="option-title">HĐ: {contract.contractCode}</span>
+                    <span className="option-desc">
+                      {isActive
+                        ? "Đang hiệu lực"
+                        : isPending
+                          ? `Sắp tới (${new Date(contract.startDate).toLocaleDateString("vi-VN")})`
+                          : contract.status === "Pending"
+                            ? "Đang chờ ký"
+                            : contract.status === "terminated"
+                              ? "Đã chấm dứt"
+                              : "Chưa có hiệu lực"
+                      }
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+            {/* Hiện các cọc lẻ */}
+            {actionPopup.deposits.map((deposit: any, idx: number) => (
+              <button
+                key={deposit._id}
+                className="popup-option option-create"
+                onClick={() => handleCreateFromDeposit(deposit._id)}
+              >
+                <PlusCircle size={16} />
+                <div className="option-text">
+                  <span className="option-title">Cọc lẻ #{idx + 1} - Ký HĐ</span>
+                  <span className="option-desc">
+                    {deposit.name || "Chưa có tên"} - {deposit.amount?.toLocaleString("vi-VN") || "---"}đ
+                  </span>
+                </div>
+              </button>
+            ))}
+            {/* Option tạo hợp đồng mới - chỉ hiện khi KHÔNG có active/pending contract VÀ KHÔNG có cọc lẻ */}
+            {actionPopup.deposits.length === 0 && !actionPopup.contracts.some((c: any) => {
+              const isActive = c.status === "active" && new Date(c.startDate) <= new Date();
+              const isPending = c.status === "active" && new Date(c.startDate) > new Date();
+              return isActive || isPending;
+            }) && (
+              <button
+                className="popup-option option-create-new"
+                onClick={handleCreateNewContract}
+              >
+                <PlusCircle size={16} />
+                <div className="option-text">
+                  <span className="option-title">Tạo hợp đồng, cọc mới</span>
+                  <span className="option-desc">Cho phòng này</span>
+                </div>
+              </button>
+            )}
           </div>
         </div>
       )}

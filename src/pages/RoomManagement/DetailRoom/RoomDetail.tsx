@@ -426,6 +426,22 @@ export default function RoomDetail() {
                     })
                     .map((svc: any) => {
                       const Icon = getServiceIcon(svc.name);
+                      // Parse currentPrice - handle Decimal128 format from MongoDB
+                      let priceDisplay = "Liên hệ";
+                      const rawPrice = svc.currentPrice;
+                      if (rawPrice !== undefined && rawPrice !== null) {
+                        let price = 0;
+                        if (typeof rawPrice === "object" && rawPrice !== null && "$numberDecimal" in rawPrice) {
+                          price = parseFloat(rawPrice.$numberDecimal);
+                        } else if (typeof rawPrice === "string") {
+                          price = parseFloat(rawPrice);
+                        } else if (typeof rawPrice === "number") {
+                          price = rawPrice;
+                        }
+                        if (price > 0) {
+                          priceDisplay = `${price.toLocaleString("vi-VN")}đ`;
+                        }
+                      }
                       return (
                         <div key={svc._id} className="service-item">
                           <div className="service-icon-box">
@@ -434,12 +450,7 @@ export default function RoomDetail() {
                           <div className="service-info">
                             <div className="service-name">{svc.name}</div>
                             <div className="service-description">
-                              {svc.currentPrice
-                                ? svc.currentPrice >= 1000
-                                  ? `${svc.currentPrice / 1000}k`
-                                  : svc.currentPrice
-                                : "0"}
-                              / 1 người
+                              {priceDisplay} / tháng / người
                             </div>
                           </div>
                         </div>
@@ -478,7 +489,7 @@ export default function RoomDetail() {
                 </div>
 
                 <div className="benefits-list">
-                  <p>✓ Giữ phòng trong 7 ngày</p>
+                  <p>✓ Giữ phòng trong 30 ngày</p>
                   <p>✓ Hỗ trợ ký hợp đồng</p>
                   <p>✓ Nhân viên sẵn sàng tư vấn</p>
                   {room.isShortTermAvailable && room.futureContractStartDate && !room.hasFutureInactiveContract && (

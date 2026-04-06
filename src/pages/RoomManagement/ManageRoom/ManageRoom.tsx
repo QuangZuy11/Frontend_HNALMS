@@ -48,7 +48,7 @@ interface Room {
 }
 
 interface ManageRoomProps {
-  readOnly?: boolean; 
+  readOnly?: boolean;
 }
 
 const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
@@ -76,10 +76,10 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
 
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
-    action: 'TOGGLE_ACTIVE' | 'DELETE' | null;
+    action: "TOGGLE_ACTIVE" | "DELETE" | null;
     targetRoom: Room | null;
     message: string;
-  }>({ isOpen: false, action: null, targetRoom: null, message: '' });
+  }>({ isOpen: false, action: null, targetRoom: null, message: "" });
 
   const [isEditing, setIsEditing] = useState(false);
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
@@ -87,8 +87,17 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const [roomBookServices, setRoomBookServices] = useState<any[]>([]);
   const [prepaidInvoice, setPrepaidInvoice] = useState<any | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
+  const [selectedContractId, setSelectedContractId] = useState<string | null>(
+    null,
+  );
+  const [selectedDepositId, setSelectedDepositId] = useState<string | null>(null);
   const [availableContracts, setAvailableContracts] = useState<any[]>([]);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
+  // State cho dropdown chọn hiển thị (hợp đồng/cọc)
+  const [displayMode, setDisplayMode] = useState<"active" | "inactive" | "deposit">("active");
+  const [allRoomContracts, setAllRoomContracts] = useState<any[]>([]);
+  const [roomDeposits, setRoomDeposits] = useState<any[]>([]);
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -102,20 +111,23 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   });
 
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-  const userRole = currentUser?.role || ''; 
+  const userRole = currentUser?.role || '';
   const canModify = userRole === 'owner' && !readOnly;
 
   // --- FETCH DATA ---
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [roomsRes, floorsRes, typesRes, contractsRes, depositsRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/rooms`),
-        axios.get(`${API_BASE_URL}/floors`),
-        axios.get(`${API_BASE_URL}/roomtypes`),
-        axios.get(`${API_BASE_URL}/contracts`),
-        axios.get(`${API_BASE_URL}/deposits`, { withCredentials: true }).catch(() => ({ data: { success: false, data: [] } })),
-      ]);
+      const [roomsRes, floorsRes, typesRes, contractsRes, depositsRes] =
+        await Promise.all([
+          axios.get(`${API_BASE_URL}/rooms`),
+          axios.get(`${API_BASE_URL}/floors`),
+          axios.get(`${API_BASE_URL}/roomtypes`),
+          axios.get(`${API_BASE_URL}/contracts`),
+          axios
+            .get(`${API_BASE_URL}/deposits`, { withCredentials: true })
+            .catch(() => ({ data: { success: false, data: [] } })),
+        ]);
 
       setRooms(roomsRes.data.data || roomsRes.data || []);
       const floorsData = floorsRes.data.data || floorsRes.data || [];
@@ -163,7 +175,8 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const getDepositForRoom = (roomId: string) => {
     return (
       deposits.find(
-        (d: any) => d.status === "Held" && (d.room?._id === roomId || d.room === roomId),
+        (d: any) =>
+          d.status === "Held" && (d.room?._id === roomId || d.room === roomId),
       ) || null
     );
   };
@@ -367,10 +380,12 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       setLoadingDetail(true);
       setRoomBookServices([]);
       setPrepaidInvoice(null);
-      
+
       const [contractRes, incurredRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/contracts/${contractId}`),
-        axios.get(`${API_BASE_URL}/invoices/incurred?type=prepaid`).catch(() => ({ data: { success: false, data: [] } })),
+        axios
+          .get(`${API_BASE_URL}/invoices/incurred?type=prepaid`)
+          .catch(() => ({ data: { success: false, data: [] } })),
       ]);
       if (contractRes.data.success && contractRes.data.data?.bookServices) {
         setRoomBookServices(contractRes.data.data.bookServices);
@@ -378,7 +393,8 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       if (incurredRes.data.success) {
         const allIncurred: any[] = incurredRes.data.data || [];
         const prepaid = allIncurred.find(
-          (inv: any) => inv.contractId === contractId || inv.contractId?._id === contractId
+          (inv: any) =>
+            inv.contractId === contractId || inv.contractId?._id === contractId,
         );
         setPrepaidInvoice(prepaid || null);
       }
@@ -397,28 +413,78 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     }
   };
 
+  // Xử lý thay đổi dropdown chọn hợp đồng/cọc
+  const handleContractSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+
+    if (value.startsWith("deposit_")) {
+      // Chọn cọc lẻ
+      const depositId = value.replace("deposit_", "");
+      setSelectedDepositId(depositId);
+      setSelectedContractId(null);
+      setRoomBookServices([]);
+      setPrepaidInvoice(null);
+    } else if (value) {
+      // Chọn hợp đồng
+      const contractId = value;
+      setSelectedContractId(contractId);
+      setSelectedDepositId(null);
+      fetchContractDetails(contractId);
+    } else {
+      // Chưa chọn gì
+      setSelectedContractId(null);
+      setSelectedDepositId(null);
+      setRoomBookServices([]);
+      setPrepaidInvoice(null);
+    }
+  };
+
   const handleViewDetail = async (room: Room) => {
     setViewingRoom(room);
     setShowDetailModal(true);
     setRoomBookServices([]);
     setPrepaidInvoice(null);
     setSelectedContractId(null);
-    
+    setSelectedDepositId(null);
+
+    // Lấy TẤT CẢ hợp đồng của phòng (active + inactive + pending)
     const roomContracts = contracts.filter(
-      (c: any) => (c.status === "active" || c.status === "Pending") && (c.roomId?._id === room._id || c.roomId === room._id)
+      (c: any) =>
+        (c.roomId?._id === room._id || c.roomId === room._id),
     );
-    roomContracts.sort((a, b) => {
-      if (a.status === "active" && b.status !== "active") return -1;
-      if (b.status === "active" && a.status !== "active") return 1;
-      return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
-    });
-    
-    setAvailableContracts(roomContracts);
-    
-    if (roomContracts.length > 0) {
-      const defaultContract = roomContracts[0];
+
+    // Lấy TẤT CẢ cọc của phòng (cọc đang giữ + cọc lẻ chưa gắn HĐ)
+    const roomDeposits = deposits.filter(
+      (d: any) =>
+        d.status === "Held" && (d.room?._id === room._id || d.room === room._id),
+    );
+
+    setAllRoomContracts(roomContracts);
+    setRoomDeposits(roomDeposits);
+
+    // Lấy danh sách hợp đồng active trước, nếu không có thì lấy inactive
+    const activeContracts = roomContracts.filter(c => c.status === "active");
+    const inactiveContracts = roomContracts.filter(c => c.status !== "active");
+    const hasContracts = roomContracts.length > 0;
+    const hasDepositOnly = roomDeposits.length > 0 && !hasContracts;
+
+    if (hasContracts) {
+      // Ưu tiên hợp đồng active, nếu không có thì lấy inactive
+      const defaultContract = activeContracts.length > 0 ? activeContracts[0] : inactiveContracts[0];
+      setAvailableContracts(roomContracts);
       setSelectedContractId(defaultContract._id);
+      setSelectedDepositId(null);
       await fetchContractDetails(defaultContract._id);
+    } else if (hasDepositOnly) {
+      // Không có hợp đồng, chỉ có cọc lẻ - hiện cọc đầu tiên
+      setAvailableContracts([]);
+      setSelectedContractId(null);
+      setSelectedDepositId(roomDeposits[0]._id);
+    } else {
+      // Không có gì
+      setAvailableContracts([]);
+      setSelectedContractId(null);
+      setSelectedDepositId(null);
     }
   };
 
@@ -426,18 +492,18 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     const action = room.isActive ? "vô hiệu hóa" : "kích hoạt";
     setConfirmModal({
       isOpen: true,
-      action: 'TOGGLE_ACTIVE',
+      action: "TOGGLE_ACTIVE",
       targetRoom: room,
-      message: `Bạn có chắc muốn ${action} phòng ${room.name} không?`
+      message: `Bạn có chắc muốn ${action} phòng ${room.name} không?`,
     });
   };
 
   const handleDelete = (room: Room) => {
     setConfirmModal({
       isOpen: true,
-      action: 'DELETE',
+      action: "DELETE",
       targetRoom: room,
-      message: `Bạn có chắc chắn muốn xóa phòng ${room.name}? Hành động này không thể hoàn tác.`
+      message: `Bạn có chắc chắn muốn xóa phòng ${room.name}? Hành động này không thể hoàn tác.`,
     });
   };
 
@@ -445,7 +511,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     if (!confirmModal.targetRoom) return;
     const room = confirmModal.targetRoom;
 
-    if (confirmModal.action === 'TOGGLE_ACTIVE') {
+    if (confirmModal.action === "TOGGLE_ACTIVE") {
       try {
         const actionText = room.isActive ? "vô hiệu hóa" : "kích hoạt";
         await axios.put(`${API_BASE_URL}/rooms/${room._id}`, {
@@ -456,17 +522,25 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       } catch (error: any) {
         toastr.error("Lỗi cập nhật trạng thái: " + error.message);
       }
-    } else if (confirmModal.action === 'DELETE') {
+    } else if (confirmModal.action === "DELETE") {
       try {
         await axios.delete(`${API_BASE_URL}/rooms/${room._id}`);
         toastr.success("Xóa phòng thành công!");
         fetchData();
       } catch (e: any) {
-        toastr.error("Lỗi xóa phòng: " + (e.response?.data?.message || e.message));
+        toastr.error(
+          "Lỗi xóa phòng: " + (e.response?.data?.message || e.message),
+        );
       }
     }
 
-    setConfirmModal({ isOpen: false, action: null, targetRoom: null, message: '' });
+    // Đóng modal sau khi xử lý xong
+    setConfirmModal({
+      isOpen: false,
+      action: null,
+      targetRoom: null,
+      message: "",
+    });
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -660,9 +734,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                             <th>Mô tả</th>
                             <th
                               style={{
-                                width: !canModify ? "100px" : "140px", 
+                                width: readOnly ? "100px" : "140px",
                                 textAlign: "center",
-                                whiteSpace: "nowrap", 
+                                whiteSpace: "nowrap",
                               }}
                             >
                               THAO TÁC
@@ -778,18 +852,16 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       ) : (
         <div className="floor-map-view">
           <div className="room-floor-pills">
-            {floors.map(
-              (floor, idx) => (
-                <button
-                  key={floor._id || idx}
-                  className={`floor-pill${activeMapFloor === idx ? " active" : ""}`}
-                  onClick={() => setActiveMapFloor(idx)}
-                >
-                  <BuildingIcon size={14} />
-                  {floor.name}
-                </button>
-              ),
-            )}
+            {floors.map((floor, idx) => (
+              <button
+                key={floor._id || idx}
+                className={`floor-pill${activeMapFloor === idx ? " active" : ""}`}
+                onClick={() => setActiveMapFloor(idx)}
+              >
+                <BuildingIcon size={14} />
+                {floor.name}
+              </button>
+            ))}
           </div>
 
           <div
@@ -805,7 +877,8 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
               if (activeMapFloor !== idx) return null;
 
               const floorRooms = mappedRoomsForMap.filter((r) => {
-                const fId = typeof r.floorId === "object" ? r.floorId?._id : r.floorId;
+                const fId =
+                  typeof r.floorId === "object" ? r.floorId?._id : r.floorId;
                 return fId === floor._id;
               });
 
@@ -817,7 +890,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                     key={floor._id}
                     rooms={floorRooms}
                     onRoomSelect={(room) =>
-                      !canModify ? handleViewDetail(room as any) : handleOpenEdit(room as any)
+                      readOnly
+                        ? handleViewDetail(room as any)
+                        : handleOpenEdit(room as any)
                     }
                   />
                 );
@@ -827,7 +902,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                     key={floor._id}
                     rooms={floorRooms}
                     onRoomSelect={(room) =>
-                      !canModify ? handleViewDetail(room as any) : handleOpenEdit(room as any)
+                      readOnly
+                        ? handleViewDetail(room as any)
+                        : handleOpenEdit(room as any)
                     }
                   />
                 );
@@ -837,7 +914,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                     key={floor._id}
                     rooms={floorRooms}
                     onRoomSelect={(room) =>
-                      !canModify ? handleViewDetail(room as any) : handleOpenEdit(room as any)
+                      readOnly
+                        ? handleViewDetail(room as any)
+                        : handleOpenEdit(room as any)
                     }
                   />
                 );
@@ -847,7 +926,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                     key={floor._id}
                     rooms={floorRooms}
                     onRoomSelect={(room) =>
-                      !canModify ? handleViewDetail(room as any) : handleOpenEdit(room as any)
+                      readOnly
+                        ? handleViewDetail(room as any)
+                        : handleOpenEdit(room as any)
                     }
                   />
                 );
@@ -859,7 +940,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                   floorName={floor.name}
                   rooms={floorRooms}
                   onRoomSelect={(room) =>
-                    !canModify ? handleViewDetail(room as any) : handleOpenEdit(room as any)
+                    readOnly
+                      ? handleViewDetail(room as any)
+                      : handleOpenEdit(room as any)
                   }
                 />
               );
@@ -870,45 +953,77 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
 
       {/* Modal Xác Nhận Xóa/Kích hoạt */}
       {confirmModal.isOpen && (
-        <div className="modal-overlay" style={{ zIndex: 9999 }} onClick={() => setConfirmModal({ isOpen: false, action: null, targetRoom: null, message: '' })}>
-          <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-              <div style={{ 
-                background: confirmModal.action === 'DELETE' ? '#fee2e2' : '#fef3c7', 
-                padding: '12px', 
-                borderRadius: '50%' 
-              }}>
-                <AlertCircle 
-                  size={32} 
-                  color={confirmModal.action === 'DELETE' ? '#ef4444' : '#d97706'} 
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div
+            className="modal-content"
+            style={{ width: "400px", textAlign: "center", padding: "24px" }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                marginBottom: "16px",
+              }}
+            >
+              <div
+                style={{
+                  background:
+                    confirmModal.action === "DELETE" ? "#fee2e2" : "#fef3c7",
+                  padding: "12px",
+                  borderRadius: "50%",
+                }}
+              >
+                <AlertCircle
+                  size={32}
+                  color={
+                    confirmModal.action === "DELETE" ? "#ef4444" : "#d97706"
+                  }
                 />
               </div>
             </div>
-            <h3 style={{ marginTop: 0, color: '#1e293b', fontSize: '18px' }}>Xác nhận thao tác</h3>
-            <p style={{ color: '#475569', margin: '16px 0 24px 0', lineHeight: '1.5' }}>
+            <h3 style={{ marginTop: 0, color: "#1e293b", fontSize: "18px" }}>
+              Xác nhận thao tác
+            </h3>
+            <p
+              style={{
+                color: "#475569",
+                margin: "16px 0 24px 0",
+                lineHeight: "1.5",
+              }}
+            >
               {confirmModal.message}
             </p>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+            <div
+              style={{ display: "flex", justifyContent: "center", gap: "12px" }}
+            >
               <button
                 className="btn-secondary"
-                onClick={() => setConfirmModal({ isOpen: false, action: null, targetRoom: null, message: '' })}
+                onClick={() =>
+                  setConfirmModal({
+                    isOpen: false,
+                    action: null,
+                    targetRoom: null,
+                    message: "",
+                  })
+                }
               >
                 Hủy bỏ
               </button>
               <button
                 style={{
-                  padding: '8px 24px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
+                  padding: "8px 24px",
+                  borderRadius: "6px",
+                  cursor: "pointer",
                   fontWeight: 600,
-                  border: 'none',
-                  background: confirmModal.action === 'DELETE' ? '#ef4444' : '#3b82f6',
-                  color: 'white',
+                  border: "none",
+                  background:
+                    confirmModal.action === "DELETE" ? "#ef4444" : "#3b82f6",
+                  color: "white",
                 }}
                 onClick={executeConfirmAction}
                 disabled={loading}
               >
-                {loading ? 'Đang xử lý...' : 'Đồng ý'}
+                {loading ? "Đang xử lý..." : "Đồng ý"}
               </button>
             </div>
           </div>
@@ -1047,7 +1162,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       {showDetailModal &&
         viewingRoom &&
         (() => {
-          const roomContract = availableContracts.find(c => c._id === selectedContractId) || null;
+          const roomContract =
+            availableContracts.find((c) => c._id === selectedContractId) ||
+            null;
           return (
             <div className="rd-overlay" style={{ zIndex: 1100 }} onClick={() => setShowDetailModal(false)}>
               <div className="rd-content" onClick={(e) => e.stopPropagation()}>
@@ -1057,6 +1174,105 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                     <X size={20} />
                   </button>
                 </div>
+
+                {/* Dropdown chọn hợp đồng */}
+                {(() => {
+                  const activeContracts = allRoomContracts.filter(c => c.status === "active");
+                  const inactiveContracts = allRoomContracts.filter(c => c.status !== "active");
+                  const depositCount = roomDeposits.length;
+                  const totalContracts = activeContracts.length + inactiveContracts.length;
+                  const hasAnyContract = totalContracts > 0;
+
+                  // Lọc cọc lẻ: cọc KHÔNG gắn với bất kỳ hợp đồng nào trong danh sách
+                  // Lấy tất cả depositId từ các hợp đồng
+                  const depositIdsFromContracts: string[] = [];
+                  allRoomContracts.forEach((contract: any) => {
+                    if (contract.depositId) {
+                      const did = typeof contract.depositId === "object"
+                        ? contract.depositId._id
+                        : contract.depositId;
+                      if (did) depositIdsFromContracts.push(did);
+                    }
+                    // Cũng kiểm tra trường deposit
+                    if (contract.deposit) {
+                      const did = typeof contract.deposit === "object"
+                        ? contract.deposit._id
+                        : contract.deposit;
+                      if (did && !depositIdsFromContracts.includes(did)) {
+                        depositIdsFromContracts.push(did);
+                      }
+                    }
+                  });
+
+                  // Cọc lẻ = cọc không nằm trong danh sách depositId từ hợp đồng VÀ không có contractId
+                  const depositLeList = roomDeposits.filter((d: any) => {
+                    // Không có contractId = cọc lẻ
+                    if (!d.contractId) return true;
+                    // Hoặc contractId không nằm trong danh sách hợp đồng
+                    const cid = typeof d.contractId === "object" ? d.contractId._id : d.contractId;
+                    const contractExists = allRoomContracts.some((c: any) => c._id === cid);
+                    return !contractExists;
+                  });
+
+                  // Chỉ hiện dropdown nếu có dữ liệu
+                  const hasAnyData = totalContracts > 0 || depositLeList.length > 0;
+
+                  return hasAnyData ? (
+                    <div className="rd-display-selector">
+                      <label className="rd-display-label">
+                        <FileText size={14} />
+                        Chọn hợp đồng:
+                      </label>
+                      <select
+                        value={selectedContractId ? selectedContractId : (selectedDepositId ? `deposit_${selectedDepositId}` : "")}
+                        onChange={handleContractSelectChange}
+                        className="rd-display-select"
+                      >
+                        {activeContracts.length > 0 && (
+                          <optgroup label="Hợp đồng đang hiệu lực">
+                            {activeContracts.map((contract: any) => (
+                              <option key={contract._id} value={contract._id}>
+                                {contract.contractCode} - {contract.tenantId?.username || "---"} ({formatDate(contract.startDate)} → {formatDate(contract.endDate)})
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {inactiveContracts.length > 0 && (
+                          <optgroup label="Hợp đồng chưa/không còn hiệu lực">
+                            {inactiveContracts.map((contract: any) => (
+                              <option key={contract._id} value={contract._id}>
+                                {contract.contractCode} - {contract.tenantId?.username || "---"} ({formatDate(contract.startDate)} → {formatDate(contract.endDate)})
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {/* Hiện cọc lẻ (chưa gắn hợp đồng) */}
+                        {depositLeList.length > 0 && (
+                          <optgroup label="Cọc lẻ chưa có hợp đồng">
+                            {depositLeList.map((deposit: any, idx: number) => {
+                              const depositIdx = roomDeposits.findIndex((d: any) => d._id === deposit._id);
+                              return (
+                                <option key={deposit._id} value={`deposit_${deposit._id}`}>
+                                  Cọc #{depositIdx + 1} - {deposit.name || "---"} ({formatCurrency(deposit.amount)})
+                                </option>
+                              );
+                            })}
+                          </optgroup>
+                        )}
+                      </select>
+                      <span className="rd-display-hint">
+                        {hasAnyContract
+                          ? `Có ${totalContracts} hợp đồng (${activeContracts.length} đang hiệu lực, ${inactiveContracts.length} không hiệu lực)${depositLeList.length > 0 ? `, ${depositLeList.length} cọc lẻ` : ""}`
+                          : `Có ${depositLeList.length} cọc lẻ chưa có hợp đồng`
+                        }
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="rd-no-data-notice">
+                      Phòng này hiện chưa có hợp đồng hay cọc lẻ nào.
+                    </div>
+                  );
+                })()}
 
                 <div className="rd-two-panel">
                   {/* === CỘT TRÁI: Thông tin phòng + Hợp đồng === */}
@@ -1070,7 +1286,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                         <label>Mã phòng:</label>
                         <span>{viewingRoom.roomCode || "---"}</span>
                       </div>
-                      
+
                       {/* [SỬA ĐỔI] Gọi hàm renderStatus truyền cả object viewingRoom vào */}
                       <div className="rd-field">
                         <label>Trạng thái:</label>
@@ -1115,18 +1331,40 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                     </div>
 
                     {(() => {
-                      const roomDeposit = getDepositForRoom(viewingRoom._id);
+                      // Xác định cọc được hiển thị
+                      let roomDeposit: any = null;
+                      let isDepositLe = false; // Cờ đánh dấu cọc lẻ
+
+                      if (selectedDepositId) {
+                        // Chọn cọc lẻ từ dropdown
+                        roomDeposit = roomDeposits.find((d: any) => d._id === selectedDepositId);
+                        isDepositLe = true;
+                      } else if (roomContract?.depositId) {
+                        // Hợp đồng có cọc - lấy cọc từ hợp đồng
+                        roomDeposit = typeof roomContract.depositId === "object"
+                          ? roomContract.depositId
+                          : roomDeposits.find((d: any) => d._id === roomContract.depositId);
+                      } else if (selectedContractId) {
+                        // Có hợp đồng nhưng không có cọc cụ thể - thử lấy cọc mặc định
+                        roomDeposit = getDepositForRoom(viewingRoom._id);
+                      }
+
                       if (!roomDeposit) return null;
                       return (
                         <>
-                          <div className="rd-section-title" style={{ marginTop: 16 }}>
+                          <div
+                            className="rd-section-title"
+                            style={{ marginTop: 16 }}
+                          >
                             <Banknote size={16} />
-                            <span>Thông tin Tiền cọc</span>
+                            <span>Thông tin Tiền cọc{isDepositLe ? " (Cọc lẻ)" : ""}</span>
                           </div>
                           <div className="rd-grid">
                             <div className="rd-field full">
                               <label>Người cọc:</label>
-                              <span style={{ fontWeight: 600 }}>{roomDeposit.name || "---"}</span>
+                              <span style={{ fontWeight: 600 }}>
+                                {roomDeposit.name || "---"}
+                              </span>
                             </div>
                             <div className="rd-field">
                               <label>SĐT:</label>
@@ -1134,17 +1372,25 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                             </div>
                             <div className="rd-field">
                               <label>Ngày cọc:</label>
-                              <span>{roomDeposit.createdAt ? formatDate(roomDeposit.createdAt) : "---"}</span>
+                              <span>
+                                {roomDeposit.createdAt
+                                  ? formatDate(roomDeposit.createdAt)
+                                  : "---"}
+                              </span>
                             </div>
                             <div className="rd-field">
                               <label>Đã thu cọc:</label>
-                              <span className="text-price">{formatCurrency(roomDeposit.amount)}</span>
+                              <span className="text-price">
+                                {formatCurrency(roomDeposit.amount)}
+                              </span>
                             </div>
                             <div className="rd-field">
                               <label>Trạng thái:</label>
                               <span className="status-badge deposited">
                                 <Banknote size={12} />
-                                {roomDeposit.status === "Held" ? "Đang giữ" : roomDeposit.status}
+                                {roomDeposit.status === "Held"
+                                  ? "Đang giữ"
+                                  : roomDeposit.status}
                               </span>
                             </div>
                           </div>
@@ -1161,21 +1407,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                           <FileText size={16} />
                           <span>Hợp đồng</span>
                         </div>
-                        {availableContracts.length > 1 && (
-                          <div className="rd-contract-selector" style={{ marginBottom: "12px" }}>
-                            <select 
-                              value={selectedContractId || ""}
-                              onChange={handleContractChange}
-                              style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1", outline: "none", fontSize: "14px", fontWeight: "500", color: "#1e293b" }}
-                            >
-                              {availableContracts.map((c: any) => (
-                                <option key={c._id} value={c._id}>
-                                  Hợp đồng {c.contractCode} - {c.status === "active" ? "Đang hiệu lực" : c.status === "Pending" ? "Sắp tới" : c.status} ({formatDate(c.startDate)} ➔ {formatDate(c.endDate)})
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
                         <div className="rd-grid">
                           <div className="rd-field">
                             <label>Mã HĐ:</label>
@@ -1186,6 +1417,22 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                               }}
                             >
                               {roomContract.contractCode}
+                            </span>
+                          </div>
+                          <div className="rd-field">
+                            <label>Trạng thái:</label>
+                            <span
+                              className={`rd-contract-status rd-status-${roomContract.status}`}
+                            >
+                              {roomContract.status === "active"
+                                ? "Đang hiệu lực"
+                                : roomContract.status === "Pending"
+                                  ? "Sắp tới"
+                                  : roomContract.status === "terminated"
+                                    ? "Đã chấm dứt"
+                                    : roomContract.status === "expired"
+                                      ? "Hết hạn"
+                                      : roomContract.status}
                             </span>
                           </div>
                           <div className="rd-field">
@@ -1205,7 +1452,10 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                         {/* THÔNG TIN TRẢ TRƯỚC */}
                         {prepaidInvoice && (
                           <>
-                            <div className="rd-section-title" style={{ marginTop: 16 }}>
+                            <div
+                              className="rd-section-title"
+                              style={{ marginTop: 16 }}
+                            >
                               <CreditCard size={16} />
                               <span>Tiền phòng trả trước</span>
                             </div>
@@ -1213,26 +1463,39 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                               <div className="rd-field">
                                 <label>Số tháng trả trước:</label>
                                 <span style={{ fontWeight: 700 }}>
-                                  {prepaidInvoice.title?.match(/(\d+)\s*tháng/)?.[1] || "---"} tháng
+                                  {prepaidInvoice.title?.match(
+                                    /(\d+)\s*tháng/,
+                                  )?.[1] || "---"}{" "}
+                                  tháng
                                 </span>
                               </div>
                               <div className="rd-field">
                                 <label>Số tiền đã nộp:</label>
-                                <span className="text-price">{formatCurrency(prepaidInvoice.totalAmount)}</span>
+                                <span className="text-price">
+                                  {formatCurrency(prepaidInvoice.totalAmount)}
+                                </span>
                               </div>
-                              {roomContract.startDate && roomContract.rentPaidUntil && (
-                                <div className="rd-field full">
-                                  <label>Thời gian đã trả:</label>
-                                  <span style={{ fontWeight: 600, color: "#2563eb" }}>
-                                    {formatDate(roomContract.startDate)} → {formatDate(roomContract.rentPaidUntil)}
-                                  </span>
-                                </div>
-                              )}
+                              {roomContract.startDate &&
+                                roomContract.rentPaidUntil && (
+                                  <div className="rd-field full">
+                                    <label>Thời gian đã trả:</label>
+                                    <span
+                                      style={{
+                                        fontWeight: 600,
+                                        color: "#2563eb",
+                                      }}
+                                    >
+                                      {formatDate(roomContract.startDate)} →{" "}
+                                      {formatDate(roomContract.rentPaidUntil)}
+                                    </span>
+                                  </div>
+                                )}
                             </div>
                           </>
                         )}
                       </>
                     )}
+
                   </div>
 
                   {/* === CỘT PHẢI: Người thuê + Dịch vụ === */}
@@ -1355,6 +1618,31 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                             Chưa đăng ký dịch vụ nào
                           </p>
                         )}
+
+                        {/* Ảnh hợp đồng bản cứng */}
+                        {roomContract?.images && roomContract.images.length > 0 && (
+                          <>
+                            <div
+                              className="rd-section-title"
+                              style={{ marginTop: 16 }}
+                            >
+                              <FileText size={16} />
+                              <span>Ảnh hợp đồng bản cứng ({roomContract.images.length})</span>
+                            </div>
+                            <div className="rd-images-grid">
+                              {roomContract.images.map((url: string, idx: number) => (
+                                <div
+                                  key={idx}
+                                  className="rd-image-item"
+                                  onClick={() => setLightboxImage(url)}
+                                >
+                                  <img src={url} alt={`Hợp đồng ${idx + 1}`} />
+                                  <span className="rd-image-label">Ảnh {idx + 1}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
                       </>
                     ) : (
                       <div className="rd-empty-contract">
@@ -1365,10 +1653,32 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                   </div>
                 </div>
 
+                {/* Lightbox xem ảnh phóng to */}
+                {lightboxImage && (
+                  <div className="rd-lightbox" onClick={() => setLightboxImage(null)}>
+                    <button
+                      className="rd-lightbox-close"
+                      onClick={() => setLightboxImage(null)}
+                    >
+                      <X size={24} />
+                    </button>
+                    <img
+                      src={lightboxImage}
+                      alt="Ảnh phóng to"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                )}
+
                 <div className="rd-actions">
                   <button
                     className="btn-secondary"
-                    onClick={() => setShowDetailModal(false)}
+                    onClick={() => {
+                      setShowDetailModal(false);
+                      setDisplayMode("active");
+                      setAllRoomContracts([]);
+                      setRoomDeposits([]);
+                    }}
                   >
                     Đóng
                   </button>
