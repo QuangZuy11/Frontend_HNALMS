@@ -85,6 +85,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
   const [waterOldIndex, setWaterOldIndex] = useState(0);
   const [electricNewIndex, setElectricNewIndex] = useState("");
   const [waterNewIndex, setWaterNewIndex] = useState("");
+  const [preflightData, setPreflightData] = useState<any>(null);
 
   // ── UI state ────────────────────────────────
   const [error, setError] = useState("");
@@ -176,11 +177,22 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
     }
   }, [contract, electricService, waterService]);
 
+  const fetchPreflight = useCallback(async () => {
+    if (!contract?._id) return;
+    try {
+      const res = await axios.get(`${API_BASE_URL}/liquidations/preflight/${contract._id}`);
+      if (res.data?.success) setPreflightData(res.data.data);
+    } catch (e) {
+      console.error("Lỗi lấy preflight data:", e);
+    }
+  }, [contract]);
+
   useEffect(() => {
     if (step === 2) {
       fetchLatestIndexes();
+      fetchPreflight();
     }
-  }, [step, fetchLatestIndexes]);
+  }, [step, fetchLatestIndexes, fetchPreflight]);
 
   // ── Financial preview computation ────────────
   const computeFinancial = () => {
@@ -207,11 +219,21 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
     const utilityCost = electricCost + waterCost;
 
     if (liquidationType === "force_majeure") {
-      // Hoàn tiền thuê còn dư = từ ngày thanh lý đến endDate của hợp đồng
+      // Hoàn tiền thuê còn dư = từ ngày thanh lý đến rentPaidUntil của hợp đồng (nếu đã trả trước)
       let remainingDays = 0;
       let remainingRentLabel = "";
 
-      if (contract.endDate) {
+      if (preflightData?.rentPaidUntil) {
+        const rpUntil = new Date(preflightData.rentPaidUntil);
+        rpUntil.setHours(12, 0, 0, 0);
+        if (rpUntil > liqDate) {
+          remainingDays = Math.round((rpUntil.getTime() - liqDate.getTime()) / msPerDay);
+          remainingRentLabel = `${remainingDays} ngày (đã trả trước đến ${rpUntil.toLocaleDateString("vi-VN")})`;
+        } else {
+          remainingRentLabel = `0 ngày (đã quá hạn trả trước: ${rpUntil.toLocaleDateString("vi-VN")})`;
+        }
+      } else if (contract.endDate) {
+        // Fallback: Nếu không rõ, dùng endDate làm mốc hoàn tiền tối đa
         const endDate = new Date(contract.endDate);
         endDate.setHours(12, 0, 0, 0);
         if (endDate > liqDate) {
@@ -224,7 +246,8 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
         remainingRentLabel = "0 ngày";
       }
 
-      const depositRefund = depositAmount;
+      const isDepositRefunded = preflightData?.deposit?.status === "Refunded";
+      const depositRefund = isDepositRefunded ? 0 : depositAmount;
       const remainRent = Math.round((roomPrice / 30) * remainingDays);
       // Tổng hoàn = cọc + tiền thuê dư − tiền điện − tiền nước
       const total = depositRefund + remainRent - utilityCost;
@@ -234,6 +257,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
         daysUsed,
         remainingDays,
         remainingRentLabel,
+        isDepositRefunded,
         depositRefund,
         remainRent,
         electricCost,
@@ -788,17 +812,40 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
 
                     {financial.type === "force_majeure" && (
                       <>
-                        <div className="liq-financial-item">
+                        <div className="liq-financial-item" style={{ alignItems: "flex-start" }}>
                           <span className="liq-financial-item-label">
                             ✅ Hoàn tiền cọc (100%)
+                            {(financial as any).isDepositRefunded && preflightData?.deposit && (
+                               <div style={{ fontSize: '13px', color: '#64748b', marginTop: '6px', fontWeight: 'normal', lineHeight: '1.4' }}>
+                                 💡 <strong>Note:</strong> Tiền cọc <strong>{formatCurrency(preflightData.deposit.amount)}</strong> đã được hoàn vào ngày {new Date(preflightData.deposit.refundDate).toLocaleDateString('vi-VN')}.
+                               </div>
+                            )}
                           </span>
                           <span className="liq-financial-item-value positive">
-                            + {formatCurrency((financial as any).depositRefund)}
+                            {(financial as any).isDepositRefunded 
+                              ? `+ 0 ₫ (Đã được hoàn)` 
+                              : `+ ${formatCurrency((financial as any).depositRefund)}`}
                           </span>
                         </div>
-                        <div className="liq-financial-item">
+                        <div className="liq-financial-item" style={{ alignItems: "flex-start" }}>
                           <span className="liq-financial-item-label">
                             ✅ Hoàn tiền thuê còn dư ({(financial as any).remainingRentLabel})
+                            {preflightData?.rentPaidUntil && (
+                              <div style={{ fontSize: '13px', color: '#64748b', marginTop: '6px', fontWeight: 'normal', lineHeight: '1.4' }}>
+                                💡 <strong>Note:</strong> Hệ thống ghi nhận phòng đã trả tiền trước{" "}
+                                {preflightData.rentPaidFromStr ? `từ ngày ` : `đến ngày `}
+                                {preflightData.rentPaidFromStr && <strong>{preflightData.rentPaidFromStr}</strong>}
+                                {preflightData.rentPaidFromStr && ` đến ngày `}
+                                <strong>{new Date(preflightData.rentPaidUntil).toLocaleDateString('vi-VN')}</strong>.
+                                <br/>
+                                <span style={{ color: (financial as any).remainingDays > 0 ? '#10b981' : '#ef4444' }}>
+                                  Tính từ ngày thanh lý (<strong>{new Date(liquidationDate).toLocaleDateString('vi-VN')}</strong>),
+                                  {(financial as any).remainingDays > 0 
+                                    ? ` khách chưa ở ${ (financial as any).remainingDays } ngày (sẽ được hoàn tiền).` 
+                                    : ` khách đã sử dụng hết chu kỳ trả trước.`}
+                                </span>
+                              </div>
+                            )}
                           </span>
                           <span className="liq-financial-item-value positive">
                             + {formatCurrency((financial as any).remainRent)}
