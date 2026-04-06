@@ -95,7 +95,7 @@ function DepositModal({
                         (c.depositId === d._id || c.depositId._id === d._id),
                     ),
                 );
-                setDeposit(freeDeposit || heldDeposits[0]);
+                setDeposit(freeDeposit || null);
               });
               return; // The axios chain will setDeposit
             } else {
@@ -492,7 +492,7 @@ const CreateContract = () => {
             return;
           }
 
-          setSelectedDeposit(roomDeposits[0]);
+          setSelectedDeposit(null);
         }
       } catch (err) {
         console.error("Error fetching deposits for room:", err);
@@ -903,13 +903,6 @@ const CreateContract = () => {
   };
 
   const onSubmit = async (data: any) => {
-    // Validate: phòng phải đã đặt cọc
-    if (selectedRoom?.status !== "Deposited") {
-      alert(
-        "Phòng chưa được đặt cọc! Vui lòng tạo cọc trước khi tạo hợp đồng.",
-      );
-      return;
-    }
 
     // Validate: phải có deposit được chọn đúng
     if (!selectedDeposit) {
@@ -1969,112 +1962,114 @@ const CreateContract = () => {
                           />
                           VNĐ/tháng. (Giá này cố định theo loại phòng).
                           <br />- Tiền đặt cọc:{" "}
-                          {selectedRoom?.status === "Deposited" ? (
-                            <>
-                              <TextField
-                                variant="standard"
-                                type="text"
-                                sx={{
-                                  width: 120,
-                                  mx: 1,
-                                  verticalAlign: "baseline",
-                                  "& .MuiInput-root": {
-                                    pb: 0,
-                                    position: "relative",
-                                    top: "-2px",
-                                  },
-                                  "& .MuiFormHelperText-root": { mt: 0 },
-                                }}
-                                inputProps={{
-                                  style: {
-                                    textAlign: "right",
-                                    fontWeight: "bold",
-                                    fontSize: "1rem",
-                                    padding: "0 0 2px 0",
-                                  },
-                                }}
-                                InputProps={{ readOnly: true }}
-                                value={Number(
-                                  selectedRoom?.roomTypeId?.currentPrice ||
-                                    selectedRoom?.price ||
-                                    0,
-                                ).toLocaleString()}
-                              />
-                              VNĐ (Tương đương 01 tháng tiền phòng).
-                              <span
-                                onClick={() => setShowDepositModal(true)}
-                                style={{
-                                  color: "#2e7d32",
-                                  fontWeight: "bold",
-                                  marginLeft: 8,
-                                  cursor: "pointer",
-                                  textDecoration: "underline",
-                                  textDecorationStyle: "dotted" as const,
-                                }}
-                                title="Xem thông tin cọc"
-                              >
-                                ✓ Đã cọc
-                              </span>
-                            </>
-                          ) : selectedRoom?.status === "Available" ? (
-                            <>
-                              <span
-                                style={{
-                                  fontStyle: "italic",
-                                  color: "#d32f2f",
-                                  marginLeft: 4,
-                                }}
-                              >
-                                Chưa đặt cọc
-                              </span>
-                              <Button
-                                variant="outlined"
-                                size="small"
-                                onClick={() => {
-                                  // Save current form data to sessionStorage before leaving
-                                  const draft = {
-                                    formValues: getValues(),
-                                    selectedServices,
-                                    vehicleQuantities,
-                                    contractImages,
-                                  };
-                                  sessionStorage.setItem(
-                                    "contractFormDraft",
-                                    JSON.stringify(draft),
-                                  );
-                                  const basePath = location.pathname.startsWith(
-                                    "/owner",
-                                  )
-                                    ? "/owner"
-                                    : "/manager";
-                                  navigate(
-                                    `${basePath}/deposits/create/${selectedRoom._id}`,
-                                    {
-                                      state: {
-                                        returnTo: "create-contract",
-                                        roomId: selectedRoom._id,
-                                      },
+                          {selectedRoom ? (
+                            selectedDeposit ? (
+                              <>
+                                <TextField
+                                  variant="standard"
+                                  type="text"
+                                  sx={{
+                                    width: 120,
+                                    mx: 1,
+                                    verticalAlign: "baseline",
+                                    "& .MuiInput-root": {
+                                      pb: 0,
+                                      position: "relative",
+                                      top: "-2px",
                                     },
-                                  );
-                                }}
-                                sx={{
-                                  ml: 1,
-                                  fontFamily: '"Times New Roman", serif',
-                                  fontSize: "0.9rem",
-                                  textTransform: "none",
-                                  color: "#d32f2f",
-                                  borderColor: "#d32f2f",
-                                  py: 0.2,
-                                  px: 1.5,
-                                  "&:hover": {
-                                    borderColor: "#b71c1c",
-                                    bgcolor: "#fff5f5",
-                                  },
-                                }}
-                              >
-                                Tạo cọc ngay
-                              </Button>
-                            </>
+                                    "& .MuiFormHelperText-root": { mt: 0 },
+                                  }}
+                                  inputProps={{
+                                    style: {
+                                      textAlign: "right",
+                                      fontWeight: "bold",
+                                      fontSize: "1rem",
+                                      padding: "0 0 2px 0",
+                                    },
+                                  }}
+                                  InputProps={{ readOnly: true }}
+                                  value={Number(
+                                    selectedRoom?.roomTypeId?.currentPrice ||
+                                      selectedRoom?.price ||
+                                      0,
+                                  ).toLocaleString()}
+                                />
+                                VNĐ (Tương đương 01 tháng tiền phòng).
+                                <span
+                                  onClick={() => setShowDepositModal(true)}
+                                  style={{
+                                    color: "#2e7d32",
+                                    fontWeight: "bold",
+                                    marginLeft: 8,
+                                    cursor: "pointer",
+                                    textDecoration: "underline",
+                                    textDecorationStyle: "dotted" as const,
+                                  }}
+                                  title="Xem thông tin cọc"
+                                >
+                                  ✓ Đã cọc
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <span
+                                  style={{
+                                    fontStyle: "italic",
+                                    color: "#d32f2f",
+                                    marginLeft: 4,
+                                  }}
+                                >
+                                  Chưa đặt cọc
+                                </span>
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  onClick={() => {
+                                    // Save current form data to sessionStorage before leaving
+                                    const draft = {
+                                      formValues: getValues(),
+                                      selectedServices,
+                                      vehicleQuantities,
+                                      contractImages,
+                                    };
+                                    sessionStorage.setItem(
+                                      "contractFormDraft",
+                                      JSON.stringify(draft),
+                                    );
+                                    const basePath = location.pathname.startsWith(
+                                      "/owner",
+                                    )
+                                      ? "/owner"
+                                      : "/manager";
+                                    navigate(
+                                      `${basePath}/deposits/create/${selectedRoom._id}`,
+                                      {
+                                        state: {
+                                          returnTo: "create-contract",
+                                          roomId: selectedRoom._id,
+                                        },
+                                      },
+                                    );
+                                  }}
+                                  sx={{
+                                    ml: 1,
+                                    fontFamily: '"Times New Roman", serif',
+                                    fontSize: "0.9rem",
+                                    textTransform: "none",
+                                    color: "#d32f2f",
+                                    borderColor: "#d32f2f",
+                                    py: 0.2,
+                                    px: 1.5,
+                                    "&:hover": {
+                                      borderColor: "#b71c1c",
+                                      bgcolor: "#fff5f5",
+                                    },
+                                  }}
+                                >
+                                  Tạo cọc ngay
+                                </Button>
+                              </>
+                            )
                           ) : (
                             <span
                               style={{ fontStyle: "italic", marginLeft: 4 }}
