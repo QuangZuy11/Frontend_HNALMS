@@ -123,9 +123,9 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  min-width: 280px; /* [ĐÃ SỬA] Nới rộng hẳn ra để chứa đủ chữ và số */
+  min-width: 280px; 
   padding-left: 10px;
-  padding-right: 10px; /* Đệm 1 chút cho an toàn */
+  padding-right: 10px; 
 }
 
 .legend-item {
@@ -144,21 +144,27 @@
 
 .legend-name {
   color: #64748b;
-  white-space: nowrap; /* Giữ chữ trên 1 dòng */
-  /* Đã gỡ bỏ overflow: hidden và text-overflow: ellipsis */
+  white-space: nowrap; 
 }
 
 .legend-val {
   font-weight: 600;
   color: #334155;
-  white-space: nowrap; /* Giữ số trên 1 dòng */
-  margin-left: auto; /* [QUAN TRỌNG] Tự động đẩy số tiền dạt kịch sang bên phải */
+  white-space: nowrap; 
+  margin-left: auto; 
 }
 
 /* TABLE */
+/* [ĐÃ SỬA] Bọc table lại để cuộn ngang trên mobile */
+.table-box-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
 .debt-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 700px; /* Ép độ rộng tối thiểu để không bị méo chữ khi thu nhỏ */
 }
 
 .debt-table th {
@@ -168,6 +174,7 @@
   color: #64748b;
   font-size: 13px;
   border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
 }
 
 .debt-table td {
@@ -181,6 +188,59 @@
   border-radius: 4px;
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 .type-badge.periodic { background: #e0f2fe; color: #0284c7; }
 .type-badge.incurred { background: #fef3c7; color: #d97706; }
+
+
+/* ========================================================
+   [MỚI] BỘ ĐIỀU KHIỂN RESPONSIVE CHO TABLET & MOBILE
+   ======================================================== */
+
+/* Màn hình Tablet (Ví dụ iPad, thu nhỏ dưới 1024px) */
+@media screen and (max-width: 1024px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr); /* Chuyển từ 4 cột xuống 2 cột */
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr; /* 2 biểu đồ rớt xuống xếp dọc */
+  }
+
+  .pie-legend {
+    min-width: unset;
+    width: 100%;
+  }
+}
+
+/* Màn hình Mobile (Điện thoại, thu nhỏ dưới 768px) */
+@media screen and (max-width: 768px) {
+  .finance-dashboard {
+    padding: 16px; /* Giảm lề 2 bên để tiết kiệm diện tích trên mobile */
+  }
+
+  .dash-header {
+    flex-direction: column; /* Đẩy bộ lọc ngày tháng xuống dưới tiêu đề */
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .date-filter {
+    width: 100%; /* Kéo giãn bộ chọn ngày tháng */
+    justify-content: space-between;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr; /* Các thẻ Summary xếp thành 1 hàng dọc */
+  }
+
+  .chart-wrapper {
+    min-height: 250px;
+  }
+
+  /* Fix lỗi tràn chữ ở Legend biểu đồ Pie */
+  .legend-name {
+    white-space: normal;
+  }
+}

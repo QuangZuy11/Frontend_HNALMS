@@ -12,13 +12,16 @@ import {
   ChevronRight,
   DoorOpen,
   Wrench,
-  HardHat,
+  Frown,
   AlertTriangle,
   ArrowRightLeft,
   LogOut,
   BarChart3,
   Activity,
   SwatchBook,
+  Building2,
+  ChartBarStacked,
+  RefreshCcwDot
 } from 'lucide-react';
 import './ManagerSidebar.css';
 import logo from '../../../../assets/images/Logo.png';
@@ -37,10 +40,13 @@ const MENU_ITEMS = [
     subItems: []
   },
   {
-    title: "Quản lý Phòng",
-    icon: <DoorOpen size={20} />,
-    path: "/manager/rooms",
-    subItems: []
+    title: "Quản Lý Phòng",
+    icon: <Building2 size={20} />,
+    path: "/manager",
+    subItems: [
+      { title: "Danh Sách Phòng", path: "/manager/rooms", icon: <DoorOpen size={16} /> },
+      { title: "Loại Phòng", path: "/manager/building-config", icon: <ChartBarStacked size={16} /> },
+    ]
   },
   {
     title: "Hợp Đồng",
@@ -71,11 +77,11 @@ const MENU_ITEMS = [
     icon: <MessageSquare size={20} />,
     path: "/manager/requests",
     subItems: [
-      { title: "Yêu cầu sửa chữa", path: "/manager/requests/repairs", icon: <Wrench size={16} /> },
-      { title: "Yêu cầu bảo trì", path: "/manager/requests/maintenance", icon: <HardHat size={16} /> },
-      { title: "Danh sách khiếu nại", path: "/manager/requests/complaints", icon: <AlertTriangle size={16} /> },
-      { title: "Yêu cầu chuyển phòng", path: "/manager/requests/transfers", icon: <ArrowRightLeft size={16} /> },
-      { title: "Yêu cầu trả phòng", path: "/manager/requests/move-outs", icon: <LogOut size={16} /> },
+      { title: "Sửa Chữa", path: "/manager/requests/repairs", icon: <Wrench size={16} /> },
+      { title: "Bảo Trì", path: "/manager/requests/maintenance", icon: <RefreshCcwDot size={16} /> },
+      { title: "Khiếu Nại", path: "/manager/requests/complaints", icon: <Frown size={16} /> },
+      { title: "Chuyển Phòng", path: "/manager/requests/transfers", icon: <ArrowRightLeft size={16} /> },
+      { title: "Trả Phòng", path: "/manager/requests/move-outs", icon: <LogOut size={16} /> },
     ]
   },
   {
@@ -89,8 +95,8 @@ const MENU_ITEMS = [
     icon: <BarChart3 size={20} />,
     path: "/manager/statistics/performance",
     subItems: [
-      { title: "Hiệu suất", path: "/manager/statistics/performance", icon: <Activity size={16} /> },
-      { title: "Sửa chữa & Bảo trì", path: "/manager/statistics/repairs", icon: <Wrench size={16} /> },
+      { title: "Hiệu Suất", path: "/manager/statistics/performance", icon: <Activity size={16} /> },
+      { title: "Sửa Chữa & Bảo Trì", path: "/manager/statistics/repairs", icon: <Wrench size={16} /> },
     ]
   },
   {

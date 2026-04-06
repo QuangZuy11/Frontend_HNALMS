@@ -204,6 +204,12 @@ export default function ComplaintRequestList() {
           );
         }
       }
+
+      setComplaintToast({
+        title: 'Thành công',
+        message: 'Cập nhật trạng thái thành công!',
+        variant: 'success',
+      });
     } catch (err: unknown) {
       console.error('Lỗi khi cập nhật trạng thái khiếu nại:', err);
       const anyErr = err as { response?: { data?: { error?: { message?: string } } } };
@@ -245,6 +251,10 @@ export default function ComplaintRequestList() {
     setShowComplaintStatusConfirmModal(false);
     setPendingComplaintStatusChange(null);
     await applyComplaintStatusUpdate(complaint, nextStatus);
+    // Hiện toast trước 600ms rồi mới đóng modal chi tiết để user thấy thông báo
+    setTimeout(() => {
+      setSelectedComplaint(null);
+    }, 600);
   };
 
   const handleCloseComplaintStatusConfirmModal = () => {
@@ -336,6 +346,10 @@ export default function ComplaintRequestList() {
             variant: 'success',
           },
       );
+      // Hiện toast trước 600ms rồi mới đóng modal chi tiết để user thấy thông báo
+      setTimeout(() => {
+        setSelectedComplaint(null);
+      }, 600);
     } catch (err: unknown) {
       console.error('Lỗi khi cập nhật trạng thái khiếu nại:', err);
       const anyErr = err as { response?: { data?: { error?: { message?: string } } } };

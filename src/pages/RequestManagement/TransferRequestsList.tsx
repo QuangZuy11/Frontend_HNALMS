@@ -166,6 +166,21 @@ export default function TransferRequestsList() {
     setCurrentPage(1);
   }, [statusFilter, search]);
 
+  // ─── Control body overflow when modal opens ───────────────────────────────
+  useEffect(() => {
+    // Check if any modal states are active
+    if (window.innerWidth < 768) {
+      // Mobile: always allow scrolling
+      document.body.style.overflow = '';
+    } else {
+      // Desktop: disable overflow when modal is open
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
   const handleSearch = () => {
     setSearch(searchInput);
   };

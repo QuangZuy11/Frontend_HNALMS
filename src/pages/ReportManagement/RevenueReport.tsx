@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Download, Filter, TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-react';
-import * as XLSX from 'xlsx'; 
+import * as XLSX from 'xlsx-js-style';
 import toastr from 'toastr';
 import './ReportCashFlow.css'; // Dùng chung file CSS của Cashflow cho đồng bộ giao diện
 
@@ -42,6 +42,8 @@ const RevenueReport = () => {
 
   const exportToExcel = () => {
     if (!data || !data.ledger) return;
+    
+    // 1. Chuẩn bị dữ liệu mảng
     const excelData = data.ledger.map((item: any) => ({
       "Ngày Ghi Nhận": new Date(item.date).toLocaleDateString('vi-VN'),
       "Mã Chứng Từ": item.code,
@@ -52,7 +54,59 @@ const RevenueReport = () => {
       "Chi Phí (-)": item.expense,
       "Tình Trạng Thu Tiền": item.status
     }));
+
+    // [MỚI] Push thêm 1 dòng "Tổng cộng" vào cuối mảng Excel
+    excelData.push({
+      "Ngày Ghi Nhận": "TỔNG CỘNG",
+      "Mã Chứng Từ": "",
+      "Phòng": "",
+      "Hạng Mục": "",
+      "Diễn Giải": "",
+      "Doanh Thu (+)": data.summary.recognizedRevenue,
+      "Chi Phí (-)": data.summary.recognizedExpense,
+      "Tình Trạng Thu Tiền": ""
+    });
+
+    // 2. Chuyển đổi dữ liệu thành Sheet
     const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // ==========================================
+    // PHẦN THÊM STYLE CHO EXCEL
+    // ==========================================
+    const range = XLSX.utils.decode_range(ws['!ref'] as string);
+
+    // Bôi vàng và in đậm hàng Tiêu đề (Row 0)
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col }); 
+      if (!ws[cellAddress]) continue;
+
+      ws[cellAddress].s = {
+        font: { bold: true, color: { rgb: "000000" } },
+        fill: { fgColor: { rgb: "FFFF00" } },
+        alignment: { horizontal: "center", vertical: "center" }
+      };
+    }
+
+    // [MỚI] In đậm và bôi màu xám nhạt cho hàng Tổng cộng (Row cuối cùng)
+    const lastRowIndex = range.e.r;
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: lastRowIndex, c: col }); 
+      if (!ws[cellAddress]) continue;
+
+      ws[cellAddress].s = {
+        font: { bold: true, color: { rgb: "000000" } },
+        fill: { fgColor: { rgb: "FFFF00" } }, 
+      };
+    }
+
+    // Set độ rộng cột
+    ws['!cols'] = [
+      { wch: 15 }, { wch: 25 }, { wch: 12 }, { wch: 30 }, 
+      { wch: 45 }, { wch: 20 }, { wch: 20 }, { wch: 20 }
+    ];
+    // ==========================================
+
+    // 3. Đóng gói và xuất file
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Bao_Cao_KQKD");
     XLSX.writeFile(wb, `Ket_Qua_Kinh_Doanh_${startDate}_${endDate}.xlsx`);
@@ -144,7 +198,7 @@ const RevenueReport = () => {
                   </td>
                   <td>
                     <span style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', color: row.status === 'Đã thu tiền' || row.status === 'Đã chi' ? '#16a34a' : '#d97706' }}>
-                      {row.status === 'Đang ghi công nợ' ? '⚠️' : '✅'} {row.status}
+                      {row.status}
                     </span>
                   </td>
                 </tr>

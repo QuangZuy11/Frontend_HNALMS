@@ -228,19 +228,14 @@
   color: #92400e;
 }
 
-.status-badge.status-approved {
+.status-badge.status-invoicereleased {
+  background-color: #ccfbf1;
+  color: #0f766e;
+}
+
+.status-badge.status-paid {
   background-color: #dcfce7;
   color: #166534;
-}
-
-.status-badge.status-inprocess {
-  background-color: #e0e7ff;
-  color: #312e81;
-}
-
-.status-badge.status-rejected {
-  background-color: #fee2e2;
-  color: #b91c1c;
 }
 
 .status-badge.status-completed {
@@ -320,33 +315,48 @@
   background-color: #fee2e2;
 }
 
-.btn-complete {
-  padding: 5px 8px;
+.btn-release-invoice {
+  padding: 5px;
   border: none;
   background-color: transparent;
-  color: #0c4a6e;
+  color: #0f766e;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  font-weight: 600;
-  font-size: 14px;
 }
 
-.btn-complete:hover {
-  background-color: #dbeafe;
+.btn-release-invoice:hover {
+  background-color: #ccfbf1;
+}
+
+.btn-confirm-payment {
+  padding: 5px;
+  border: none;
+  background-color: transparent;
+  color: #4338ca;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.btn-confirm-payment:hover {
+  background-color: #e0e7ff;
 }
 
 /* Modal */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 23, 42, 0.5);
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 50;
+  z-index: 9999;
   animation: fadeInOverlay 0.18s ease-out;
 }
 
@@ -361,25 +371,25 @@
 }
 
 .modal-content {
-  background: #ffffff;
+  background: white;
   border-radius: 12px;
   width: 600px;
   max-width: 95vw;
   max-height: 90vh;
   overflow: hidden;
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
-  animation: fadeInModal 0.2s ease-out;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: fadeInModal 0.3s ease;
 }
 
 @keyframes fadeInModal {
   from {
     opacity: 0;
-    transform: translateY(-6px) scale(0.96);
+    transform: translateY(-10px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -387,7 +397,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 18px;
+  padding: 20px 24px;
   border-bottom: 1px solid #e2e8f0;
 }
 
@@ -683,4 +693,146 @@
 .pagination-arrow-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
+}
+
+/* ── Wide modal ─────────────────────────────────────────────────────────── */
+.modal-content--wide {
+  width: 700px;
+}
+
+/* ── Detail sections ─────────────────────────────────────────────────────── */
+.detail-section {
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.detail-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.detail-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+}
+
+/* ── Comparison table ────────────────────────────────────────────────────── */
+.comparison-table {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.comparison-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: #374151;
+}
+
+.comparison-loading {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* ── Text helpers ────────────────────────────────────────────────────────── */
+.text-danger {
+  color: #b91c1c;
+  font-weight: 500;
+}
+
+.text-ok {
+  color: #166534;
+  font-weight: 500;
+}
+
+/* ── Info boxes ──────────────────────────────────────────────────────────── */
+.info-box {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.info-box p { margin: 0; }
+
+.info-box--blue {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+.info-box--green {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.info-box--orange {
+  background-color: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+}
+
+/* ── Detail actions (inside detail modal) ────────────────────────────────── */
+.detail-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+/* Shared action button base */
+.btn-action-primary,
+.btn-action-indigo,
+.btn-action-green {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #ffffff;
+  transition: background-color 0.18s;
+}
+
+.btn-action-primary { background-color: #0f766e; }
+.btn-action-primary:hover:not(:disabled) { background-color: #0d6b63; }
+
+.btn-action-indigo { background-color: #4338ca; }
+.btn-action-indigo:hover:not(:disabled) { background-color: #3730a3; }
+
+.btn-action-green { background-color: #16a34a; }
+.btn-action-green:hover:not(:disabled) { background-color: #15803d; }
+
+.btn-action-primary:disabled,
+.btn-action-indigo:disabled,
+.btn-action-green:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Variant for use inside modal footer */
+.btn-modal-action {
+  padding: 9px 20px;
 }

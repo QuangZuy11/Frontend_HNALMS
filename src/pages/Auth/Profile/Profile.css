@@ -494,19 +494,19 @@
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 9999;
     padding: 1rem;
 }
 
 .modal-content {
     background: #fff;
-    border-radius: 0.75rem;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(53, 121, 198, 0.08);
-    /* Đặt chiều rộng gần với card \"Thông Tin Chi Tiết\" thay vì full màn hình */
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     max-width: 600px;
     width: 100%;
     max-height: 90vh;
@@ -517,8 +517,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid rgba(53, 121, 198, 0.2);
+    padding: 20px 24px;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .modal-header h2 {

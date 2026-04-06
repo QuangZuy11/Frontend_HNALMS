@@ -107,8 +107,8 @@
 .hero-content-container {
   position: relative;
   z-index: 2;
-  max-width: 800px;
-  width: 100%;
+  max-width: 750px;
+  width: 110%;
   text-align: center;
 }
 
@@ -118,7 +118,7 @@
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
-  padding: 3rem 2rem;
+  padding: 0rem 0rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   animation: slideUp 1s ease-out;
 }
@@ -136,7 +136,7 @@
 
 /* Decorative divider */
 .hero-divider {
-  width: 60px;
+  width: 70px;
   height: 3px;
   background: linear-gradient(90deg, #3b82f6, #14b8a6);
   margin: 1.5rem auto 0;
@@ -170,14 +170,14 @@
 
 @media (min-width: 768px) {
   .hero-title {
-    font-size: 3.5rem;
-    margin-bottom: 2rem;
+    font-size: 1.5rem;
+    margin-bottom: 0rem;
   }
 }
 
 @media (min-width: 1024px) {
   .hero-title {
-    font-size: 4rem;
+    font-size: 3rem;
   }
 }
 
@@ -216,8 +216,8 @@
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -231,11 +231,11 @@
 }
 
 .hero-nav-button-prev {
-  left: 2rem;
+  left: 1rem;
 }
 
 .hero-nav-button-next {
-  right: 2rem;
+  right: 1rem;
 }
 
 @media (max-width: 768px) {

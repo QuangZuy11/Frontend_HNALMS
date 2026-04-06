@@ -3,7 +3,8 @@ import axios from 'axios';
 import {
   Plus, Search, Edit, Trash2,
   FileSpreadsheet, Upload, Download,
-  X, Laptop, Wrench, AlertCircle
+  X, Laptop, Wrench, AlertCircle,
+  Filter, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import toastr from 'toastr';
 import 'toastr/build/toastr.min.css';
@@ -27,7 +28,15 @@ const ManagerDevice = () => {
   // --- States ---
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // Filter States
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('ALL');
+  const [filterPrice, setFilterPrice] = useState('ALL');
+  
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Modal States
   const [showModal, setShowModal] = useState(false);
@@ -35,7 +44,7 @@ const ManagerDevice = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
 
-  // [MỚI] State cho Modal Xác nhận xóa
+  // State cho Modal Xác nhận xóa
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     action: 'DELETE' | null;
@@ -43,7 +52,7 @@ const ManagerDevice = () => {
     message: string;
   }>({ isOpen: false, action: null, targetDevice: null, message: '' });
 
-  // Form Data
+  // Form Data (Mặc định unit là 'Cái')
   const [formData, setFormData] = useState<Partial<Device>>({
     name: '', brand: '', model: '', category: '', unit: 'Cái', price: 0, description: ''
   });
@@ -51,6 +60,14 @@ const ManagerDevice = () => {
   // Import File Ref
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // ==========================================
+  // LOGIC PHÂN QUYỀN TỪ LOCAL STORAGE
+  // ==========================================
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const userRole = currentUser?.role || ''; 
+  const canModify = userRole === 'owner';
+  // ==========================================
 
   // --- Config Toastr ---
   useEffect(() => {
@@ -62,6 +79,12 @@ const ManagerDevice = () => {
     };
     fetchDevices();
   }, []);
+
+  // --- Lấy danh sách danh mục duy nhất từ data để làm Filter ---
+  const uniqueCategories = useMemo(() => {
+    const cats = new Set(devices.map(d => d.category || 'Chung'));
+    return Array.from(cats);
+  }, [devices]);
 
   // --- API Actions ---
 
@@ -78,7 +101,6 @@ const ManagerDevice = () => {
     }
   };
 
-  // [SỬA] Đổi từ window.confirm sang mở Modal
   const handleDelete = (device: Device) => {
     setConfirmModal({
       isOpen: true,
@@ -88,7 +110,6 @@ const ManagerDevice = () => {
     });
   };
 
-  // [MỚI] Thực thi xóa khi bấm Đồng ý
   const executeConfirmAction = async () => {
     if (!confirmModal.targetDevice) return;
     
@@ -96,6 +117,12 @@ const ManagerDevice = () => {
       try {
         await axios.delete(`${API_BASE_URL}/devices/${confirmModal.targetDevice._id}`);
         toastr.success("Xóa thiết bị thành công!");
+        
+        // Nếu xóa phần tử cuối cùng của trang, lùi lại 1 trang
+        if (currentItems.length === 1 && currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+        
         fetchDevices();
       } catch (error) {
         toastr.error("Lỗi khi xóa thiết bị");
@@ -108,11 +135,14 @@ const ManagerDevice = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Ép cứng đơn vị tính là "Cái" trước khi gửi lên server
+      const payload = { ...formData, unit: 'Cái' };
+
       if (isEditing && currentId) {
-        await axios.put(`${API_BASE_URL}/devices/${currentId}`, formData);
+        await axios.put(`${API_BASE_URL}/devices/${currentId}`, payload);
         toastr.success("Cập nhật thiết bị thành công!");
       } else {
-        await axios.post(`${API_BASE_URL}/devices`, formData);
+        await axios.post(`${API_BASE_URL}/devices`, payload);
         toastr.success("Thêm mới thiết bị thành công!");
       }
       setShowModal(false);
@@ -127,7 +157,7 @@ const ManagerDevice = () => {
   const handleDownloadTemplate = async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/devices/template`, {
-        responseType: 'blob', // Quan trọng: Nhận về dạng file
+        responseType: 'blob', 
       });
       const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       saveAs(blob, 'Device_Import_Template.xlsx');
@@ -155,14 +185,18 @@ const ManagerDevice = () => {
       const { successCount, errorCount, errors } = res.data.data;
       
       if (successCount > 0) toastr.success(`Đã thêm thành công ${successCount} thiết bị.`);
+      
+      // [SỬA ĐỔI] Sử dụng toastr để hiển thị danh sách lỗi thay vì Custom Modal
       if (errorCount > 0) {
-        toastr.warning(`Có ${errorCount} dòng lỗi.`);
-        console.warn("Import Errors:", errors);
-        alert(`Chi tiết lỗi:\n${errors.join('\n')}`); // Show lỗi chi tiết
+        toastr.error(
+          `Có ${errorCount} dòng lỗi:<br/>- ${errors.join('<br/>- ')}`, 
+          "Lỗi Import", 
+          { timeOut: 10000, escapeHtml: false } // escapeHtml: false để render thẻ <br/>
+        );
       }
 
       setShowImportModal(false);
-      setSelectedFile(null);
+      setSelectedFile(null); // Reset file đã chọn
       fetchDevices();
     } catch (error: any) {
       toastr.error(error.response?.data?.message || "Lỗi khi import file");
@@ -186,13 +220,38 @@ const ManagerDevice = () => {
     setShowModal(true);
   };
 
+  // Reset page về 1 mỗi khi đổi filter
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterCategory, filterPrice]);
+
+  // Logic Lọc (Filter & Search)
   const filteredDevices = useMemo(() => {
-    return devices.filter(d => 
+    let result = devices.filter(d => 
       d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       d.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
       d.brand.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [devices, searchTerm]);
+
+    if (filterCategory !== 'ALL') {
+      result = result.filter(d => (d.category || 'Chung') === filterCategory);
+    }
+
+    if (filterPrice !== 'ALL') {
+      if (filterPrice === 'under1m') result = result.filter(d => d.price < 1000000);
+      else if (filterPrice === '1m-5m') result = result.filter(d => d.price >= 1000000 && d.price <= 5000000);
+      else if (filterPrice === 'over5m') result = result.filter(d => d.price > 5000000);
+    }
+
+    return result;
+  }, [devices, searchTerm, filterCategory, filterPrice]);
+
+  // Logic Phân trang
+  const totalPages = Math.ceil(filteredDevices.length / itemsPerPage);
+  const currentItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredDevices.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredDevices, currentPage]);
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
 
@@ -207,30 +266,77 @@ const ManagerDevice = () => {
         </div>
       </div>
 
-      {/* TOOLBAR */}
-      <div className="actions-bar">
-        <div className="search-box">
-          <Search size={18} className="search-icon" />
-          <input 
-            type="text" 
-            className="search-input" 
-            placeholder="Tìm theo tên, model, hãng..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      {/* TOOLBAR LỌC & TÌM KIẾM */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '24px', backgroundColor: '#fff', padding: '16px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        
+        {/* Nhóm Lọc (Bên trái) */}
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', flex: 1 }}>
+          <div className="search-box" style={{ minWidth: '250px', flex: 1 }}>
+            <Search size={18} className="search-icon" />
+            <input 
+              type="text" 
+              className="search-input" 
+              placeholder="Tìm theo tên, model, hãng..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Filter size={16} color="#64748b" />
+            <select 
+              value={filterCategory} 
+              onChange={(e) => setFilterCategory(e.target.value)}
+              style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', color: '#334155' }}
+            >
+              <option value="ALL">Tất cả danh mục</option>
+              {uniqueCategories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <select 
+              value={filterPrice} 
+              onChange={(e) => setFilterPrice(e.target.value)}
+              style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', color: '#334155' }}
+            >
+              <option value="ALL">Tất cả mức giá</option>
+              <option value="under1m">Dưới 1 triệu</option>
+              <option value="1m-5m">Từ 1 - 5 triệu</option>
+              <option value="over5m">Trên 5 triệu</option>
+            </select>
+          </div>
         </div>
 
-        <div className="button-group">
-          <button className="btn btn-outline" onClick={handleDownloadTemplate}>
-            <Download size={18} /> Tải mẫu Excel
-          </button>
-          <button className="btn btn-success" onClick={() => setShowImportModal(true)}>
-            <FileSpreadsheet size={18} /> Import Excel
-          </button>
-          <button className="btn btn-primary" onClick={handleOpenAdd}>
-            <Plus size={18} /> Thêm thiết bị
-          </button>
-        </div>
+        {/* Nhóm Nút chức năng (Bên phải) */}
+        {canModify && (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button 
+              className="btn btn-outline" 
+              onClick={handleDownloadTemplate}
+              style={{ height: '40px', display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}
+            >
+              <Download size={18} /> Tải mẫu
+            </button>
+            <button 
+              className="btn btn-success" 
+              onClick={() => setShowImportModal(true)}
+              style={{ height: '40px', display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}
+            >
+              <FileSpreadsheet size={18} /> Import
+            </button>
+            <button 
+              className="btn btn-primary" 
+              onClick={handleOpenAdd}
+              style={{ height: '40px', display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}
+            >
+              <Plus size={18} /> Thêm thiết bị
+            </button>
+          </div>
+        )}
       </div>
 
       {/* TABLE */}
@@ -238,69 +344,120 @@ const ManagerDevice = () => {
         <table className="device-table">
           <thead>
             <tr>
-              <th style={{width: '25%'}}>Tên thiết bị</th>
+              <th style={{width: '5%', textAlign: 'center'}}>STT</th>
+              <th style={{width: '25%'}}>Tên thiết bị & Mô tả</th>
               <th style={{width: '15%'}}>Model / Hãng</th>
               <th style={{width: '15%'}}>Danh mục</th>
-              <th style={{width: '10%'}}>Đơn vị</th>
-              <th style={{width: '15%'}}>Giá niêm yết</th>
-              {/* [ĐÃ SỬA] Căn giữa tiêu đề */}
-              <th style={{ textAlign: 'center', width: '15%' }}>Thao tác</th> 
+              <th style={{width: '15%', textAlign: 'right'}}>Giá niêm yết</th>
+              {canModify && (
+                <th style={{ textAlign: 'center', width: '15%' }}>Thao tác</th> 
+              )}
             </tr>
           </thead>
           <tbody>
-            {filteredDevices.length > 0 ? (
-              filteredDevices.map((device) => (
+            {currentItems.length > 0 ? (
+              currentItems.map((device, index) => (
                 <tr key={device._id}>
-                  <td>
-                    <div style={{fontWeight: 600}}>{device.name}</div>
-                    <div style={{fontSize: 12, color: '#94a3b8', marginTop: 4}}>{device.description}</div>
+                  {/* Cột STT tính toán dựa trên trang hiện tại */}
+                  <td style={{ textAlign: 'center', fontWeight: 600, color: '#64748b' }}>
+                    {(currentPage - 1) * itemsPerPage + index + 1}
                   </td>
+                  
                   <td>
-                    <div>{device.model || '--'}</div>
+                    <div style={{fontWeight: 600, color: '#1e293b'}}>{device.name}</div>
+                    {/* Giới hạn hiển thị mô tả, tự động xuống dòng */}
+                    <div style={{fontSize: 12, color: '#64748b', marginTop: 4, wordBreak: 'break-word', lineHeight: '1.4'}}>
+                      {device.description || <span style={{fontStyle: 'italic', opacity: 0.7}}>Chưa có mô tả</span>}
+                    </div>
+                  </td>
+                  
+                  <td>
+                    <div style={{color: '#334155'}}>{device.model || '--'}</div>
                     <div style={{fontSize: 12, color: '#64748b'}}>{device.brand}</div>
                   </td>
+                  
                   <td>
                     <span style={{background: '#e0f2fe', color: '#0284c7', padding: '4px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600}}>
                       {device.category || 'Chung'}
                     </span>
                   </td>
-                  <td>{device.unit}</td>
-                  <td className="text-price">{formatCurrency(device.price)}</td>
                   
-                  {/* [ĐÃ SỬA] Căn giữa nội dung cột và các nút bấm */}
-                  <td style={{ textAlign: 'center' }}>
-                    <div className="action-buttons" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                      <button className="btn-icon" onClick={() => handleOpenEdit(device)} title="Sửa">
-                        <Edit size={18} />
-                      </button>
-                      <button className="btn-icon delete" onClick={() => handleDelete(device)} title="Xóa">
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
+                  <td className="text-price" style={{ textAlign: 'right' }}>
+                    {formatCurrency(device.price)}
                   </td>
+                  
+                  {canModify && (
+                    <td style={{ textAlign: 'center' }}>
+                      <div className="action-buttons" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                        <button className="btn-icon" onClick={() => handleOpenEdit(device)} title="Sửa">
+                          <Edit size={18} />
+                        </button>
+                        <button className="btn-icon delete" onClick={() => handleDelete(device)} title="Xóa">
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={6} style={{textAlign: 'center', padding: '40px', color: '#94a3b8'}}>
-                  {loading ? 'Đang tải dữ liệu...' : 'Không tìm thấy thiết bị nào.'}
+                <td colSpan={canModify ? 6 : 5} style={{textAlign: 'center', padding: '40px', color: '#94a3b8'}}>
+                  {loading ? 'Đang tải dữ liệu...' : 'Không tìm thấy thiết bị nào phù hợp.'}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+
+        {/* PHÂN TRANG (PAGINATION) */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
+            <div style={{ fontSize: '14px', color: '#64748b' }}>
+              Hiển thị <span style={{ fontWeight: 600, color: '#0f172a' }}>{(currentPage - 1) * itemsPerPage + 1}</span> đến <span style={{ fontWeight: 600, color: '#0f172a' }}>{Math.min(currentPage * itemsPerPage, filteredDevices.length)}</span> trong tổng số <span style={{ fontWeight: 600, color: '#0f172a' }}>{filteredDevices.length}</span> thiết bị
+            </div>
+            
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                style={{ padding: '6px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: currentPage === 1 ? '#f1f5f9' : '#fff', color: currentPage === 1 ? '#94a3b8' : '#334155', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                <ChevronLeft size={16} /> Trước
+              </button>
+              
+              {/* Hiển thị số trang */}
+              <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontWeight: 600, color: '#0f172a' }}>
+                Trang {currentPage} / {totalPages}
+              </div>
+
+              <button 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                style={{ padding: '6px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: currentPage === totalPages ? '#f1f5f9' : '#fff', color: currentPage === totalPages ? '#94a3b8' : '#334155', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                Sau <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* --- ADD / EDIT MODAL --- */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
+      {/* =========================================================================
+          CÁC MODAL
+          ========================================================================= */}
+
+      {/* --- 1. ADD / EDIT MODAL --- */}
+      {canModify && showModal && (
+        <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => setShowModal(false)}>
+          <div className="modal-content" style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ flexShrink: 0 }}>
               <h3>{isEditing ? 'Cập nhật thông tin' : 'Thêm thiết bị mới'}</h3>
               <button className="btn-icon" onClick={() => setShowModal(false)}><X size={20} /></button>
             </div>
-            <form onSubmit={handleSave}>
-              <div className="modal-body">
+            
+            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', margin: 0, padding: 0, flex: 1, overflow: 'hidden' }}>
+              <div className="modal-body" style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
                 <div className="form-grid">
                   <div className="form-group full-width">
                     <label>Tên thiết bị <span style={{color: 'red'}}>*</span></label>
@@ -316,40 +473,65 @@ const ManagerDevice = () => {
                   </div>
                   <div className="form-group">
                     <label>Danh mục</label>
-                    <input type="text" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} placeholder="VD: Điện lạnh" />
-                  </div>
-                  <div className="form-group">
-                    <label>Đơn vị tính</label>
-                    <input type="text" value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} />
+                    <input type="text" list="category-list" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} placeholder="VD: Điện lạnh, Nội thất..." />
+                    <datalist id="category-list">
+                      {uniqueCategories.map(cat => <option key={cat} value={cat} />)}
+                    </datalist>
                   </div>
                   <div className="form-group full-width">
                     <label>Giá tiền (VNĐ) <span style={{color: 'red'}}>*</span></label>
                     <input required type="number" min="0" value={formData.price} onChange={e => setFormData({...formData, price: Number(e.target.value)})} />
                   </div>
                   <div className="form-group full-width">
-                    <label>Mô tả chi tiết</label>
-                    <textarea rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Thông số kỹ thuật, ghi chú..." />
+                    <label>Mô tả chi tiết (Tối đa 100 ký tự)</label>
+                    <textarea 
+                      rows={3} 
+                      maxLength={100}
+                      value={formData.description} 
+                      onChange={e => setFormData({...formData, description: e.target.value})} 
+                      placeholder="Thông số kỹ thuật, ghi chú (Tối đa 100 ký tự)..." 
+                    />
+                    <div style={{ textAlign: 'right', fontSize: '12px', color: (formData.description?.length || 0) === 100 ? '#ef4444' : '#94a3b8' }}>
+                      {formData.description?.length || 0}/100
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-outline" onClick={() => setShowModal(false)}>Hủy</button>
-                <button type="submit" className="btn btn-primary">Lưu lại</button>
+              
+              <div 
+                className="modal-footer" 
+                style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', padding: '16px 24px', borderTop: '1px solid #e2e8f0', margin: 0, flexShrink: 0, background: '#fff' }}
+              >
+                <button 
+                  type="button" 
+                  className="btn btn-outline" 
+                  onClick={() => setShowModal(false)}
+                  style={{ width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 0, margin: 0, boxSizing: 'border-box' }}
+                >
+                  Hủy
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  style={{ width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 0, margin: 0, boxSizing: 'border-box' }}
+                >
+                  Lưu lại
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* --- IMPORT EXCEL MODAL --- */}
-      {showImportModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{width: '500px'}}>
-            <div className="modal-header">
+      {/* --- 2. IMPORT EXCEL MODAL --- */}
+      {canModify && showImportModal && (
+        <div className="modal-overlay" style={{ zIndex: 1050 }} onClick={() => setShowImportModal(false)}>
+          <div className="modal-content" style={{ width: '500px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ flexShrink: 0 }}>
               <h3>Import dữ liệu từ Excel</h3>
               <button className="btn-icon" onClick={() => setShowImportModal(false)}><X size={20} /></button>
             </div>
-            <div className="modal-body">
+            <div className="modal-body" style={{ padding: '24px', overflowY: 'auto' }}>
               <div 
                 className="upload-area"
                 onClick={() => fileInputRef.current?.click()}
@@ -379,17 +561,29 @@ const ManagerDevice = () => {
                 <ul style={{paddingLeft: 20, marginTop: 4}}>
                   <li>Sử dụng đúng file mẫu đã tải về.</li>
                   <li>Cột <b>Tên thiết bị</b> là bắt buộc.</li>
+                  <li>Cột <b>Đơn vị</b> (nếu có trong mẫu) sẽ tự động được gán là "Cái" trên hệ thống.</li>
                   <li>Dữ liệu sẽ được thêm mới vào hệ thống.</li>
                 </ul>
               </div>
             </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-outline" onClick={() => setShowImportModal(false)}>Hủy</button>
+            <div 
+              className="modal-footer" 
+              style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', padding: '16px 24px', borderTop: '1px solid #e2e8f0', margin: 0, flexShrink: 0, background: '#fff' }}
+            >
+              <button 
+                type="button" 
+                className="btn btn-outline" 
+                onClick={() => setShowImportModal(false)}
+                style={{ width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 0, margin: 0, boxSizing: 'border-box' }}
+              >
+                Hủy
+              </button>
               <button 
                 type="button" 
                 className="btn btn-primary" 
                 onClick={handleImportSubmit}
                 disabled={!selectedFile || loading}
+                style={{ height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '0 24px', boxSizing: 'border-box' }}
               >
                 {loading ? 'Đang xử lý...' : 'Tiến hành Import'}
               </button>
@@ -398,16 +592,12 @@ const ManagerDevice = () => {
         </div>
       )}
 
-      {/* --- MODAL XÁC NHẬN (CONFIRM MODAL) --- */}
-      {confirmModal.isOpen && (
-        <div className="modal-overlay" style={{ zIndex: 9999 }}>
-          <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }}>
+      {/* --- 3. MODAL XÁC NHẬN XÓA --- */}
+      {canModify && confirmModal.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }} onClick={() => setConfirmModal({ isOpen: false, action: null, targetDevice: null, message: '' })}>
+          <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '24px' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-              <div style={{ 
-                background: '#fee2e2', 
-                padding: '12px', 
-                borderRadius: '50%' 
-              }}>
+              <div style={{ background: '#fee2e2', padding: '12px', borderRadius: '50%' }}>
                 <AlertCircle size={32} color="#ef4444" />
               </div>
             </div>
@@ -420,19 +610,15 @@ const ManagerDevice = () => {
                 type="button"
                 className="btn btn-outline"
                 onClick={() => setConfirmModal({ isOpen: false, action: null, targetDevice: null, message: '' })}
+                style={{ width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', boxSizing: 'border-box' }}
               >
                 Hủy bỏ
               </button>
               <button
                 type="button"
                 style={{
-                  padding: '8px 24px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  border: 'none',
-                  background: '#ef4444',
-                  color: 'white',
+                  width: '120px', height: '42px', display: 'flex', justifyContent: 'center', alignItems: 'center', boxSizing: 'border-box',
+                  borderRadius: '6px', cursor: 'pointer', fontWeight: 600, border: 'none', background: '#ef4444', color: 'white',
                 }}
                 onClick={executeConfirmAction}
                 disabled={loading}
