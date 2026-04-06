@@ -285,7 +285,7 @@ export default function TenantAccountList() {
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
-              <option value="all">Tất cả trạng thái</option>
+              <option value="all">Tất cả</option>
               <option value="active">Hoạt động</option>
               <option value="inactive">Không hoạt động</option>
             </select>
