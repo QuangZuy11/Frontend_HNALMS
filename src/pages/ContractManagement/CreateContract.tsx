@@ -1775,6 +1775,32 @@ const CreateContract = () => {
                                   format="dd/MM/yyyy"
                                   minDate={minDate}
                                   maxDate={maxDate}
+                                  shouldDisableDate={(date) => {
+                                    if (!date) return false;
+                                    
+                                    // Xác định mốc thời gian (ưu tiên ngày cọc, nếu không có thì lấy ngày hiện tại)
+                                    const refDate = selectedDeposit?.createdAt ? new Date(selectedDeposit.createdAt) : new Date();
+                                    
+                                    // Tạo bản sao chỉ có Ngày/Tháng/Năm để so sánh chính xác tuyệt đối (bỏ qua giờ/phút)
+                                    const refDateOnly = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate());
+                                    const compareDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+                                    // Không được chọn ngày "quá khứ" so với ngày cọc (trước ngày cọc)
+                                    if (compareDateOnly < refDateOnly) {
+                                      return true;
+                                    }
+
+                                    // Xác định "tháng sau" dựa trên tháng của mốc (tháng cọc)
+                                    const isFutureMonth = 
+                                      date.getFullYear() > refDate.getFullYear() || 
+                                      (date.getFullYear() === refDate.getFullYear() && date.getMonth() > refDate.getMonth());
+                                    
+                                    if (isFutureMonth) {
+                                      // Sang tháng tiếp theo -> Chỉ được chọn ngày mùng 1
+                                      return date.getDate() !== 1;
+                                    }
+                                    return false; // Trong tháng cọc ("tháng lẻ"), cho phép các ngày sau ngày cọc
+                                  }}
                                   slotProps={{
                                     textField: {
                                       variant: "standard",
