@@ -138,9 +138,15 @@ export default function ViolationList() {
   const fetchContracts = useCallback(async () => {
     try {
       setLoadingContracts(true);
+      console.log('[ViolationList] Fetching contracts with status=Active...');
       const response = await api.get('/contracts', { params: { status: 'Active' } });
+      console.log('[ViolationList] Contracts response:', response.data);
       if (response.data.success && Array.isArray(response.data.data)) {
+        console.log('[ViolationList] Setting contracts:', response.data.data.length, 'items');
         setContracts(response.data.data);
+      } else {
+        console.log('[ViolationList] No contracts data or not array');
+        setContracts([]);
       }
     } catch (err: any) {
       console.error('Lỗi khi tải danh sách hợp đồng:', err);
@@ -150,7 +156,8 @@ export default function ViolationList() {
   }, []);
 
   const openCreateModal = async () => {
-    fetchContracts();
+    setShowCreateModal(true);
+    await fetchContracts();
     try {
       const response = await violateService.getNextViolationCode();
       if (response?.success) {
@@ -160,7 +167,6 @@ export default function ViolationList() {
       console.error('Lỗi khi lấy mã vi phạm:', err);
       setViolationCode('');
     }
-    setShowCreateModal(true);
   };
 
   const closeCreateModal = () => {
@@ -816,6 +822,12 @@ export default function ViolationList() {
                           helperText={formErrors.contractId}
                         />
                       )}
+                      slotProps={{
+                        popper: {
+                          modifiers: [{ name: 'flip', enabled: false }],
+                          style: { zIndex: 10000 },
+                        },
+                      }}
                     />
                   </div>
 
