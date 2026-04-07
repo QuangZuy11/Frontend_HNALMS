@@ -383,6 +383,21 @@ export default function FloorMapLevel5({
                       !hasFloatingDeposit && (
                         <span className="room-guest-can-deposit">Có thể cọc</span>
                       )}
+                    {legendType === "contract" &&
+                      room.contractRenewalStatus === "declined" &&
+                      isDeposited &&
+                      getExpiryLabel(room.contractEndDate) && (
+                        <span className="room-expiry-label">
+                          {getExpiryLabel(room.contractEndDate)}
+                        </span>
+                      )}
+                    {legendType === "contract" &&
+                      room.contractRenewalStatus === "declined" &&
+                      getExpiryLabel(room.contractEndDate) && (
+                        <span className="room-manager-declined-tag">
+                          Từ chối gia hạn
+                        </span>
+                      )}
                     {!isDeposited && room.contractStartDate && getContractDateLabel(room.contractStartDate, room.contractEndDate, showDateYear) && (
                       <span className="room-contract-dates">
                         {getContractDateLabel(room.contractStartDate, room.contractEndDate, showDateYear)}
