@@ -9,6 +9,10 @@ interface MoveOutRequestItem {
   contractId?: {
     _id: string;
     contractCode?: string;
+    startDate?: string;
+    endDate?: string;
+    duration?: number;
+    rentAmount?: number;
     roomId?: {
       _id: string;
       name?: string;
@@ -22,6 +26,7 @@ interface MoveOutRequestItem {
     fullname?: string;
     email?: string;
     phoneNumber?: string;
+    cccd?: string;
   } | null;
   finalInvoiceId?: {
     _id: string;
@@ -39,9 +44,10 @@ interface MoveOutRequestItem {
   isDepositForfeited?: boolean;
   isGapContract?: boolean;
   managerInvoiceNotes?: string;
+  accountantNotes?: string;
   paymentMethod?: string;
-  paymentDate?: string;
   paymentTransactionCode?: string;
+  paymentDate?: string;
   depositRefundAmount?: number;
   completedDate?: string;
   managerCompletionNotes?: string;
@@ -242,6 +248,27 @@ export default function MoveOutRequestsList() {
     return req.finalInvoiceId._id ?? null;
   };
 
+  const getContractCode = (req: MoveOutRequestItem) => {
+    if (req.contractId && typeof req.contractId === 'object') {
+      return req.contractId.contractCode || '-';
+    }
+    return '-';
+  };
+
+  const getTenantEmail = (req: MoveOutRequestItem) => {
+    if (req.tenantId && typeof req.tenantId === 'object') {
+      return req.tenantId.email || '-';
+    }
+    return '-';
+  };
+
+  const getTenantPhone = (req: MoveOutRequestItem) => {
+    if (req.tenantId && typeof req.tenantId === 'object') {
+      return req.tenantId.phoneNumber || '-';
+    }
+    return '-';
+  };
+
   // ── Open detail + load comparison ─────────────────────────────────────────
   const openDetail = async (req: MoveOutRequestItem) => {
     setSelectedRequest(req);
@@ -261,6 +288,16 @@ export default function MoveOutRequestsList() {
 
   // ── Release Invoice ───────────────────────────────────────────────────────
   const openReleaseModal = async (req: MoveOutRequestItem) => {
+    // Validate: ngày hiện tại phải bằng ngày expectedMoveOutDate mới được phát hành
+    const today = new Date();
+    const todayStr = today.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const expectedDate = new Date(req.expectedMoveOutDate ?? '');
+    const expectedDateStr = expectedDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    if (todayStr !== expectedDateStr) {
+      alert(`Chỉ có thể phát hành hóa đơn khi đến ngày dự kiến trả phòng (${expectedDateStr}). Hôm nay là ${todayStr}.`);
+      return;
+    }
+
     setReleasingRequest(req);
     setElectricIndex('');
     setWaterIndex('');
@@ -561,18 +598,72 @@ export default function MoveOutRequestsList() {
               <button className="btn-close" onClick={() => setSelectedRequest(null)}>×</button>
             </div>
             <div className="modal-body">
-              {/* Basic info */}
+              {/* ── STEP 1: Thông tin hợp đồng ── */}
               <div className="detail-section">
-                <div className="detail-section-title">Thông tin chung</div>
+                <div className="detail-section-title">Thông tin hợp đồng</div>
                 <div className="detail-grid">
                   <div className="detail-row">
-                    <label>Cư dân:</label>
-                    <span>{getTenantFullName(selectedRequest)}</span>
+                    <label>Mã hợp đồng:</label>
+                    <span>{getContractCode(selectedRequest)}</span>
                   </div>
+                  {selectedRequest.contractId && typeof selectedRequest.contractId === 'object' && (
+                    <>
+                      {selectedRequest.contractId.startDate && (
+                        <div className="detail-row">
+                          <label>Ngày bắt đầu:</label>
+                          <span>{formatDate(selectedRequest.contractId.startDate)}</span>
+                        </div>
+                      )}
+                      {selectedRequest.contractId.endDate && (
+                        <div className="detail-row">
+                          <label>Ngày kết thúc:</label>
+                          <span>{formatDate(selectedRequest.contractId.endDate)}</span>
+                        </div>
+                      )}
+                      {selectedRequest.contractId.duration && (
+                        <div className="detail-row">
+                          <label>Thời hạn:</label>
+                          <span>{selectedRequest.contractId.duration} tháng</span>
+                        </div>
+                      )}
+                      {selectedRequest.contractId.rentAmount !== undefined && (
+                        <div className="detail-row">
+                          <label>Tiền thuê/tháng:</label>
+                          <span>{formatMoney(selectedRequest.contractId.rentAmount)}</span>
+                        </div>
+                      )}
+                    </>
+                  )}
                   <div className="detail-row">
                     <label>Phòng:</label>
                     <span>{getRoomNumber(selectedRequest)}</span>
                   </div>
+                </div>
+              </div>
+
+              {/* ── STEP 2: Thông tin cư dân ── */}
+              <div className="detail-section">
+                <div className="detail-section-title">Thông tin cư dân</div>
+                <div className="detail-grid">
+                  <div className="detail-row">
+                    <label>Tên cư dân:</label>
+                    <span>{getTenantFullName(selectedRequest)}</span>
+                  </div>
+                  <div className="detail-row">
+                    <label>Email:</label>
+                    <span>{getTenantEmail(selectedRequest)}</span>
+                  </div>
+                  <div className="detail-row">
+                    <label>SĐT:</label>
+                    <span>{getTenantPhone(selectedRequest)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── STEP 3: Thông tin yêu cầu trả phòng ── */}
+              <div className="detail-section">
+                <div className="detail-section-title">Thông tin yêu cầu trả phòng</div>
+                <div className="detail-grid">
                   <div className="detail-row">
                     <label>Ngày yêu cầu:</label>
                     <span>{formatDate(selectedRequest.requestDate ?? selectedRequest.createdAt)}</span>
@@ -594,28 +685,10 @@ export default function MoveOutRequestsList() {
                 </div>
               </div>
 
-              {/* Cọc + điều kiện */}
+              {/* ── STEP 4: Điều kiện hoàn cọc ── */}
               <div className="detail-section">
-                <div className="detail-section-title">Điều kiện cọc</div>
+                <div className="detail-section-title">Điều kiện hoàn cọc</div>
                 <div className="detail-grid">
-                  {comparisonLoading && getInvoiceId(selectedRequest) && (
-                    <div className="detail-row">
-                      <label>Tiền cọc/HĐ:</label>
-                      <span>Đang tải...</span>
-                    </div>
-                  )}
-                  {depositComparison && (
-                    <>
-                      <div className="detail-row">
-                        <label>Tiền cọc hiện giữ:</label>
-                        <span>{formatMoney(depositComparison.depositAmount)}</span>
-                      </div>
-                      <div className="detail-row">
-                        <label>Tiền hóa đơn cuối:</label>
-                        <span>{formatMoney(depositComparison.invoiceAmount)}</span>
-                      </div>
-                    </>
-                  )}
                   <div className="detail-row">
                     <label>Báo gấp (dưới 30 ngày):</label>
                     <span className={selectedRequest.isEarlyNotice ? 'text-danger' : 'text-ok'}>
@@ -629,7 +702,7 @@ export default function MoveOutRequestsList() {
                     </span>
                   </div>
                   <div className="detail-row">
-                    <label>Tiền cọc:</label>
+                    <label>Tình trạng cọc:</label>
                     <span className={selectedRequest.isDepositForfeited ? 'text-danger' : 'text-ok'}>
                       {selectedRequest.isDepositForfeited ? '❌ Mất cọc' : '✓ Được hoàn cọc'}
                     </span>
@@ -640,65 +713,28 @@ export default function MoveOutRequestsList() {
                       <span className="text-ok">✓ Luôn được hoàn cọc</span>
                     </div>
                   )}
+                  {/* Tiền cọc */}
+                  {depositComparison && (
+                    <div className="detail-row">
+                      <label>Số tiền cọc hiện giữ:</label>
+                      <span>{formatMoney(depositComparison.depositAmount)}</span>
+                    </div>
+                  )}
+                  {selectedRequest.isDepositForfeited && depositComparison && (
+                    <div className="detail-row">
+                      <label>Số tiền mất cọc:</label>
+                      <span className="text-danger">{formatMoney(depositComparison.depositAmount)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Deposit vs Invoice comparison */}
-              {getInvoiceId(selectedRequest) && (
+              {/* ── STEP 5: Hóa đơn cuối ── */}
+              {selectedRequest.finalInvoiceId && (
                 <div className="detail-section">
-                  <div className="detail-section-title">So sánh cọc – hóa đơn</div>
-                  {comparisonLoading ? (
-                    <div className="comparison-loading">Đang tải...</div>
-                  ) : depositComparison ? (
-                    <div className="comparison-table">
-                      <div className="comparison-row">
-                        <span>Tiền cọc hiện giữ:</span>
-                        <strong>{formatMoney(depositComparison.depositAmount)}</strong>
-                      </div>
-                      <div className="comparison-row">
-                        <span>Hóa đơn cuối:</span>
-                        <strong>{formatMoney(depositComparison.invoiceAmount)}</strong>
-                      </div>
-                      <div className="comparison-row">
-                        <span>Tiền cọc hoàn riêng:</span>
-                        <strong className={depositComparison.isDepositForfeited ? 'text-danger' : 'text-ok'}>
-                          {depositComparison.isDepositForfeited
-                            ? 'Không hoàn (mất cọc)'
-                            : formatMoney(depositComparison.depositRefundAmount)}
-                        </strong>
-                      </div>
-                      <div className="comparison-row text-danger">
-                        <span>Tiền cọc hiện giữ:</span>
-                        <strong>{formatMoney(depositComparison.depositAmount)}</strong>
-                      </div>
-
-                      {depositComparison.refundTicket && (
-                        <>
-                          <div className="comparison-row">
-                            <span>ID phiếu chi:</span>
-                            <strong>{depositComparison.refundTicket.id ?? '-'}</strong>
-                          </div>
-                          <div className="comparison-row">
-                            <span>Mã phiếu chi hoàn cọc:</span>
-                            <strong>{depositComparison.refundTicket.paymentVoucher ?? '-'}</strong>
-                          </div>
-                          <div className="comparison-row">
-                            <span>Số tiền phiếu chi:</span>
-                            <strong>{formatMoney(depositComparison.refundTicket.amount)}</strong>
-                          </div>
-                          <div className="comparison-row">
-                            <span>Trạng thái phiếu chi:</span>
-                            <strong>{depositComparison.refundTicket.status ?? '-'}</strong>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ) : (
-                    <p style={{ fontSize: 13, color: '#64748b' }}>Không tải được thông tin so sánh.</p>
-                  )}
-                  {/* Invoice details */}
-                  {typeof selectedRequest.finalInvoiceId === 'object' && selectedRequest.finalInvoiceId && (
-                    <div className="detail-grid" style={{ marginTop: 8 }}>
+                  <div className="detail-section-title">Hóa đơn cuối</div>
+                  {typeof selectedRequest.finalInvoiceId === 'object' && selectedRequest.finalInvoiceId ? (
+                    <div className="detail-grid">
                       <div className="detail-row">
                         <label>Mã hóa đơn:</label>
                         <span>{selectedRequest.finalInvoiceId.invoiceCode ?? '-'}</span>
@@ -708,23 +744,58 @@ export default function MoveOutRequestsList() {
                         <span>{formatMoney(selectedRequest.finalInvoiceId.totalAmount)}</span>
                       </div>
                       <div className="detail-row">
-                        <label>TT hóa đơn:</label>
+                        <label>Trạng thái HĐ:</label>
                         <span>{selectedRequest.finalInvoiceId.status ?? '-'}</span>
                       </div>
+                      {selectedRequest.finalInvoiceId.dueDate && (
+                        <div className="detail-row">
+                          <label>Ngày đến hạn:</label>
+                          <span>{formatDate(selectedRequest.finalInvoiceId.dueDate)}</span>
+                        </div>
+                      )}
                     </div>
+                  ) : (
+                    <p style={{ fontSize: 13, color: '#64748b' }}>Không tải được thông tin hóa đơn.</p>
                   )}
                 </div>
               )}
 
-              {/* Payment info */}
-              {(selectedRequest.paymentMethod || selectedRequest.paymentDate) && (
+              {/* ── STEP 6: Ghi chú quản lý ── */}
+              {(selectedRequest.managerInvoiceNotes || selectedRequest.accountantNotes) && (
                 <div className="detail-section">
-                  <div className="detail-section-title">Thanh toán</div>
+                  <div className="detail-section-title">Ghi chú</div>
+                  <div className="detail-grid">
+                    {selectedRequest.managerInvoiceNotes && (
+                      <div className="detail-row" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                        <label>Ghi chú phát hành HĐ:</label>
+                        <span style={{ marginTop: 4, color: '#374151', fontSize: 13 }}>{selectedRequest.managerInvoiceNotes}</span>
+                      </div>
+                    )}
+                    {selectedRequest.accountantNotes && (
+                      <div className="detail-row" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                        <label>Ghi chú kế toán:</label>
+                        <span style={{ marginTop: 4, color: '#374151', fontSize: 13 }}>{selectedRequest.accountantNotes}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ── STEP 7: Thanh toán ── */}
+              {selectedRequest.status === 'Paid' && (
+                <div className="detail-section">
+                  <div className="detail-section-title">Thông tin thanh toán</div>
                   <div className="detail-grid">
                     {selectedRequest.paymentMethod && (
                       <div className="detail-row">
                         <label>Hình thức:</label>
                         <span>{selectedRequest.paymentMethod === 'online' ? 'Online' : 'Offline (tiền mặt)'}</span>
+                      </div>
+                    )}
+                    {selectedRequest.paymentTransactionCode && (
+                      <div className="detail-row">
+                        <label>Mã giao dịch:</label>
+                        <span>{selectedRequest.paymentTransactionCode}</span>
                       </div>
                     )}
                     {selectedRequest.paymentDate && (
@@ -745,19 +816,19 @@ export default function MoveOutRequestsList() {
                 </div>
               )}
 
-              {/* Completion info */}
+              {/* ── STEP 8: Hoàn tất ── */}
               {selectedRequest.completedDate && (
                 <div className="detail-section">
-                  <div className="detail-section-title">Hoàn tất</div>
+                  <div className="detail-section-title">Hoàn tất trả phòng</div>
                   <div className="detail-grid">
                     <div className="detail-row">
                       <label>Ngày hoàn tất:</label>
                       <span>{formatDate(selectedRequest.completedDate)}</span>
                     </div>
                     {selectedRequest.managerCompletionNotes && (
-                      <div className="detail-row">
-                        <label>Ghi chú:</label>
-                        <span>{selectedRequest.managerCompletionNotes}</span>
+                      <div className="detail-row" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                        <label>Ghi chú hoàn tất:</label>
+                        <span style={{ marginTop: 4, color: '#374151', fontSize: 13 }}>{selectedRequest.managerCompletionNotes}</span>
                       </div>
                     )}
                   </div>
@@ -766,14 +837,29 @@ export default function MoveOutRequestsList() {
 
               {/* Action buttons inside detail modal */}
               <div className="detail-actions">
-                {selectedRequest.status === 'Requested' && (
-                  <button
-                    className="btn-action-primary"
-                    onClick={() => { setSelectedRequest(null); openReleaseModal(selectedRequest); }}
-                  >
-                    <FileText size={14} /> Phát hành hóa đơn cuối
-                  </button>
-                )}
+                {selectedRequest.status === 'Requested' && (() => {
+                  const today = new Date();
+                  const todayStr = today.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                  const expDate = new Date(selectedRequest.expectedMoveOutDate ?? '');
+                  const expDateStr = expDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                  const canRelease = todayStr === expDateStr;
+                  return (
+                    <button
+                      className="btn-action-primary"
+                      onClick={() => {
+                        if (!canRelease) {
+                          alert(`Chỉ có thể phát hành hóa đơn khi đến ngày dự kiến trả phòng (${expDateStr}). Hôm nay là ${todayStr}.`);
+                          return;
+                        }
+                        setSelectedRequest(null);
+                        openReleaseModal(selectedRequest);
+                      }}
+                      title={canRelease ? 'Phát hành hóa đơn cuối' : `Chỉ được phát hành khi đến ngày ${expDateStr}`}
+                    >
+                      <FileText size={14} /> Phát hành hóa đơn cuối
+                    </button>
+                  );
+                })()}
                 {selectedRequest.status === 'Paid' && (
                   <button
                     className="btn-action-green"
