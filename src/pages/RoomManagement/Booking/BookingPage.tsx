@@ -73,6 +73,9 @@ export default function BookingPage() {
                     if (roomData.hasFutureInactiveContract && !roomData.hasFloatingDeposit) {
                         isShortTermAvailable = true;
                     }
+                    if (roomData.contractRenewalStatus === "declined" && !roomData.hasFloatingDeposit) {
+                        isShortTermAvailable = true;
+                    }
 
                     setRoom({
                         ...roomData,
@@ -83,6 +86,7 @@ export default function BookingPage() {
                         typeName: roomData.roomTypeId?.typeName || "Phòng",
                         futureContractStartDate: futureStart,
                         isShortTermAvailable,
+                        contractRenewalStatus: roomData.contractRenewalStatus ?? null,
                     });
                 }
             } catch (err) {
@@ -372,6 +376,12 @@ export default function BookingPage() {
                                         <li>
                                             <span className="check" style={{ color: "var(--warning)" }}>⚠</span>
                                             <span style={{ color: "var(--warning)", fontWeight: "bold" }}>Thuê ngắn hạn đến {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}</span>
+                                        </li>
+                                    )}
+                                    {room.contractRenewalStatus === "declined" && (
+                                        <li>
+                                            <span className="check" style={{ color: "var(--warning)" }}>⚠</span>
+                                            <span style={{ color: "var(--warning)", fontWeight: "bold" }}>Người thuê hiện tại đã từ chối gia hạn — đặt cọc cho kỳ thuê tiếp theo.</span>
                                         </li>
                                     )}
                                 </ul>

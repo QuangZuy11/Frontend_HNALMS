@@ -545,12 +545,18 @@ const CreateContract = () => {
   }, [preFilledRoomId]);
 
   const handleRoomSelect = async (roomData: any) => {
-    // Prevent selecting Occupied rooms
+    // Allow selecting Occupied rooms ONLY if renewalStatus is "declined" (tenant refused renewal → room can be re-booked)
     if (roomData.status === "Occupied" || roomData.status === "Đang thuê") {
+      if (roomData.contractRenewalStatus !== "declined") {
+        alert(
+          "Phòng này đã có người thuê! Vui lòng chọn phòng Trống hoặc Đã cọc.",
+        );
+        return;
+      }
+      // renewalStatus = "declined" → allow, show info
       alert(
-        "Phòng này đã có người thuê! Vui lòng chọn phòng Trống hoặc Đã cọc.",
+        "Phòng này có người thuê hiện tại đã từ chối gia hạn. Bạn có thể đặt cọc và ký hợp đồng mới.",
       );
-      return;
     }
 
     try {
@@ -2639,7 +2645,7 @@ const CreateContract = () => {
                 variant="contained"
                 color="primary"
                 size="large"
-                disabled={selectedRoom?.status !== "Deposited" || submitting}
+                disabled={!selectedRoom || (selectedRoom.status !== "Deposited" && selectedRoom.contractRenewalStatus !== "declined") || submitting}
               >
                 {submitting ? (
                   <>

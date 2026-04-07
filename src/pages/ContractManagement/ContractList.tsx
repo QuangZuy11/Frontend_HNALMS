@@ -21,6 +21,22 @@ interface RoomActionPopup {
   deposits: any[];       // Danh sách cọc lẻ (chưa gắn HĐ)
 }
 
+/** Hiện nút "Tạo hợp đồng, cọc mới": không có cọc lẻ chờ ký; HĐ active đã hiệu lực + declined thì vẫn cho */
+function allowCreateNewContractOption(
+  roomContracts: any[],
+  roomDeposits: any[],
+) {
+  if (roomDeposits.length > 0) return false;
+  const blocked = roomContracts.some((c: any) => {
+    if (c.status !== "active") return false;
+    const start = new Date(c.startDate).getTime();
+    if (start > Date.now()) return true;
+    if (c.renewalStatus === "declined") return false;
+    return true;
+  });
+  return !blocked;
+}
+
 const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
   const navigate = useNavigate();
   const [rooms, setRooms] = useState<any[]>([]);
@@ -358,12 +374,11 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
                 </div>
               </button>
             ))}
-            {/* Option tạo hợp đồng mới - chỉ hiện khi KHÔNG có active/pending contract VÀ KHÔNG có cọc lẻ */}
-            {actionPopup.deposits.length === 0 && !actionPopup.contracts.some((c: any) => {
-              const isActive = c.status === "active" && new Date(c.startDate) <= new Date();
-              const isPending = c.status === "active" && new Date(c.startDate) > new Date();
-              return isActive || isPending;
-            }) && (
+            {!readOnly &&
+              allowCreateNewContractOption(
+                actionPopup.contracts,
+                actionPopup.deposits,
+              ) && (
               <button
                 className="popup-option option-create-new"
                 onClick={handleCreateNewContract}

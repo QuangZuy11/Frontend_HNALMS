@@ -29,6 +29,8 @@ interface Room {
   price?: number;
   contractStartDate?: string; // Ngày bắt đầu hợp đồng tương lai (nếu có)
   contractEndDate?: string;   // Ngày kết thúc hợp đồng
+  contractRenewalStatus?: string | null; // "declined" nếu người thuê từ chối gia hạn
+  hasFloatingDeposit?: boolean;
   [key: string]: any;
 }
 
@@ -155,6 +157,20 @@ const DepositFloorMap = () => {
         toastr.warning("Phòng này đã có tiền cọc và đang chờ ký hợp đồng.");
       }
     } else if (room.status === "Occupied") {
+      // Nếu renewalStatus = "declined" → người thuê từ chối gia hạn, cho phép đặt cọc sớm
+      if (room.contractRenewalStatus === "declined") {
+        if (room.hasFloatingDeposit) {
+          toastr.warning(
+            "Phòng đã có người đặt cọc cho kỳ thuê tiếp theo. Không thể tạo thêm cọc.",
+          );
+          return;
+        }
+        toastr.info(
+          `Người thuê hiện tại đã từ chối gia hạn. Bạn có thể đặt cọc để ký hợp đồng cho khách mới.`
+        );
+        navigate(`${basePath}/deposits/create/${room._id}`);
+        return;
+      }
       // Kiểm tra nếu có hợp đồng tương lai (chưa active) thì cho phép cọc
       if (room.contractStartDate) {
         const futureStartDate = new Date(room.contractStartDate);

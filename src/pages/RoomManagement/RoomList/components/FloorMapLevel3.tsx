@@ -399,7 +399,15 @@ export default function FloorMapLevel3({
                           const hasFutureContract = !!(room.futureContractId || room.contractStartDate);
                           const hasFutureInactiveContract = room.hasFutureInactiveContract || false;
                           const hasMultiOptions = isDeposited && hasFutureContract && !hasFloatingDeposit;
-                          const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFutureContract) || hasFutureInactiveContract;
+                          const renewalDeclinedRebook =
+                            room.contractRenewalStatus === "declined" &&
+                            !hasFloatingDeposit &&
+                            (room.status === "Occupied" || room.status === "Deposited");
+                          const showAsAvailable =
+                            isAvailable ||
+                            (isDeposited && isShortTermAvailable && !hasFutureContract) ||
+                            hasFutureInactiveContract ||
+                            renewalDeclinedRebook;
                           // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit
                           const showDepositedBadge = (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) || (hasFutureInactiveContract && hasFloatingDeposit);
                           const typeColor = getRoomTypeColor(
@@ -556,7 +564,15 @@ export default function FloorMapLevel3({
                   const hasFutureContract = !!(room.futureContractId || room.contractStartDate);
                   const hasFutureInactiveContract = room.hasFutureInactiveContract || false;
                   const hasMultiOptions = isDeposited && hasFutureContract && !hasFloatingDeposit;
-                  const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFutureContract) || hasFutureInactiveContract;
+                  const renewalDeclinedRebook =
+                    room.contractRenewalStatus === "declined" &&
+                    !hasFloatingDeposit &&
+                    (room.status === "Occupied" || room.status === "Deposited");
+                  const showAsAvailable =
+                    isAvailable ||
+                    (isDeposited && isShortTermAvailable && !hasFutureContract) ||
+                    hasFutureInactiveContract ||
+                    renewalDeclinedRebook;
                   // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit
                   const showDepositedBadge = (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) || (hasFutureInactiveContract && hasFloatingDeposit);
                   const typeColor = getRoomTypeColor(room.roomTypeId?._id);

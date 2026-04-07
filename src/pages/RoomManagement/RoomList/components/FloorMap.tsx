@@ -21,6 +21,7 @@ interface Room {
   futureContractId?: string; // ID of future contract if exists
   futureContractStartDate?: string;
   hasFutureInactiveContract?: boolean; // true: contract inactive (>30 days) → show green label, no !
+  contractRenewalStatus?: string | null;
   [key: string]: any;
 }
 
@@ -322,8 +323,17 @@ export default function FloorMap({
               // Special case: room is Deposited AND has future contract
               const hasMultiOptions = isDeposited && hasFutureContract && !hasFloatingDeposit;
 
+              const renewalDeclinedRebook =
+                room.contractRenewalStatus === "declined" &&
+                !hasFloatingDeposit &&
+                (room.status === "Occupied" || room.status === "Deposited");
+
               // Inactive contract (>30 days): treat as available, green label, no !
-              const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFutureContract) || hasFutureInactiveContract;
+              const showAsAvailable =
+                isAvailable ||
+                (isDeposited && isShortTermAvailable && !hasFutureContract) ||
+                hasFutureInactiveContract ||
+                renewalDeclinedRebook;
               // Visual: show deposit badge if deposited + has floating deposit (NOT for inactive contracts)
               // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit
               const showDepositedBadge = (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) || (hasFutureInactiveContract && hasFloatingDeposit);

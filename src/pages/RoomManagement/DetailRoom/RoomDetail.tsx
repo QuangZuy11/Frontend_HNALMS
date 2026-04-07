@@ -92,6 +92,11 @@ export default function RoomDetail() {
           isShortTermAvailable = true;
         }
 
+        // Declined renewal: chỉ mở đặt cọc khi chưa có cọc floating cho khách kế tiếp
+        if (roomData.contractRenewalStatus === "declined" && !hasFloatingDeposit) {
+          isShortTermAvailable = true;
+        }
+
         // Transform data to match component expectations
         const transformedRoom = {
           ...roomData,
@@ -109,7 +114,8 @@ export default function RoomDetail() {
           futureContractStartDate: futureStart,
           hasFloatingDeposit,
           isShortTermAvailable,
-          hasFutureInactiveContract
+          hasFutureInactiveContract,
+          contractRenewalStatus: roomData.contractRenewalStatus ?? null,
         };
 
         console.log("✅ Transformed room price:", transformedRoom.price);
@@ -209,6 +215,10 @@ export default function RoomDetail() {
   }
 
   const depositAmount = room.price;
+  const depositAllowed =
+    room.status === "Available" ||
+    room.status === "Trống" ||
+    room.isShortTermAvailable;
 
   return (
     <main className="room-detail-page">
@@ -248,26 +258,21 @@ export default function RoomDetail() {
                   </div>
                   <span
                     className={`overlay-status ${
-                      room.status === "Available" || room.status === "Trống"
+                      depositAllowed
                         ? "available"
-                        : room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit
-                          ? "available"
-                          : room.status === "Deposited" && room.futureContractStartDate && room.isShortTermAvailable
-                            ? "available"
-                            : room.status === "Deposited"
-                              ? "deposited"
-                              : "occupied"
+                        : room.status === "Deposited"
+                          ? "deposited"
+                          : "occupied"
                       }`}
                   >
-                    {room.status === "Available" || room.status === "Trống"
-                      ? "Còn trống"
-                      : room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit
-                        ? "Còn trống"
-                        : room.status === "Deposited" && room.futureContractStartDate && room.isShortTermAvailable
-                          ? "Còn trống"
-                          : room.status === "Deposited"
-                            ? "Đã đặt cọc"
-                            : "Đang thuê"}
+                    {depositAllowed
+                      ? room.contractRenewalStatus === "declined" &&
+                        room.status === "Occupied"
+                        ? "Có thể đặt cọc"
+                        : "Còn trống"
+                      : room.status === "Deposited"
+                        ? "Đã đặt cọc"
+                        : "Đang thuê"}
                   </span>
                 </div>
 
@@ -498,16 +503,19 @@ export default function RoomDetail() {
                   {room.hasFutureInactiveContract && !room.hasFloatingDeposit && room.futureContractStartDate && (
                      <p style={{ color: "var(--success, #10b981)", fontWeight: "bold" }}>✓ Phòng hiện trống - Sẽ có Hợp đồng bắt đầu từ {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}</p>
                   )}
+                  {room.contractRenewalStatus === "declined" && room.status === "Occupied" && (
+                    <p style={{ color: "var(--warning)", fontWeight: "bold" }}>
+                      ⚠ Người thuê hiện tại đã từ chối gia hạn — bạn có thể đặt cọc cho kỳ thuê tiếp theo.
+                    </p>
+                  )}
                 </div>
 
                 <button
                   className="booking-button"
-                  disabled={
-                    (room.status !== "Available" && room.status !== "Trống" && !room.isShortTermAvailable)
-                  }
+                  disabled={!depositAllowed}
                   onClick={() => navigate(`/rooms/${id}/booking`)}
                 >
-                  {room.status === "Available" || room.status === "Trống" || room.isShortTermAvailable
+                  {depositAllowed
                     ? "Đặt Cọc Ngay"
                     : room.status === "Deposited"
                       ? "Phòng Đã Được Đặt Cọc"
