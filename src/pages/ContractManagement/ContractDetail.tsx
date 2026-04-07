@@ -207,6 +207,11 @@ const ContractDetail = () => {
     );
   }
 
+  const deposit =
+    contract.depositId && typeof contract.depositId === "object"
+      ? contract.depositId
+      : null;
+
   const roomPrice = parseFloat(
     contract.roomId?.roomTypeId?.currentPrice?.toString() || "0",
   );
@@ -446,6 +451,7 @@ const ContractDetail = () => {
                   <strong>
                     {contract.tenantInfo?.fullname ||
                       contract.tenantId?.username ||
+                      deposit?.name ||
                       "—"}
                   </strong>
                 </Typography>
@@ -472,12 +478,15 @@ const ContractDetail = () => {
               <Grid size={{ xs: 12, md: 6 }}>
                 <Typography sx={{ fontFamily: serifFont }}>
                   Điện thoại:{" "}
-                  <strong>{contract.tenantId?.phoneNumber || "—"}</strong>
+                  <strong>
+                    {contract.tenantId?.phoneNumber || deposit?.phone || "—"}
+                  </strong>
                 </Typography>
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
                 <Typography sx={{ fontFamily: serifFont }}>
-                  Email: <strong>{contract.tenantId?.email || "—"}</strong>
+                  Email:{" "}
+                  <strong>{contract.tenantId?.email || deposit?.email || "—"}</strong>
                 </Typography>
               </Grid>
               <Grid size={12}>
