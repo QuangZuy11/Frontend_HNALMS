@@ -22,6 +22,8 @@ interface Room {
   futureContractStartDate?: string;
   hasFutureInactiveContract?: boolean; // true: contract inactive (>30 days) → show green label, no !
   contractRenewalStatus?: string | null;
+  /** Đã có HĐ kế tiếp sau kỳ declined — guest không đặt cọc thêm */
+  successorLeaseBooked?: boolean;
   [key: string]: any;
 }
 
@@ -405,7 +407,14 @@ export default function FloorMap({
                       )}
                     {legendType === "guest" &&
                       room.contractRenewalStatus === "declined" &&
-                      !hasFloatingDeposit && (
+                      !hasFloatingDeposit &&
+                      room.successorLeaseBooked && (
+                        <span className="room-guest-successor-booked">Đã có HĐ kế tiếp</span>
+                      )}
+                    {legendType === "guest" &&
+                      room.contractRenewalStatus === "declined" &&
+                      !hasFloatingDeposit &&
+                      !room.successorLeaseBooked && (
                         <span className="room-guest-can-deposit">Có thể cọc</span>
                       )}
                     {legendType === "contract" &&

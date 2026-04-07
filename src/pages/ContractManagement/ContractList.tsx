@@ -10,7 +10,10 @@ import FloorMapLevel3 from "../RoomManagement/RoomList/components/FloorMapLevel3
 import FloorMapLevel4 from "../RoomManagement/RoomList/components/FloorMapLevel4";
 import FloorMapLevel5 from "../RoomManagement/RoomList/components/FloorMapLevel5";
 import "./ContractFloorMap.css";
-import { isContractStartedByLocalCalendar } from "../../utils/contractDates";
+import {
+  hasSuccessorContractAfterDeclinedTenant,
+  isContractStartedByLocalCalendar,
+} from "../../utils/contractDates";
 
 const API_URL = "http://localhost:9999/api";
 
@@ -28,6 +31,7 @@ interface RoomActionPopup {
  * - Không chặn khi HĐ active hiện tại có renewal declined (đang chờ trả phòng / ký HĐ lấp khe).
  * - HĐ active nhưng ngày bắt đầu còn trong tương lai: thường chặn (đã có HĐ xếp hàng),
  *   trừ phòng `contractRenewalStatus === "declined"` — vẫn cho tạo HĐ/cọc cho giai đoạn trước HĐ tương lai.
+ * - Nếu đã có HĐ kế tiếp (sau ngày kết thúc HĐ đang ở) thì không cho (khách A đã ký xong).
  */
 function allowCreateNewContractOption(
   room: any,
@@ -35,6 +39,7 @@ function allowCreateNewContractOption(
   roomDeposits: any[],
 ) {
   if (roomDeposits.length > 0) return false;
+  if (hasSuccessorContractAfterDeclinedTenant(room, roomContracts)) return false;
   const blocked = roomContracts.some((c: any) => {
     if (c.status !== "active") return false;
     if (!isContractStartedByLocalCalendar(c.startDate)) {

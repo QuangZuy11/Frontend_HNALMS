@@ -380,7 +380,14 @@ export default function FloorMapLevel5({
                       )}
                     {legendType === "guest" &&
                       room.contractRenewalStatus === "declined" &&
-                      !hasFloatingDeposit && (
+                      !hasFloatingDeposit &&
+                      room.successorLeaseBooked && (
+                        <span className="room-guest-successor-booked">Đã có HĐ kế tiếp</span>
+                      )}
+                    {legendType === "guest" &&
+                      room.contractRenewalStatus === "declined" &&
+                      !hasFloatingDeposit &&
+                      !room.successorLeaseBooked && (
                         <span className="room-guest-can-deposit">Có thể cọc</span>
                       )}
                     {legendType === "contract" &&
