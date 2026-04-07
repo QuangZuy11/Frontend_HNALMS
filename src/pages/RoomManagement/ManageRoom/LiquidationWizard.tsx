@@ -261,12 +261,20 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
         total,
       };
     } else {
-      const rentDebt = Math.round((roomPrice / 30) * daysUsed);
+      let rentDebt = 0;
+      let actualOwedDays = daysUsed;
+      if (preflightData?.rentDebtDays !== undefined) {
+        rentDebt = preflightData.rentDebtAmount;
+        actualOwedDays = preflightData.rentDebtDays;
+      } else {
+        rentDebt = Math.round((roomPrice / 30) * daysUsed);
+      }
+      
       // Tổng thu = tiền thuê nợ + tiền điện + tiền nước (đều CỘNG vào)
       const total = rentDebt + utilityCost;
       return {
         type: "violation" as const,
-        daysUsed,
+        daysUsed: actualOwedDays,
         rentDebt,
         electricCost,
         waterCost,
