@@ -389,11 +389,6 @@ export default function ReportRepairMaintenance() {
                       return (
                         <tr key={row.month}>
                           <td>
-                            {isPeak && (
-                              <span className="rrm-badge rrm-badge-peak" style={{ marginRight: 6 }}>
-                                ★
-                              </span>
-                            )}
                             {formatMonth(row.month)}
                           </td>
                           <td>
