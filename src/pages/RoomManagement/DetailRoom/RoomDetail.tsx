@@ -137,20 +137,7 @@ export default function RoomDetail() {
     try {
       const response = await serviceService.getServices();
       if (response.data) {
-        // Filter only the services we want to display
-        const allowedNames = [
-          "Điện",
-          "Nước",
-          "Internet",
-          "Vệ Sinh",
-          "Thang máy",
-        ];
-        const filtered = response.data.filter((svc: any) =>
-          allowedNames.some((name) =>
-            svc.name.toLowerCase().includes(name.toLowerCase()),
-          ),
-        );
-        setServices(filtered);
+        setServices(response.data);
       }
     } catch (err) {
       console.error("Error fetching services:", err);
