@@ -10,6 +10,7 @@ import FloorMapLevel3 from "../RoomManagement/RoomList/components/FloorMapLevel3
 import FloorMapLevel4 from "../RoomManagement/RoomList/components/FloorMapLevel4";
 import FloorMapLevel5 from "../RoomManagement/RoomList/components/FloorMapLevel5";
 import "./ContractFloorMap.css";
+import { isContractStartedByLocalCalendar } from "../../utils/contractDates";
 
 const API_URL = "http://localhost:9999/api";
 
@@ -21,16 +22,25 @@ interface RoomActionPopup {
   deposits: any[];       // Danh sách cọc lẻ (chưa gắn HĐ)
 }
 
-/** Hiện nút "Tạo hợp đồng, cọc mới": không có cọc lẻ chờ ký; HĐ active đã hiệu lực + declined thì vẫn cho */
+/**
+ * Hiện nút "Tạo hợp đồng, cọc mới":
+ * - Không có cọc lẻ chờ ký (phải ký qua từng cọc).
+ * - Không chặn khi HĐ active hiện tại có renewal declined (đang chờ trả phòng / ký HĐ lấp khe).
+ * - HĐ active nhưng ngày bắt đầu còn trong tương lai: thường chặn (đã có HĐ xếp hàng),
+ *   trừ phòng `contractRenewalStatus === "declined"` — vẫn cho tạo HĐ/cọc cho giai đoạn trước HĐ tương lai.
+ */
 function allowCreateNewContractOption(
+  room: any,
   roomContracts: any[],
   roomDeposits: any[],
 ) {
   if (roomDeposits.length > 0) return false;
   const blocked = roomContracts.some((c: any) => {
     if (c.status !== "active") return false;
-    const start = new Date(c.startDate).getTime();
-    if (start > Date.now()) return true;
+    if (!isContractStartedByLocalCalendar(c.startDate)) {
+      if (room?.contractRenewalStatus === "declined") return false;
+      return true;
+    }
     if (c.renewalStatus === "declined") return false;
     return true;
   });
@@ -99,7 +109,7 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
             return (
               roomId === room._id &&
               c.status === "active" &&
-              new Date(c.startDate) > new Date()
+              !isContractStartedByLocalCalendar(c.startDate)
             );
           });
 
@@ -135,7 +145,11 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
   const roomContractMap: Record<string, string> = {};
   contracts.forEach((c: any) => {
     const roomId = c.roomId?._id || c.roomId;
-    if (c.status === "active" && roomId && new Date(c.startDate) <= new Date()) {
+    if (
+      c.status === "active" &&
+      roomId &&
+      isContractStartedByLocalCalendar(c.startDate)
+    ) {
       roomContractMap[roomId] = c._id;
     }
   });
@@ -331,8 +345,12 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
           <div className="popup-options">
             {/* Hiện các hợp đồng */}
             {actionPopup.contracts.map((contract: any) => {
-              const isActive = contract.status === "active" && new Date(contract.startDate) <= new Date();
-              const isPending = contract.status === "active" && new Date(contract.startDate) > new Date();
+              const isActive =
+                contract.status === "active" &&
+                isContractStartedByLocalCalendar(contract.startDate);
+              const isPending =
+                contract.status === "active" &&
+                !isContractStartedByLocalCalendar(contract.startDate);
               return (
                 <button
                   key={contract._id}
@@ -376,6 +394,7 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
             ))}
             {!readOnly &&
               allowCreateNewContractOption(
+                actionPopup.room,
                 actionPopup.contracts,
                 actionPopup.deposits,
               ) && (

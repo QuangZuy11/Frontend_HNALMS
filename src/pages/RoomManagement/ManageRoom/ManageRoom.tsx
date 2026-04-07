@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import "./ManageRoom.css";
 import LiquidationWizard from "./LiquidationWizard";
+import { isContractStartedByLocalCalendar } from "../../../utils/contractDates";
 
 const API_BASE_URL = "http://localhost:9999/api";
 
@@ -282,7 +283,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
             if (rid !== room._id || c.status !== "active") return false;
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            const started = new Date(c.startDate) <= new Date();
+            const started = isContractStartedByLocalCalendar(c.startDate);
             const endD = new Date(c.endDate);
             endD.setHours(0, 0, 0, 0);
             const notEnded = endD >= today;

@@ -392,7 +392,8 @@ const CreateContract = () => {
     mode: "onChange",
     defaultValues: savedDraft?.formValues || {
       roomId: preFilledRoomId || "",
-      startDate: new Date().toISOString().split("T")[0],
+      // Local calendar date — toISOString() is UTC and shifts the day in VN (UTC+7).
+      startDate: formatDate(new Date(), "yyyy-MM-dd"),
       duration: 12,
       prepayMonths: 2,
       tenantInfo: {
