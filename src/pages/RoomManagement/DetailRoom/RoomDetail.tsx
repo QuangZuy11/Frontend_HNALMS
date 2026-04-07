@@ -220,6 +220,10 @@ export default function RoomDetail() {
     room.status === "Trống" ||
     room.isShortTermAvailable;
 
+  const declinedRenewalDual =
+    room.contractRenewalStatus === "declined" &&
+    (room.status === "Occupied" || room.status === "Deposited");
+
   return (
     <main className="room-detail-page">
       <div className="room-detail-container">
@@ -256,24 +260,32 @@ export default function RoomDetail() {
                       <span>{room.floorLabel}</span>
                     </div>
                   </div>
-                  <span
-                    className={`overlay-status ${
-                      depositAllowed
-                        ? "available"
-                        : room.status === "Deposited"
-                          ? "deposited"
-                          : "occupied"
-                      }`}
-                  >
-                    {depositAllowed
-                      ? room.contractRenewalStatus === "declined" &&
-                        room.status === "Occupied"
-                        ? "Có thể đặt cọc"
-                        : "Còn trống"
-                      : room.status === "Deposited"
+                  {declinedRenewalDual ? (
+                    <div className="overlay-status-row">
+                      <span className="overlay-status occupied">Đang thuê</span>
+                      <span
+                        className={`overlay-status ${room.hasFloatingDeposit ? "deposited" : "available"}`}
+                      >
+                        {room.hasFloatingDeposit
+                          ? "Đã có cọc kế tiếp"
+                          : "Có thể cọc"}
+                      </span>
+                    </div>
+                  ) : (
+                    <span
+                      className={`overlay-status ${
+                        depositAllowed
+                          ? "available"
+                          : room.status === "Deposited"
+                            ? "deposited"
+                            : "occupied"
+                        }`}
+                    >
+                      {depositAllowed ? "Còn trống" : room.status === "Deposited"
                         ? "Đã đặt cọc"
                         : "Đang thuê"}
-                  </span>
+                    </span>
+                  )}
                 </div>
 
                 {/* Navigation Buttons */}
@@ -335,23 +347,36 @@ export default function RoomDetail() {
                     <span>{room.floorLabel}</span>
                   </div>
                 </div>
-                <span
-                  className={`overlay-status ${
-                    room.status === "Available" || room.status === "Trống" || (room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit)
-                      ? "available"
-                      : room.status === "Deposited"
-                        ? "deposited"
-                        : "occupied"
-                    }`}
-                >
-                  {room.status === "Available" || room.status === "Trống"
-                    ? "Còn trống"
-                    : room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit
+                {declinedRenewalDual ? (
+                  <div className="overlay-status-row">
+                    <span className="overlay-status occupied">Đang thuê</span>
+                    <span
+                      className={`overlay-status ${room.hasFloatingDeposit ? "deposited" : "available"}`}
+                    >
+                      {room.hasFloatingDeposit
+                        ? "Đã có cọc kế tiếp"
+                        : "Có thể cọc"}
+                    </span>
+                  </div>
+                ) : (
+                  <span
+                    className={`overlay-status ${
+                      room.status === "Available" || room.status === "Trống" || (room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit)
+                        ? "available"
+                        : room.status === "Deposited"
+                          ? "deposited"
+                          : "occupied"
+                      }`}
+                  >
+                    {room.status === "Available" || room.status === "Trống"
                       ? "Còn trống"
-                      : room.status === "Deposited"
-                        ? "Đã đặt cọc"
-                        : "Đã thuê"}
-                </span>
+                      : room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit
+                        ? "Còn trống"
+                        : room.status === "Deposited"
+                          ? "Đã đặt cọc"
+                          : "Đã thuê"}
+                  </span>
+                )}
               </div>
               <span className="gallery-text">Hình Ảnh Phòng</span>
             </div>
@@ -364,6 +389,25 @@ export default function RoomDetail() {
             {/* Room Info Card */}
             <div className="info-card">
               <h3 className="card-title">Thông Tin Phòng</h3>
+
+              {declinedRenewalDual && (
+                <div className="detail-dual-status-cards">
+                  <div className="detail-status-mini-card detail-status-mini-occupied">
+                    <span className="detail-status-mini-label">Trạng thái thuê</span>
+                    <span className="detail-status-mini-value">Đang thuê</span>
+                  </div>
+                  <div
+                    className={`detail-status-mini-card ${room.hasFloatingDeposit ? "detail-status-mini-deposited" : "detail-status-mini-can-deposit"}`}
+                  >
+                    <span className="detail-status-mini-label">Đặt cọc kế tiếp</span>
+                    <span className="detail-status-mini-value">
+                      {room.hasFloatingDeposit
+                        ? "Đã có cọc"
+                        : "Có thể cọc"}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {room.description && (
                 <p className="detail-room-description">{room.description}</p>

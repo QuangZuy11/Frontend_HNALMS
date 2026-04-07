@@ -329,11 +329,12 @@ export default function FloorMap({
                 (room.status === "Occupied" || room.status === "Deposited");
 
               // Inactive contract (>30 days): treat as available, green label, no !
+              // Guest + declined: giữ dạng đang thuê (sọc), chỉ thêm nhãn "Có thể cọc"
               const showAsAvailable =
                 isAvailable ||
                 (isDeposited && isShortTermAvailable && !hasFutureContract) ||
                 hasFutureInactiveContract ||
-                renewalDeclinedRebook;
+                (renewalDeclinedRebook && legendType !== "guest");
               // Visual: show deposit badge if deposited + has floating deposit (NOT for inactive contracts)
               // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit
               const showDepositedBadge = (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) || (hasFutureInactiveContract && hasFloatingDeposit);
@@ -394,6 +395,19 @@ export default function FloorMap({
                         {getExpiryLabel(room.contractEndDate)}
                       </span>
                     )}
+                    {legendType === "guest" &&
+                      room.contractRenewalStatus === "declined" &&
+                      isDeposited &&
+                      getExpiryLabel(room.contractEndDate) && (
+                        <span className="room-expiry-label">
+                          {getExpiryLabel(room.contractEndDate)}
+                        </span>
+                      )}
+                    {legendType === "guest" &&
+                      room.contractRenewalStatus === "declined" &&
+                      !hasFloatingDeposit && (
+                        <span className="room-guest-can-deposit">Có thể cọc</span>
+                      )}
                     {!isDeposited && room.contractStartDate && getContractDateLabel(room.contractStartDate, room.contractEndDate, showDateYear) && (
                       <span className="room-contract-dates">
                         {getContractDateLabel(room.contractStartDate, room.contractEndDate, showDateYear)}

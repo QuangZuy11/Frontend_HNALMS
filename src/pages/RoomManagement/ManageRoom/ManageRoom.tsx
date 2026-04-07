@@ -46,6 +46,7 @@ interface Room {
   status: "Available" | "Occupied" | "Maintenance" | "Deposited";
   description?: string;
   isActive: boolean;
+  contractRenewalStatus?: string | null;
 }
 
 interface ManageRoomProps {
@@ -273,12 +274,34 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
             <AlertCircle size={12} /> Đang thuê
           </span>
         );
-      case "Deposited":
+      case "Deposited": {
+        // Phòng DB = Deposited (vd: khách B đã cọc) nhưng khách A vẫn đang ở + đã declined → hiển thị Đang thuê
+        if (room.contractRenewalStatus === "declined") {
+          const stillOccupied = contracts.some((c: any) => {
+            const rid = c.roomId?._id || c.roomId;
+            if (rid !== room._id || c.status !== "active") return false;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const started = new Date(c.startDate) <= new Date();
+            const endD = new Date(c.endDate);
+            endD.setHours(0, 0, 0, 0);
+            const notEnded = endD >= today;
+            return started && notEnded && c.isActivated !== false;
+          });
+          if (stillOccupied) {
+            return (
+              <span className="status-badge occupied">
+                <AlertCircle size={12} /> Đang thuê
+              </span>
+            );
+          }
+        }
         return (
           <span className="status-badge deposited">
             <Banknote size={12} /> Đã cọc
           </span>
         );
+      }
       default:
         return <span>{room.status}</span>;
     }

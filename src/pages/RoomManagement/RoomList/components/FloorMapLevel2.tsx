@@ -409,7 +409,7 @@ export default function FloorMapLevel2({
                             isAvailable ||
                             (isDeposited && isShortTermAvailable && !hasFutureContract) ||
                             hasFutureInactiveContract ||
-                            renewalDeclinedRebook;
+                            (renewalDeclinedRebook && legendType !== "guest");
                           // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit
                           const showDepositedBadge = (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) || (hasFutureInactiveContract && hasFloatingDeposit);
                           const typeColor = getRoomTypeColor(
@@ -496,6 +496,19 @@ export default function FloorMapLevel2({
                                   {getExpiryLabel(room.contractEndDate)}
                                 </span>
                               )}
+                              {legendType === "guest" &&
+                                room.contractRenewalStatus === "declined" &&
+                                isDeposited &&
+                                getExpiryLabel(room.contractEndDate) && (
+                                  <span className="room-expiry-label">
+                                    {getExpiryLabel(room.contractEndDate)}
+                                  </span>
+                                )}
+                              {legendType === "guest" &&
+                                room.contractRenewalStatus === "declined" &&
+                                !hasFloatingDeposit && (
+                                  <span className="room-guest-can-deposit">Có thể cọc</span>
+                                )}
                               {!isDeposited && room.contractStartDate && getContractDateLabel(room.contractStartDate, room.contractEndDate) && (
                                 <span className="room-contract-dates">
                                   {getContractDateLabel(room.contractStartDate, room.contractEndDate)}
@@ -574,7 +587,7 @@ export default function FloorMapLevel2({
                     isAvailable ||
                     (isDeposited && isShortTermAvailable && !hasFutureContract) ||
                     hasFutureInactiveContract ||
-                    renewalDeclinedRebook;
+                    (renewalDeclinedRebook && legendType !== "guest");
                   // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit
                   const showDepositedBadge = (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) || (hasFutureInactiveContract && hasFloatingDeposit);
                   const typeColor = getRoomTypeColor(room.roomTypeId?._id);
@@ -656,6 +669,19 @@ export default function FloorMapLevel2({
                           {getExpiryLabel(room.contractEndDate)}
                         </span>
                       )}
+                      {legendType === "guest" &&
+                        room.contractRenewalStatus === "declined" &&
+                        isDeposited &&
+                        getExpiryLabel(room.contractEndDate) && (
+                          <span className="room-expiry-label">
+                            {getExpiryLabel(room.contractEndDate)}
+                          </span>
+                        )}
+                      {legendType === "guest" &&
+                        room.contractRenewalStatus === "declined" &&
+                        !hasFloatingDeposit && (
+                          <span className="room-guest-can-deposit">Có thể cọc</span>
+                        )}
                       {!isDeposited && room.contractStartDate && getContractDateLabel(room.contractStartDate, room.contractEndDate) && (
                         <span className="room-contract-dates">
                           {getContractDateLabel(room.contractStartDate, room.contractEndDate)}
