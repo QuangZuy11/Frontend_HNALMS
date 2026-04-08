@@ -126,6 +126,7 @@ export default function RoomDetail() {
           hasFutureInactiveContract,
           contractRenewalStatus: roomData.contractRenewalStatus ?? null,
           successorLeaseBooked,
+          nextInactiveContractStart: roomData.nextInactiveContractStart ?? null,
         };
 
         console.log("✅ Transformed room price:", transformedRoom.price);
@@ -559,6 +560,11 @@ export default function RoomDetail() {
                   {room.contractRenewalStatus === "declined" && (room.status === "Occupied" || room.status === "Deposited") && !room.successorLeaseBooked && (
                     <p style={{ color: "var(--warning)", fontWeight: "bold" }}>
                       ⚠ Người thuê hiện tại đã từ chối gia hạn — bạn có thể đặt cọc cho kỳ thuê tiếp theo.
+                    </p>
+                  )}
+                  {room.contractRenewalStatus === "declined" && room.nextInactiveContractStart && !room.successorLeaseBooked && (
+                    <p style={{ color: "#dc2626", fontWeight: "bold", marginTop: "4px" }}>
+                      ⚠ Hợp đồng mới phải kết thúc trước ngày {new Date(room.nextInactiveContractStart).toLocaleDateString("vi-VN")} (ngày HĐ kế tiếp bắt đầu).
                     </p>
                   )}
                 </div>

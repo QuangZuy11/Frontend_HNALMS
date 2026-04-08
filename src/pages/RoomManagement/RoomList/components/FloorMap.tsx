@@ -16,14 +16,16 @@ interface Room {
   price?: number;
   contractStartDate?: string;
   contractEndDate?: string;
-  hasFloatingDeposit?: boolean; // true if room has deposit not yet linked to contract
-  isShortTermAvailable?: boolean; // true if room can accept short-term rental
-  futureContractId?: string; // ID of future contract if exists
+  hasFloatingDeposit?: boolean;
+  isShortTermAvailable?: boolean;
+  futureContractId?: string;
   futureContractStartDate?: string;
-  hasFutureInactiveContract?: boolean; // true: contract inactive (>30 days) → show green label, no !
+  hasFutureInactiveContract?: boolean;
   contractRenewalStatus?: string | null;
   /** Đã có HĐ kế tiếp sau kỳ declined — guest không đặt cọc thêm */
   successorLeaseBooked?: boolean;
+  /** Ngày bắt đầu HĐ chưa kích hoạt kế tiếp (vd HĐ 464) — giới hạn thời gian thuê mới */
+  nextInactiveContractStart?: string | null;
   [key: string]: any;
 }
 
@@ -338,8 +340,11 @@ export default function FloorMap({
                 hasFutureInactiveContract ||
                 (renewalDeclinedRebook && legendType !== "guest");
               // Visual: show deposit badge if deposited + has floating deposit (NOT for inactive contracts)
-              // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit
-              const showDepositedBadge = (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) || (hasFutureInactiveContract && hasFloatingDeposit);
+              // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit OR gap is already filled
+              const showDepositedBadge = 
+                (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) || 
+                (hasFutureInactiveContract && hasFloatingDeposit) ||
+                (hasFutureInactiveContract && room.successorLeaseBooked);
 
               // Check if highlighted
               const isGhosted =
@@ -391,12 +396,22 @@ export default function FloorMap({
                       </span>
                     )}
 
-                    {/* Occupied rooms → normal expiry / contract date range */}
-                    {!isDeposited && !room.contractStartDate && getExpiryLabel(room.contractEndDate) && (
-                      <span className="room-expiry-label">
-                        {getExpiryLabel(room.contractEndDate)}
-                      </span>
-                    )}
+                    {/* Occupied + declined: hiện "Trống từ DD/MM" (ngày hết HĐ 622 + 1) */}
+                    {room.contractRenewalStatus === "declined" &&
+                      !isDeposited &&
+                      getExpiryLabel(room.contractEndDate) && (
+                        <span className="room-expiry-label">
+                          {getExpiryLabel(room.contractEndDate)}
+                        </span>
+                      )}
+                    {/* Khi có HĐ 464 chưa kích hoạt: hiện giới hạn thuê — "Trống đến → DD/MM/YYYY" */}
+                    {room.contractRenewalStatus === "declined" &&
+                      room.nextInactiveContractStart &&
+                      !room.successorLeaseBooked && (
+                        <span className="room-inactive-label" style={{ background: "rgba(220,38,38,0.85)" }}>
+                          Đến → {new Date(room.nextInactiveContractStart as string).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                        </span>
+                      )}
                     {legendType === "guest" &&
                       room.contractRenewalStatus === "declined" &&
                       isDeposited &&

@@ -408,8 +408,11 @@ export default function FloorMapLevel3({
                             (isDeposited && isShortTermAvailable && !hasFutureContract) ||
                             hasFutureInactiveContract ||
                             (renewalDeclinedRebook && legendType !== "guest");
-                          // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit
-                          const showDepositedBadge = (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) || (hasFutureInactiveContract && hasFloatingDeposit);
+                          // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit OR gap is already filled
+                          const showDepositedBadge = 
+                            (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) || 
+                            (hasFutureInactiveContract && hasFloatingDeposit) ||
+                            (hasFutureInactiveContract && room.successorLeaseBooked);
                           const typeColor = getRoomTypeColor(
                             room.roomTypeId?._id,
                           );
