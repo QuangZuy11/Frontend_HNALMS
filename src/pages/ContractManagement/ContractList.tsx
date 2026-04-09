@@ -17,12 +17,47 @@ import {
 
 const API_URL = "http://localhost:9999/api";
 
+type PopupPlacement = "above" | "below";
+
 interface RoomActionPopup {
   show: boolean;
   room: any;
-  position: { x: number; y: number };
+  position: { x: number; anchorTop: number; anchorBottom: number };
+  placement: PopupPlacement;
   contracts: any[];      // Danh sách hợp đồng của phòng
   deposits: any[];       // Danh sách cọc lẻ (chưa gắn HĐ)
+}
+
+const EMPTY_ACTION_POPUP: RoomActionPopup = {
+  show: false,
+  room: null,
+  position: { x: 0, anchorTop: 0, anchorBottom: 0 },
+  placement: "above",
+  contracts: [],
+  deposits: [],
+};
+
+/** Tránh popup mở phía trên khi ô phòng sát mép trên viewport (đè lên chrome / header app). */
+function computePopupAnchor(
+  event?: React.MouseEvent,
+): { x: number; anchorTop: number; anchorBottom: number; placement: PopupPlacement } {
+  const rect = event?.currentTarget
+    ? (event.currentTarget as HTMLElement).getBoundingClientRect()
+    : null;
+  const fallbackY = event?.clientY ?? 200;
+  const xRaw = rect ? rect.left + rect.width / 2 : event?.clientX ?? 200;
+  const anchorTop = rect?.top ?? fallbackY - 24;
+  const anchorBottom = rect?.bottom ?? fallbackY + 24;
+  const halfMin = 140;
+  const x =
+    typeof window !== "undefined"
+      ? Math.min(window.innerWidth - halfMin - 8, Math.max(halfMin + 8, xRaw))
+      : xRaw;
+  const VIEWPORT_TOP_SAFE = 8;
+  const ESTIMATED_POPUP_HEIGHT = 340;
+  const placement: PopupPlacement =
+    anchorTop >= ESTIMATED_POPUP_HEIGHT + VIEWPORT_TOP_SAFE ? "above" : "below";
+  return { x, anchorTop, anchorBottom, placement };
 }
 
 /**
@@ -67,20 +102,14 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
   const [deposits, setDeposits] = useState<any[]>([]);
   const [floors, setFloors] = useState<any[]>([]);
   const [activeFloorTab, setActiveFloorTab] = useState(0);
-  const [actionPopup, setActionPopup] = useState<RoomActionPopup>({
-    show: false,
-    room: null,
-    position: { x: 0, y: 0 },
-    contracts: [],
-    deposits: [],
-  });
+  const [actionPopup, setActionPopup] = useState<RoomActionPopup>(EMPTY_ACTION_POPUP);
   const popupRef = useRef<HTMLDivElement>(null);
 
   // Close popup when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
-        setActionPopup({ show: false, room: null, position: { x: 0, y: 0 } });
+        setActionPopup(EMPTY_ACTION_POPUP);
       }
     };
     if (actionPopup.show) {
@@ -194,14 +223,13 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
 
     // Nếu có hợp đồng hoặc cọc lẻ → hiện popup
     if (roomContracts.length > 0 || roomDeposits.length > 0) {
-      const rect = (event?.currentTarget as HTMLElement)?.getBoundingClientRect();
-      const x = rect ? rect.left + rect.width / 2 : event?.clientX || 200;
-      const y = rect ? rect.top : event?.clientY || 200;
+      const { x, anchorTop, anchorBottom, placement } = computePopupAnchor(event);
 
       setActionPopup({
         show: true,
         room,
-        position: { x, y },
+        position: { x, anchorTop, anchorBottom },
+        placement,
         contracts: roomContracts,
         deposits: roomDeposits,
       });
@@ -224,7 +252,7 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
   // Xem chi tiết hợp đồng
   const handleViewContract = (contractId: string) => {
     navigate(`${contractId}`);
-    setActionPopup({ show: false, room: null, position: { x: 0, y: 0 }, contracts: [], deposits: [] });
+    setActionPopup(EMPTY_ACTION_POPUP);
   };
 
   // Tạo hợp đồng mới cho cọc lẻ
@@ -232,7 +260,7 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
     if (actionPopup.room) {
       navigate("create", { state: { roomId: actionPopup.room._id, depositId } });
     }
-    setActionPopup({ show: false, room: null, position: { x: 0, y: 0 }, contracts: [], deposits: [] });
+    setActionPopup(EMPTY_ACTION_POPUP);
   };
 
   // Tạo hợp đồng mới (không có cọc)
@@ -240,7 +268,7 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
     if (actionPopup.room) {
       navigate("create", { state: { roomId: actionPopup.room._id } });
     }
-    setActionPopup({ show: false, room: null, position: { x: 0, y: 0 }, contracts: [], deposits: [] });
+    setActionPopup(EMPTY_ACTION_POPUP);
   };
 
   const activeContracts = contracts.filter(
@@ -339,12 +367,18 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
       {actionPopup.show && actionPopup.room && (
         <div
           ref={popupRef}
-          className="room-action-popup"
+          className={`room-action-popup room-action-popup--${actionPopup.placement}`}
           style={{
             position: "fixed",
             left: actionPopup.position.x,
-            top: actionPopup.position.y - 10,
-            transform: "translate(-50%, -100%)",
+            top:
+              actionPopup.placement === "above"
+                ? actionPopup.position.anchorTop - 10
+                : actionPopup.position.anchorBottom + 10,
+            transform:
+              actionPopup.placement === "above"
+                ? "translate(-50%, -100%)"
+                : "translate(-50%, 0)",
             zIndex: 1000,
           }}
         >
