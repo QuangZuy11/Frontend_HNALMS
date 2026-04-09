@@ -226,60 +226,60 @@ export default function FloorMap({
                   }}
                 />
                 Đã thuê{legendType === "contract" && " → Click để xem HĐ"}
-              {legendType === "default" && " → Click để xem chi tiết"}
+                {legendType === "default" && " → Click để xem chi tiết"}
                 {legendType === "guest" && " (Không khả dụng)"}
               </span>
               {(legendType !== "default") && (
-              <span
-                style={{
-                  fontSize: "0.8rem",
-                  color: "#374151",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "0.35rem",
-                }}
-              >
                 <span
                   style={{
-                    position: "relative",
-                    display: "inline-block",
-                    width: "16px",
-                    height: "16px",
-                    borderRadius: "3px",
-                    background:
-                      "linear-gradient(145deg, #f59e0b 0%, #d97706 100%)",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                    fontSize: "0.8rem",
+                    color: "#374151",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.35rem",
                   }}
                 >
                   <span
                     style={{
-                      position: "absolute",
-                      top: "-4px",
-                      right: "-4px",
-                      width: "12px",
-                      height: "12px",
-                      borderRadius: "50%",
+                      position: "relative",
+                      display: "inline-block",
+                      width: "16px",
+                      height: "16px",
+                      borderRadius: "3px",
                       background:
-                        "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
-                      color: "#1e293b",
-                      fontSize: "8px",
-                      fontWeight: 800,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      lineHeight: 1,
-                      border: "1.5px solid white",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                        "linear-gradient(145deg, #f59e0b 0%, #d97706 100%)",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
                     }}
                   >
-                    !
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "-4px",
+                        right: "-4px",
+                        width: "12px",
+                        height: "12px",
+                        borderRadius: "50%",
+                        background:
+                          "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
+                        color: "#1e293b",
+                        fontSize: "8px",
+                        fontWeight: 800,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        lineHeight: 1,
+                        border: "1.5px solid white",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                      }}
+                    >
+                      !
+                    </span>
                   </span>
+                  Đã cọc
+                  {legendType === "guest" && " (Không khả dụng)"}
                 </span>
-                Đã cọc
-              {legendType === "guest" && " (Không khả dụng)"}
-            </span>
-            )}
-          </div>
+              )}
+            </div>
           )}
 
           {/* Room Type Legend (Dynamic) */}
@@ -341,8 +341,8 @@ export default function FloorMap({
                 (renewalDeclinedRebook && legendType !== "guest");
               // Visual: show deposit badge if deposited + has floating deposit (NOT for inactive contracts)
               // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit OR gap is already filled
-              const showDepositedBadge = 
-                (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) || 
+              const showDepositedBadge =
+                (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) ||
                 (hasFutureInactiveContract && hasFloatingDeposit) ||
                 (hasFutureInactiveContract && room.successorLeaseBooked);
 
@@ -396,20 +396,12 @@ export default function FloorMap({
                       </span>
                     )}
 
-                    {/* Occupied + declined: hiện "Trống từ DD/MM" (ngày hết HĐ 622 + 1) */}
+                    {/* Declined: thứ tự Trống từ → Đến (inactive) → nhãn guest / Từ chối gia hạn */}
                     {room.contractRenewalStatus === "declined" &&
                       !isDeposited &&
                       getExpiryLabel(room.contractEndDate) && (
                         <span className="room-expiry-label">
                           {getExpiryLabel(room.contractEndDate)}
-                        </span>
-                      )}
-                    {/* Khi có HĐ 464 chưa kích hoạt: hiện giới hạn thuê — "Trống đến → DD/MM/YYYY" */}
-                    {room.contractRenewalStatus === "declined" &&
-                      room.nextInactiveContractStart &&
-                      !room.successorLeaseBooked && (
-                        <span className="room-inactive-label" style={{ background: "rgba(220,38,38,0.85)" }}>
-                          Đến → {new Date(room.nextInactiveContractStart as string).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
                         </span>
                       )}
                     {legendType === "guest" &&
@@ -418,6 +410,21 @@ export default function FloorMap({
                       getExpiryLabel(room.contractEndDate) && (
                         <span className="room-expiry-label">
                           {getExpiryLabel(room.contractEndDate)}
+                        </span>
+                      )}
+                    {legendType === "contract" &&
+                      room.contractRenewalStatus === "declined" &&
+                      isDeposited &&
+                      getExpiryLabel(room.contractEndDate) && (
+                        <span className="room-expiry-label">
+                          {getExpiryLabel(room.contractEndDate)}
+                        </span>
+                      )}
+                    {room.contractRenewalStatus === "declined" &&
+                      room.nextInactiveContractStart &&
+                      !room.successorLeaseBooked && (
+                        <span className="room-inactive-label" style={{ background: "rgba(220,38,38,0.85)" }}>
+                          Đến → {new Date(room.nextInactiveContractStart as string).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
                         </span>
                       )}
                     {legendType === "guest" &&
@@ -431,14 +438,6 @@ export default function FloorMap({
                       !hasFloatingDeposit &&
                       !room.successorLeaseBooked && (
                         <span className="room-guest-can-deposit">Có thể cọc</span>
-                      )}
-                    {legendType === "contract" &&
-                      room.contractRenewalStatus === "declined" &&
-                      isDeposited &&
-                      getExpiryLabel(room.contractEndDate) && (
-                        <span className="room-expiry-label">
-                          {getExpiryLabel(room.contractEndDate)}
-                        </span>
                       )}
                     {legendType === "contract" &&
                       room.contractRenewalStatus === "declined" &&
