@@ -52,7 +52,7 @@ const ROOM_TYPE_COLORS = [
 ];
 
 // Helper to extract number from room type name (e.g., "Loại 1" -> 1)
-// Format contract expiry: endDate + 1 day => "Trống từ DD/MM"
+// Format contract expiry: endDate + 1 day => "Trống từ DD/MM/YY"
 const getExpiryLabel = (contractEndDate?: string): string | null => {
   if (!contractEndDate) return null;
   const endDate = new Date(contractEndDate);
@@ -61,7 +61,8 @@ const getExpiryLabel = (contractEndDate?: string): string | null => {
   vacantDate.setDate(vacantDate.getDate() + 1);
   const day = vacantDate.getDate().toString().padStart(2, "0");
   const month = (vacantDate.getMonth() + 1).toString().padStart(2, "0");
-  return `Trống từ ${day}/${month}`;
+  const year = vacantDate.getFullYear().toString().slice(-2);
+  return `Trống từ ${day}/${month}/${year}`;
 };
 
 // Label for Deposited rooms with a future contract (short format: room is available until this date)
@@ -70,8 +71,14 @@ const getComingSoonLabel = (contractStartDate?: string): string | null => {
   const d = new Date(contractStartDate);
   const day = d.getDate().toString().padStart(2, "0");
   const month = (d.getMonth() + 1).toString().padStart(2, "0");
-  const year = d.getFullYear();
+  const year = d.getFullYear().toString().slice(-2);
   return `Trống đến → ${day}/${month}/${year}`;
+};
+
+// Format date: dd/mm/yy
+const fmtYY = (dateStr: string): string => {
+  const d = new Date(dateStr);
+  return `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}/${d.getFullYear().toString().slice(-2)}`;
 };
 
 
@@ -386,66 +393,58 @@ export default function FloorMap({
                     {/* Inactive contract (>30 days): green label — không hiện khi đang có multi-options */}
                     {!hasMultiOptions && hasFutureInactiveContract && !hasFloatingDeposit && (room.futureContractStartDate || room.contractStartDate) && (
                       <span className="room-inactive-label">
-                        Trống đến → {new Date((room.futureContractStartDate || room.contractStartDate) as string).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                        Trống đến → {fmtYY((room.futureContractStartDate || room.contractStartDate) as string)}
                       </span>
                     )}
                     {/* Short-term available: show "trống đến → DD/MM/YY" label (KHÔNG khi có inactive contract) */}
                     {isShortTermAvailable && !hasFloatingDeposit && !hasFutureInactiveContract && room.contractStartDate && (
                       <span className="room-expiry-label" style={{ fontSize: "0.6rem", color: "#fff", fontWeight: 700, background: "rgba(16, 185, 129, 0.9)", padding: "2px 4px", borderRadius: "3px", lineHeight: 1.2 }}>
-                        Trống đến → {new Date(room.contractStartDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+                        Trống đến → {fmtYY(room.contractStartDate)}
                       </span>
                     )}
 
-                    {/* Declined: thứ tự Trống từ → Đến (inactive) → nhãn guest / Từ chối gia hạn */}
-                    {room.contractRenewalStatus === "declined" &&
-                      !isDeposited &&
-                      getExpiryLabel(room.contractEndDate) && (
-                        <span className="room-expiry-label">
-                          {getExpiryLabel(room.contractEndDate)}
-                        </span>
-                      )}
-                    {legendType === "guest" &&
-                      room.contractRenewalStatus === "declined" &&
-                      isDeposited &&
-                      getExpiryLabel(room.contractEndDate) && (
-                        <span className="room-expiry-label">
-                          {getExpiryLabel(room.contractEndDate)}
-                        </span>
-                      )}
-                    {legendType === "contract" &&
-                      room.contractRenewalStatus === "declined" &&
-                      isDeposited &&
-                      getExpiryLabel(room.contractEndDate) && (
-                        <span className="room-expiry-label">
-                          {getExpiryLabel(room.contractEndDate)}
-                        </span>
-                      )}
-                    {room.contractRenewalStatus === "declined" &&
-                      room.nextInactiveContractStart &&
-                      !room.successorLeaseBooked && (
-                        <span className="room-inactive-label" style={{ background: "rgba(220,38,38,0.85)" }}>
-                          Đến → {new Date(room.nextInactiveContractStart as string).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
-                        </span>
-                      )}
-                    {legendType === "guest" &&
-                      room.contractRenewalStatus === "declined" &&
-                      !hasFloatingDeposit &&
-                      room.successorLeaseBooked && (
-                        <span className="room-guest-successor-booked">Đã có HĐ kế tiếp</span>
-                      )}
-                    {legendType === "guest" &&
-                      room.contractRenewalStatus === "declined" &&
-                      !hasFloatingDeposit &&
-                      !room.successorLeaseBooked && (
-                        <span className="room-guest-can-deposit">Có thể cọc</span>
-                      )}
-                    {legendType === "contract" &&
-                      room.contractRenewalStatus === "declined" &&
-                      getExpiryLabel(room.contractEndDate) && (
-                        <span className="room-manager-declined-tag">
-                          Từ chối gia hạn
-                        </span>
-                      )}
+                    {/* Declined: gom cột + chữ lớn hơn; thứ tự Trống từ → Đến → guest / Từ chối gia hạn */}
+                    {room.contractRenewalStatus === "declined" && (
+                      <div className="room-declined-meta">
+                        {!isDeposited &&
+                          getExpiryLabel(room.contractEndDate) && (
+                            <span className="room-expiry-label">
+                              {getExpiryLabel(room.contractEndDate)}
+                            </span>
+                          )}
+                        {legendType === "guest" &&
+                          isDeposited &&
+                          getExpiryLabel(room.contractEndDate) && (
+                            <span className="room-expiry-label">
+                              {getExpiryLabel(room.contractEndDate)}
+                            </span>
+                          )}
+                        {legendType === "contract" &&
+                          isDeposited &&
+                          getExpiryLabel(room.contractEndDate) && (
+                            <span className="room-expiry-label">
+                              {getExpiryLabel(room.contractEndDate)}
+                            </span>
+                          )}
+                        {room.nextInactiveContractStart &&
+                          !room.successorLeaseBooked && (
+                            <span className="room-inactive-label room-inactive-label--deadline" style={{ background: "rgba(220,38,38,0.9)" }}>
+                              Đến → {fmtYY(room.nextInactiveContractStart)}
+                            </span>
+                          )}
+                        {legendType === "guest" &&
+                          !hasFloatingDeposit &&
+                          room.successorLeaseBooked && (
+                            <span className="room-guest-successor-booked">Đã có HĐ kế tiếp</span>
+                          )}
+                        {legendType === "guest" &&
+                          !hasFloatingDeposit &&
+                          !room.successorLeaseBooked && (
+                            <span className="room-guest-can-deposit">Có thể cọc</span>
+                          )}
+                        {/* "Từ chối gia hạn" hiển thị trên modal (ContractList), không lặp trên ô phòng sơ đồ HĐ */}
+                      </div>
+                    )}
                     {!isDeposited && room.contractStartDate && getContractDateLabel(room.contractStartDate, room.contractEndDate, showDateYear) && (
                       <span className="room-contract-dates">
                         {getContractDateLabel(room.contractStartDate, room.contractEndDate, showDateYear)}

@@ -33,6 +33,14 @@ interface RoomActionPopup {
  *   trừ phòng `contractRenewalStatus === "declined"` — vẫn cho tạo HĐ/cọc cho giai đoạn trước HĐ tương lai.
  * - Nếu đã có HĐ kế tiếp (sau ngày kết thúc HĐ đang ở) thì không cho (khách A đã ký xong).
  */
+/** dd/mm/yy — đồng bộ với FloorMap */
+function formatDdMmYy(iso?: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}/${d.getFullYear().toString().slice(-2)}`;
+}
+
 function allowCreateNewContractOption(
   room: any,
   roomContracts: any[],
@@ -356,26 +364,37 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
               const isPending =
                 contract.status === "active" &&
                 !isContractStartedByLocalCalendar(contract.startDate);
+              const showDeclinedRenewal =
+                isActive &&
+                (contract.renewalStatus === "declined" ||
+                  actionPopup.room?.contractRenewalStatus === "declined");
+              const statusLine = isActive
+                ? "Đang hiệu lực"
+                : isPending
+                  ? `Sắp tới (bắt đầu ${formatDdMmYy(contract.startDate)})`
+                  : contract.status === "Pending"
+                    ? "Đang chờ ký"
+                    : contract.status === "terminated"
+                      ? "Đã chấm dứt"
+                      : "Chưa có hiệu lực";
               return (
                 <button
                   key={contract._id}
-                  className={`popup-option ${isActive ? "option-view-active" : "option-view"}`}
+                  className={`popup-option popup-option-contract ${isActive ? "option-view-active" : "option-view"}`}
                   onClick={() => handleViewContract(contract._id)}
                 >
                   <FileText size={16} />
                   <div className="option-text">
                     <span className="option-title">HĐ: {contract.contractCode}</span>
-                    <span className="option-desc">
-                      {isActive
-                        ? "Đang hiệu lực"
-                        : isPending
-                          ? `Sắp tới (${new Date(contract.startDate).toLocaleDateString("vi-VN")})`
-                          : contract.status === "Pending"
-                            ? "Đang chờ ký"
-                            : contract.status === "terminated"
-                              ? "Đã chấm dứt"
-                              : "Chưa có hiệu lực"
-                      }
+                    <span className="option-dates">
+                      Bắt đầu: {formatDdMmYy(contract.startDate)} · Kết thúc:{" "}
+                      {formatDdMmYy(contract.endDate)}
+                    </span>
+                    <span className="option-desc option-desc-with-status">
+                      <span>{statusLine}</span>
+                      {showDeclinedRenewal && (
+                        <span className="popup-declined-renewal-tag">Từ chối gia hạn</span>
+                      )}
                     </span>
                   </div>
                 </button>

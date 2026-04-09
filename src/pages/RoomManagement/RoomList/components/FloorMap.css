@@ -168,14 +168,17 @@
 .room-node {
   width: 100%;
   /* Fill the grid cell */
-  height: 4.5rem;
-  /* Taller (approx 72px) */
+  min-height: 4.5rem;
+  height: auto;
+  align-self: stretch;
   border-radius: 0.625rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
+  padding: 0.3rem 0.2rem 0.35rem;
+  box-sizing: border-box;
   /* Center multi-line text */
   font-weight: 700;
   font-size: 0.95rem;
@@ -209,6 +212,57 @@
   position: relative;
   z-index: 1;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+  line-height: 1.15;
+}
+
+/* Cột nhãn từ chối gia hạn: dễ đọc hơn nhiều dòng trong ô */
+.room-declined-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.22rem;
+  width: 100%;
+  max-width: 100%;
+  margin-top: 0.15rem;
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+}
+
+.room-declined-meta:empty {
+  display: none;
+}
+
+.room-declined-meta .room-expiry-label,
+.room-declined-meta .room-inactive-label {
+  margin-top: 0;
+  font-size: 0.7rem;
+  padding: 3px 5px;
+  line-height: 1.25;
+  letter-spacing: 0;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.room-declined-meta .room-inactive-label--deadline {
+  font-variant-numeric: tabular-nums;
+}
+
+.room-declined-meta .room-manager-declined-tag {
+  margin-top: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 6px;
+  line-height: 1.25;
+}
+
+.room-declined-meta .room-guest-can-deposit,
+.room-declined-meta .room-guest-successor-booked {
+  margin-top: 0;
+  font-size: 0.66rem;
+  padding: 3px 6px;
+  line-height: 1.25;
 }
 
 .room-expiry-label {
