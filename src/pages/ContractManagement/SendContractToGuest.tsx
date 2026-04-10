@@ -18,6 +18,7 @@ import {
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+import api from "../../services/api";
 import { bookingRequestService } from "../../services/bookingRequestService";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -77,8 +78,7 @@ function DepositModal({
 
     // Otherwise, fetch from API using the string ID or roomId
     setLoading(true);
-    axios
-      .get(`${API_URL}/deposits`)
+    api.get(`/deposits`)
       .then((res) => {
         if (res.data.success) {
           let found = null;
@@ -98,7 +98,7 @@ function DepositModal({
 
             if (heldDeposits.length > 1) {
               // If multiple, find the one NOT used by any active contract
-              axios.get(`${API_URL}/contracts`).then((cRes) => {
+              api.get(`/contracts`).then((cRes) => {
                 const activeContracts = cRes.data.data.filter(
                   (c: any) =>
                     (c.roomId === roomId || c.roomId?._id === roomId) &&
@@ -339,14 +339,14 @@ interface ContractFormValues {
   prepayMonths: number | string;
 }
 
-const CreateContract = () => {
+const SendContractToGuest = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Pre-fill from navigation state (e.g., from Floor Map or Deposit)
-  const preFilledRoomId = location.state?.roomId;
-  const preFilledDepositId = location.state?.depositId;
+  // Pre-fill from navigation state (from Booking Request)
   const preFilledBookingRequestId = location.state?.bookingRequestId;
+  const preFilledRoomId = null; // Not used in booking guest flow
+  const preFilledDepositId = null; // Not used in booking guest flow
 
   // Restore saved form data from sessionStorage (when returning from deposit creation)
   const savedDraft = (() => {
@@ -368,12 +368,6 @@ const CreateContract = () => {
   const [vehicleQuantities, setVehicleQuantities] = useState<
     Record<string, number>
   >(savedDraft?.vehicleQuantities || {});
-  const [contractImages, setContractImages] = useState<string[]>(
-    savedDraft?.contractImages || [],
-  );
-  const [uploading, setUploading] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [ocrLoading, setOcrLoading] = useState(false);
   const ocrFileInputRef = useRef<HTMLInputElement>(null);
@@ -440,12 +434,17 @@ const CreateContract = () => {
               ...requestData,
               isBookingRequest: true, // flag to distinguish when submitting
             });
+
+            // We set selectedDeposit here, and another useEffect will handle form population
+
+
             if (requestData.roomId && !selectedRoom) {
               const room = rooms.find((r: any) =>
                 r._id === requestData.roomId._id || r._id === requestData.roomId
               );
               if (room) {
                 setValue("roomId", room._id);
+                handleRoomSelect(room); // Properly initialize room
               }
             }
             return;
@@ -453,8 +452,8 @@ const CreateContract = () => {
         }
 
         const [depositsRes, contractsRes] = await Promise.all([
-          axios.get(`${API_URL}/deposits`),
-          axios.get(`${API_URL}/contracts`),
+          api.get(`/deposits`),
+          api.get(`/contracts`),
         ]);
 
         if (depositsRes.data.success && contractsRes.data.success) {
@@ -584,8 +583,8 @@ const CreateContract = () => {
     const fetchData = async () => {
       try {
         const [roomsRes, servicesRes] = await Promise.all([
-          axios.get(`${API_URL}/rooms`),
-          axios.get(`${API_URL}/services?isActive=true`),
+          api.get(`/rooms`),
+          api.get(`/services?isActive=true`),
         ]);
 
         // Show all rooms (Occupied ones should be styled differently and unselectable)
@@ -633,7 +632,7 @@ const CreateContract = () => {
 
     try {
       // Fetch full room details to get devices
-      const res = await axios.get(`${API_URL}/rooms/${roomData._id}`);
+      const res = await api.get(`/rooms/${roomData._id}`);
       const fullRoom = res.data.data;
 
       setSelectedRoom(fullRoom);
@@ -958,51 +957,6 @@ const CreateContract = () => {
     }
   };
 
-  // Upload contract images handler
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const remaining = 5 - contractImages.length;
-    if (files.length > remaining) {
-      alert(
-        `Chỉ có thể tải thêm tối đa ${remaining} ảnh (đã có ${contractImages.length}/5 ảnh).`,
-      );
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      for (let i = 0; i < files.length; i++) {
-        formData.append("images", files[i]);
-      }
-
-      const res = await axios.post(
-        `${API_URL}/contracts/upload-images`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        },
-      );
-
-      if (res.data.success) {
-        setContractImages((prev) => [...prev, ...res.data.data]);
-        setImageError(false);
-      }
-    } catch (err: any) {
-      alert("Lỗi tải ảnh: " + (err.response?.data?.message || err.message));
-    } finally {
-      setUploading(false);
-      // Reset file input
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-
-  const handleRemoveImage = (index: number) => {
-    setContractImages((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const onSubmit = async (data: any) => {
 
     // Validate: phải có deposit được chọn đúng
@@ -1010,19 +964,6 @@ const CreateContract = () => {
       alert(
         "Không tìm thấy đặt cọc phù hợp cho phòng này. Vui lòng tạo đặt cọc mới trước khi tạo hợp đồng.",
       );
-      return;
-    }
-
-    // Validate: phải có least 1 ảnh hợp đồng bản cứng (ngoại trừ Booking Request Online đã có prepayMonths từ flow/ko cần up ảnh ngay nếu dev muốn, nhưng ở đây tạm giữ, hoặc check isBookingRequest)
-    const isOnlineBooking = selectedDeposit && selectedDeposit.isBookingRequest;
-    if (contractImages.length === 0 && !isOnlineBooking) {
-      setImageError(true);
-      alert("Vui lòng tải lên ít nhất 1 ảnh hợp đồng bản cứng.");
-      // Scroll đến khu vực upload ảnh
-      fileInputRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
       return;
     }
 
@@ -1062,25 +1003,29 @@ const CreateContract = () => {
           }
           return entry;
         }),
-        images: contractImages,
       };
 
       if (isOnlineBooking) {
-        payload.bookingRequestId = selectedDeposit._id;
+        // Send Payment request rather than creating contract immediately
+        const res = await api.post(`/booking-requests/${selectedDeposit._id}/send-payment`, payload);
+        if (res.data.success) {
+          sessionStorage.removeItem("contractFormDraft");
+          toastr.success("Đã chốt thông tin và gửi yêu cầu thanh toán (kèm QR) cho khách thành công!");
+          navigate("/manager/requests/bookings");
+        }
       } else {
         payload.depositId = selectedDeposit._id;
-      }
-
-      const res = await axios.post(`${API_URL}/contracts/create`, payload);
-      if (res.data.success) {
-        sessionStorage.removeItem("contractFormDraft");
-        toastr.success(res.data.message);
-        // Redirect
-        navigate("/manager/contracts");
+        // Create contract
+        const res = await api.post(`/contracts/create`, payload);
+        if (res.data.success) {
+          sessionStorage.removeItem("contractFormDraft");
+          toastr.success("Hợp đồng đã được tạo thành công!");
+          navigate("/manager/contracts");
+        }
       }
     } catch (err: any) {
       toastr.error(
-        "Lỗi tạo hợp đồng: " + (err.response?.data?.message || err.message),
+        "Lỗi xử lý hợp đồng: " + (err.response?.data?.message || err.message),
       );
     } finally {
       setSubmitting(false);
@@ -2281,7 +2226,6 @@ const CreateContract = () => {
                                       formValues: getValues(),
                                       selectedServices,
                                       vehicleQuantities,
-                                      contractImages,
                                     };
                                     sessionStorage.setItem(
                                       "contractFormDraft",
@@ -2681,162 +2625,6 @@ const CreateContract = () => {
                     )}
                   </Box>
                 </Box>
-
-                {/* Contract Image Upload */}
-                <Box
-                  sx={{
-                    mt: 4,
-                    pt: 3,
-                    borderTop: "1px solid #333",
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontWeight: "bold",
-                      fontFamily: '"Times New Roman", serif',
-                      fontSize: "1.1rem",
-                      mb: 1,
-                    }}
-                  >
-                    Ảnh hợp đồng bản cứng (đã ký){" "}
-                    <span style={{ color: "red" }}>*</span>
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: '"Times New Roman", serif',
-                      fontSize: "1rem",
-                      fontStyle: "italic",
-                      mb: 1.5,
-                      color: "#555",
-                    }}
-                  >
-                    Tải lên ảnh chụp hợp đồng đã ký (tối đa 5 ảnh). Hỗ trợ định
-                    dạng: JPG, PNG, JPEG, WebP.
-                  </Typography>
-
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 2,
-                      mb: 2,
-                    }}
-                  >
-                    <input
-                      type="file"
-                      accept="image/jpg,image/jpeg,image/png,image/webp"
-                      multiple
-                      ref={fileInputRef}
-                      style={{ display: "none" }}
-                      onChange={handleImageUpload}
-                    />
-                    <Button
-                      variant="outlined"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading || contractImages.length >= 5}
-                      sx={{
-                        fontFamily: '"Times New Roman", serif',
-                        fontSize: "0.95rem",
-                        textTransform: "none",
-                        color: "#333",
-                        borderColor: "#333",
-                        borderStyle: "dashed",
-                        px: 3,
-                        py: 1,
-                        "&:hover": {
-                          borderColor: "#000",
-                          bgcolor: "#fafafa",
-                        },
-                      }}
-                    >
-                      {uploading ? (
-                        <>
-                          <CircularProgress
-                            size={16}
-                            sx={{ mr: 1, color: "#333" }}
-                          />
-                          Đang tải lên...
-                        </>
-                      ) : (
-                        `Chọn ảnh tải lên (${contractImages.length}/5)`
-                      )}
-                    </Button>
-                  </Box>
-
-                  {imageError && contractImages.length === 0 && (
-                    <Typography
-                      sx={{
-                        color: "#d32f2f",
-                        fontFamily: '"Times New Roman", serif',
-                        fontSize: "0.95rem",
-                        mb: 1.5,
-                      }}
-                    >
-                      Vui lòng tải lên ít nhất 1 ảnh hợp đồng bản cứng (đã ký)
-                      để tạo hợp đồng.
-                    </Typography>
-                  )}
-
-                  {/* Image Preview Grid */}
-                  {contractImages.length > 0 && (
-                    <Grid container spacing={2}>
-                      {contractImages.map((url, index) => (
-                        <Grid size={{ xs: 6, sm: 4, md: 3 }} key={index}>
-                          <Box
-                            sx={{
-                              position: "relative",
-                              border: "1px solid #333",
-                              overflow: "hidden",
-                              "&:hover .delete-btn": { opacity: 1 },
-                            }}
-                          >
-                            <img
-                              src={url}
-                              alt={`Hợp đồng ${index + 1}`}
-                              style={{
-                                width: "100%",
-                                height: 180,
-                                objectFit: "cover",
-                                display: "block",
-                              }}
-                            />
-                            <IconButton
-                              className="delete-btn"
-                              size="small"
-                              onClick={() => handleRemoveImage(index)}
-                              sx={{
-                                position: "absolute",
-                                top: 4,
-                                right: 4,
-                                bgcolor: "rgba(255,255,255,0.9)",
-                                opacity: 0,
-                                transition: "opacity 0.2s",
-                                "&:hover": {
-                                  bgcolor: "#ffebee",
-                                  color: "#d32f2f",
-                                },
-                              }}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                            <Typography
-                              sx={{
-                                display: "block",
-                                textAlign: "center",
-                                py: 0.5,
-                                fontFamily: '"Times New Roman", serif',
-                                fontSize: "0.9rem",
-                                borderTop: "1px solid #333",
-                              }}
-                            >
-                              Ảnh {index + 1}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                      ))}
-                    </Grid>
-                  )}
-                </Box>
               </Paper>
             </Box>
 
@@ -2864,15 +2652,15 @@ const CreateContract = () => {
                 variant="contained"
                 color="primary"
                 size="large"
-                disabled={!selectedRoom || (selectedRoom.status !== "Deposited" && selectedRoom.contractRenewalStatus !== "declined") || submitting}
+                disabled={!selectedRoom || (!selectedDeposit?.isBookingRequest && selectedRoom.status !== "Deposited" && selectedRoom.contractRenewalStatus !== "declined") || submitting}
               >
                 {submitting ? (
                   <>
                     <CircularProgress size={20} sx={{ color: "#fff", mr: 1 }} />
-                    Đang tạo hợp đồng...
+                    Đang gửi cho khách...
                   </>
                 ) : (
-                  "Xác nhận & Tạo Hợp Đồng"
+                  "Gửi cho Guest"
                 )}
               </Button>
             </Box>
@@ -2892,4 +2680,4 @@ const CreateContract = () => {
   );
 };
 
-export default CreateContract;
+export default SendContractToGuest;

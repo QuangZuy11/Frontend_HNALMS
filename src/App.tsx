@@ -61,6 +61,7 @@ import ComplaintRequestList from "./pages/RequestManagement/ComplaintRequestlist
 import TransferRequestsList from "./pages/RequestManagement/TransferRequestsList";
 import ViolationList from "./pages/ViolateManagement/ViolationList";
 import MoveOutRequestsList from "./pages/RequestManagement/MoveOutRequestsList";
+import BookingRequestList from "./pages/RequestManagement/BookingRequestList";
 
 // Pages - Accountant Dashboard
 import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
@@ -97,6 +98,7 @@ import ReportRepairMaintenance from "./pages/ReportManagement/ReportRepairMainte
 
 // Pages - Contract Management
 import CreateContract from "./pages/ContractManagement/CreateContract";
+import SendContractToGuest from "./pages/ContractManagement/SendContractToGuest";
 import ContractList from "./pages/ContractManagement/ContractList";
 import ContractDetail from "./pages/ContractManagement/ContractDetail";
 import EditContract from "./pages/ContractManagement/EditContract";
@@ -290,6 +292,8 @@ function LayoutWrapper() {
           />
           <Route path="requests/transfers" element={<TransferRequestsList />} />
           <Route path="/manager/requests/move-outs" element={<MoveOutRequestsList />} />
+          <Route path="/manager/requests/bookings" element={<BookingRequestList />} />
+          <Route path="/manager/booking-contracts/send" element={<SendContractToGuest />} />
           <Route path="notifications" element={<ManagerNotificationList />} />
           <Route path="profile" element={<ManagerProfile />} />
           <Route path="contracts" element={<ContractList />} />

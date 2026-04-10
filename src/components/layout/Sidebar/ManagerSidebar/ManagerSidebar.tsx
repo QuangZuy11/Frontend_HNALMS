@@ -82,6 +82,7 @@ const MENU_ITEMS = [
       { title: "Khiếu Nại", path: "/manager/requests/complaints", icon: <Frown size={16} /> },
       { title: "Chuyển Phòng", path: "/manager/requests/transfers", icon: <ArrowRightLeft size={16} /> },
       { title: "Trả Phòng", path: "/manager/requests/move-outs", icon: <LogOut size={16} /> },
+      { title: "Khách Đặt Phòng", path: "/manager/requests/bookings", icon: <FileText size={16} /> },
     ]
   },
   {

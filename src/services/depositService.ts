@@ -5,6 +5,11 @@ export interface DepositInitiateRequest {
     name: string;
     phone: string;
     email: string;
+    idCard: string;
+    startDate: string;
+    duration: number;
+    prepayMonths: number | "all";
+    coResidents: { fullName: string; cccd: string }[];
 }
 
 export interface BankInfo {
