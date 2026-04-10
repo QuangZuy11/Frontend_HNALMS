@@ -805,6 +805,7 @@ export default function ViolationList() {
                     <label htmlFor="contractId">
                       Số phòng <span className="required">*</span>
                     </label>
+
                     <Autocomplete
                       id="contractId"
                       options={contracts}
