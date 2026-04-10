@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { bookingRequestService } from "../../services/bookingRequestService";
 import { format } from "date-fns";
+import api from "../../services/api";
 import {
   Table,
   TableBody,
@@ -15,8 +16,12 @@ import {
   CircularProgress,
   Chip,
   Button,
+  Tooltip,
 } from "@mui/material";
 import SearchIcon from '@mui/icons-material/Search';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import toastr from "toastr";
+import "toastr/build/toastr.min.css";
 
 interface Room {
   _id: string;
@@ -32,7 +37,10 @@ interface BookingRequest {
   email: string;
   idCard: string;
   roomId: Room;
-  status: "Pending" | "Processed" | "Rejected";
+  status: "Pending" | "Processed" | "Rejected" | "Awaiting Payment" | "Expired";
+  paymentStatus?: "Unpaid" | "Paid";
+  transactionCode?: string;
+  totalAmount?: number;
   startDate: string;
   duration: number;
   prepayMonths: number | "all";
@@ -40,14 +48,31 @@ interface BookingRequest {
   createdAt: string;
 }
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Held": return "primary";
-    case "Refunded": return "success";
-    case "Forfeited": return "error";
-    case "Expired": return "warning";
-    case "Pending": return "info";
-    default: return "default";
+const POLL_INTERVAL_MS = 5000; // 5 giây – giống deposit polling
+
+const getStatusChip = (req: BookingRequest) => {
+  switch (req.status) {
+    case "Processed":
+      return <Chip label="✅ Đã ký HĐ" color="success" size="small" sx={{ fontWeight: "bold" }} />;
+    case "Awaiting Payment":
+      return (
+        <Tooltip title={`Mã CK: ${req.transactionCode || "—"} | ${(req.totalAmount || 0).toLocaleString("vi-VN")} VNĐ`}>
+          <Chip
+            label="⏳ Chờ thanh toán"
+            color="warning"
+            size="small"
+            sx={{ fontWeight: "bold", cursor: "help" }}
+          />
+        </Tooltip>
+      );
+    case "Pending":
+      return <Chip label="📋 Chờ duyệt" color="info" size="small" sx={{ fontWeight: "bold" }} />;
+    case "Rejected":
+      return <Chip label="❌ Từ chối" color="error" size="small" sx={{ fontWeight: "bold" }} />;
+    case "Expired":
+      return <Chip label="⌛ Hết hạn" color="default" size="small" sx={{ fontWeight: "bold" }} />;
+    default:
+      return <Chip label={req.status} size="small" />;
   }
 };
 
@@ -63,23 +88,75 @@ const BookingRequestList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const ROWS_PER_PAGE = 10;
 
-  useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const responseData = await bookingRequestService.getAllBookingRequests();
-        if (responseData.success) {
-          setRequests(responseData.data);
-        } else {
-          setError("Tải danh sách thất bại");
-        }
-      } catch (err: any) {
-        setError(err.message || "Đã xảy ra lỗi");
-      } finally {
-        setLoading(false);
+  // Ref để tránh gọi đồng thời nhiều polling
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Ref lưu danh sách request hiện tại (để polling đọc mà không cần re-render)
+  const requestsRef = useRef<BookingRequest[]>([]);
+  requestsRef.current = requests;
+
+  const fetchRequests = useCallback(async (silent = false) => {
+    try {
+      if (!silent) setLoading(true);
+      const responseData = await bookingRequestService.getAllBookingRequests();
+      if (responseData.success) {
+        setRequests(responseData.data);
+      } else {
+        setError("Tải danh sách thất bại");
       }
-    };
-    fetchRequests();
+    } catch (err: any) {
+      setError(err.message || "Đã xảy ra lỗi");
+    } finally {
+      if (!silent) setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
+
+  // Polling cho các request đang "Awaiting Payment"
+  useEffect(() => {
+    if (pollingRef.current) clearInterval(pollingRef.current);
+
+    pollingRef.current = setInterval(async () => {
+      const awaitingList = requestsRef.current.filter(
+        (r) => r.status === "Awaiting Payment" && r.transactionCode
+      );
+      if (awaitingList.length === 0) return;
+
+      for (const req of awaitingList) {
+        try {
+          const res = await api.get(
+            `/booking-requests/payment-status/${encodeURIComponent(req.transactionCode!)}`
+          );
+          const pollData = res.data?.data;
+          if (!pollData) continue;
+
+          if (pollData.status === "Processed") {
+            // Thanh toán thành công, tạo HĐ xong → reload danh sách
+            toastr.success(
+              `✅ Khách ${req.name} (${req.roomId?.name}) đã thanh toán thành công! Hợp đồng đã được tạo.`,
+              "Thanh toán thành công",
+              { timeOut: 8000 }
+            );
+            fetchRequests(true);
+            break; // Reload rồi thì break, list sẽ refresh
+          } else if (pollData.status === "Expired") {
+            // Hết hạn → update UI ngay không cần reload
+            setRequests((prev) =>
+              prev.map((r) => r._id === req._id ? { ...r, status: "Expired" } : r)
+            );
+          }
+        } catch {
+          // Bỏ qua lỗi mạng giống deposit polling
+        }
+      }
+    }, POLL_INTERVAL_MS);
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, []); // Mount một lần, đọc requestsRef.current để luôn có data mới nhất
 
   const filteredRequests = requests.filter((req) => {
     const matchName = req.name.toLowerCase().includes(filterName.toLowerCase());
@@ -111,13 +188,41 @@ const BookingRequestList = () => {
     );
   }
 
+  const awaitingCount = requests.filter(r => r.status === "Awaiting Payment").length;
+
   return (
     <Box sx={{ p: 4, fontFamily: "'Inter', sans-serif" }}>
-      <Typography variant="h4" sx={{ mb: 1, fontWeight: "bold", color: "#1e293b" }}>
-        Khách Đặt Phòng Online
-      </Typography>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+        <Typography variant="h4" sx={{ fontWeight: "bold", color: "#1e293b" }}>
+          Khách Đặt Phòng Online
+        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {awaitingCount > 0 && (
+            <Chip
+              label={`🔄 Đang chờ thanh toán: ${awaitingCount}`}
+              color="warning"
+              size="small"
+              sx={{ fontWeight: 600 }}
+            />
+          )}
+          <Button
+            startIcon={<RefreshIcon />}
+            onClick={() => fetchRequests(true)}
+            size="small"
+            variant="outlined"
+            sx={{ textTransform: "none" }}
+          >
+            Tải lại
+          </Button>
+        </Box>
+      </Box>
       <Typography variant="body1" sx={{ color: "#64748b", mb: 4 }}>
         Quản lý các yêu cầu đặt phòng và làm hợp đồng cho khách
+        {awaitingCount > 0 && (
+          <span style={{ color: "#f59e0b", fontWeight: 600 }}>
+            {" "}— Đang tự động kiểm tra thanh toán mỗi 5 giây...
+          </span>
+        )}
       </Typography>
 
       <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
@@ -152,20 +257,23 @@ const BookingRequestList = () => {
               <TableCell sx={{ fontWeight: 600, color: "#334155" }}>Khách hàng</TableCell>
               <TableCell sx={{ fontWeight: 600, color: "#334155" }}>SĐT</TableCell>
               <TableCell sx={{ fontWeight: 600, color: "#334155" }}>Ngày muốn vào</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: "#334155" }}>Trạng thái cọc</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: "#334155" }}>Mã CK / Số tiền</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: "#334155" }}>Trạng thái</TableCell>
               <TableCell align="right" sx={{ fontWeight: 600, color: "#334155" }}>Thao tác</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {paginatedRequests.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 4, color: "#64748b" }}>
+                <TableCell colSpan={8} align="center" sx={{ py: 4, color: "#64748b" }}>
                   Chưa có khách đặt phòng online
                 </TableCell>
               </TableRow>
             ) : (
               paginatedRequests.map((req, index) => (
-                <TableRow key={req._id} hover>
+                <TableRow key={req._id} hover
+                  sx={req.status === "Awaiting Payment" ? { bgcolor: "#fffbeb" } : {}}
+                >
                   <TableCell>{(currentPage - 1) * ROWS_PER_PAGE + index + 1}</TableCell>
                   <TableCell sx={{ fontWeight: 500 }}>{req.roomId?.name || "N/A"}</TableCell>
                   <TableCell>{req.name}</TableCell>
@@ -174,31 +282,31 @@ const BookingRequestList = () => {
                     {req.startDate ? format(new Date(req.startDate), "dd/MM/yyyy") : "N/A"}
                   </TableCell>
                   <TableCell>
-                    <Chip
-                      label={
-                        req.status === "Processed" ? "Đã duyệt" :
-                        req.status === "Awaiting Payment" ? "Chờ thanh toán" :
-                        req.status === "Pending" ? "Chờ duyệt" :
-                        req.status === "Rejected" ? "Đã từ chối" : req.status
-                      }
-                      color={
-                        req.status === "Processed" ? "success" :
-                        req.status === "Awaiting Payment" ? "warning" :
-                        req.status === "Pending" ? "info" : "error"
-                      }
-                      size="small"
-                      sx={{ fontWeight: "bold" }}
-                    />
+                    {req.transactionCode ? (
+                      <Box>
+                        <Typography variant="caption" sx={{ fontFamily: "monospace", fontWeight: 700, color: "#1d4ed8", display: "block" }}>
+                          {req.transactionCode}
+                        </Typography>
+                        {req.totalAmount && (
+                          <Typography variant="caption" sx={{ color: "#991b1b" }}>
+                            {req.totalAmount.toLocaleString("vi-VN")} VNĐ
+                          </Typography>
+                        )}
+                      </Box>
+                    ) : (
+                      <Typography variant="caption" sx={{ color: "#94a3b8" }}>—</Typography>
+                    )}
                   </TableCell>
+                  <TableCell>{getStatusChip(req)}</TableCell>
                   <TableCell align="right">
                     <Button
                       variant="contained"
                       size="small"
                       onClick={() => handleReview(req._id)}
-                      disabled={req.status === "Rejected" || req.status === "Processed"}
+                      disabled={req.status === "Rejected" || req.status === "Processed" || req.status === "Awaiting Payment"}
                       sx={{ textTransform: "none", fontWeight: 600, borderRadius: "6px" }}
                     >
-                      Xem & Chốt HĐ
+                      {req.status === "Awaiting Payment" ? "Chờ TT..." : "Xem & Chốt HĐ"}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -221,3 +329,4 @@ const BookingRequestList = () => {
 };
 
 export default BookingRequestList;
+
