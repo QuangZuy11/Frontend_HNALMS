@@ -47,7 +47,7 @@ const ManageService = () => {
 
   // --- Pagination States ---
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 8;
 
   // --- Modal States ---
   const [showModal, setShowModal] = useState(false);
@@ -245,7 +245,7 @@ const ManageService = () => {
                 </div>
                 <div className="stat-card__body">
                   <span className="stat-card__value">{fixedCount}</span>
-                  <span className="stat-card__label">Cố định / tháng</span>
+                  <span className="stat-card__label">Cố định</span>
                 </div>
               </div>
               <div className="stat-card stat-card--extension">
@@ -290,8 +290,8 @@ const ManageService = () => {
               onChange={(e) => setFilterType(e.target.value)}
             >
               <option value="ALL">Tất cả loại</option>
-              <option value="Fixed">Cố định (Fixed)</option>
-              <option value="Extension">Phụ trội (Extension)</option>
+              <option value="Fixed">Cố định </option>
+              <option value="Extension">Phụ trội </option>
             </select>
           </div>
 
@@ -352,7 +352,7 @@ const ManageService = () => {
 
                   <td className="cell-type">
                     <span className={`type-badge ${service.type === 'Fixed' ? 'badge-fixed' : 'badge-extension'}`}>
-                      {service.type === 'Fixed' ? 'Cố định / Tháng' : 'Phụ trội'}
+                      {service.type === 'Fixed' ? 'Cố định' : 'Phụ trội'}
                     </span>
                   </td>
 
