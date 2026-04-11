@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { CheckCircle2, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import './Toast.css';
@@ -38,14 +38,53 @@ const ICONS: Record<ToastType, ReactNode> = {
 };
 
 function ToastItem({ toast, onRemove, duration }: ToastItemProps & { duration: number }) {
+  const [isPaused, setIsPaused] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const remainingRef = useRef(duration);
+  const startTimeRef = useRef<number | null>(null);
+
+  const clearTimer = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const startTimer = () => {
+    clearTimer();
+    startTimeRef.current = Date.now();
+    timerRef.current = setTimeout(() => onRemove(toast.id), remainingRef.current);
+  };
+
   useEffect(() => {
-    if (duration <= 0) return;
-    const timer = setTimeout(() => onRemove(toast.id), duration);
-    return () => clearTimeout(timer);
-  }, [toast.id, duration, onRemove]);
+    remainingRef.current = duration;
+    startTimer();
+    return clearTimer;
+  }, [toast.id]);
+
+  const handleMouseEnter = () => {
+    if (isPaused) return;
+    setIsPaused(true);
+    clearTimer();
+    if (startTimeRef.current) {
+      remainingRef.current = Math.max(0, remainingRef.current - (Date.now() - startTimeRef.current));
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (!isPaused) return;
+    setIsPaused(false);
+    startTimer();
+  };
 
   return (
-    <div className={`app-toast app-toast--${toast.type}`} role="alert" style={{ '--toast-duration': `${duration}ms` } as React.CSSProperties}>
+    <div
+      className={`app-toast app-toast--${toast.type}${isPaused ? ' app-toast--paused' : ''}`}
+      role="alert"
+      style={{ '--toast-duration': `${remainingRef.current}ms` } as React.CSSProperties}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       <div className="app-toast-icon">{ICONS[toast.type]}</div>
       <div className="app-toast-content">
         <p className="app-toast-title">{toast.title}</p>

@@ -227,7 +227,7 @@ const ManageService = () => {
           <div className="service-header-aside">
             <div className="stats-summary">
               <div className="stat-item">
-                <FileText size={16} className="stat-icon icon-primary" />
+                <FileText size={16} className="stat-icon icon-accent" />
                 <div className="stat-text">
                   <span className="stat-value">{totalCount}</span>
                   <span className="stat-label">Tổng số</span>
@@ -235,7 +235,7 @@ const ManageService = () => {
               </div>
               <div className="stat-divider"></div>
               <div className="stat-item">
-                <LayoutGrid size={16} className="stat-icon icon-accent" />
+                <LayoutGrid size={16} className="stat-icon icon-primary" />
                 <div className="stat-text">
                   <span className="stat-value">{fixedCount}</span>
                   <span className="stat-label">Cố định</span>

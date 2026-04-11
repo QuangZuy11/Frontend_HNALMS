@@ -146,18 +146,18 @@
 }
 
 .service-header-aside .icon-primary {
-  color: #3579c6;
-  background-color: #e6f0ff;
+  color: #2563eb;
+  background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
 }
 
 .service-header-aside .icon-accent {
-  color: #10b981;
-  background-color: #d1fae5;
+  color: #059669;
+  background: linear-gradient(135deg, #d1fae5 0%, #6ee7b7 100%);
 }
 
 .service-header-aside .icon-warning {
-  color: #f59e0b;
-  background-color: #fef3c7;
+  color: #d97706;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
 }
 
 .service-header-add-btn {

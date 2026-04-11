@@ -106,6 +106,11 @@
   transform: rotate(90deg);
 }
 
+/* ── Pause on hover ── */
+.app-toast--paused .app-toast-progress-bar {
+  animation-play-state: paused;
+}
+
 /* ── Progress Line (bottom) ── */
 .app-toast-progress {
   position: absolute;
