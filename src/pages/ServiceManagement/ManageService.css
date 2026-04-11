@@ -91,88 +91,73 @@
   flex-shrink: 0;
 }
 
-.service-stat-cards {
+/* Stats Summary — đồng bộ với ContractList (ContractFloorMap.css) */
+.service-header-aside .stats-summary {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: flex-end;
+  align-items: center;
+  background-color: white;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
 }
 
-.stat-card {
+.service-header-aside .stat-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
-  min-width: 118px;
-  border-radius: 12px;
-  border: 1px solid var(--ms-border);
-  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  padding: 0 16px;
 }
 
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.07);
+.service-header-aside .stat-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
 }
 
-.stat-card__icon {
+.service-header-aside .stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.service-header-aside .stat-label {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.service-header-aside .stat-divider {
+  width: 1px;
+  height: 32px;
+  background-color: #e2e8f0;
+}
+
+.service-header-aside .stat-icon {
+  padding: 8px;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  flex-shrink: 0;
-  color: var(--ms-primary);
-  background: var(--ms-primary-soft);
 }
 
-.stat-card__body {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  min-width: 0;
+.service-header-aside .icon-primary {
+  color: #3579c6;
+  background-color: #e6f0ff;
 }
 
-.stat-card__value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--ms-text-heading);
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
+.service-header-aside .icon-accent {
+  color: #10b981;
+  background-color: #d1fae5;
 }
 
-.stat-card__label {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ms-text-muted);
-}
-
-.stat-card--total .stat-card__icon {
-  color: var(--ms-primary);
-  background: var(--ms-primary-soft);
-}
-
-.stat-card--fixed .stat-card__icon {
-  color: #1e56a0;
-  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
-}
-
-.stat-card--fixed {
-  border-color: rgba(53, 121, 198, 0.2);
-}
-
-.stat-card--extension .stat-card__icon {
-  color: #c2410c;
-  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
-}
-
-.stat-card--extension {
-  border-color: rgba(251, 146, 60, 0.3);
+.service-header-aside .icon-warning {
+  color: #f59e0b;
+  background-color: #fef3c7;
 }
 
 .service-header-add-btn {
@@ -192,6 +177,13 @@
   .service-header-add-btn {
     width: auto;
     max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .service-header-aside .stats-summary {
+    width: 100%;
+    justify-content: center;
   }
 }
 
@@ -1021,13 +1013,8 @@ textarea:disabled {
     align-items: stretch;
   }
 
-  .service-stat-cards {
-    justify-content: stretch;
-  }
-
-  .stat-card {
-    flex: 1;
-    min-width: calc(33.333% - 7px);
+  .stats-summary {
+    justify-content: center;
   }
 
   .service-header-add-btn {

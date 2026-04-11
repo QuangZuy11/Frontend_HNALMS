@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   CalendarDays,
   Sparkles,
+  FileText,
 } from 'lucide-react';
 import './ManageService.css';
 
@@ -229,32 +230,28 @@ const ManageService = () => {
           </div>
 
           <div className="service-header-aside">
-            <div className="service-stat-cards" role="group" aria-label="Thống kê dịch vụ">
-              <div className="stat-card stat-card--total">
-                <div className="stat-card__icon" aria-hidden>
-                  <LayoutGrid size={20} strokeWidth={2} />
-                </div>
-                <div className="stat-card__body">
-                  <span className="stat-card__value">{totalCount}</span>
-                  <span className="stat-card__label">Tổng số</span>
+            <div className="stats-summary">
+              <div className="stat-item">
+                <FileText size={16} className="stat-icon icon-primary" />
+                <div className="stat-text">
+                  <span className="stat-value">{totalCount}</span>
+                  <span className="stat-label">Tổng số</span>
                 </div>
               </div>
-              <div className="stat-card stat-card--fixed">
-                <div className="stat-card__icon" aria-hidden>
-                  <CalendarDays size={20} strokeWidth={2} />
-                </div>
-                <div className="stat-card__body">
-                  <span className="stat-card__value">{fixedCount}</span>
-                  <span className="stat-card__label">Cố định</span>
+              <div className="stat-divider"></div>
+              <div className="stat-item">
+                <LayoutGrid size={16} className="stat-icon icon-accent" />
+                <div className="stat-text">
+                  <span className="stat-value">{fixedCount}</span>
+                  <span className="stat-label">Cố định</span>
                 </div>
               </div>
-              <div className="stat-card stat-card--extension">
-                <div className="stat-card__icon" aria-hidden>
-                  <Sparkles size={20} strokeWidth={2} />
-                </div>
-                <div className="stat-card__body">
-                  <span className="stat-card__value">{extensionCount}</span>
-                  <span className="stat-card__label">Phụ trội</span>
+              <div className="stat-divider"></div>
+              <div className="stat-item">
+                <Sparkles size={16} className="stat-icon icon-warning" />
+                <div className="stat-text">
+                  <span className="stat-value">{extensionCount}</span>
+                  <span className="stat-label">Phụ trội</span>
                 </div>
               </div>
             </div>
