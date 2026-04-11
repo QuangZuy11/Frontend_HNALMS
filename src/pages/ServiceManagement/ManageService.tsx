@@ -13,9 +13,7 @@ import './ManageService.css';
 
 import { AppModal } from '../../components/common/Modal';
 import { Pagination } from '../../components/common/Pagination';
-
-import toastr from 'toastr';
-import 'toastr/build/toastr.min.css';
+import { useToast } from '../../components/common/Toast';
 
 const API_BASE_URL = 'http://localhost:9999/api';
 
@@ -38,6 +36,8 @@ interface Service {
 }
 
 const ManageService = () => {
+  const { showToast } = useToast();
+
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -70,13 +70,6 @@ const ManageService = () => {
   const canModify = userRole === 'owner';
 
   useEffect(() => {
-    toastr.options = {
-      closeButton: true,
-      progressBar: true,
-      positionClass: "toast-top-right",
-      timeOut: 3000,
-      extendedTimeOut: 1000,
-    };
     fetchServices();
   }, []);
 
@@ -85,8 +78,8 @@ const ManageService = () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/services`);
       setServices(res.data.data || res.data || []);
-    } catch (error) {
-      toastr.error("Không thể tải danh sách dịch vụ!", "Lỗi kết nối");
+    } catch {
+      showToast('error', "Lỗi kết nối", "Không thể tải danh sách dịch vụ!");
     } finally {
       setLoading(false);
     }
@@ -164,7 +157,7 @@ const ManageService = () => {
     if (!itemToDelete) return;
     try {
       await axios.delete(`${API_BASE_URL}/services/${itemToDelete}`);
-      toastr.success("Xóa dịch vụ thành công!", "Thành công");
+      showToast('success', "Thành công", "Xóa dịch vụ thành công!");
 
       // Chuyển trang nếu xóa phần tử cuối cùng của trang
       if (currentItems.length === 1 && currentPage > 1) {
@@ -174,8 +167,8 @@ const ManageService = () => {
       fetchServices();
       setShowDeleteModal(false);
       setItemToDelete(null);
-    } catch (e) {
-      toastr.error("Có lỗi xảy ra khi xóa dịch vụ.", "Lỗi");
+    } catch {
+      showToast('error', "Lỗi", "Có lỗi xảy ra khi xóa dịch vụ.");
     }
   };
 
@@ -184,16 +177,17 @@ const ManageService = () => {
     try {
       if (isEditing && currentId) {
         await axios.put(`${API_BASE_URL}/services/${currentId}`, formData);
-        toastr.success("Cập nhật dịch vụ thành công!", "Thành công");
+        showToast('success', "Thành công", "Cập nhật dịch vụ thành công!");
       } else {
         await axios.post(`${API_BASE_URL}/services`, formData);
-        toastr.success("Thêm mới dịch vụ thành công!", "Thành công");
+        showToast('success', "Thành công", "Thêm mới dịch vụ thành công!");
       }
       setShowModal(false);
       fetchServices();
-    } catch (e: any) {
-      const errorMessage = e.response?.data?.message || "Không thể lưu thông tin dịch vụ.";
-      toastr.error(errorMessage, "Lỗi hệ thống");
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } };
+      const errorMessage = err.response?.data?.message || "Không thể lưu thông tin dịch vụ.";
+      showToast('error', "Lỗi hệ thống", errorMessage);
     }
   };
 
@@ -482,8 +476,8 @@ const ManageService = () => {
                   onChange={e => setFormData({ ...formData, type: e.target.value as any })}
                   disabled={isEditing && formData.type === 'Fixed'}
                 >
-                  <option value="Fixed">Cố định (Fixed)</option>
-                  <option value="Extension">Phụ trội (Extension)</option>
+                  <option value="Fixed">Cố định </option>
+                  <option value="Extension">Phụ trội </option>
                 </select>
               </div>
             </div>
