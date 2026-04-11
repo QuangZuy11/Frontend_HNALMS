@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import {
-  Plus, Search, Edit, Trash2, X,
+  Plus, Search, Edit, Trash2,
   Filter, ArrowUpDown, History, CalendarClock,
   AlertTriangle, CheckCircle2, XCircle,
-  ChevronLeft, ChevronRight,
-  ChevronsLeft, ChevronsRight,
   SwatchBook,
   LayoutGrid,
-  CalendarDays,
   Sparkles,
   FileText,
 } from 'lucide-react';
 import './ManageService.css';
+
+import { AppModal } from '../../components/common/Modal';
+import { Pagination } from '../../components/common/Pagination';
 
 import toastr from 'toastr';
 import 'toastr/build/toastr.min.css';
@@ -400,71 +400,12 @@ const ManageService = () => {
         </table>
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="tenant-account-list-pagination">
-            <span className="tenant-account-list-pagination-info">
-              Tổng: <strong>{processedServices.length}</strong> bản ghi · Trang <strong>{currentPage}</strong>/<strong>{totalPages}</strong>
-            </span>
-            <div className="tenant-account-list-pagination-controls">
-              <button
-                type="button"
-                className="tenant-account-list-pagination-btn"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(1)}
-                title="Trang đầu"
-              >
-                <ChevronsLeft size={16} />
-              </button>
-              <button
-                type="button"
-                className="tenant-account-list-pagination-btn"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                title="Trang trước"
-              >
-                <ChevronLeft size={16} />
-              </button>
-
-              {(() => {
-                const pages: number[] = [];
-                let start = Math.max(1, currentPage - 2);
-                let end = Math.min(totalPages, currentPage + 2);
-                if (currentPage <= 2) end = Math.min(totalPages, 5);
-                if (currentPage >= totalPages - 1) start = Math.max(1, totalPages - 4);
-                for (let i = start; i <= end; i += 1) pages.push(i);
-                return pages;
-              })().map((pageNumber) => (
-                <button
-                  key={pageNumber}
-                  type="button"
-                  className={`tenant-account-list-pagination-btn ${pageNumber === currentPage ? "active" : ""}`}
-                  onClick={() => setCurrentPage(pageNumber)}
-                >
-                  {pageNumber}
-                </button>
-              ))}
-
-              <button
-                type="button"
-                className="tenant-account-list-pagination-btn"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                title="Trang sau"
-              >
-                <ChevronRight size={16} />
-              </button>
-              <button
-                type="button"
-                className="tenant-account-list-pagination-btn"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(totalPages)}
-                title="Trang cuối"
-              >
-                <ChevronsRight size={16} />
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={processedServices.length}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       {/* =========================================================================
@@ -472,247 +413,206 @@ const ManageService = () => {
           ========================================================================= */}
 
       {/* 1. Modal Thêm/Sửa Dịch vụ */}
-      {showModal && (
-        <div className="ms-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="ms-modal ms-modal--add" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div className="ms-modal-header">
-              <div className="ms-modal-header-left">
-                <div className={`ms-modal-icon ms-modal-icon--${isEditing ? 'edit' : 'add'}`}>
-                  {isEditing ? <Edit size={18} /> : <Plus size={18} />}
-                </div>
-                <div>
-                  <h3 className="ms-modal-title">{isEditing ? 'Cập nhật Dịch vụ' : 'Thêm Dịch vụ Mới'}</h3>
-                  <p className="ms-modal-subtitle">
-                    {isEditing ? 'Chỉnh sửa thông tin dịch vụ hiện có' : 'Điền đầy đủ thông tin để thêm dịch vụ mới'}
-                  </p>
-                </div>
-              </div>
-              <button type="button" className="ms-modal-close" onClick={() => setShowModal(false)} aria-label="Đóng">
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Body */}
-            <form id="ms-add-form" className="ms-modal-body" onSubmit={handleSubmit}>
-              {/* Tên dịch vụ */}
-              <div className="ms-field">
-                <label className="ms-label">
-                  Tên dịch vụ <span className="ms-label-required">*</span>
-                  {isEditing && formData.type === 'Fixed' && (
-                    <span className="ms-label-badge ms-label-badge--info">Không đổi được</span>
-                  )}
-                </label>
-                <div className="ms-input-wrap">
-                  <input
-                    type="text"
-                    className="ms-input"
-                    required
-                    value={formData.name}
-                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    disabled={isEditing && formData.type === 'Fixed'}
-                    placeholder="VD: Điện, Nước, Internet..."
-                  />
-                </div>
-              </div>
-
-              {/* Giá & Loại */}
-              <div className="ms-field-row">
-                <div className="ms-field">
-                  <label className="ms-label">
-                    Giá (VNĐ) <span className="ms-label-required">*</span>
-                  </label>
-                  <div className="ms-input-wrap ms-input-wrap--prefix">
-                    <span className="ms-input-prefix">₫</span>
-                    <input
-                      type="number"
-                      className="ms-input ms-input--prefix"
-                      required
-                      min="0"
-                      value={formData.currentPrice}
-                      onChange={e => setFormData({ ...formData, currentPrice: Number(e.target.value) })}
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-                <div className="ms-field">
-                  <label className="ms-label">Loại dịch vụ</label>
-                  <div className="ms-select-wrap">
-                    <select
-                      className="ms-select"
-                      value={formData.type}
-                      onChange={e => setFormData({ ...formData, type: e.target.value as any })}
-                      disabled={isEditing && formData.type === 'Fixed'}
-                    >
-                      <option value="Fixed">Cố định (Fixed)</option>
-                      <option value="Extension">Phụ trội (Extension)</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Mô tả */}
-              <div className="ms-field">
-                <label className="ms-label">Mô tả</label>
-                <div className="ms-textarea-wrap">
-                  <textarea
-                    className="ms-textarea"
-                    rows={3}
-                    maxLength={100}
-                    value={formData.description}
-                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Nhập mô tả ngắn gọn về dịch vụ..."
-                  />
-                  <div className={`ms-textarea-count ${(formData.description?.length || 0) === 100 ? 'ms-textarea-count--limit' : ''}`}>
-                    {formData.description?.length || 0}/100
-                  </div>
-                </div>
-              </div>
-
-              {/* Toggle hoạt động */}
-              <div className="ms-toggle-row">
-                <div className="ms-toggle-info">
-                  <span className="ms-toggle-title">Trạng thái hoạt động</span>
-                  <span className="ms-toggle-desc">
-                    Dịch vụ sẽ {formData.isActive ? 'hiển thị và có thể sử dụng' : 'bị ẩn khỏi danh sách'}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={formData.isActive}
-                  className={`ms-toggle ${formData.isActive ? 'ms-toggle--on' : 'ms-toggle--off'}`}
-                  onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
-                >
-                  <span className="ms-toggle-thumb" />
-                </button>
-              </div>
-            </form>
-
-            {/* Footer */}
-            <div className="ms-modal-footer">
-              <button type="button" className="ms-btn ms-btn--ghost" onClick={() => setShowModal(false)}>
-                Hủy bỏ
-              </button>
-              <button type="submit" form="ms-add-form" className="ms-btn ms-btn--primary" onClick={handleSubmit}>
-                <CheckCircle2 size={16} />
-                {isEditing ? 'Cập nhật' : 'Thêm dịch vụ'}
-              </button>
+      <AppModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title={isEditing ? 'Cập nhật Dịch vụ' : 'Thêm Dịch vụ Mới'}
+        icon={isEditing ? <Edit size={18} /> : <Plus size={18} />}
+        color="blue"
+        size="md"
+        footer={
+          <>
+            <button type="button" className="ms-btn ms-btn--ghost" onClick={() => setShowModal(false)}>
+              Hủy bỏ
+            </button>
+            <button type="submit" form="ms-add-form" className="ms-btn ms-btn--primary">
+              <CheckCircle2 size={16} />
+              {isEditing ? 'Cập nhật' : 'Thêm dịch vụ'}
+            </button>
+          </>
+        }
+      >
+        <form id="ms-add-form" onSubmit={handleSubmit}>
+          {/* Tên dịch vụ */}
+          <div className="ms-field">
+            <label className="ms-label">
+              Tên dịch vụ <span className="ms-label-required">*</span>
+              {isEditing && formData.type === 'Fixed' && (
+                <span className="ms-label-badge ms-label-badge--info">Không đổi được</span>
+              )}
+            </label>
+            <div className="ms-input-wrap">
+              <input
+                type="text"
+                className="ms-input"
+                required
+                value={formData.name}
+                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                disabled={isEditing && formData.type === 'Fixed'}
+                placeholder="VD: Điện, Nước, Internet..."
+              />
             </div>
           </div>
-        </div>
-      )}
+
+          {/* Giá & Loại */}
+          <div className="ms-field-row">
+            <div className="ms-field">
+              <label className="ms-label">
+                Giá (VNĐ) <span className="ms-label-required">*</span>
+              </label>
+              <div className="ms-input-wrap ms-input-wrap--prefix">
+                <span className="ms-input-prefix">₫</span>
+                <input
+                  type="number"
+                  className="ms-input ms-input--prefix"
+                  required
+                  min="0"
+                  value={formData.currentPrice}
+                  onChange={e => setFormData({ ...formData, currentPrice: Number(e.target.value) })}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+            <div className="ms-field">
+              <label className="ms-label">Loại dịch vụ</label>
+              <div className="ms-select-wrap">
+                <select
+                  className="ms-select"
+                  value={formData.type}
+                  onChange={e => setFormData({ ...formData, type: e.target.value as any })}
+                  disabled={isEditing && formData.type === 'Fixed'}
+                >
+                  <option value="Fixed">Cố định (Fixed)</option>
+                  <option value="Extension">Phụ trội (Extension)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Mô tả */}
+          <div className="ms-field">
+            <label className="ms-label">Mô tả</label>
+            <div className="ms-textarea-wrap">
+              <textarea
+                className="ms-textarea"
+                rows={3}
+                maxLength={100}
+                value={formData.description}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Nhập mô tả ngắn gọn về dịch vụ..."
+              />
+              <div className={`ms-textarea-count ${(formData.description?.length || 0) === 100 ? 'ms-textarea-count--limit' : ''}`}>
+                {formData.description?.length || 0}/100
+              </div>
+            </div>
+          </div>
+
+          {/* Toggle hoạt động */}
+          <div className="ms-toggle-row">
+            <div className="ms-toggle-info">
+              <span className="ms-toggle-title">Trạng thái hoạt động</span>
+              <span className="ms-toggle-desc">
+                Dịch vụ sẽ {formData.isActive ? 'hiển thị và có thể sử dụng' : 'bị ẩn khỏi danh sách'}
+              </span>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={formData.isActive}
+              className={`ms-toggle ${formData.isActive ? 'ms-toggle--on' : 'ms-toggle--off'}`}
+              onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
+            >
+              <span className="ms-toggle-thumb" />
+            </button>
+          </div>
+        </form>
+      </AppModal>
 
       {/* 2. Modal Lịch Sử Giá */}
-      {showHistoryModal && viewingHistoryService && (
-        <div className="ms-modal-overlay" onClick={() => setShowHistoryModal(false)}>
-          <div className="ms-modal ms-modal--history" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div className="ms-modal-header">
-              <div className="ms-modal-header-left">
-                <div className="ms-modal-icon ms-modal-icon--history">
-                  <CalendarClock size={18} />
-                </div>
-                <div>
-                  <h3 className="ms-modal-title">Lịch sử thay đổi giá</h3>
-                  <p className="ms-modal-subtitle">{viewingHistoryService.name}</p>
-                </div>
+      <AppModal
+        open={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        title="Lịch sử thay đổi giá"
+        icon={<CalendarClock size={18} />}
+        color="teal"
+        size="md"
+        footer={
+          <button type="button" className="ms-btn ms-btn--ghost" onClick={() => setShowHistoryModal(false)}>
+            Đóng
+          </button>
+        }
+      >
+        <div className="ms-history-body">
+          <p className="ms-modal-subtitle" style={{ marginBottom: '1rem', color: '#475569', fontSize: '0.9rem' }}>
+            {viewingHistoryService?.name}
+          </p>
+          {viewingHistoryService?.histories && viewingHistoryService.histories.length > 0 ? (
+            <div className="ms-history-table">
+              <div className="ms-history-thead">
+                <span>Ngày bắt đầu</span>
+                <span>Ngày kết thúc</span>
+                <span>Giá áp dụng</span>
               </div>
-              <button type="button" className="ms-modal-close" onClick={() => setShowHistoryModal(false)} aria-label="Đóng">
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="ms-history-body">
-              {viewingHistoryService.histories && viewingHistoryService.histories.length > 0 ? (
-                <div className="ms-history-table">
-                  <div className="ms-history-thead">
-                    <span>Ngày bắt đầu</span>
-                    <span>Ngày kết thúc</span>
-                    <span>Giá áp dụng</span>
+              {[...viewingHistoryService.histories].reverse().map((history) => (
+                <div
+                  key={history._id}
+                  className={`ms-history-row ${!history.endDate ? 'ms-history-row--current' : ''}`}
+                >
+                  <div>{formatDate(history.startDate)}</div>
+                  <div>
+                    {history.endDate ? (
+                      formatDate(history.endDate)
+                    ) : (
+                      <span className="ms-history-pill">Đang áp dụng</span>
+                    )}
                   </div>
-                  {[...viewingHistoryService.histories].reverse().map((history) => (
-                    <div
-                      key={history._id}
-                      className={`ms-history-row ${!history.endDate ? 'ms-history-row--current' : ''}`}
-                    >
-                      <div>{formatDate(history.startDate)}</div>
-                      <div>
-                        {history.endDate ? (
-                          formatDate(history.endDate)
-                        ) : (
-                          <span className="ms-history-pill">Đang áp dụng</span>
-                        )}
-                      </div>
-                      <div className={`ms-history-price ${!history.endDate ? 'ms-history-price--active' : ''}`}>
-                        {formatCurrency(history.price)}
-                      </div>
-                    </div>
-                  ))}
+                  <div className={`ms-history-price ${!history.endDate ? 'ms-history-price--active' : ''}`}>
+                    {formatCurrency(history.price)}
+                  </div>
                 </div>
-              ) : (
-                <div className="ms-history-empty">
-                  Chưa có dữ liệu lịch sử giá.
-                </div>
-              )}
+              ))}
             </div>
-
-            {/* Footer */}
-            <div className="ms-modal-footer">
-              <button type="button" className="ms-btn ms-btn--ghost" onClick={() => setShowHistoryModal(false)}>
-                Đóng
-              </button>
+          ) : (
+            <div className="ms-history-empty">
+              Chưa có dữ liệu lịch sử giá.
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </AppModal>
 
       {/* 3. Modal Xác Nhận Xóa */}
-      {showDeleteModal && (
-        <div className="ms-modal-overlay" onClick={() => { setShowDeleteModal(false); setItemToDelete(null); }}>
-          <div className="ms-modal ms-modal--delete" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div className="ms-modal-header">
-              <div className="ms-modal-header-left">
-                <div className="ms-modal-icon ms-modal-icon--delete">
-                  <AlertTriangle size={18} />
-                </div>
-                <div>
-                  <h3 className="ms-modal-title">Xóa dịch vụ</h3>
-                  <p className="ms-modal-subtitle">Hành động này không thể hoàn tác</p>
-                </div>
-              </div>
-              <button type="button" className="ms-modal-close" onClick={() => { setShowDeleteModal(false); setItemToDelete(null); }} aria-label="Đóng">
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="ms-modal-body">
-              <div className="ms-delete-notice">
-                <div className="ms-delete-notice-icon">
-                  <AlertTriangle size={28} color="#f59e0b" />
-                </div>
-                <p className="ms-delete-notice-text">
-                  Bạn có chắc chắn muốn xóa dịch vụ này không? Toàn bộ dữ liệu liên quan sẽ bị mất vĩnh viễn.
-                </p>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="ms-modal-footer">
-              <button type="button" className="ms-btn ms-btn--ghost" onClick={() => { setShowDeleteModal(false); setItemToDelete(null); }}>
-                Hủy bỏ
-              </button>
-              <button type="button" className="ms-btn ms-btn--danger" onClick={handleConfirmDelete}>
-                <Trash2 size={16} />
-                Xóa vĩnh viễn
-              </button>
-            </div>
+      <AppModal
+        open={showDeleteModal}
+        onClose={() => { setShowDeleteModal(false); setItemToDelete(null); }}
+        title="Xóa dịch vụ"
+        icon={<AlertTriangle size={18} />}
+        color="red"
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              className="ms-btn ms-btn--ghost"
+              onClick={() => { setShowDeleteModal(false); setItemToDelete(null); }}
+            >
+              Hủy bỏ
+            </button>
+            <button type="button" className="ms-btn ms-btn--danger" onClick={handleConfirmDelete}>
+              <Trash2 size={16} />
+              Xóa vĩnh viễn
+            </button>
+          </>
+        }
+      >
+        <div className="ms-delete-notice">
+          <div className="ms-delete-notice-icon">
+            <AlertTriangle size={28} color="#f59e0b" />
           </div>
+          <p className="ms-delete-notice-text">
+            Bạn có chắc chắn muốn xóa dịch vụ này không? Toàn bộ dữ liệu liên quan sẽ bị mất vĩnh viễn.
+          </p>
         </div>
-      )}
+      </AppModal>
     </div>
   );
 };
