@@ -5,6 +5,7 @@ import {
   Filter, ArrowUpDown, History, CalendarClock,
   AlertTriangle, CheckCircle2, XCircle,
   ChevronLeft, ChevronRight,
+  ChevronsLeft, ChevronsRight,
   SwatchBook,
   LayoutGrid,
   CalendarDays,
@@ -398,37 +399,68 @@ const ManageService = () => {
           </tbody>
         </table>
 
-        {/* PHÂN TRANG (PAGINATION) */}
+        {/* Pagination */}
         {totalPages > 1 && (
-          <div className="service-pagination">
-            <div className="service-pagination-info">
-              Hiển thị{' '}
-              <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> đến{' '}
-              <strong>{Math.min(currentPage * itemsPerPage, processedServices.length)}</strong> trong tổng số{' '}
-              <strong>{processedServices.length}</strong> dịch vụ
-            </div>
-
-            <div className="service-pagination-nav">
+          <div className="tenant-account-list-pagination">
+            <span className="tenant-account-list-pagination-info">
+              Tổng: <strong>{processedServices.length}</strong> bản ghi · Trang <strong>{currentPage}</strong>/<strong>{totalPages}</strong>
+            </span>
+            <div className="tenant-account-list-pagination-controls">
               <button
                 type="button"
-                className="service-page-btn"
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                className="tenant-account-list-pagination-btn"
                 disabled={currentPage === 1}
+                onClick={() => setCurrentPage(1)}
+                title="Trang đầu"
               >
-                <ChevronLeft size={16} /> Trước
+                <ChevronsLeft size={16} />
+              </button>
+              <button
+                type="button"
+                className="tenant-account-list-pagination-btn"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                title="Trang trước"
+              >
+                <ChevronLeft size={16} />
               </button>
 
-              <span className="service-page-indicator">
-                Trang {currentPage} / {totalPages}
-              </span>
+              {(() => {
+                const pages: number[] = [];
+                let start = Math.max(1, currentPage - 2);
+                let end = Math.min(totalPages, currentPage + 2);
+                if (currentPage <= 2) end = Math.min(totalPages, 5);
+                if (currentPage >= totalPages - 1) start = Math.max(1, totalPages - 4);
+                for (let i = start; i <= end; i += 1) pages.push(i);
+                return pages;
+              })().map((pageNumber) => (
+                <button
+                  key={pageNumber}
+                  type="button"
+                  className={`tenant-account-list-pagination-btn ${pageNumber === currentPage ? "active" : ""}`}
+                  onClick={() => setCurrentPage(pageNumber)}
+                >
+                  {pageNumber}
+                </button>
+              ))}
 
               <button
                 type="button"
-                className="service-page-btn"
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                className="tenant-account-list-pagination-btn"
                 disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                title="Trang sau"
               >
-                Sau <ChevronRight size={16} />
+                <ChevronRight size={16} />
+              </button>
+              <button
+                type="button"
+                className="tenant-account-list-pagination-btn"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(totalPages)}
+                title="Trang cuối"
+              >
+                <ChevronsRight size={16} />
               </button>
             </div>
           </div>
@@ -436,103 +468,162 @@ const ManageService = () => {
       </div>
 
       {/* =========================================================================
-          CÁC MODAL 
+          CÁC MODAL
           ========================================================================= */}
 
       {/* 1. Modal Thêm/Sửa Dịch vụ */}
       {showModal && (
-        <div className="modal-overlay modal-z-base" onClick={() => setShowModal(false)}>
-          <div className="modal-content modal-content--w500" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{isEditing ? 'Cập nhật Dịch vụ' : 'Thêm Dịch vụ Mới'}</h3>
-              <button type="button" onClick={() => setShowModal(false)} aria-label="Đóng"><X size={20} /></button>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>Tên dịch vụ <span className="form-required">*</span></label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  disabled={isEditing && formData.type === 'Fixed'}
-                />
-                {isEditing && formData.type === 'Fixed' && (
-                  <small className="form-hint">Dịch vụ cố định không được đổi tên</small>
-                )}
+        <div className="ms-modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="ms-modal ms-modal--add" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="ms-modal-header">
+              <div className="ms-modal-header-left">
+                <div className={`ms-modal-icon ms-modal-icon--${isEditing ? 'edit' : 'add'}`}>
+                  {isEditing ? <Edit size={18} /> : <Plus size={18} />}
+                </div>
+                <div>
+                  <h3 className="ms-modal-title">{isEditing ? 'Cập nhật Dịch vụ' : 'Thêm Dịch vụ Mới'}</h3>
+                  <p className="ms-modal-subtitle">
+                    {isEditing ? 'Chỉnh sửa thông tin dịch vụ hiện có' : 'Điền đầy đủ thông tin để thêm dịch vụ mới'}
+                  </p>
+                </div>
               </div>
+              <button type="button" className="ms-modal-close" onClick={() => setShowModal(false)} aria-label="Đóng">
+                <X size={18} />
+              </button>
+            </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Giá (VNĐ) <span className="form-required">*</span></label>
+            {/* Body */}
+            <form id="ms-add-form" className="ms-modal-body" onSubmit={handleSubmit}>
+              {/* Tên dịch vụ */}
+              <div className="ms-field">
+                <label className="ms-label">
+                  Tên dịch vụ <span className="ms-label-required">*</span>
+                  {isEditing && formData.type === 'Fixed' && (
+                    <span className="ms-label-badge ms-label-badge--info">Không đổi được</span>
+                  )}
+                </label>
+                <div className="ms-input-wrap">
                   <input
-                    type="number"
+                    type="text"
+                    className="ms-input"
                     required
-                    min="0"
-                    value={formData.currentPrice}
-                    onChange={e => setFormData({ ...formData, currentPrice: Number(e.target.value) })}
+                    value={formData.name}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    disabled={isEditing && formData.type === 'Fixed'}
+                    placeholder="VD: Điện, Nước, Internet..."
                   />
                 </div>
-                <div className="form-group">
-                  <label>Loại dịch vụ</label>
-                  <select
-                    value={formData.type}
-                    onChange={e => setFormData({ ...formData, type: e.target.value as any })}
-                    disabled={isEditing && formData.type === 'Fixed'}
-                  >
-                    <option value="Fixed">Cố định (Fixed)</option>
-                    <option value="Extension">Phụ trội (Extension)</option>
-                  </select>
+              </div>
+
+              {/* Giá & Loại */}
+              <div className="ms-field-row">
+                <div className="ms-field">
+                  <label className="ms-label">
+                    Giá (VNĐ) <span className="ms-label-required">*</span>
+                  </label>
+                  <div className="ms-input-wrap ms-input-wrap--prefix">
+                    <span className="ms-input-prefix">₫</span>
+                    <input
+                      type="number"
+                      className="ms-input ms-input--prefix"
+                      required
+                      min="0"
+                      value={formData.currentPrice}
+                      onChange={e => setFormData({ ...formData, currentPrice: Number(e.target.value) })}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                <div className="ms-field">
+                  <label className="ms-label">Loại dịch vụ</label>
+                  <div className="ms-select-wrap">
+                    <select
+                      className="ms-select"
+                      value={formData.type}
+                      onChange={e => setFormData({ ...formData, type: e.target.value as any })}
+                      disabled={isEditing && formData.type === 'Fixed'}
+                    >
+                      <option value="Fixed">Cố định (Fixed)</option>
+                      <option value="Extension">Phụ trội (Extension)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Mô tả (Tối đa 100 ký tự)</label>
-                <textarea
-                  rows={3}
-                  maxLength={100}
-                  value={formData.description}
-                  onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Nhập mô tả ngắn gọn..."
-                />
-                <div className={`form-char-count ${(formData.description?.length || 0) === 100 ? 'form-char-count--limit' : ''}`}>
-                  {formData.description?.length || 0}/100
+              {/* Mô tả */}
+              <div className="ms-field">
+                <label className="ms-label">Mô tả</label>
+                <div className="ms-textarea-wrap">
+                  <textarea
+                    className="ms-textarea"
+                    rows={3}
+                    maxLength={100}
+                    value={formData.description}
+                    onChange={e => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Nhập mô tả ngắn gọn về dịch vụ..."
+                  />
+                  <div className={`ms-textarea-count ${(formData.description?.length || 0) === 100 ? 'ms-textarea-count--limit' : ''}`}>
+                    {formData.description?.length || 0}/100
+                  </div>
                 </div>
               </div>
 
-              <div className="form-group form-group--checkbox">
-                <input
-                  type="checkbox"
-                  id="activeChk"
-                  checked={formData.isActive}
-                  onChange={e => setFormData({ ...formData, isActive: e.target.checked })}
-                />
-                <label htmlFor="activeChk">
-                  Đang hoạt động
-                </label>
-              </div>
-
-              <div className="ms-form-actions">
-                <button type="button" className="btn-secondary ms-btn-fixed" onClick={() => setShowModal(false)}>Hủy</button>
-                <button type="submit" className="btn-primary ms-btn-fixed">Lưu thông tin</button>
+              {/* Toggle hoạt động */}
+              <div className="ms-toggle-row">
+                <div className="ms-toggle-info">
+                  <span className="ms-toggle-title">Trạng thái hoạt động</span>
+                  <span className="ms-toggle-desc">
+                    Dịch vụ sẽ {formData.isActive ? 'hiển thị và có thể sử dụng' : 'bị ẩn khỏi danh sách'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={formData.isActive}
+                  className={`ms-toggle ${formData.isActive ? 'ms-toggle--on' : 'ms-toggle--off'}`}
+                  onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
+                >
+                  <span className="ms-toggle-thumb" />
+                </button>
               </div>
             </form>
+
+            {/* Footer */}
+            <div className="ms-modal-footer">
+              <button type="button" className="ms-btn ms-btn--ghost" onClick={() => setShowModal(false)}>
+                Hủy bỏ
+              </button>
+              <button type="submit" form="ms-add-form" className="ms-btn ms-btn--primary" onClick={handleSubmit}>
+                <CheckCircle2 size={16} />
+                {isEditing ? 'Cập nhật' : 'Thêm dịch vụ'}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* 2. Modal Lịch Sử Giá */}
       {showHistoryModal && viewingHistoryService && (
-        <div className="modal-overlay modal-z-history" onClick={() => setShowHistoryModal(false)}>
-          <div className="modal-content modal-content--w600" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="ms-history-title">
-                <CalendarClock size={24} className="ms-history-icon" aria-hidden />
-                <h3>Lịch sử thay đổi giá: {viewingHistoryService.name}</h3>
+        <div className="ms-modal-overlay" onClick={() => setShowHistoryModal(false)}>
+          <div className="ms-modal ms-modal--history" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="ms-modal-header">
+              <div className="ms-modal-header-left">
+                <div className="ms-modal-icon ms-modal-icon--history">
+                  <CalendarClock size={18} />
+                </div>
+                <div>
+                  <h3 className="ms-modal-title">Lịch sử thay đổi giá</h3>
+                  <p className="ms-modal-subtitle">{viewingHistoryService.name}</p>
+                </div>
               </div>
-              <button type="button" onClick={() => setShowHistoryModal(false)} aria-label="Đóng"><X size={20} /></button>
+              <button type="button" className="ms-modal-close" onClick={() => setShowHistoryModal(false)} aria-label="Đóng">
+                <X size={18} />
+              </button>
             </div>
 
+            {/* Body */}
             <div className="ms-history-body">
               {viewingHistoryService.histories && viewingHistoryService.histories.length > 0 ? (
                 <div className="ms-history-table">
@@ -541,7 +632,6 @@ const ManageService = () => {
                     <span>Ngày kết thúc</span>
                     <span>Giá áp dụng</span>
                   </div>
-
                   {[...viewingHistoryService.histories].reverse().map((history) => (
                     <div
                       key={history._id}
@@ -549,7 +639,9 @@ const ManageService = () => {
                     >
                       <div>{formatDate(history.startDate)}</div>
                       <div>
-                        {history.endDate ? formatDate(history.endDate) : (
+                        {history.endDate ? (
+                          formatDate(history.endDate)
+                        ) : (
                           <span className="ms-history-pill">Đang áp dụng</span>
                         )}
                       </div>
@@ -566,8 +658,11 @@ const ManageService = () => {
               )}
             </div>
 
+            {/* Footer */}
             <div className="ms-modal-footer">
-              <button type="button" className="btn-secondary ms-btn-fixed" onClick={() => setShowHistoryModal(false)}>Đóng</button>
+              <button type="button" className="ms-btn ms-btn--ghost" onClick={() => setShowHistoryModal(false)}>
+                Đóng
+              </button>
             </div>
           </div>
         </div>
@@ -575,20 +670,45 @@ const ManageService = () => {
 
       {/* 3. Modal Xác Nhận Xóa */}
       {showDeleteModal && (
-        <div className="modal-overlay modal-z-delete" onClick={() => { setShowDeleteModal(false); setItemToDelete(null); }}>
-          <div className="modal-content modal-content--delete" onClick={(e) => e.stopPropagation()}>
-            <div className="ms-delete-wrap">
-              <div className="ms-delete-icon-ring">
-                <AlertTriangle size={32} color="#ef4444" />
+        <div className="ms-modal-overlay" onClick={() => { setShowDeleteModal(false); setItemToDelete(null); }}>
+          <div className="ms-modal ms-modal--delete" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="ms-modal-header">
+              <div className="ms-modal-header-left">
+                <div className="ms-modal-icon ms-modal-icon--delete">
+                  <AlertTriangle size={18} />
+                </div>
+                <div>
+                  <h3 className="ms-modal-title">Xóa dịch vụ</h3>
+                  <p className="ms-modal-subtitle">Hành động này không thể hoàn tác</p>
+                </div>
+              </div>
+              <button type="button" className="ms-modal-close" onClick={() => { setShowDeleteModal(false); setItemToDelete(null); }} aria-label="Đóng">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="ms-modal-body">
+              <div className="ms-delete-notice">
+                <div className="ms-delete-notice-icon">
+                  <AlertTriangle size={28} color="#f59e0b" />
+                </div>
+                <p className="ms-delete-notice-text">
+                  Bạn có chắc chắn muốn xóa dịch vụ này không? Toàn bộ dữ liệu liên quan sẽ bị mất vĩnh viễn.
+                </p>
               </div>
             </div>
-            <h3 className="ms-delete-title">Xác nhận xóa?</h3>
-            <p className="ms-delete-text">
-              Bạn có chắc chắn muốn xóa dịch vụ này không? Hành động này không thể hoàn tác.
-            </p>
-            <div className="ms-modal-actions-row">
-              <button type="button" className="btn-secondary ms-btn-fixed" onClick={() => { setShowDeleteModal(false); setItemToDelete(null); }}>Hủy</button>
-              <button type="button" className="btn-primary btn-danger ms-btn-fixed" onClick={handleConfirmDelete}>Xóa</button>
+
+            {/* Footer */}
+            <div className="ms-modal-footer">
+              <button type="button" className="ms-btn ms-btn--ghost" onClick={() => { setShowDeleteModal(false); setItemToDelete(null); }}>
+                Hủy bỏ
+              </button>
+              <button type="button" className="ms-btn ms-btn--danger" onClick={handleConfirmDelete}>
+                <Trash2 size={16} />
+                Xóa vĩnh viễn
+              </button>
             </div>
           </div>
         </div>
