@@ -103,6 +103,7 @@ import SendContractToGuest from "./pages/ContractManagement/SendContractToGuest"
 import ContractList from "./pages/ContractManagement/ContractList";
 import ContractDetail from "./pages/ContractManagement/ContractDetail";
 import EditContract from "./pages/ContractManagement/EditContract";
+import ContractLiquidationManagement from "./pages/ContractManagement/ContractLiquidationManagement";
 import DepositRoom from "./pages/ContractManagement/DepositRoom";
 import DepositFloorMap from "./pages/ContractManagement/DepositFloorMap";
 import CreateDeposit from "./pages/ContractManagement/CreateDeposit";
@@ -301,6 +302,7 @@ function LayoutWrapper() {
           <Route path="contracts/create" element={<CreateContract />} />
           <Route path="contracts/:id" element={<ContractDetail />} />
           <Route path="contracts/:id/edit" element={<EditContract />} />
+          <Route path="contracts/liquidations" element={<ContractLiquidationManagement />} />
           <Route path="deposits" element={<DepositRoom />} />
           <Route path="deposits/floor-map" element={<DepositFloorMap />} />
           <Route path="deposits/create/:id" element={<CreateDeposit />} />
