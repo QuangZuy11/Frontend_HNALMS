@@ -65,5 +65,15 @@ export const bookingRequestService = {
     } catch (error: any) {
       throw error.response?.data || { message: "Không thể kết nối đến máy chủ" };
     }
+  },
+
+  getPaymentStatus: async (transactionCode: string) => {
+    try {
+      const encoded = encodeURIComponent(transactionCode);
+      const response = await api.get(`/booking-requests/payment-status/${encoded}`);
+      return response.data;
+    } catch (error: any) {
+      throw error.response?.data || { message: "Không thể kết nối đến máy chủ" };
+    }
   }
 };

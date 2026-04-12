@@ -6,6 +6,9 @@ export interface DepositInitiateRequest {
     phone: string;
     email: string;
     idCard: string;
+    dob?: string;
+    address?: string;
+    gender?: string;
     startDate: string;
     duration: number;
     prepayMonths: number | "all";

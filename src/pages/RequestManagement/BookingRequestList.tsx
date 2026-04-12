@@ -303,7 +303,7 @@ const BookingRequestList = () => {
                       variant="contained"
                       size="small"
                       onClick={() => handleReview(req._id)}
-                      disabled={req.status === "Rejected" || req.status === "Processed" || req.status === "Awaiting Payment"}
+                      disabled={req.status === "Rejected" || req.status === "Processed"}
                       sx={{ textTransform: "none", fontWeight: 600, borderRadius: "6px" }}
                     >
                       {req.status === "Awaiting Payment" ? "Chờ TT..." : "Xem & Chốt HĐ"}

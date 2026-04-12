@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import { roomService } from "../../../services/roomService";
 import { bookingRequestService } from "../../../services/bookingRequestService";
-import DepositPayment from "./DepositPayment";
 import "./BookingPage.css";
 
 interface CoResident {
@@ -53,7 +52,6 @@ export default function BookingPage() {
     const [bookingStep, setBookingStep] = useState<"form" | "success">("form");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
-    const [showPaymentModal, setShowPaymentModal] = useState(false);
 
     // --- Tenant fields ---
     const [fullName, setFullName] = useState("");
@@ -287,7 +285,7 @@ export default function BookingPage() {
                 startDate,
                 duration,
                 prepayMonths,
-                coResidents
+                coResidents,
             });
             if (res.success) {
                 setBookingStep("success");
@@ -304,19 +302,8 @@ export default function BookingPage() {
         }
     };
 
-    const handlePaymentSuccess = () => {
-        setShowPaymentModal(false);
-        setBookingStep("success");
-    };
-
-    const handleCancelDeposit = async () => {
-        if (depositData?.transactionCode) {
-            try {
-                await depositService.cancelDeposit(depositData.transactionCode);
-            } catch { /* ignore */ }
-        }
-        setShowPaymentModal(false);
-        setDepositData(null);
+    const handleCancelDeposit = () => {
+        setBookingStep("form");
     };
 
     // ---------- Co-resident helpers ----------
@@ -739,7 +726,7 @@ export default function BookingPage() {
                                             </>
                                         ) : (
                                             <>
-                                                <CheckCircle size={18} />
+                                                <CreditCard size={18} />
                                                 Gửi Yêu Cầu Đặt Phòng
                                             </>
                                         )}
@@ -755,56 +742,35 @@ export default function BookingPage() {
                                     <div className="success-icon-wrapper">
                                         <CheckCircle />
                                     </div>
-                                    <h2 className="success-heading">Gửi Yêu Cầu Thành Công!</h2>
+                                    <h2 className="success-heading">Yêu Cầu Đặt Phòng Đã Được Gửi!</h2>
                                     <p className="success-subheading">
-                                        Cảm ơn bạn đã chọn {room.roomCode} của Hoàng Nam Building
+                                        Cảm ơn bạn đã chọn {room.roomCode} của Hoàng Nam Building. Yêu cầu của bạn đang chờ được xử lý.
                                     </p>
 
                                     <div className="success-summary">
                                         <div className="payment-info-row">
-                                            <span className="payment-info-label">Số tiền cọc dự kiến:</span>
+                                            <span className="payment-info-label">Phòng:</span>
                                             <span className="payment-info-value highlight">
-                                                {depositAmount.toLocaleString("vi-VN")}đ
+                                                {room.roomCode}
                                             </span>
                                         </div>
                                         <div className="payment-info-row">
-                                            <span className="payment-info-label">Người đại diện:</span>
-                                            <span className="payment-info-value">{fullName}</span>
+                                            <span class="payment-info-label">Thời gian giữ phòng:</span>
+                                            <span className="payment-info-value">30 ngày</span>
                                         </div>
                                         <div className="payment-info-row">
-                                            <span className="payment-info-label">Ngày muốn vào ở:</span>
-                                            <span className="payment-info-value">
-                                                {startDate ? new Date(startDate).toLocaleDateString("vi-VN") : "—"}
-                                            </span>
-                                        </div>
-                                        <div className="payment-info-row">
-                                            <span className="payment-info-label">Thời hạn thuê:</span>
-                                            <span className="payment-info-value">{duration} tháng</span>
-                                        </div>
-                                        <div className="payment-info-row">
-                                            <span className="payment-info-label">Trả trước:</span>
-                                            <span className="payment-info-value">
-                                                {prepayMonths === "all" ? `${duration} tháng (toàn bộ)` : `${prepayMonths} tháng`}
-                                            </span>
-                                        </div>
-                                        {coResidents.length > 0 && (
-                                            <div className="payment-info-row">
-                                                <span className="payment-info-label">Người ở cùng:</span>
-                                                <span className="payment-info-value">{coResidents.map(c => c.fullName).join(", ")}</span>
-                                            </div>
-                                        )}
-                                        <div className="payment-info-row">
-                                            <span className="payment-info-label">Trạng thái yêu cầu:</span>
-                                            <span className="success-badge" style={{ backgroundColor: "#e2e8f0", color: "#475569" }}>Đang Chờ Xử Lý</span>
+                                            <span className="payment-info-label">Trạng thái:</span>
+                                            <span className="success-badge">Chờ Xác Nhận</span>
                                         </div>
                                     </div>
 
                                     <div className="success-info-box">
                                         <p>📋 Thông tin cần biết:</p>
                                         <ul>
-                                            <li>• Yêu cầu của bạn đã được gửi đến Ban Quản Lý (Status: Pending).</li>
-                                            <li>• BQL sẽ xem xét, chốt thông tin và gửi hợp đồng kèm phương thức thanh toán vào Email: {email}</li>
-                                            <li>• Hotline hỗ trợ ngay: 0869 048 066</li>
+                                            <li>• Yêu cầu đặt phòng của bạn đã được gửi đến bộ phận quản lý</li>
+                                            <li>• Bạn sẽ nhận email xác nhận khi yêu cầu được duyệt</li>
+                                            <li>• Thanh toán sẽ được thực hiện sau khi hợp đồng được gửi qua email</li>
+                                            <li>• Hotline: 0869 048 066</li>
                                         </ul>
                                     </div>
 
@@ -812,7 +778,7 @@ export default function BookingPage() {
                                         <button className="bk-primary-btn" onClick={() => navigate("/rooms")}>
                                             Quay Lại Danh Sách Phòng
                                         </button>
-                                        <button className="bk-outline-btn" onClick={() => navigate(`/rooms/${id}`)}>
+                                        <button className="bk-outline-btn" onClick={() => navigate(`/rooms/${id}`)}>  
                                             Xem Lại Chi Tiết Phòng
                                         </button>
                                     </div>
@@ -843,7 +809,7 @@ export default function BookingPage() {
 
                             <div className="sidebar-deposit-box">
                                 <div className="sidebar-deposit-row">
-                                    <span className="sidebar-price-label">Tiền Cọc (Tạm tính)</span>
+                                    <span className="sidebar-price-label">Tiền Cọc</span>
                                     <span className="sidebar-deposit-value">
                                         {depositAmount > 0 ? `${depositAmount.toLocaleString("vi-VN")} đ` : "Liên hệ"}
                                         <span className="sidebar-deposit-note"> = 1 tháng tiền nhà</span>
@@ -882,7 +848,6 @@ export default function BookingPage() {
                                     Điều Khoản
                                 </p>
                                 <ul className="sidebar-terms-list">
-                                    <li><span className="check" style={{ color: "#2563eb" }}>ℹ</span><span style={{ color: "#2563eb", fontWeight: "bold" }}>Các khoản tiền ở đây chỉ là tạm tính. Bạn sẽ thanh toán chính thức sau khi Ban Quản Lý duyệt yêu cầu.</span></li>
                                     <li><span className="check">✓</span><span>Giữ phòng 30 ngày</span></li>
                                     <li><span className="check">✓</span><span>Không hoàn lại cọc</span></li>
                                     <li><span className="check">✓</span><span>Phải ký HĐ trong 30 ngày</span></li>
@@ -911,19 +876,6 @@ export default function BookingPage() {
                 </div>
             </div>
 
-            {/* PAYMENT MODAL */}
-            {showPaymentModal && depositData && (
-                <div className="payment-modal-overlay" onClick={handleCancelDeposit}>
-                    <div className="payment-modal-content" onClick={e => e.stopPropagation()}>
-                        <button className="payment-modal-close" onClick={handleCancelDeposit}>✕</button>
-                        <DepositPayment
-                            depositData={depositData}
-                            onSuccess={handlePaymentSuccess}
-                            onCancel={handleCancelDeposit}
-                        />
-                    </div>
-                </div>
-            )}
         </main>
     );
 }
