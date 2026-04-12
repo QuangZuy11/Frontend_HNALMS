@@ -48,6 +48,11 @@ export const accountService = {
     const response = await api.put(`/accounts/${group}/${accountId}/enable`);
     return response.data;
   },
+
+  delete: async (group: AccountGroup, accountId: string) => {
+    const response = await api.delete(`/accounts/${group}/${accountId}`);
+    return response.data;
+  },
 };
 
 // Account management API services
