@@ -310,7 +310,15 @@ export default function FloorMapLevel5({
               const hasFutureContract = !!(room.futureContractId || room.contractStartDate);
               const hasFutureInactiveContract = room.hasFutureInactiveContract || false;
               const hasMultiOptions = isDeposited && hasFutureContract && !hasFloatingDeposit;
-              const showAsAvailable = isAvailable || (isDeposited && isShortTermAvailable && !hasFutureContract) || hasFutureInactiveContract;
+              const renewalDeclinedRebook =
+                room.contractRenewalStatus === "declined" &&
+                !hasFloatingDeposit &&
+                (room.status === "Occupied" || room.status === "Deposited");
+              const showAsAvailable =
+                isAvailable ||
+                (isDeposited && isShortTermAvailable && !hasFutureContract) ||
+                hasFutureInactiveContract ||
+                (renewalDeclinedRebook && legendType !== "guest");
               // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit
               const showDepositedBadge = (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) || (hasFutureInactiveContract && hasFloatingDeposit);
               const typeColor = getRoomTypeColor(room.roomTypeId?._id);
@@ -362,6 +370,41 @@ export default function FloorMapLevel5({
                         {getExpiryLabel(room.contractEndDate)}
                       </span>
                     )}
+                    {legendType === "guest" &&
+                      room.contractRenewalStatus === "declined" &&
+                      isDeposited &&
+                      getExpiryLabel(room.contractEndDate) && (
+                        <span className="room-expiry-label">
+                          {getExpiryLabel(room.contractEndDate)}
+                        </span>
+                      )}
+                    {legendType === "guest" &&
+                      room.contractRenewalStatus === "declined" &&
+                      !hasFloatingDeposit &&
+                      room.successorLeaseBooked && (
+                        <span className="room-guest-successor-booked">Đã có HĐ kế tiếp</span>
+                      )}
+                    {legendType === "guest" &&
+                      room.contractRenewalStatus === "declined" &&
+                      !hasFloatingDeposit &&
+                      !room.successorLeaseBooked && (
+                        <span className="room-guest-can-deposit">Có thể cọc</span>
+                      )}
+                    {legendType === "contract" &&
+                      room.contractRenewalStatus === "declined" &&
+                      isDeposited &&
+                      getExpiryLabel(room.contractEndDate) && (
+                        <span className="room-expiry-label">
+                          {getExpiryLabel(room.contractEndDate)}
+                        </span>
+                      )}
+                    {legendType === "contract" &&
+                      room.contractRenewalStatus === "declined" &&
+                      getExpiryLabel(room.contractEndDate) && (
+                        <span className="room-manager-declined-tag">
+                          Từ chối gia hạn
+                        </span>
+                      )}
                     {!isDeposited && room.contractStartDate && getContractDateLabel(room.contractStartDate, room.contractEndDate, showDateYear) && (
                       <span className="room-contract-dates">
                         {getContractDateLabel(room.contractStartDate, room.contractEndDate, showDateYear)}

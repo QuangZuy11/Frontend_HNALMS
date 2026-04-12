@@ -22,7 +22,8 @@
   overflow-x: hidden;
   background-color: #f8fafc;
   border-top-left-radius: 16px;
-  padding: 5px 24px;
+  /* Thu hẹp để tối ưu diện tích nội dung (trên / trái / phải) */
+  padding: 6px 12px 14px;
 }
 
 @media (max-width: 1024px) {

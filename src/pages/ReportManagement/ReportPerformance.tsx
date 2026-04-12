@@ -24,11 +24,11 @@ import type { VacancyMonthData, SnapshotData } from "../../services/reportServic
 import "./ReportPerformance.css";
 
 const COLORS = {
-  occupied: "#1976D2",
+  occupied: "#2e69b1",
   vacant: "#9e9e9e",
 };
 
-const PIE_COLORS = ["#1976D2", "#9e9e9e"];
+const PIE_COLORS = ["#2e69b1", "#9e9e9e"];
 
 const formatMonth = (monthStr: string) => {
   const [year, mon] = monthStr.split("-");
@@ -148,17 +148,17 @@ export default function ReportPerformance() {
             <div className="snapshot-cards">
               <div className="snapshot-card">
                 <div className="snapshot-icon">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1976D2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2e69b1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                     <polyline points="9 22 9 12 15 12 15 22"/>
                   </svg>
                 </div>
                 <div className="snapshot-label">Tổng phòng</div>
-                <div className="snapshot-value">{snapshot.totalRooms}</div>
+                <div className="snapshot-value total">{snapshot.totalRooms}</div>
               </div>
               <div className="snapshot-card">
                 <div className="snapshot-icon">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2e69b1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                     <circle cx="9" cy="7" r="4"/>
                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
@@ -170,7 +170,7 @@ export default function ReportPerformance() {
               </div>
               <div className="snapshot-card">
                 <div className="snapshot-icon">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef6c00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2e69b1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                     <line x1="9" y1="3" x2="9" y2="21"/>
                   </svg>
@@ -180,7 +180,7 @@ export default function ReportPerformance() {
               </div>
               <div className="snapshot-card">
                 <div className="snapshot-icon">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7b1fa2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2e69b1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="20" x2="18" y2="10"/>
                     <line x1="12" y1="20" x2="12" y2="4"/>
                     <line x1="6" y1="20" x2="6" y2="14"/>
@@ -221,7 +221,7 @@ export default function ReportPerformance() {
                         return (
                           <div style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 8, padding: "10px 14px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
                             <p style={{ margin: "0 0 6px", fontWeight: 600, fontSize: 13 }}>{formatMonth(String(label ?? ""))}</p>
-                            <p style={{ margin: "0 0 3px", fontSize: 12, color: "#1976D2" }}>Đã thuê: {occupied} phòng</p>
+                            <p style={{ margin: "0 0 3px", fontSize: 12, color: "#2e69b1" }}>Đã thuê: {occupied} phòng</p>
                             <p style={{ margin: 0, fontSize: 12, color: "#9e9e9e" }}>Phòng trống: {vacant} phòng</p>
                           </div>
                         );

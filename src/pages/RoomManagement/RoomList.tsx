@@ -38,6 +38,7 @@ interface Room {
   amenities: string[];
   images: string[];
   isShortTermAvailable?: boolean;
+  successorLeaseBooked?: boolean;
 }
 
 export default function RoomList() {
@@ -164,6 +165,10 @@ export default function RoomList() {
                isShortTermAvailable = true;
             }
 
+            if (room.successorLeaseBooked) {
+              isShortTermAvailable = false;
+            }
+
             return {
               ...room,
               title: room.name,
@@ -186,6 +191,7 @@ export default function RoomList() {
               contractEndDate: room.contractEndDate || null,
               contractStartDate: room.contractStartDate || null,
               hasFloatingDeposit: room.hasFloatingDeposit || false,
+              successorLeaseBooked: !!room.successorLeaseBooked,
               isShortTermAvailable,
               hasFutureInactiveContract: room.hasFutureInactiveContract || false,
             };

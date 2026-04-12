@@ -78,6 +78,7 @@ export default function RoomDetail() {
         const futureStart = roomData.futureContractStartDate;
         const hasFloatingDeposit = roomData.hasFloatingDeposit || false;
         const hasFutureInactiveContract = roomData.hasFutureInactiveContract || false;
+        const successorLeaseBooked = !!roomData.successorLeaseBooked;
         let isShortTermAvailable = false;
         // Available if: Deposited + future active contract >= 30 days
         // OR: Deposited + future inactive contract (>30 days) → allow booking
@@ -90,6 +91,19 @@ export default function RoomDetail() {
         
         if (hasFutureInactiveContract && !hasFloatingDeposit) {
           isShortTermAvailable = true;
+        }
+
+        // Declined renewal: chỉ mở đặt cọc khi chưa có cọc floating và chưa có HĐ kế tiếp
+        if (
+          roomData.contractRenewalStatus === "declined" &&
+          !hasFloatingDeposit &&
+          !successorLeaseBooked
+        ) {
+          isShortTermAvailable = true;
+        }
+
+        if (successorLeaseBooked) {
+          isShortTermAvailable = false;
         }
 
         // Transform data to match component expectations
@@ -109,7 +123,10 @@ export default function RoomDetail() {
           futureContractStartDate: futureStart,
           hasFloatingDeposit,
           isShortTermAvailable,
-          hasFutureInactiveContract
+          hasFutureInactiveContract,
+          contractRenewalStatus: roomData.contractRenewalStatus ?? null,
+          successorLeaseBooked,
+          nextInactiveContractStart: roomData.nextInactiveContractStart ?? null,
         };
 
         console.log("✅ Transformed room price:", transformedRoom.price);
@@ -196,6 +213,15 @@ export default function RoomDetail() {
   }
 
   const depositAmount = room.price;
+  const depositAllowed =
+    !room.successorLeaseBooked &&
+    (room.status === "Available" ||
+      room.status === "Trống" ||
+      room.isShortTermAvailable);
+
+  const declinedRenewalDual =
+    room.contractRenewalStatus === "declined" &&
+    (room.status === "Occupied" || room.status === "Deposited");
 
   return (
     <main className="room-detail-page">
@@ -233,29 +259,34 @@ export default function RoomDetail() {
                       <span>{room.floorLabel}</span>
                     </div>
                   </div>
-                  <span
-                    className={`overlay-status ${
-                      room.status === "Available" || room.status === "Trống"
-                        ? "available"
-                        : room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit
+                  {declinedRenewalDual ? (
+                    <div className="overlay-status-row">
+                      <span className="overlay-status occupied">Đang thuê</span>
+                      <span
+                        className={`overlay-status ${room.successorLeaseBooked ? "occupied" : room.hasFloatingDeposit ? "deposited" : "available"}`}
+                      >
+                        {room.successorLeaseBooked
+                          ? "Đã có HĐ kế tiếp"
+                          : room.hasFloatingDeposit
+                            ? "Đã có cọc kế tiếp"
+                            : "Có thể cọc"}
+                      </span>
+                    </div>
+                  ) : (
+                    <span
+                      className={`overlay-status ${
+                        depositAllowed
                           ? "available"
-                          : room.status === "Deposited" && room.futureContractStartDate && room.isShortTermAvailable
-                            ? "available"
-                            : room.status === "Deposited"
-                              ? "deposited"
-                              : "occupied"
-                      }`}
-                  >
-                    {room.status === "Available" || room.status === "Trống"
-                      ? "Còn trống"
-                      : room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit
-                        ? "Còn trống"
-                        : room.status === "Deposited" && room.futureContractStartDate && room.isShortTermAvailable
-                          ? "Còn trống"
                           : room.status === "Deposited"
-                            ? "Đã đặt cọc"
-                            : "Đang thuê"}
-                  </span>
+                            ? "deposited"
+                            : "occupied"
+                        }`}
+                    >
+                      {depositAllowed ? "Còn trống" : room.status === "Deposited"
+                        ? "Đã đặt cọc"
+                        : "Đang thuê"}
+                    </span>
+                  )}
                 </div>
 
                 {/* Navigation Buttons */}
@@ -317,23 +348,38 @@ export default function RoomDetail() {
                     <span>{room.floorLabel}</span>
                   </div>
                 </div>
-                <span
-                  className={`overlay-status ${
-                    room.status === "Available" || room.status === "Trống" || (room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit)
-                      ? "available"
-                      : room.status === "Deposited"
-                        ? "deposited"
-                        : "occupied"
-                    }`}
-                >
-                  {room.status === "Available" || room.status === "Trống"
-                    ? "Còn trống"
-                    : room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit
+                {declinedRenewalDual ? (
+                  <div className="overlay-status-row">
+                    <span className="overlay-status occupied">Đang thuê</span>
+                    <span
+                      className={`overlay-status ${room.successorLeaseBooked ? "occupied" : room.hasFloatingDeposit ? "deposited" : "available"}`}
+                    >
+                      {room.successorLeaseBooked
+                        ? "Đã có HĐ kế tiếp"
+                        : room.hasFloatingDeposit
+                          ? "Đã có cọc kế tiếp"
+                          : "Có thể cọc"}
+                    </span>
+                  </div>
+                ) : (
+                  <span
+                    className={`overlay-status ${
+                      room.status === "Available" || room.status === "Trống" || (room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit)
+                        ? "available"
+                        : room.status === "Deposited"
+                          ? "deposited"
+                          : "occupied"
+                      }`}
+                  >
+                    {room.status === "Available" || room.status === "Trống"
                       ? "Còn trống"
-                      : room.status === "Deposited"
-                        ? "Đã đặt cọc"
-                        : "Đã thuê"}
-                </span>
+                      : room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit
+                        ? "Còn trống"
+                        : room.status === "Deposited"
+                          ? "Đã đặt cọc"
+                          : "Đã thuê"}
+                  </span>
+                )}
               </div>
               <span className="gallery-text">Hình Ảnh Phòng</span>
             </div>
@@ -346,6 +392,27 @@ export default function RoomDetail() {
             {/* Room Info Card */}
             <div className="info-card">
               <h3 className="card-title">Thông Tin Phòng</h3>
+
+              {declinedRenewalDual && (
+                <div className="detail-dual-status-cards">
+                  <div className="detail-status-mini-card detail-status-mini-occupied">
+                    <span className="detail-status-mini-label">Trạng thái thuê</span>
+                    <span className="detail-status-mini-value">Đang thuê</span>
+                  </div>
+                  <div
+                    className={`detail-status-mini-card ${room.successorLeaseBooked ? "detail-status-mini-occupied" : room.hasFloatingDeposit ? "detail-status-mini-deposited" : "detail-status-mini-can-deposit"}`}
+                  >
+                    <span className="detail-status-mini-label">Đặt cọc kế tiếp</span>
+                    <span className="detail-status-mini-value">
+                      {room.successorLeaseBooked
+                        ? "Đã có HĐ"
+                        : room.hasFloatingDeposit
+                          ? "Đã có cọc"
+                          : "Có thể cọc"}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {room.description && (
                 <p className="detail-room-description">{room.description}</p>
@@ -482,23 +549,38 @@ export default function RoomDetail() {
                   {room.isShortTermAvailable && room.futureContractStartDate && !room.hasFutureInactiveContract && (
                      <p style={{ color: "var(--warning)", fontWeight: "bold" }}>⚠ Chỉ thuê đến trước {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}</p>
                   )}
-                  {room.hasFutureInactiveContract && !room.hasFloatingDeposit && room.futureContractStartDate && (
+                  {room.hasFutureInactiveContract && !room.hasFloatingDeposit && room.futureContractStartDate && !room.successorLeaseBooked && (
                      <p style={{ color: "var(--success, #10b981)", fontWeight: "bold" }}>✓ Phòng hiện trống - Sẽ có Hợp đồng bắt đầu từ {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}</p>
+                  )}
+                  {room.successorLeaseBooked && (
+                    <p style={{ color: "#92400e", fontWeight: "bold" }}>
+                      Kỳ thuê tiếp theo đã có hợp đồng — không mở đặt cọc thêm.
+                    </p>
+                  )}
+                  {room.contractRenewalStatus === "declined" && (room.status === "Occupied" || room.status === "Deposited") && !room.successorLeaseBooked && (
+                    <p style={{ color: "var(--warning)", fontWeight: "bold" }}>
+                      ⚠ Người thuê hiện tại đã từ chối gia hạn — bạn có thể đặt cọc cho kỳ thuê tiếp theo.
+                    </p>
+                  )}
+                  {room.contractRenewalStatus === "declined" && room.nextInactiveContractStart && !room.successorLeaseBooked && (
+                    <p style={{ color: "#dc2626", fontWeight: "bold", marginTop: "4px" }}>
+                      ⚠ Hợp đồng mới phải kết thúc trước ngày {new Date(room.nextInactiveContractStart).toLocaleDateString("vi-VN")} (ngày HĐ kế tiếp bắt đầu).
+                    </p>
                   )}
                 </div>
 
                 <button
                   className="booking-button"
-                  disabled={
-                    (room.status !== "Available" && room.status !== "Trống" && !room.isShortTermAvailable)
-                  }
+                  disabled={!depositAllowed}
                   onClick={() => navigate(`/rooms/${id}/booking`)}
                 >
-                  {room.status === "Available" || room.status === "Trống" || room.isShortTermAvailable
+                  {depositAllowed
                     ? "Đặt Cọc Ngay"
-                    : room.status === "Deposited"
-                      ? "Phòng Đã Được Đặt Cọc"
-                      : "Phòng Đã Có Chủ"}
+                    : room.successorLeaseBooked
+                      ? "Đã có HĐ kế tiếp"
+                      : room.status === "Deposited"
+                        ? "Phòng Đã Được Đặt Cọc"
+                        : "Phòng Đã Có Chủ"}
                 </button>
 
               </div>

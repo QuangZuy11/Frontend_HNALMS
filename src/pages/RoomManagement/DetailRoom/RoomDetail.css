@@ -187,6 +187,76 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
+.detail-dual-status-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 520px) {
+  .detail-dual-status-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detail-status-mini-card {
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  background: #fafafa;
+}
+
+.detail-status-mini-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.25rem;
+}
+
+.detail-status-mini-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.detail-status-mini-occupied {
+  border-color: #fecaca;
+  background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+}
+
+.detail-status-mini-occupied .detail-status-mini-value {
+  color: #b91c1c;
+}
+
+.detail-status-mini-can-deposit {
+  border-color: #86efac;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+}
+
+.detail-status-mini-can-deposit .detail-status-mini-value {
+  color: #047857;
+}
+
+.detail-status-mini-deposited {
+  border-color: #fcd34d;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+}
+
+.detail-status-mini-deposited .detail-status-mini-value {
+  color: #b45309;
+}
+
+.overlay-status-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
 .overlay-status {
   padding: 0.4rem 0.875rem;
   border-radius: 6px;

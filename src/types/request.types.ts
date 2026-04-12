@@ -85,7 +85,11 @@ export interface MoveOutRequest {
   roomId?: Room | null;
   reason?: string;
   moveOutDate?: string | null;
-  status: 'Requested' | 'Approved' | 'Rejected' | 'Completed' | 'Cancelled';
+  status: 'Requested' | 'InvoiceReleased' | 'Paid' | 'Completed' | 'Cancelled';
+  isEarlyNotice?: boolean;
+  isUnderMinStay?: boolean;
+  isDepositForfeited?: boolean;
+  isGapContract?: boolean;
   managerNote?: string;
   rejectReason?: string;
   completedAt?: string | null;

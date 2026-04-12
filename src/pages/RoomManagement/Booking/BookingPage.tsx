@@ -63,6 +63,7 @@ export default function BookingPage() {
                         }
                     }
                     const futureStart = roomData.futureContractStartDate;
+                    const successorLeaseBooked = !!roomData.successorLeaseBooked;
                     let isShortTermAvailable = false;
                     if (roomData.status === "Deposited" && futureStart && !roomData.hasFloatingDeposit) {
                         const daysUntil = Math.ceil((new Date(futureStart).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
@@ -72,6 +73,12 @@ export default function BookingPage() {
                     }
                     if (roomData.hasFutureInactiveContract && !roomData.hasFloatingDeposit) {
                         isShortTermAvailable = true;
+                    }
+                    if (roomData.contractRenewalStatus === "declined" && !roomData.hasFloatingDeposit && !successorLeaseBooked) {
+                        isShortTermAvailable = true;
+                    }
+                    if (successorLeaseBooked) {
+                        isShortTermAvailable = false;
                     }
 
                     setRoom({
@@ -83,6 +90,8 @@ export default function BookingPage() {
                         typeName: roomData.roomTypeId?.typeName || "Phòng",
                         futureContractStartDate: futureStart,
                         isShortTermAvailable,
+                        contractRenewalStatus: roomData.contractRenewalStatus ?? null,
+                        successorLeaseBooked,
                     });
                 }
             } catch (err) {
@@ -110,6 +119,13 @@ export default function BookingPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!room) return;
+        const allowed =
+            !room.successorLeaseBooked &&
+            (room.status === "Available" ||
+                room.status === "Trống" ||
+                room.isShortTermAvailable);
+        if (!allowed) return;
         if (!validate()) return;
         setIsSubmitting(true);
         setSubmitError(null);
@@ -178,6 +194,12 @@ export default function BookingPage() {
 
     const depositAmount = room.price;
 
+    const depositAllowed =
+        !room.successorLeaseBooked &&
+        (room.status === "Available" ||
+            room.status === "Trống" ||
+            room.isShortTermAvailable);
+
     return (
         <main className="booking-page">
             <div className="booking-container">
@@ -204,6 +226,13 @@ export default function BookingPage() {
                                 <p className="bk-card-desc">Vui lòng cung cấp thông tin liên hệ chính xác</p>
 
                                 <form className="booking-form" onSubmit={handleSubmit}>
+                                    {!depositAllowed && (
+                                        <div className="form-submit-error" style={{ marginBottom: "1rem" }}>
+                                            {room.successorLeaseBooked
+                                                ? "Kỳ thuê tiếp theo đã có hợp đồng. Phòng không mở đặt cọc thêm."
+                                                : "Phòng hiện không thể đặt cọc trực tuyến."}
+                                        </div>
+                                    )}
                                     <div className="form-group">
                                         <label className="form-label">Họ Tên Đầy Đủ *</label>
                                         <input
@@ -250,7 +279,7 @@ export default function BookingPage() {
                                         <div className="form-submit-error">{submitError}</div>
                                     )}
 
-                                    <button type="submit" className="bk-primary-btn" disabled={isSubmitting}>
+                                    <button type="submit" className="bk-primary-btn" disabled={isSubmitting || !depositAllowed}>
                                         {isSubmitting ? (
                                             <>
                                                 <Loader size={18} className="spin" />
@@ -372,6 +401,18 @@ export default function BookingPage() {
                                         <li>
                                             <span className="check" style={{ color: "var(--warning)" }}>⚠</span>
                                             <span style={{ color: "var(--warning)", fontWeight: "bold" }}>Thuê ngắn hạn đến {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}</span>
+                                        </li>
+                                    )}
+                                    {room.contractRenewalStatus === "declined" && !room.successorLeaseBooked && (
+                                        <li>
+                                            <span className="check" style={{ color: "var(--warning)" }}>⚠</span>
+                                            <span style={{ color: "var(--warning)", fontWeight: "bold" }}>Người thuê hiện tại đã từ chối gia hạn — đặt cọc cho kỳ thuê tiếp theo.</span>
+                                        </li>
+                                    )}
+                                    {room.successorLeaseBooked && (
+                                        <li>
+                                            <span className="check" style={{ color: "#92400e" }}>ℹ</span>
+                                            <span style={{ color: "#92400e", fontWeight: "bold" }}>Kỳ thuê tiếp theo đã có hợp đồng — không đặt cọc thêm.</span>
                                         </li>
                                     )}
                                 </ul>

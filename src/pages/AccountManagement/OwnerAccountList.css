@@ -24,7 +24,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.25rem 1.5rem;
-  background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+  background: #2e69b1;
   gap: 1rem;
   flex-wrap: wrap;
 }
@@ -66,8 +66,8 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.6rem 1.2rem;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: #2e69b1;
+  border: 1px solid #2e69b1;
   border-radius: 10px;
   color: #fff;
   font-size: 0.875rem;
@@ -79,8 +79,8 @@
 }
 
 .admin-accounts-btn-create:hover {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: #245a90;
+  border-color: #245a90;
   transform: translateY(-1px);
 }
 
@@ -350,14 +350,14 @@
 }
 
 .admin-accounts-pagination-btn.active {
-  background: #1a237e;
-  border-color: #1a237e;
+  background: #2e69b1;
+  border-color: #2e69b1;
   color: #ffffff;
 }
 
 .admin-accounts-pagination-btn.active:hover {
-  background: #303f9f;
-  border-color: #303f9f;
+  background: #245a90;
+  border-color: #245a90;
 }
 
 /* Empty state */
@@ -467,6 +467,51 @@
   background: #303f9f;
 }
 
+/* Toast notification */
+.admin-accounts-toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 99999;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  animation: admin-accounts-toast-in 0.3s ease-out;
+}
+
+.admin-accounts-toast-icon {
+  width: 32px;
+  height: 32px;
+  background: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.admin-accounts-toast-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #166534;
+}
+
+.admin-accounts-toast-msg {
+  font-size: 0.8rem;
+  color: #166534;
+  margin-top: 2px;
+}
+
+@keyframes admin-accounts-toast-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 /* Create Account Modal */
 .admin-accounts-create-modal-overlay {
   position: fixed;
@@ -500,7 +545,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.1rem 1.4rem;
-  background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+  background: #2e69b1;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -613,7 +658,7 @@
 
 .admin-accounts-create-btn-submit {
   padding: 0.6rem 1.5rem;
-  background: #1a237e;
+  background: #2e69b1;
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -625,9 +670,9 @@
 }
 
 .admin-accounts-create-btn-submit:hover:not(:disabled) {
-  background: #303f9f;
+  background: #245a90;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(26, 35, 126, 0.25);
+  box-shadow: 0 4px 12px rgba(46, 105, 177, 0.25);
 }
 
 .admin-accounts-create-btn-cancel:disabled,
@@ -670,7 +715,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.1rem 1.4rem;
-  background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #1e3a8a 100%);
+  background: #2e69b1;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -734,8 +779,8 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.2rem;
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  border: 1px solid #bfdbfe;
+  background: linear-gradient(135deg, #ebf5ff 0%, #dbeeff 100%);
+  border: 1px solid #2e69b1;
   border-radius: 12px;
   margin-bottom: 1rem;
 }
@@ -744,7 +789,7 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #1e40af, #4338ca);
+  background: #2e69b1;
   color: #fff;
   font-size: 1.3rem;
   font-weight: 700;
@@ -752,7 +797,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+  box-shadow: 0 4px 12px rgba(46, 105, 177, 0.3);
 }
 
 .owner-account-detail-profile-info {
@@ -788,9 +833,9 @@
 .owner-account-detail-role-badge {
   display: inline-block;
   padding: 0.18rem 0.6rem;
-  background: #eff6ff;
-  color: #1e40af;
-  border: 1px solid #bfdbfe;
+  background: #ffffff;
+  color: #2e69b1;
+  border: 1px solid #2e69b1;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 700;

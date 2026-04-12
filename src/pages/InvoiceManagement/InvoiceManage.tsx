@@ -72,7 +72,7 @@ const InvoiceManager = () => {
   // Các state hỗ trợ cho Modal Ghi điện nước hàng loạt
   const [bulkSearchTerm, setBulkSearchTerm] = useState('');
   const [bulkFilterStatus, setBulkFilterStatus] = useState('ALL'); 
-  const [bulkFilterFloor, setBulkFilterFloor] = useState('ALL'); // [MỚI] Lọc theo tầng
+  const [bulkFilterFloor, setBulkFilterFloor] = useState('ALL'); // Lọc theo tầng
   const [bulkCurrentPage, setBulkCurrentPage] = useState(1);
 
   const [confirmModal, setConfirmModal] = useState<{
@@ -692,6 +692,17 @@ const InvoiceManager = () => {
     const startIndex = (bulkCurrentPage - 1) * BULK_ITEMS_PER_PAGE;
     return filteredBulkRooms.slice(startIndex, startIndex + BULK_ITEMS_PER_PAGE);
   }, [filteredBulkRooms, bulkCurrentPage]);
+
+
+  // [ĐÃ SỬA LỖI REFERENCE ERROR] - Đưa khai báo ra ngoài để Render JSX có thể nhìn thấy
+  const elecServiceInfo = useMemo(() => {
+    return services.find(s => ['điện', 'dien'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
+  }, [services]);
+
+  const waterServiceInfo = useMemo(() => {
+    return services.find(s => ['nước', 'nuoc'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
+  }, [services]);
+
 
   return (
     <div className="invoice-container">

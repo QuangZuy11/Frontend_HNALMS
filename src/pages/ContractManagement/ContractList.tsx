@@ -10,15 +10,89 @@ import FloorMapLevel3 from "../RoomManagement/RoomList/components/FloorMapLevel3
 import FloorMapLevel4 from "../RoomManagement/RoomList/components/FloorMapLevel4";
 import FloorMapLevel5 from "../RoomManagement/RoomList/components/FloorMapLevel5";
 import "./ContractFloorMap.css";
+import {
+  hasSuccessorContractAfterDeclinedTenant,
+  isContractStartedByLocalCalendar,
+} from "../../utils/contractDates";
 
 const API_URL = "http://localhost:9999/api";
+
+type PopupPlacement = "above" | "below";
 
 interface RoomActionPopup {
   show: boolean;
   room: any;
-  position: { x: number; y: number };
+  position: { x: number; anchorTop: number; anchorBottom: number };
+  placement: PopupPlacement;
   contracts: any[];      // Danh sách hợp đồng của phòng
   deposits: any[];       // Danh sách cọc lẻ (chưa gắn HĐ)
+}
+
+const EMPTY_ACTION_POPUP: RoomActionPopup = {
+  show: false,
+  room: null,
+  position: { x: 0, anchorTop: 0, anchorBottom: 0 },
+  placement: "above",
+  contracts: [],
+  deposits: [],
+};
+
+/** Tránh popup mở phía trên khi ô phòng sát mép trên viewport (đè lên chrome / header app). */
+function computePopupAnchor(
+  event?: React.MouseEvent,
+): { x: number; anchorTop: number; anchorBottom: number; placement: PopupPlacement } {
+  const rect = event?.currentTarget
+    ? (event.currentTarget as HTMLElement).getBoundingClientRect()
+    : null;
+  const fallbackY = event?.clientY ?? 200;
+  const xRaw = rect ? rect.left + rect.width / 2 : event?.clientX ?? 200;
+  const anchorTop = rect?.top ?? fallbackY - 24;
+  const anchorBottom = rect?.bottom ?? fallbackY + 24;
+  const halfMin = 140;
+  const x =
+    typeof window !== "undefined"
+      ? Math.min(window.innerWidth - halfMin - 8, Math.max(halfMin + 8, xRaw))
+      : xRaw;
+  const VIEWPORT_TOP_SAFE = 8;
+  const ESTIMATED_POPUP_HEIGHT = 340;
+  const placement: PopupPlacement =
+    anchorTop >= ESTIMATED_POPUP_HEIGHT + VIEWPORT_TOP_SAFE ? "above" : "below";
+  return { x, anchorTop, anchorBottom, placement };
+}
+
+/**
+ * Hiện nút "Tạo hợp đồng, cọc mới":
+ * - Không có cọc lẻ chờ ký (phải ký qua từng cọc).
+ * - Không chặn khi HĐ active hiện tại có renewal declined (đang chờ trả phòng / ký HĐ lấp khe).
+ * - HĐ active nhưng ngày bắt đầu còn trong tương lai: thường chặn (đã có HĐ xếp hàng),
+ *   trừ phòng `contractRenewalStatus === "declined"` — vẫn cho tạo HĐ/cọc cho giai đoạn trước HĐ tương lai.
+ * - Nếu đã có HĐ kế tiếp (sau ngày kết thúc HĐ đang ở) thì không cho (khách A đã ký xong).
+ */
+/** dd/mm/yy — đồng bộ với FloorMap */
+function formatDdMmYy(iso?: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}/${d.getFullYear().toString().slice(-2)}`;
+}
+
+function allowCreateNewContractOption(
+  room: any,
+  roomContracts: any[],
+  roomDeposits: any[],
+) {
+  if (roomDeposits.length > 0) return false;
+  if (hasSuccessorContractAfterDeclinedTenant(room, roomContracts)) return false;
+  const blocked = roomContracts.some((c: any) => {
+    if (c.status !== "active") return false;
+    if (!isContractStartedByLocalCalendar(c.startDate)) {
+      if (room?.contractRenewalStatus === "declined") return false;
+      return true;
+    }
+    if (c.renewalStatus === "declined") return false;
+    return true;
+  });
+  return !blocked;
 }
 
 const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
@@ -28,20 +102,14 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
   const [deposits, setDeposits] = useState<any[]>([]);
   const [floors, setFloors] = useState<any[]>([]);
   const [activeFloorTab, setActiveFloorTab] = useState(0);
-  const [actionPopup, setActionPopup] = useState<RoomActionPopup>({
-    show: false,
-    room: null,
-    position: { x: 0, y: 0 },
-    contracts: [],
-    deposits: [],
-  });
+  const [actionPopup, setActionPopup] = useState<RoomActionPopup>(EMPTY_ACTION_POPUP);
   const popupRef = useRef<HTMLDivElement>(null);
 
   // Close popup when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
-        setActionPopup({ show: false, room: null, position: { x: 0, y: 0 } });
+        setActionPopup(EMPTY_ACTION_POPUP);
       }
     };
     if (actionPopup.show) {
@@ -83,7 +151,7 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
             return (
               roomId === room._id &&
               c.status === "active" &&
-              new Date(c.startDate) > new Date()
+              !isContractStartedByLocalCalendar(c.startDate)
             );
           });
 
@@ -119,7 +187,11 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
   const roomContractMap: Record<string, string> = {};
   contracts.forEach((c: any) => {
     const roomId = c.roomId?._id || c.roomId;
-    if (c.status === "active" && roomId && new Date(c.startDate) <= new Date()) {
+    if (
+      c.status === "active" &&
+      roomId &&
+      isContractStartedByLocalCalendar(c.startDate)
+    ) {
       roomContractMap[roomId] = c._id;
     }
   });
@@ -151,14 +223,13 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
 
     // Nếu có hợp đồng hoặc cọc lẻ → hiện popup
     if (roomContracts.length > 0 || roomDeposits.length > 0) {
-      const rect = (event?.currentTarget as HTMLElement)?.getBoundingClientRect();
-      const x = rect ? rect.left + rect.width / 2 : event?.clientX || 200;
-      const y = rect ? rect.top : event?.clientY || 200;
+      const { x, anchorTop, anchorBottom, placement } = computePopupAnchor(event);
 
       setActionPopup({
         show: true,
         room,
-        position: { x, y },
+        position: { x, anchorTop, anchorBottom },
+        placement,
         contracts: roomContracts,
         deposits: roomDeposits,
       });
@@ -181,7 +252,7 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
   // Xem chi tiết hợp đồng
   const handleViewContract = (contractId: string) => {
     navigate(`${contractId}`);
-    setActionPopup({ show: false, room: null, position: { x: 0, y: 0 }, contracts: [], deposits: [] });
+    setActionPopup(EMPTY_ACTION_POPUP);
   };
 
   // Tạo hợp đồng mới cho cọc lẻ
@@ -189,7 +260,7 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
     if (actionPopup.room) {
       navigate("create", { state: { roomId: actionPopup.room._id, depositId } });
     }
-    setActionPopup({ show: false, room: null, position: { x: 0, y: 0 }, contracts: [], deposits: [] });
+    setActionPopup(EMPTY_ACTION_POPUP);
   };
 
   // Tạo hợp đồng mới (không có cọc)
@@ -197,7 +268,7 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
     if (actionPopup.room) {
       navigate("create", { state: { roomId: actionPopup.room._id } });
     }
-    setActionPopup({ show: false, room: null, position: { x: 0, y: 0 }, contracts: [], deposits: [] });
+    setActionPopup(EMPTY_ACTION_POPUP);
   };
 
   const activeContracts = contracts.filter(
@@ -296,12 +367,18 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
       {actionPopup.show && actionPopup.room && (
         <div
           ref={popupRef}
-          className="room-action-popup"
+          className={`room-action-popup room-action-popup--${actionPopup.placement}`}
           style={{
             position: "fixed",
             left: actionPopup.position.x,
-            top: actionPopup.position.y - 10,
-            transform: "translate(-50%, -100%)",
+            top:
+              actionPopup.placement === "above"
+                ? actionPopup.position.anchorTop - 10
+                : actionPopup.position.anchorBottom + 10,
+            transform:
+              actionPopup.placement === "above"
+                ? "translate(-50%, -100%)"
+                : "translate(-50%, 0)",
             zIndex: 1000,
           }}
         >
@@ -315,28 +392,43 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
           <div className="popup-options">
             {/* Hiện các hợp đồng */}
             {actionPopup.contracts.map((contract: any) => {
-              const isActive = contract.status === "active" && new Date(contract.startDate) <= new Date();
-              const isPending = contract.status === "active" && new Date(contract.startDate) > new Date();
+              const isActive =
+                contract.status === "active" &&
+                isContractStartedByLocalCalendar(contract.startDate);
+              const isPending =
+                contract.status === "active" &&
+                !isContractStartedByLocalCalendar(contract.startDate);
+              const showDeclinedRenewal =
+                isActive &&
+                (contract.renewalStatus === "declined" ||
+                  actionPopup.room?.contractRenewalStatus === "declined");
+              const statusLine = isActive
+                ? "Đang hiệu lực"
+                : isPending
+                  ? `Sắp tới (bắt đầu ${formatDdMmYy(contract.startDate)})`
+                  : contract.status === "Pending"
+                    ? "Đang chờ ký"
+                    : contract.status === "terminated"
+                      ? "Đã chấm dứt"
+                      : "Chưa có hiệu lực";
               return (
                 <button
                   key={contract._id}
-                  className={`popup-option ${isActive ? "option-view-active" : "option-view"}`}
+                  className={`popup-option popup-option-contract ${isActive ? "option-view-active" : "option-view"}`}
                   onClick={() => handleViewContract(contract._id)}
                 >
                   <FileText size={16} />
                   <div className="option-text">
                     <span className="option-title">HĐ: {contract.contractCode}</span>
-                    <span className="option-desc">
-                      {isActive
-                        ? "Đang hiệu lực"
-                        : isPending
-                          ? `Sắp tới (${new Date(contract.startDate).toLocaleDateString("vi-VN")})`
-                          : contract.status === "Pending"
-                            ? "Đang chờ ký"
-                            : contract.status === "terminated"
-                              ? "Đã chấm dứt"
-                              : "Chưa có hiệu lực"
-                      }
+                    <span className="option-dates">
+                      Bắt đầu: {formatDdMmYy(contract.startDate)} · Kết thúc:{" "}
+                      {formatDdMmYy(contract.endDate)}
+                    </span>
+                    <span className="option-desc option-desc-with-status">
+                      <span>{statusLine}</span>
+                      {showDeclinedRenewal && (
+                        <span className="popup-declined-renewal-tag">Từ chối gia hạn</span>
+                      )}
                     </span>
                   </div>
                 </button>
@@ -358,12 +450,12 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
                 </div>
               </button>
             ))}
-            {/* Option tạo hợp đồng mới - chỉ hiện khi KHÔNG có active/pending contract VÀ KHÔNG có cọc lẻ */}
-            {actionPopup.deposits.length === 0 && !actionPopup.contracts.some((c: any) => {
-              const isActive = c.status === "active" && new Date(c.startDate) <= new Date();
-              const isPending = c.status === "active" && new Date(c.startDate) > new Date();
-              return isActive || isPending;
-            }) && (
+            {!readOnly &&
+              allowCreateNewContractOption(
+                actionPopup.room,
+                actionPopup.contracts,
+                actionPopup.deposits,
+              ) && (
               <button
                 className="popup-option option-create-new"
                 onClick={handleCreateNewContract}
