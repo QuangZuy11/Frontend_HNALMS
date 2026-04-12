@@ -18,9 +18,6 @@ import "./LiquidationWizard.css";
 
 const API_BASE_URL = "http://localhost:9999/api";
 
-// ─────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────
 const formatCurrency = (amount: number | null | undefined): string => {
   if (amount === null || amount === undefined) return "---";
   return new Intl.NumberFormat("vi-VN", {
@@ -34,9 +31,6 @@ const today = () => {
   return d.toISOString().split("T")[0];
 };
 
-// ─────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────
 interface Service {
   _id: string;
   name: string;
@@ -45,16 +39,13 @@ interface Service {
 }
 
 interface LiquidationWizardProps {
-  contract: any; // contract object from ManageRoom (allRoomContracts selected)
-  roomPrice: number; // giá phòng (currentPrice từ roomType)
-  depositAmount: number; // số tiền cọc
+  contract: any;
+  roomPrice: number;
+  depositAmount: number;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-// ─────────────────────────────────────────────
-// Main Component
-// ─────────────────────────────────────────────
 const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
   contract,
   roomPrice,
@@ -62,15 +53,12 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
   onClose,
   onSuccess,
 }) => {
-  // ── Type selection ──────────────────────────
   const [liquidationType, setLiquidationType] = useState<
     "force_majeure" | "violation" | null
   >(null);
 
-  // ── Step ────────────────────────────────────
-  const [step, setStep] = useState<0 | 1 | 2>(0); // 0=type, 1=step1, 2=step2
+  const [step, setStep] = useState<0 | 1 | 2>(0);
 
-  // ── Step 1 fields ───────────────────────────
   const [liquidationDate, setLiquidationDate] = useState(today());
   const [note, setNote] = useState("");
   const [images, setImages] = useState<string[]>([]);
@@ -78,7 +66,6 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
   const [uploadingImages, setUploadingImages] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Step 2 fields ───────────────────────────
   const [electricService, setElectricService] = useState<Service | null>(null);
   const [waterService, setWaterService] = useState<Service | null>(null);
   const [electricOldIndex, setElectricOldIndex] = useState(0);
@@ -87,12 +74,10 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
   const [waterNewIndex, setWaterNewIndex] = useState("");
   const [preflightData, setPreflightData] = useState<any>(null);
 
-  // ── UI state ────────────────────────────────
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loadingServices, setLoadingServices] = useState(false);
 
-  // ── Fetch services on mount ──────────────────
   useEffect(() => {
     const fetchServices = async () => {
       setLoadingServices(true);
@@ -100,31 +85,32 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
         const res = await axios.get(`${API_BASE_URL}/services`);
         const all: Service[] = res.data.data || res.data || [];
 
-        // ── Tìm dịch vụ điện ──
-        // Ưu tiên 1: tên chính xác "Điện" / "điện" / "Electric"
-        // Ưu tiên 2: tên ngắn nhất chứa "điện" (để tránh "Gửi Xe máy điện")
         const ELEC_EXACT = ["điện", "electric", "tiền điện", "điện năng"];
         let elec =
           all.find((s) => ELEC_EXACT.includes(s.name.toLowerCase().trim())) ??
           all
-            .filter((s) => s.name.toLowerCase().includes("điện") || s.name.toLowerCase().includes("electric"))
+            .filter(
+              (s) =>
+                s.name.toLowerCase().includes("điện") ||
+                s.name.toLowerCase().includes("electric")
+            )
             .sort((a, b) => a.name.length - b.name.length)[0] ??
           null;
 
-        // ── Tìm dịch vụ nước ──
         const WATER_EXACT = ["nước", "water", "tiền nước", "nước sinh hoạt"];
         let water =
           all.find((s) => WATER_EXACT.includes(s.name.toLowerCase().trim())) ??
           all
-            .filter((s) => s.name.toLowerCase().includes("nước") || s.name.toLowerCase().includes("water"))
+            .filter(
+              (s) =>
+                s.name.toLowerCase().includes("nước") ||
+                s.name.toLowerCase().includes("water")
+            )
             .sort((a, b) => a.name.length - b.name.length)[0] ??
           null;
 
         if (elec) setElectricService(elec);
         if (water) setWaterService(water);
-
-        console.log("[Liquidation] Dịch vụ điện:", elec?.name, "giá:", elec?.currentPrice);
-        console.log("[Liquidation] Dịch vụ nước:", water?.name, "giá:", water?.currentPrice);
       } catch (e) {
         console.error("Lỗi tải dịch vụ:", e);
       } finally {
@@ -134,7 +120,6 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
     fetchServices();
   }, []);
 
-  // ── Fetch old meter indexes when going to Step 2 ──
   const fetchLatestIndexes = useCallback(async () => {
     if (!contract?.roomId?._id && !contract?.roomId) return;
     const roomId =
@@ -167,7 +152,10 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
       if (electricService && results[0]?.data?.data) {
         setElectricOldIndex(results[0].data.data.newIndex ?? 0);
       }
-      if (waterService && results[electricService ? 1 : 0]?.data?.data) {
+      if (
+        waterService &&
+        results[electricService ? 1 : 0]?.data?.data
+      ) {
         setWaterOldIndex(
           results[electricService ? 1 : 0].data.data.newIndex ?? 0
         );
@@ -180,9 +168,10 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
   const fetchPreflight = useCallback(async () => {
     if (!contract?._id) return;
     try {
-      const res = await axios.get(`${API_BASE_URL}/liquidations/preflight/${contract._id}`, {
-        params: { liquidationDate },
-      });
+      const res = await axios.get(
+        `${API_BASE_URL}/liquidations/preflight/${contract._id}`,
+        { params: { liquidationDate } }
+      );
       if (res.data?.success) setPreflightData(res.data.data);
     } catch (e) {
       console.error("Lỗi lấy preflight data:", e);
@@ -196,7 +185,6 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
     }
   }, [step, liquidationDate, fetchLatestIndexes, fetchPreflight]);
 
-  // ── Financial preview computation ────────────
   const computeFinancial = () => {
     if (!liquidationType) return null;
 
@@ -204,44 +192,66 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
     liqDate.setHours(12, 0, 0, 0);
     const msPerDay = 1000 * 60 * 60 * 24;
 
-    // Số ngày đã dùng trong tháng — cho violation (tiền thuê nợ)
-    const startOfMonth = new Date(liqDate.getFullYear(), liqDate.getMonth(), 1);
-    const daysUsed = Math.round((liqDate.getTime() - startOfMonth.getTime()) / msPerDay) + 1;
+    const startOfMonth = new Date(
+      liqDate.getFullYear(),
+      liqDate.getMonth(),
+      1
+    );
+    const daysUsed =
+      Math.round(
+        (liqDate.getTime() - startOfMonth.getTime()) / msPerDay
+      ) + 1;
 
-    const elecUsage = Math.max(0, Number(electricNewIndex || 0) - electricOldIndex);
-    const waterUsage = Math.max(0, Number(waterNewIndex || 0) - waterOldIndex);
+    const elecUsage = Math.max(
+      0,
+      Number(electricNewIndex || 0) - electricOldIndex
+    );
+    const waterUsage = Math.max(
+      0,
+      Number(waterNewIndex || 0) - waterOldIndex
+    );
 
-    // Giá điện/nước: lấy trực tiếp Number() — currentPrice là Number trong DB
-    const elecPrice = electricService ? Number(electricService.currentPrice) : 0;
-    const waterPrice = waterService ? Number(waterService.currentPrice) : 0;
+    const elecPrice = electricService
+      ? Number(electricService.currentPrice)
+      : 0;
+    const waterPrice = waterService
+      ? Number(waterService.currentPrice)
+      : 0;
 
-    // Chỉ tính tiền điện và nước — không tính dịch vụ nào khác
     const electricCost = elecUsage * elecPrice;
     const waterCost = waterUsage * waterPrice;
     const utilityCost = electricCost + waterCost;
 
     if (liquidationType === "force_majeure") {
-      const isDepositRefunded = preflightData?.deposit?.status === "Refunded";
+      const isDepositRefunded =
+        preflightData?.deposit?.status === "Refunded";
       const depositRefund = isDepositRefunded ? 0 : depositAmount;
 
-      // Hoàn tiền thuê: dùng kết quả tính từ paidRentPeriods nếu có, fallback sang cách cũ
       let remainRent = 0;
       let remainingRentLabel = "";
       if (preflightData?.paidRentPeriods !== undefined) {
         remainRent = preflightData.totalRentRefund ?? 0;
-        const totalUnused = (preflightData.paidRentPeriods as any[]).reduce((s: number, p: any) => s + p.unusedDays, 0);
-        remainingRentLabel = remainRent > 0
-          ? `${totalUnused} ngày chưa dùng (từ ${(preflightData.paidRentPeriods as any[]).length} kỳ HĐ)`
-          : "0 ngày (không có kỳ đã thanh toán còn dư)";
+        const totalUnused = (
+          preflightData.paidRentPeriods as any[]
+        ).reduce((s: number, p: any) => s + p.unusedDays, 0);
+        remainingRentLabel =
+          remainRent > 0
+            ? `${totalUnused} ngày chưa dùng (từ ${
+                (preflightData.paidRentPeriods as any[]).length
+              } kỳ HĐ)`
+            : "0 ngày (không có kỳ đã thanh toán còn dư)";
       } else {
-        // Fallback: tính theo rentPaidUntil
         if (preflightData?.rentPaidUntil) {
           const rpUntil = new Date(preflightData.rentPaidUntil);
           rpUntil.setHours(12, 0, 0, 0);
           if (rpUntil > liqDate) {
-            const days = Math.round((rpUntil.getTime() - liqDate.getTime()) / msPerDay);
+            const days = Math.round(
+              (rpUntil.getTime() - liqDate.getTime()) / msPerDay
+            );
             remainRent = Math.round((roomPrice / 30) * days);
-            remainingRentLabel = `${days} ngày (đến ${rpUntil.toLocaleDateString('vi-VN')})`;
+            remainingRentLabel = `${days} ngày (đến ${rpUntil.toLocaleDateString(
+              "vi-VN"
+            )})`;
           }
         }
       }
@@ -269,8 +279,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
       } else {
         rentDebt = Math.round((roomPrice / 30) * daysUsed);
       }
-      
-      // Tổng thu = tiền thuê nợ + tiền điện + tiền nước (đều CỘNG vào)
+
       const total = rentDebt + utilityCost;
       return {
         type: "violation" as const,
@@ -284,15 +293,14 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
     }
   };
 
-  const financial = (step === 2 || step === 1) ? computeFinancial() : null;
+  const financial =
+    step === 2 || step === 1 ? computeFinancial() : null;
 
-  // ── Image upload ─────────────────────────────
   const handleImageFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setUploadingImages(true);
     setError("");
 
-    // Local previews
     const localUrls: string[] = [];
     Array.from(files).forEach((f) => {
       localUrls.push(URL.createObjectURL(f));
@@ -314,7 +322,6 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
       setError(
         "Lỗi upload ảnh: " + (e.response?.data?.message || e.message)
       );
-      // Remove local previews on error
       setImageLocalPreviews((prev) =>
         prev.slice(0, prev.length - localUrls.length)
       );
@@ -328,7 +335,6 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
     setImageLocalPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // ── Step 1 Validation ──────────────────────
   const validateStep1 = () => {
     if (!liquidationDate) {
       setError("Vui lòng chọn ngày thanh lý.");
@@ -345,19 +351,24 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
     return true;
   };
 
-  // ── Step 2 Validation ──────────────────────
   const validateStep2 = () => {
     if (!electricService || !waterService) {
       setError("Không tìm thấy dịch vụ điện/nước trong hệ thống.");
       return false;
     }
-    if (electricNewIndex === "" || Number(electricNewIndex) < electricOldIndex) {
+    if (
+      electricNewIndex === "" ||
+      Number(electricNewIndex) < electricOldIndex
+    ) {
       setError(
         `Chỉ số điện mới (${electricNewIndex}) không được nhỏ hơn chỉ số cũ (${electricOldIndex}).`
       );
       return false;
     }
-    if (waterNewIndex === "" || Number(waterNewIndex) < waterOldIndex) {
+    if (
+      waterNewIndex === "" ||
+      Number(waterNewIndex) < waterOldIndex
+    ) {
       setError(
         `Chỉ số nước mới (${waterNewIndex}) không được nhỏ hơn chỉ số cũ (${waterOldIndex}).`
       );
@@ -366,7 +377,6 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
     return true;
   };
 
-  // ── Submit ──────────────────────────────────
   const handleSubmit = async () => {
     setError("");
     if (!validateStep2()) return;
@@ -397,17 +407,16 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
     }
   };
 
-  // ── Render helpers ─────────────────────────
   const typeBadge = liquidationType ? (
     <span
-      className={`liq-type-badge ${
+      className={`lqw-type-badge ${
         liquidationType === "force_majeure" ? "force" : "violation"
       }`}
     >
       {liquidationType === "force_majeure" ? (
-        <ShieldOff size={12} />
+        <ShieldOff size={10} />
       ) : (
-        <AlertTriangle size={12} />
+        <AlertTriangle size={10} />
       )}
       {liquidationType === "force_majeure" ? "Bất khả kháng" : "Vi phạm"}
     </span>
@@ -418,94 +427,86 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
       ? contract.roomId.name
       : contract.roomId;
 
-  // ── RENDER ─────────────────────────────────
   return (
-    <div className="liq-overlay" onClick={onClose}>
-      <div className="liq-modal" onClick={(e) => e.stopPropagation()}>
-        {/* ── Header ── */}
-        <div className="liq-header">
-          <div className="liq-header-left">
+    <div className="lqw-overlay" onClick={onClose}>
+      <div className="lqw-modal" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="lqw-header">
+          <div className="lqw-header-left">
             <div
-              className={`liq-header-icon ${
+              className={`lqw-header-icon ${
                 liquidationType === "violation" ? "violation" : "force"
               }`}
             >
-              <Gavel size={20} />
+              <Gavel size={18} />
             </div>
             <div>
-              <div className="liq-header-title">
+              <div className="lqw-header-title">
                 Thanh lý Hợp đồng — {roomName || "---"}
               </div>
-              <div className="liq-header-subtitle">
+              <div className="lqw-header-subtitle">
                 {contract.contractCode} {typeBadge}
               </div>
             </div>
           </div>
-          <button className="liq-close-btn" onClick={onClose}>
+          <button className="lqw-close-btn" onClick={onClose}>
             <X size={16} />
           </button>
         </div>
 
-        {/* ── Stepper (ẩn ở step 0) ── */}
+        {/* Stepper */}
         {step > 0 && (
-          <div className="liq-stepper">
-            <div className={`liq-step ${step >= 1 ? (step > 1 ? "done" : "active") : ""}`}>
-              <div className="liq-step-circle">
+          <div className="lqw-stepper">
+            <div
+              className={`lqw-step ${
+                step >= 1 ? (step > 1 ? "done" : "active") : ""
+              }`}
+            >
+              <div className="lqw-step-circle">
                 {step > 1 ? <CheckCircle size={14} /> : "1"}
               </div>
-              <span className="liq-step-label">Thông tin cơ bản</span>
+              <span className="lqw-step-label">Thông tin cơ bản</span>
             </div>
-            <div className={`liq-step-connector ${step > 1 ? "done" : ""}`} />
-            <div className={`liq-step ${step === 2 ? "active" : ""}`}>
-              <div className="liq-step-circle">2</div>
-              <span className="liq-step-label">Chỉ số & Hoá đơn</span>
+            <div
+              className={`lqw-step-connector ${step > 1 ? "done" : ""}`}
+            />
+            <div className={`lqw-step ${step === 2 ? "active" : ""}`}>
+              <div className="lqw-step-circle">2</div>
+              <span className="lqw-step-label">Chỉ số & Hoá đơn</span>
             </div>
           </div>
         )}
 
-        {/* ── Error ── */}
+        {/* Error */}
         {error && (
-          <div className="liq-body" style={{ paddingBottom: 0 }}>
-            <div className="liq-error">
-              <AlertTriangle size={15} />
+          <div className="lqw-body" style={{ paddingBottom: 0 }}>
+            <div className="lqw-error">
+              <AlertTriangle size={14} />
               {error}
             </div>
           </div>
         )}
 
-        {/* ══════════════════════════════════════
-            STEP 0 — Chọn loại thanh lý
-           ══════════════════════════════════════ */}
+        {/* STEP 0 */}
         {step === 0 && (
           <>
-            <p className="liq-type-selector-title">
+            <p className="lqw-type-selector-title">
               Chọn loại thanh lý cho hợp đồng này:
             </p>
-            <div className="liq-type-selector">
-              {/* Bất khả kháng */}
+            <div className="lqw-type-selector">
               <div
-                className={`liq-type-card ${
-                  liquidationType === "force_majeure" ? "selected-force" : ""
+                className={`lqw-type-card ${
+                  liquidationType === "force_majeure"
+                    ? "selected-force"
+                    : ""
                 }`}
                 onClick={() => setLiquidationType("force_majeure")}
               >
-                <div
-                  className="liq-type-card-icon"
-                  style={{
-                    background:
-                      liquidationType === "force_majeure"
-                        ? "#dbeafe"
-                        : "#f1f5f9",
-                    color:
-                      liquidationType === "force_majeure"
-                        ? "#2563eb"
-                        : "#64748b",
-                  }}
-                >
-                  <ShieldOff size={26} />
+                <div className="lqw-type-card-icon">
+                  <ShieldOff size={24} />
                 </div>
-                <div className="liq-type-card-title">Bất khả kháng</div>
-                <div className="liq-type-card-desc">
+                <div className="lqw-type-card-title">Bất khả kháng</div>
+                <div className="lqw-type-card-desc">
                   Cháy nhà, thiên tai, nhà nước thu hồi, bảo trì bắt buộc...
                   <br />
                   <strong style={{ color: "#2563eb" }}>
@@ -514,26 +515,17 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                 </div>
               </div>
 
-              {/* Vi phạm */}
               <div
-                className={`liq-type-card ${
+                className={`lqw-type-card ${
                   liquidationType === "violation" ? "selected-violation" : ""
                 }`}
                 onClick={() => setLiquidationType("violation")}
               >
-                <div
-                  className="liq-type-card-icon"
-                  style={{
-                    background:
-                      liquidationType === "violation" ? "#fee2e2" : "#f1f5f9",
-                    color:
-                      liquidationType === "violation" ? "#dc2626" : "#64748b",
-                  }}
-                >
-                  <AlertTriangle size={26} />
+                <div className="lqw-type-card-icon">
+                  <AlertTriangle size={24} />
                 </div>
-                <div className="liq-type-card-title">Vi phạm</div>
-                <div className="liq-type-card-desc">
+                <div className="lqw-type-card-title">Vi phạm</div>
+                <div className="lqw-type-card-desc">
                   Chậm đóng tiền, gây mất trật tự, vi phạm nội quy...
                   <br />
                   <strong style={{ color: "#dc2626" }}>
@@ -543,59 +535,57 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
               </div>
             </div>
 
-            <div className="liq-footer">
-              <button className="liq-btn liq-btn-secondary" onClick={onClose}>
+            <div className="lqw-footer">
+              <button
+                className="lqw-btn lqw-btn-secondary"
+                onClick={onClose}
+              >
                 Hủy
               </button>
               <button
-                className="liq-btn liq-btn-primary"
+                className="lqw-btn lqw-btn-primary"
                 disabled={!liquidationType}
                 onClick={() => {
                   setError("");
                   setStep(1);
                 }}
               >
-                Tiếp tục <ChevronRight size={16} />
+                Tiếp tục <ChevronRight size={14} />
               </button>
             </div>
           </>
         )}
 
-        {/* ══════════════════════════════════════
-            STEP 1 — Thông tin cơ bản
-           ══════════════════════════════════════ */}
+        {/* STEP 1 */}
         {step === 1 && (
           <>
-            <div className="liq-body">
-              <div className="liq-form-row">
-                {/* Ngày thanh lý */}
-                <div className="liq-form-group">
-                  <label className="liq-label">
+            <div className="lqw-body">
+              <div className="lqw-form-row">
+                <div className="lqw-form-group">
+                  <label className="lqw-label">
                     Ngày thanh lý <span>*</span>
                   </label>
                   <input
                     type="date"
-                    className="liq-input"
+                    className="lqw-input"
                     value={liquidationDate}
                     onChange={(e) => setLiquidationDate(e.target.value)}
                     max={today()}
                   />
                 </div>
 
-                {/* Loại thanh lý (chỉ đọc) */}
-                <div className="liq-form-group">
-                  <label className="liq-label">Loại thanh lý</label>
-                  <div style={{ paddingTop: 8 }}>{typeBadge}</div>
+                <div className="lqw-form-group">
+                  <label className="lqw-label">Loại thanh lý</label>
+                  <div style={{ paddingTop: "6px" }}>{typeBadge}</div>
                 </div>
               </div>
 
-              {/* Ghi chú */}
-              <div className="liq-form-group" style={{ marginBottom: 14 }}>
-                <label className="liq-label">
+              <div className="lqw-form-group lqw-form-group-full">
+                <label className="lqw-label">
                   Ghi chú / Lý do <span>*</span>
                 </label>
                 <textarea
-                  className="liq-textarea"
+                  className="lqw-textarea"
                   placeholder="Mô tả lý do thanh lý hợp đồng..."
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
@@ -603,16 +593,15 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                 />
               </div>
 
-              {/* Upload ảnh */}
-              <div className="liq-form-group">
-                <label className="liq-label">
+              <div className="lqw-form-group lqw-form-group-full">
+                <label className="lqw-label">
                   Ảnh bằng chứng <span>*</span>{" "}
                   <span style={{ color: "#94a3b8", fontWeight: 400 }}>
                     (ít nhất 1 ảnh)
                   </span>
                 </label>
                 <div
-                  className="liq-upload-zone"
+                  className="lqw-upload-zone"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <input
@@ -622,10 +611,10 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                     multiple
                     onChange={(e) => handleImageFiles(e.target.files)}
                   />
-                  <div className="liq-upload-icon">
-                    <Upload size={28} />
+                  <div className="lqw-upload-icon">
+                    <Upload size={24} />
                   </div>
-                  <div className="liq-upload-text">
+                  <div className="lqw-upload-text">
                     <strong>Bấm để chọn ảnh</strong> hoặc kéo thả vào đây
                     <br />
                     Hỗ trợ JPG, PNG, WEBP — tối đa 10 ảnh
@@ -633,19 +622,25 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                 </div>
 
                 {uploadingImages && (
-                  <div className="liq-upload-spinner">
-                    <div className="liq-spinner" style={{ borderColor: "rgba(59,130,246,0.4)", borderTopColor: "#3b82f6" }} />
+                  <div className="lqw-upload-spinner">
+                    <div
+                      className="lqw-spinner"
+                      style={{
+                        borderColor: "rgba(59,130,246,0.4)",
+                        borderTopColor: "#3b82f6",
+                      }}
+                    />
                     Đang tải ảnh lên...
                   </div>
                 )}
 
                 {imageLocalPreviews.length > 0 && (
-                  <div className="liq-image-previews">
+                  <div className="lqw-image-previews">
                     {imageLocalPreviews.map((url, i) => (
-                      <div key={i} className="liq-image-preview-item">
+                      <div key={i} className="lqw-image-preview-item">
                         <img src={url} alt={`Ảnh ${i + 1}`} />
                         <button
-                          className="liq-image-remove-btn"
+                          className="lqw-image-remove-btn"
                           onClick={(e) => {
                             e.stopPropagation();
                             removeImage(i);
@@ -660,18 +655,18 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
               </div>
             </div>
 
-            <div className="liq-footer">
+            <div className="lqw-footer">
               <button
-                className="liq-btn liq-btn-secondary"
+                className="lqw-btn lqw-btn-secondary"
                 onClick={() => {
                   setError("");
                   setStep(0);
                 }}
               >
-                <ChevronLeft size={16} /> Quay lại
+                <ChevronLeft size={14} /> Quay lại
               </button>
               <button
-                className="liq-btn liq-btn-primary"
+                className="lqw-btn lqw-btn-primary"
                 disabled={uploadingImages}
                 onClick={() => {
                   if (validateStep1()) {
@@ -680,44 +675,44 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                   }
                 }}
               >
-                Tiếp theo <ChevronRight size={16} />
+                Tiếp theo <ChevronRight size={14} />
               </button>
             </div>
           </>
         )}
 
-        {/* ══════════════════════════════════════
-            STEP 2 — Chỉ số điện/nước & Preview
-           ══════════════════════════════════════ */}
+        {/* STEP 2 */}
         {step === 2 && (
           <>
-            <div className="liq-body">
-              {/* Meter reading inputs */}
-              <div className="liq-section-title">
+            <div className="lqw-body">
+              <div className="lqw-section-title">
                 <Calculator size={14} /> Nhập chỉ số cuối kỳ
               </div>
 
               {loadingServices ? (
-                <p style={{ color: "#94a3b8", fontSize: 13 }}>Đang tải dịch vụ...</p>
+                <p style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
+                  Đang tải dịch vụ...
+                </p>
               ) : (
-                <div className="liq-meter-grid">
-                  {/* Điện */}
-                  <div className="liq-meter-card">
-                    <div className="liq-meter-card-header">
-                      <Zap size={16} className="liq-meter-icon-elec" />
+                <div className="lqw-meter-grid">
+                  <div className="lqw-meter-card">
+                    <div className="lqw-meter-card-header">
+                      <Zap size={14} className="lqw-meter-icon-elec" />
                       Điện (kWh)
                     </div>
-                    <div className="liq-meter-row">
-                      <span className="liq-meter-row-label">Chỉ số cũ:</span>
-                      <span className="liq-meter-row-value">{electricOldIndex}</span>
+                    <div className="lqw-meter-row">
+                      <span className="lqw-meter-row-label">Chỉ số cũ:</span>
+                      <span className="lqw-meter-row-value">
+                        {electricOldIndex}
+                      </span>
                     </div>
-                    <div className="liq-form-group">
-                      <label className="liq-label">
+                    <div className="lqw-form-group">
+                      <label className="lqw-label">
                         Chỉ số mới <span>*</span>
                       </label>
                       <input
                         type="number"
-                        className="liq-input"
+                        className="lqw-input"
                         min={electricOldIndex}
                         placeholder={`≥ ${electricOldIndex}`}
                         value={electricNewIndex}
@@ -726,8 +721,8 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                     </div>
                     {electricNewIndex !== "" && (
                       <div
-                        className="liq-hint"
-                        style={{ marginTop: 6, color: "#f59e0b" }}
+                        className="lqw-hint"
+                        style={{ color: "#f59e0b" }}
                       >
                         Sử dụng:{" "}
                         {Math.max(
@@ -737,31 +732,42 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                         kWh
                         {electricService &&
                           ` × ${formatCurrency(
-                            typeof (electricService.currentPrice as any) === "object"
-                              ? parseFloat((electricService.currentPrice as any).$numberDecimal)
+                            typeof (
+                              electricService.currentPrice as unknown as {
+                                $numberDecimal: string;
+                              }
+                            ) === "object"
+                              ? parseFloat(
+                                  (
+                                    electricService.currentPrice as unknown as {
+                                      $numberDecimal: string;
+                                    }
+                                  ).$numberDecimal
+                                )
                               : Number(electricService.currentPrice)
                           )}`}
                       </div>
                     )}
                   </div>
 
-                  {/* Nước */}
-                  <div className="liq-meter-card">
-                    <div className="liq-meter-card-header">
-                      <Droplets size={16} className="liq-meter-icon-water" />
+                  <div className="lqw-meter-card">
+                    <div className="lqw-meter-card-header">
+                      <Droplets size={14} className="lqw-meter-icon-water" />
                       Nước (m³)
                     </div>
-                    <div className="liq-meter-row">
-                      <span className="liq-meter-row-label">Chỉ số cũ:</span>
-                      <span className="liq-meter-row-value">{waterOldIndex}</span>
+                    <div className="lqw-meter-row">
+                      <span className="lqw-meter-row-label">Chỉ số cũ:</span>
+                      <span className="lqw-meter-row-value">
+                        {waterOldIndex}
+                      </span>
                     </div>
-                    <div className="liq-form-group">
-                      <label className="liq-label">
+                    <div className="lqw-form-group">
+                      <label className="lqw-label">
                         Chỉ số mới <span>*</span>
                       </label>
                       <input
                         type="number"
-                        className="liq-input"
+                        className="lqw-input"
                         min={waterOldIndex}
                         placeholder={`≥ ${waterOldIndex}`}
                         value={waterNewIndex}
@@ -769,16 +775,27 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                       />
                     </div>
                     {waterNewIndex !== "" && (
-                      <div
-                        className="liq-hint"
-                        style={{ marginTop: 6, color: "#3b82f6" }}
-                      >
+                      <div className="lqw-hint" style={{ color: "#3b82f6" }}>
                         Sử dụng:{" "}
-                        {Math.max(0, Number(waterNewIndex) - waterOldIndex)} m³
+                        {Math.max(
+                          0,
+                          Number(waterNewIndex) - waterOldIndex
+                        )}{" "}
+                        m³
                         {waterService &&
                           ` × ${formatCurrency(
-                            typeof (waterService.currentPrice as any) === "object"
-                              ? parseFloat((waterService.currentPrice as any).$numberDecimal)
+                            typeof (
+                              waterService.currentPrice as unknown as {
+                                $numberDecimal: string;
+                              }
+                            ) === "object"
+                              ? parseFloat(
+                                  (
+                                    waterService.currentPrice as unknown as {
+                                      $numberDecimal: string;
+                                    }
+                                  ).$numberDecimal
+                                )
                               : Number(waterService.currentPrice)
                           )}`}
                       </div>
@@ -787,19 +804,18 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                 </div>
               )}
 
-              {/* Financial Preview */}
               {financial && electricNewIndex !== "" && waterNewIndex !== "" && (
                 <>
-                  <div className="liq-section-title">
-                    <FileText size={14} /> Bảng tính tất toán (preview)
+                  <div className="lqw-section-title">
+                    <FileText size={14} /> Bảng tính tất toán
                   </div>
 
                   <div
-                    className={`liq-financial-preview ${
+                    className={`lqw-financial-preview ${
                       financial.type === "violation" ? "violation" : ""
                     }`}
                   >
-                    <div className="liq-financial-title">
+                    <div className="lqw-financial-title">
                       {financial.type === "force_majeure" ? (
                         <>
                           <ShieldOff size={14} /> Bất khả kháng — Hoàn tiền
@@ -815,80 +831,244 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
 
                     {financial.type === "force_majeure" && (
                       <>
-                        <div className="liq-financial-item" style={{ alignItems: "flex-start" }}>
-                          <span className="liq-financial-item-label">
+                        <div
+                          className="lqw-financial-item"
+                          style={{ flexDirection: "column", alignItems: "flex-start" }}
+                        >
+                          <span className="lqw-financial-item-label">
                             ✅ Hoàn tiền cọc (100%)
-                            {(financial as any).isDepositRefunded && preflightData?.deposit && (
-                               <div style={{ fontSize: '13px', color: '#64748b', marginTop: '6px', fontWeight: 'normal', lineHeight: '1.4' }}>
-                                 💡 <strong>Note:</strong> Tiền cọc <strong>{formatCurrency(preflightData.deposit.amount)}</strong> đã được hoàn vào ngày {new Date(preflightData.deposit.refundDate).toLocaleDateString('vi-VN')}.
-                               </div>
+                          </span>
+                          {(financial as any).isDepositRefunded &&
+                            preflightData?.deposit && (
+                              <div
+                                style={{
+                                  fontSize: "0.7rem",
+                                  color: "#64748b",
+                                  marginTop: "4px",
+                                  fontWeight: "normal",
+                                }}
+                              >
+                                💡 Tiền cọc{" "}
+                                <strong>
+                                  {formatCurrency(preflightData.deposit.amount)}
+                                </strong>{" "}
+                                đã được hoàn vào ngày{" "}
+                                {new Date(
+                                  preflightData.deposit.refundDate
+                                ).toLocaleDateString("vi-VN")}
+                                .
+                              </div>
                             )}
-                          </span>
-                          <span className="liq-financial-item-value positive">
-                            {(financial as any).isDepositRefunded 
-                              ? `+ 0 ₫ (Đã được hoàn)` 
-                              : `+ ${formatCurrency((financial as any).depositRefund)}`}
+                          <span className="lqw-financial-item-value positive">
+                            {(financial as any).isDepositRefunded
+                              ? `+ 0 ₫ (Đã được hoàn)`
+                              : `+ ${formatCurrency(
+                                  (financial as any).depositRefund
+                                )}`}
                           </span>
                         </div>
-                        <div className="liq-financial-item" style={{ alignItems: "flex-start", flexDirection: "column", gap: 0 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
-                            <span className="liq-financial-item-label">
-                              ✅ Hoàn tiền thuê còn dư ({(financial as any).remainingRentLabel})
-                            </span>
-                            <span className="liq-financial-item-value positive">
-                              + {formatCurrency((financial as any).remainRent)}
-                            </span>
-                          </div>
-                          {preflightData?.paidRentPeriods && (preflightData.paidRentPeriods as any[]).length > 0 && (
-                            <div style={{ marginTop: 8, width: "100%" }}>
-                              <div style={{ fontSize: "12px", color: "#64748b", marginBottom: 4 }}>💡 Chi tiết từng kỳ hoà đơn đã thanh toán:</div>
-                              <table style={{ width: "100%", fontSize: "12px", borderCollapse: "collapse" }}>
-                                <thead>
-                                  <tr style={{ color: "#475569", borderBottom: "1px solid #e2e8f0" }}>
-                                    <th style={{ textAlign: "left", padding: "3px 6px" }}>Kỳ</th>
-                                    <th style={{ textAlign: "center", padding: "3px 6px" }}>Từ</th>
-                                    <th style={{ textAlign: "center", padding: "3px 6px" }}>Đến</th>
-                                    <th style={{ textAlign: "center", padding: "3px 6px" }}>Chưa dùng</th>
-                                    <th style={{ textAlign: "right", padding: "3px 6px" }}>Hoàn</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {(preflightData.paidRentPeriods as any[]).map((p: any, i: number) => (
-                                    <tr key={i} style={{ borderBottom: "1px solid #f1f5f9", color: p.unusedDays > 0 ? "#0f172a" : "#94a3b8" }}>
-                                      <td style={{ padding: "3px 6px" }}>{p.invoiceTitle?.replace("Hóa đơn tiền thuê & dịch vụ ", "") || `Kỳ ${i+1}`}</td>
-                                      <td style={{ textAlign: "center", padding: "3px 6px" }}>{p.fromStr}</td>
-                                      <td style={{ textAlign: "center", padding: "3px 6px" }}>{p.toStr}</td>
-                                      <td style={{ textAlign: "center", padding: "3px 6px" }}>
-                                        {p.unusedDays > 0 ? <span style={{ color: "#10b981" }}>✅ {p.unusedDays} ngày</span> : <span style={{ color: "#ef4444" }}>❌ 0 ngày</span>}
-                                      </td>
-                                      <td style={{ textAlign: "right", padding: "3px 6px", fontWeight: p.refundAmount > 0 ? 600 : 400 }}>
-                                        {p.refundAmount > 0 ? `+ ${formatCurrency(p.refundAmount)}` : "0 ₫"}
-                                      </td>
+                        <div
+                          className="lqw-financial-item"
+                          style={{
+                            flexDirection: "column",
+                            alignItems: "flex-start",
+                          }}
+                        >
+                          <span className="lqw-financial-item-label">
+                            ✅ Hoàn tiền thuê còn dư (
+                            {(financial as any).remainingRentLabel})
+                          </span>
+                          <span className="lqw-financial-item-value positive">
+                            +{" "}
+                            {formatCurrency((financial as any).remainRent)}
+                          </span>
+                          {preflightData?.paidRentPeriods &&
+                            (preflightData.paidRentPeriods as any[]).length >
+                              0 && (
+                              <div style={{ marginTop: "8px", width: "100%" }}>
+                                <div
+                                  style={{
+                                    fontSize: "0.7rem",
+                                    color: "#64748b",
+                                    marginBottom: "4px",
+                                  }}
+                                >
+                                  💡 Chi tiết từng kỳ hoà đơn đã thanh toán:
+                                </div>
+                                <table
+                                  style={{
+                                    width: "100%",
+                                    fontSize: "0.7rem",
+                                    borderCollapse: "collapse",
+                                    background: "#fff",
+                                    borderRadius: "4px",
+                                    overflow: "hidden",
+                                  }}
+                                >
+                                  <thead>
+                                    <tr
+                                      style={{
+                                        background: "#f8fafc",
+                                        color: "#475569",
+                                        borderBottom: "1px solid #e2e8f0",
+                                      }}
+                                    >
+                                      <th
+                                        style={{
+                                          textAlign: "left",
+                                          padding: "6px",
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        Kỳ
+                                      </th>
+                                      <th
+                                        style={{
+                                          textAlign: "center",
+                                          padding: "6px",
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        Từ
+                                      </th>
+                                      <th
+                                        style={{
+                                          textAlign: "center",
+                                          padding: "6px",
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        Đến
+                                      </th>
+                                      <th
+                                        style={{
+                                          textAlign: "center",
+                                          padding: "6px",
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        Chưa dùng
+                                      </th>
+                                      <th
+                                        style={{
+                                          textAlign: "right",
+                                          padding: "6px",
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        Hoàn
+                                      </th>
                                     </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                          {preflightData?.paidRentPeriods && (preflightData.paidRentPeriods as any[]).length === 0 && (
-                            <div style={{ fontSize: "12px", color: "#ef4444", marginTop: 6 }}>
-                              ⚠️ Chưa có hóa đơn tiền thuê nào được ghi nhận Paid cho hợp đồng này.
-                            </div>
-                          )}
+                                  </thead>
+                                  <tbody>
+                                    {(preflightData.paidRentPeriods as any[]).map(
+                                      (p: any, i: number) => (
+                                        <tr
+                                          key={i}
+                                          style={{
+                                            borderBottom: "1px solid #f1f5f9",
+                                            color:
+                                              p.unusedDays > 0
+                                                ? "#0f172a"
+                                                : "#94a3b8",
+                                          }}
+                                        >
+                                          <td style={{ padding: "6px" }}>
+                                            {p.invoiceTitle?.replace(
+                                              "Hóa đơn tiền thuê & dịch vụ ",
+                                              ""
+                                            ) || `Kỳ ${i + 1}`}
+                                          </td>
+                                          <td
+                                            style={{
+                                              textAlign: "center",
+                                              padding: "6px",
+                                            }}
+                                          >
+                                            {p.fromStr}
+                                          </td>
+                                          <td
+                                            style={{
+                                              textAlign: "center",
+                                              padding: "6px",
+                                            }}
+                                          >
+                                            {p.toStr}
+                                          </td>
+                                          <td
+                                            style={{
+                                              textAlign: "center",
+                                              padding: "6px",
+                                            }}
+                                          >
+                                            {p.unusedDays > 0 ? (
+                                              <span style={{ color: "#10b981" }}>
+                                                ✅ {p.unusedDays} ngày
+                                              </span>
+                                            ) : (
+                                              <span style={{ color: "#ef4444" }}>
+                                                ❌ 0 ngày
+                                              </span>
+                                            )}
+                                          </td>
+                                          <td
+                                            style={{
+                                              textAlign: "right",
+                                              padding: "6px",
+                                              fontWeight: p.refundAmount > 0 ? 600 : 400,
+                                            }}
+                                          >
+                                            {p.refundAmount > 0
+                                              ? `+ ${formatCurrency(
+                                                  p.refundAmount
+                                                )}`
+                                              : "0 ₫"}
+                                          </td>
+                                        </tr>
+                                      )
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          {preflightData?.paidRentPeriods &&
+                            (preflightData.paidRentPeriods as any[]).length ===
+                              0 && (
+                              <div
+                                style={{
+                                  fontSize: "0.7rem",
+                                  color: "#ef4444",
+                                  marginTop: "4px",
+                                }}
+                              >
+                                ⚠️ Chưa có hóa đơn tiền thuê nào được ghi nhận
+                                Paid cho hợp đồng này.
+                              </div>
+                            )}
                         </div>
-                        <div className="liq-financial-item">
-                          <span className="liq-financial-item-label">
-                            ❌ Trừ tiền {electricService?.name || "điện"} ({Math.max(0, Number(electricNewIndex) - electricOldIndex)} kWh)
+                        <div className="lqw-financial-item">
+                          <span className="lqw-financial-item-label">
+                            ❌ Trừ tiền {electricService?.name || "điện"} (
+                            {Math.max(
+                              0,
+                              Number(electricNewIndex) - electricOldIndex
+                            )}{" "}
+                            kWh)
                           </span>
-                          <span className="liq-financial-item-value negative">
+                          <span className="lqw-financial-item-value negative">
                             − {formatCurrency(financial.electricCost)}
                           </span>
                         </div>
-                        <div className="liq-financial-item">
-                          <span className="liq-financial-item-label">
-                            ❌ Trừ tiền {waterService?.name || "nước"} ({Math.max(0, Number(waterNewIndex) - waterOldIndex)} m³)
+                        <div className="lqw-financial-item">
+                          <span className="lqw-financial-item-label">
+                            ❌ Trừ tiền {waterService?.name || "nước"} (
+                            {Math.max(
+                              0,
+                              Number(waterNewIndex) - waterOldIndex
+                            )}{" "}
+                            m³)
                           </span>
-                          <span className="liq-financial-item-value negative">
+                          <span className="lqw-financial-item-value negative">
                             − {formatCurrency(financial.waterCost)}
                           </span>
                         </div>
@@ -897,48 +1077,62 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
 
                     {financial.type === "violation" && (
                       <>
-                        <div className="liq-financial-item">
-                          <span className="liq-financial-item-label">
-                            💰 Tiền thuê còn nợ ({(financial as any).daysUsed} ngày)
+                        <div className="lqw-financial-item">
+                          <span className="lqw-financial-item-label">
+                            💰 Tiền thuê còn nợ (
+                            {(financial as any).daysUsed} ngày)
                           </span>
-                          <span className="liq-financial-item-value negative">
+                          <span className="lqw-financial-item-value negative">
                             + {formatCurrency((financial as any).rentDebt)}
                           </span>
                         </div>
-                        <div className="liq-financial-item">
-                          <span className="liq-financial-item-label">
-                            ⚡ Tiền {electricService?.name || "điện"} ({Math.max(0, Number(electricNewIndex) - electricOldIndex)} kWh)
+                        <div className="lqw-financial-item">
+                          <span className="lqw-financial-item-label">
+                            ⚡ Tiền {electricService?.name || "điện"} (
+                            {Math.max(
+                              0,
+                              Number(electricNewIndex) - electricOldIndex
+                            )}{" "}
+                            kWh)
                           </span>
-                          <span className="liq-financial-item-value negative">
+                          <span className="lqw-financial-item-value negative">
                             + {formatCurrency(financial.electricCost)}
                           </span>
                         </div>
-                        <div className="liq-financial-item">
-                          <span className="liq-financial-item-label">
-                            💧 Tiền {waterService?.name || "nước"} ({Math.max(0, Number(waterNewIndex) - waterOldIndex)} m³)
+                        <div className="lqw-financial-item">
+                          <span className="lqw-financial-item-label">
+                            💧 Tiền {waterService?.name || "nước"} (
+                            {Math.max(
+                              0,
+                              Number(waterNewIndex) - waterOldIndex
+                            )}{" "}
+                            m³)
                           </span>
-                          <span className="liq-financial-item-value negative">
+                          <span className="lqw-financial-item-value negative">
                             + {formatCurrency(financial.waterCost)}
                           </span>
                         </div>
-                        <div className="liq-financial-item">
-                          <span className="liq-financial-item-label">
+                        <div className="lqw-financial-item">
+                          <span className="lqw-financial-item-label">
                             🔒 Tiền cọc bị tịch thu (giữ lại)
                           </span>
-                          <span className="liq-financial-item-value" style={{ color: "#64748b" }}>
+                          <span
+                            className="lqw-financial-item-value"
+                            style={{ color: "#64748b" }}
+                          >
                             {formatCurrency(depositAmount)}
                           </span>
                         </div>
                       </>
                     )}
 
-                    <div className="liq-financial-total">
-                      <span className="liq-financial-total-label">
+                    <div className="lqw-financial-total">
+                      <span className="lqw-financial-total-label">
                         {financial.type === "force_majeure"
                           ? "Tổng hoàn lại cho người thuê:"
                           : "Tổng người thuê cần nộp thêm:"}
                       </span>
-                      <span className="liq-financial-total-value">
+                      <span className="lqw-financial-total-value">
                         {formatCurrency(Math.abs(financial.total))}
                       </span>
                     </div>
@@ -947,34 +1141,34 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
               )}
             </div>
 
-            <div className="liq-footer">
+            <div className="lqw-footer">
               <button
-                className="liq-btn liq-btn-secondary"
+                className="lqw-btn lqw-btn-secondary"
                 onClick={() => {
                   setError("");
                   setStep(1);
                 }}
                 disabled={submitting}
               >
-                <ChevronLeft size={16} /> Quay lại
+                <ChevronLeft size={14} /> Quay lại
               </button>
               <button
-                className={`liq-btn ${
+                className={`lqw-btn ${
                   liquidationType === "force_majeure"
-                    ? "liq-btn-primary"
-                    : "liq-btn-danger"
+                    ? "lqw-btn-primary"
+                    : "lqw-btn-danger"
                 }`}
                 onClick={handleSubmit}
                 disabled={submitting}
               >
                 {submitting ? (
                   <>
-                    <div className="liq-spinner" />
+                    <div className="lqw-spinner" />
                     Đang xử lý...
                   </>
                 ) : (
                   <>
-                    <Gavel size={16} />
+                    <Gavel size={14} />
                     Xác nhận thanh lý
                   </>
                 )}

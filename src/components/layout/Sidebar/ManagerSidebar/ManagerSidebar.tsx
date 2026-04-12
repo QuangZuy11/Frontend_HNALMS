@@ -52,7 +52,10 @@ const MENU_ITEMS = [
     title: "Hợp Đồng",
     icon: <FileText size={20} />,
     path: "/manager/contracts",
-    subItems: []
+    subItems: [
+      { title: "Danh Sách HĐ", path: "/manager/contracts", icon: <FileText size={16} /> },
+      { title: "Thanh Lý HĐ", path: "/manager/contracts/liquidations", icon: <RefreshCcwDot size={16} /> },
+    ]
   },
   {
     title: "Danh Sách Cọc",
