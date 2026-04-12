@@ -52,7 +52,7 @@ const ROOM_TYPE_COLORS = [
 ];
 
 // Helper to extract number from room type name (e.g., "Loại 1" -> 1)
-// Format contract expiry: endDate + 1 day => "Trống từ DD/MM"
+// Format contract expiry: endDate + 1 day => "Trống từ DD/MM/YY"
 const getExpiryLabel = (contractEndDate?: string): string | null => {
   if (!contractEndDate) return null;
   const endDate = new Date(contractEndDate);
@@ -61,7 +61,8 @@ const getExpiryLabel = (contractEndDate?: string): string | null => {
   vacantDate.setDate(vacantDate.getDate() + 1);
   const day = vacantDate.getDate().toString().padStart(2, "0");
   const month = (vacantDate.getMonth() + 1).toString().padStart(2, "0");
-  return `Trống từ ${day}/${month}`;
+  const year = vacantDate.getFullYear().toString().slice(-2);
+  return `Trống từ ${day}/${month}/${year}`;
 };
 
 // Label for Deposited rooms with a future contract (short format: room is available until this date)
@@ -70,8 +71,14 @@ const getComingSoonLabel = (contractStartDate?: string): string | null => {
   const d = new Date(contractStartDate);
   const day = d.getDate().toString().padStart(2, "0");
   const month = (d.getMonth() + 1).toString().padStart(2, "0");
-  const year = d.getFullYear();
+  const year = d.getFullYear().toString().slice(-2);
   return `Trống đến → ${day}/${month}/${year}`;
+};
+
+// Format date: dd/mm/yy
+const fmtYY = (dateStr: string): string => {
+  const d = new Date(dateStr);
+  return `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}/${d.getFullYear().toString().slice(-2)}`;
 };
 
 
@@ -226,60 +233,60 @@ export default function FloorMap({
                   }}
                 />
                 Đã thuê{legendType === "contract" && " → Click để xem HĐ"}
-              {legendType === "default" && " → Click để xem chi tiết"}
+                {legendType === "default" && " → Click để xem chi tiết"}
                 {legendType === "guest" && " (Không khả dụng)"}
               </span>
               {(legendType !== "default") && (
-              <span
-                style={{
-                  fontSize: "0.8rem",
-                  color: "#374151",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "0.35rem",
-                }}
-              >
                 <span
                   style={{
-                    position: "relative",
-                    display: "inline-block",
-                    width: "16px",
-                    height: "16px",
-                    borderRadius: "3px",
-                    background:
-                      "linear-gradient(145deg, #f59e0b 0%, #d97706 100%)",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                    fontSize: "0.8rem",
+                    color: "#374151",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.35rem",
                   }}
                 >
                   <span
                     style={{
-                      position: "absolute",
-                      top: "-4px",
-                      right: "-4px",
-                      width: "12px",
-                      height: "12px",
-                      borderRadius: "50%",
+                      position: "relative",
+                      display: "inline-block",
+                      width: "16px",
+                      height: "16px",
+                      borderRadius: "3px",
                       background:
-                        "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
-                      color: "#1e293b",
-                      fontSize: "8px",
-                      fontWeight: 800,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      lineHeight: 1,
-                      border: "1.5px solid white",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                        "linear-gradient(145deg, #f59e0b 0%, #d97706 100%)",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
                     }}
                   >
-                    !
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "-4px",
+                        right: "-4px",
+                        width: "12px",
+                        height: "12px",
+                        borderRadius: "50%",
+                        background:
+                          "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
+                        color: "#1e293b",
+                        fontSize: "8px",
+                        fontWeight: 800,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        lineHeight: 1,
+                        border: "1.5px solid white",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                      }}
+                    >
+                      !
+                    </span>
                   </span>
+                  Đã cọc
+                  {legendType === "guest" && " (Không khả dụng)"}
                 </span>
-                Đã cọc
-              {legendType === "guest" && " (Không khả dụng)"}
-            </span>
-            )}
-          </div>
+              )}
+            </div>
           )}
 
           {/* Room Type Legend (Dynamic) */}
@@ -341,8 +348,8 @@ export default function FloorMap({
                 (renewalDeclinedRebook && legendType !== "guest");
               // Visual: show deposit badge if deposited + has floating deposit (NOT for inactive contracts)
               // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit OR gap is already filled
-              const showDepositedBadge = 
-                (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) || 
+              const showDepositedBadge =
+                (isDeposited && !hasMultiOptions && !hasFutureInactiveContract) ||
                 (hasFutureInactiveContract && hasFloatingDeposit) ||
                 (hasFutureInactiveContract && room.successorLeaseBooked);
 
@@ -386,67 +393,58 @@ export default function FloorMap({
                     {/* Inactive contract (>30 days): green label — không hiện khi đang có multi-options */}
                     {!hasMultiOptions && hasFutureInactiveContract && !hasFloatingDeposit && (room.futureContractStartDate || room.contractStartDate) && (
                       <span className="room-inactive-label">
-                        Trống đến → {new Date((room.futureContractStartDate || room.contractStartDate) as string).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                        Trống đến → {fmtYY((room.futureContractStartDate || room.contractStartDate) as string)}
                       </span>
                     )}
                     {/* Short-term available: show "trống đến → DD/MM/YY" label (KHÔNG khi có inactive contract) */}
                     {isShortTermAvailable && !hasFloatingDeposit && !hasFutureInactiveContract && room.contractStartDate && (
                       <span className="room-expiry-label" style={{ fontSize: "0.6rem", color: "#fff", fontWeight: 700, background: "rgba(16, 185, 129, 0.9)", padding: "2px 4px", borderRadius: "3px", lineHeight: 1.2 }}>
-                        Trống đến → {new Date(room.contractStartDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+                        Trống đến → {fmtYY(room.contractStartDate)}
                       </span>
                     )}
 
-                    {/* Occupied + declined: hiện "Trống từ DD/MM" (ngày hết HĐ 622 + 1) */}
-                    {room.contractRenewalStatus === "declined" &&
-                      !isDeposited &&
-                      getExpiryLabel(room.contractEndDate) && (
-                        <span className="room-expiry-label">
-                          {getExpiryLabel(room.contractEndDate)}
-                        </span>
-                      )}
-                    {/* Khi có HĐ 464 chưa kích hoạt: hiện giới hạn thuê — "Trống đến → DD/MM/YYYY" */}
-                    {room.contractRenewalStatus === "declined" &&
-                      room.nextInactiveContractStart &&
-                      !room.successorLeaseBooked && (
-                        <span className="room-inactive-label" style={{ background: "rgba(220,38,38,0.85)" }}>
-                          Đến → {new Date(room.nextInactiveContractStart as string).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
-                        </span>
-                      )}
-                    {legendType === "guest" &&
-                      room.contractRenewalStatus === "declined" &&
-                      isDeposited &&
-                      getExpiryLabel(room.contractEndDate) && (
-                        <span className="room-expiry-label">
-                          {getExpiryLabel(room.contractEndDate)}
-                        </span>
-                      )}
-                    {legendType === "guest" &&
-                      room.contractRenewalStatus === "declined" &&
-                      !hasFloatingDeposit &&
-                      room.successorLeaseBooked && (
-                        <span className="room-guest-successor-booked">Đã có HĐ kế tiếp</span>
-                      )}
-                    {legendType === "guest" &&
-                      room.contractRenewalStatus === "declined" &&
-                      !hasFloatingDeposit &&
-                      !room.successorLeaseBooked && (
-                        <span className="room-guest-can-deposit">Có thể cọc</span>
-                      )}
-                    {legendType === "contract" &&
-                      room.contractRenewalStatus === "declined" &&
-                      isDeposited &&
-                      getExpiryLabel(room.contractEndDate) && (
-                        <span className="room-expiry-label">
-                          {getExpiryLabel(room.contractEndDate)}
-                        </span>
-                      )}
-                    {legendType === "contract" &&
-                      room.contractRenewalStatus === "declined" &&
-                      getExpiryLabel(room.contractEndDate) && (
-                        <span className="room-manager-declined-tag">
-                          Từ chối gia hạn
-                        </span>
-                      )}
+                    {/* Declined: gom cột + chữ lớn hơn; thứ tự Trống từ → Đến → guest / Từ chối gia hạn */}
+                    {room.contractRenewalStatus === "declined" && (
+                      <div className="room-declined-meta">
+                        {!isDeposited &&
+                          getExpiryLabel(room.contractEndDate) && (
+                            <span className="room-expiry-label">
+                              {getExpiryLabel(room.contractEndDate)}
+                            </span>
+                          )}
+                        {legendType === "guest" &&
+                          isDeposited &&
+                          getExpiryLabel(room.contractEndDate) && (
+                            <span className="room-expiry-label">
+                              {getExpiryLabel(room.contractEndDate)}
+                            </span>
+                          )}
+                        {legendType === "contract" &&
+                          isDeposited &&
+                          getExpiryLabel(room.contractEndDate) && (
+                            <span className="room-expiry-label">
+                              {getExpiryLabel(room.contractEndDate)}
+                            </span>
+                          )}
+                        {room.nextInactiveContractStart &&
+                          !room.successorLeaseBooked && (
+                            <span className="room-inactive-label room-inactive-label--deadline" style={{ background: "rgba(220,38,38,0.9)" }}>
+                              Đến → {fmtYY(room.nextInactiveContractStart)}
+                            </span>
+                          )}
+                        {legendType === "guest" &&
+                          !hasFloatingDeposit &&
+                          room.successorLeaseBooked && (
+                            <span className="room-guest-successor-booked">Đã có HĐ kế tiếp</span>
+                          )}
+                        {legendType === "guest" &&
+                          !hasFloatingDeposit &&
+                          !room.successorLeaseBooked && (
+                            <span className="room-guest-can-deposit">Có thể cọc</span>
+                          )}
+                        {/* "Từ chối gia hạn" hiển thị trên modal (ContractList), không lặp trên ô phòng sơ đồ HĐ */}
+                      </div>
+                    )}
                     {!isDeposited && room.contractStartDate && getContractDateLabel(room.contractStartDate, room.contractEndDate, showDateYear) && (
                       <span className="room-contract-dates">
                         {getContractDateLabel(room.contractStartDate, room.contractEndDate, showDateYear)}

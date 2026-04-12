@@ -9,6 +9,7 @@ import "./App.css";
 
 // Context
 import { AuthProvider } from "./context/AuthContext";
+import { ToastProvider } from "./components/common/Toast";
 import { PrivateRoute } from "./routes/PrivateRoute";
 import { PublicRoute } from "./routes/PublicRoute";
 
@@ -397,9 +398,11 @@ function LayoutWrapper() {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <LayoutWrapper />
-      </BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
+          <LayoutWrapper />
+        </BrowserRouter>
+      </ToastProvider>
     </AuthProvider>
   );
 }
