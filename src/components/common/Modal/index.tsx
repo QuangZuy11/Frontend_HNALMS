@@ -1,2 +1,2 @@
-// Modal component placeholder
-export { }
+export { default as AppModal } from "./AppModal";
+export type { AppModalProps, ModalSize } from "./AppModal";
