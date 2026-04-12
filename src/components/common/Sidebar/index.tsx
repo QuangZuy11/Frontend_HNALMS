@@ -1,2 +1,0 @@
-// Sidebar component placeholder
-export { }

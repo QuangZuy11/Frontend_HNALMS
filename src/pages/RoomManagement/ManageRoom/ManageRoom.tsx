@@ -2,9 +2,6 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import axios from "axios";
 import { Building as BuildingIcon } from "lucide-react";
 
-import toastr from "toastr";
-import "toastr/build/toastr.min.css";
-
 // Floor Maps
 import FloorMap from "../RoomList/components/FloorMap";
 import FloorMapLevel2 from "../RoomList/components/FloorMapLevel2";
@@ -16,11 +13,13 @@ import {
   Plus, Edit, Trash2, Eye, ChevronDown, ChevronRight, CheckCircle,
   AlertCircle, Banknote, X, Building, Home, Tag, Power, Download,
   FileSpreadsheet, List as ListIcon, Map as MapIcon, User, Users,
-  FileText, Phone, Mail, CreditCard, Zap, Gavel,
+  FileText, Phone, Mail, CreditCard, Zap, Gavel, DoorOpen,
 } from "lucide-react";
 import "./ManageRoom.css";
 import LiquidationWizard from "./LiquidationWizard";
 import { isContractStartedByLocalCalendar } from "../../../utils/contractDates";
+import { useToast } from "../../../components/common/Toast/Toast";
+import AppModal from "../../../components/common/Modal/AppModal";
 
 const API_BASE_URL = "http://localhost:9999/api";
 
@@ -55,6 +54,9 @@ interface ManageRoomProps {
 }
 
 const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
+  // --- Toast ---
+  const { showToast } = useToast();
+
   // --- States ---
   const [rooms, setRooms] = useState<Room[]>([]);
   const [floors, setFloors] = useState<Floor[]>([]);
@@ -151,19 +153,13 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       setExpandedFloors(floorsData.map((f: Floor) => f._id));
     } catch (error) {
       console.error("Lỗi tải dữ liệu:", error);
-      toastr.error("Không thể tải dữ liệu từ máy chủ.");
+      showToast("error", "Lỗi", "Không thể tải dữ liệu từ máy chủ.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    toastr.options = {
-      closeButton: true,
-      progressBar: true,
-      positionClass: "toast-top-right",
-      timeOut: 3000,
-    };
     fetchData();
   }, []);
 
@@ -320,9 +316,10 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       document.body.appendChild(link);
       link.click();
       link.parentNode?.removeChild(link);
-      toastr.success("Tải file mẫu thành công!");
+      showToast("success", "Thành công", "Tải file mẫu thành công!");
     } catch (error) {
-      toastr.error("Lỗi tải file mẫu.");
+      console.error("Lỗi tải file:", error);
+      showToast("error", "Lỗi", "Lỗi tải file mẫu.");
     }
   };
 
@@ -344,21 +341,17 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       const res = await axios.post(`${API_BASE_URL}/excel/import`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      toastr.success(res.data.message || "Nhập file thành công!");
+      showToast("success", "Thành công", res.data.message || "Nhập file thành công!");
       fetchData();
-    } catch (error: any) {
-      console.error(error);
-      const msg = error.response?.data?.message || "Lỗi khi nhập file.";
-      const detailErrors = error.response?.data?.errors;
+    } catch (error) {
+      const err = error as { response?: { data?: { message?: string; errors?: string[] } } };
+      const msg = err.response?.data?.message || "Lỗi khi nhập file.";
+      const detailErrors = err.response?.data?.errors;
 
       if (detailErrors && detailErrors.length > 0) {
-        toastr.error(
-          `${msg}<br/>- ${detailErrors.join("<br/>- ")}`,
-          "Lỗi Import",
-          { timeOut: 10000, escapeHtml: false },
-        );
+        showToast("error", "Lỗi Import", `${msg}\n- ${detailErrors.join("\n- ")}`);
       } else {
-        toastr.error(msg);
+        showToast("error", "Lỗi", msg);
       }
     } finally {
       setLoading(false);
@@ -367,9 +360,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
 
   const handleOpenAdd = () => {
     if (floors.length === 0 || roomTypes.length === 0) {
-      toastr.warning(
-        "Vui lòng tạo Tầng và Loại phòng trước khi thêm phòng mới!",
-      );
+      showToast("warning", "Cảnh báo", "Vui lòng tạo Tầng và Loại phòng trước khi thêm phòng mới!");
       return;
     }
     setIsEditing(false);
@@ -547,20 +538,20 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         await axios.put(`${API_BASE_URL}/rooms/${room._id}`, {
           isActive: !room.isActive,
         });
-        toastr.success(`Đã ${actionText} phòng ${room.name} thành công!`);
+        showToast("success", "Thành công", `Đã ${actionText} phòng ${room.name} thành công!`);
         fetchData();
-      } catch (error: any) {
-        toastr.error("Lỗi cập nhật trạng thái: " + error.message);
+      } catch (error) {
+        console.error("Lỗi cập nhật trạng thái:", error);
+        showToast("error", "Lỗi", "Lỗi cập nhật trạng thái.");
       }
     } else if (confirmModal.action === "DELETE") {
       try {
         await axios.delete(`${API_BASE_URL}/rooms/${room._id}`);
-        toastr.success("Xóa phòng thành công!");
+        showToast("success", "Thành công", "Xóa phòng thành công!");
         fetchData();
-      } catch (e: any) {
-        toastr.error(
-          "Lỗi xóa phòng: " + (e.response?.data?.message || e.message),
-        );
+      } catch (e) {
+        const err = e as { response?: { data?: { message?: string } }; message?: string };
+        showToast("error", "Lỗi", "Lỗi xóa phòng: " + (err.response?.data?.message || err.message));
       }
     }
 
@@ -578,127 +569,127 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     try {
       if (isEditing && currentRoom) {
         await axios.put(`${API_BASE_URL}/rooms/${currentRoom._id}`, formData);
-        toastr.success("Cập nhật thông tin phòng thành công!");
+        showToast("success", "Thành công", "Cập nhật thông tin phòng thành công!");
       } else {
         await axios.post(`${API_BASE_URL}/rooms`, formData);
-        toastr.success("Thêm phòng mới thành công!");
+        showToast("success", "Thành công", "Thêm phòng mới thành công!");
       }
       setShowModal(false);
       fetchData();
-    } catch (error: any) {
-      toastr.error(
-        "Lỗi lưu dữ liệu: " + (error.response?.data?.message || error.message),
-      );
+    } catch (error) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      showToast("error", "Lỗi", "Lỗi lưu dữ liệu: " + (err.response?.data?.message || err.message));
     }
   };
 
   return (
     <div className="room-container">
-      <div className="page-header">
-        <div>
-          <h2 className="page-title">
-            {!canModify ? "Danh sách phòng" : "Quản lý danh sách phòng"}
-          </h2>
-          <p className="page-subtitle">
-            {!canModify
-              ? "Xem thông tin phòng theo tầng"
-              : "Nhóm theo tầng - Xem dạng bảng"}
-          </p>
-        </div>
+      {/* HEADER */}
+      <div className="room-header">
+        <div className="room-header-top">
+          <div className="room-title-block">
+            <div className="room-title-row">
+              <div className="room-title-icon" aria-hidden>
+                <DoorOpen size={22} strokeWidth={2} />
+              </div>
+              <div className="room-title-text">
+                <h2>{!canModify ? "Danh sách phòng" : "Quản lý Phòng"}</h2>
+                <p className="room-subtitle">
+                  {!canModify
+                    ? "Xem thông tin phòng theo tầng"
+                    : "Quản lý danh mục phòng và trạng thái cho tòa nhà Hoàng Nam."}
+                </p>
+              </div>
+            </div>
+          </div>
 
-        <div className="stats-summary">
-          <div className="stat-item">
-            <Building size={16} className="stat-icon icon-primary" />
-            <div className="stat-text">
-              <span className="stat-value">{totalFloors}</span>
-              <span className="stat-label">Tầng</span>
+          <div className="room-header-aside">
+            <div className="stats-summary">
+              <div className="stat-item">
+                <Building size={16} className="stat-icon icon-primary" />
+                <div className="stat-text">
+                  <span className="stat-value">{totalFloors}</span>
+                  <span className="stat-label">Tầng</span>
+                </div>
+              </div>
+              <div className="stat-divider"></div>
+              <div className="stat-item">
+                <Home size={16} className="stat-icon icon-accent" />
+                <div className="stat-text">
+                  <span className="stat-value">{totalRooms}</span>
+                  <span className="stat-label">Phòng</span>
+                </div>
+              </div>
+              <div className="stat-divider"></div>
+              <div className="stat-item">
+                <Tag size={16} className="stat-icon icon-success" />
+                <div className="stat-text">
+                  <span className="stat-value">{totalTypes}</span>
+                  <span className="stat-label">Loại phòng</span>
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="stat-divider"></div>
-          <div className="stat-item">
-            <Home size={16} className="stat-icon icon-accent" />
-            <div className="stat-text">
-              <span className="stat-value">{totalRooms}</span>
-              <span className="stat-label">Phòng</span>
-            </div>
-          </div>
-          <div className="stat-divider"></div>
-          <div className="stat-item">
-            <Tag size={16} className="stat-icon icon-success" />
-            <div className="stat-text">
-              <span className="stat-value">{totalTypes}</span>
-              <span className="stat-label">Loại phòng</span>
-            </div>
+
+            {canModify && (
+              <button type="button" className="btn-primary room-header-add-btn" onClick={handleOpenAdd}>
+                <Plus size={18} /> Thêm Phòng
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      <div
-        className="toolbar-actions"
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "1rem",
-          alignItems: "center",
-          justifyContent: "flex-end",
-          marginBottom: "1rem",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            background: "#fff",
-            borderRadius: "8px",
-            border: "1px solid #ddd",
-            padding: "4px",
-            marginRight: "auto",
-          }}
-        >
-          <button
-            onClick={() => setViewMode("list")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "6px 12px",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              background: viewMode === "list" ? "#3579C6" : "transparent",
-              color: viewMode === "list" ? "#fff" : "#666",
-              fontWeight: viewMode === "list" ? "bold" : "normal",
-            }}
-          >
-            <ListIcon size={16} /> Danh sách
-          </button>
-          <button
-            onClick={() => setViewMode("map")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "6px 12px",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              background: viewMode === "map" ? "#3579C6" : "transparent",
-              color: viewMode === "map" ? "#fff" : "#666",
-              fontWeight: viewMode === "map" ? "bold" : "normal",
-            }}
-          >
-            <MapIcon size={16} /> Sơ đồ
-          </button>
+      {/* TOOLBAR */}
+      <div className="room-toolbar">
+        <div className="room-toolbar-left">
+          <div style={{ display: "flex", background: "#fff", borderRadius: "8px", border: "1px solid #ddd", padding: "4px", gap: "0" }}>
+            <button
+              onClick={() => setViewMode("list")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "6px 12px",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                background: viewMode === "list" ? "#3579C6" : "transparent",
+                color: viewMode === "list" ? "#fff" : "#666",
+                fontWeight: viewMode === "list" ? "bold" : "normal",
+                fontSize: "13px",
+              }}
+            >
+              <ListIcon size={16} /> Danh sách
+            </button>
+            <button
+              onClick={() => setViewMode("map")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "6px 12px",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                background: viewMode === "map" ? "#3579C6" : "transparent",
+                color: viewMode === "map" ? "#fff" : "#666",
+                fontWeight: viewMode === "map" ? "bold" : "normal",
+                fontSize: "13px",
+              }}
+            >
+              <MapIcon size={16} /> Sơ đồ
+            </button>
+          </div>
         </div>
 
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        <div className="room-toolbar-right">
           {canModify && (
             <>
               <button className="btn-secondary" onClick={handleDownloadTemplate}>
-                <Download size={18} /> Tải mẫu Excel
+                <Download size={16} /> Tải mẫu Excel
               </button>
-
               <button className="btn-success" onClick={triggerFileInput}>
-                <FileSpreadsheet size={18} /> Nhập Excel
+                <FileSpreadsheet size={16} /> Nhập Excel
               </button>
               <input
                 type="file"
@@ -707,10 +698,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                 accept=".xlsx, .xls"
                 onChange={handleFileUpload}
               />
-
-              <button className="btn-primary" onClick={handleOpenAdd}>
-                <Plus size={18} /> Thêm phòng mới
-              </button>
             </>
           )}
         </div>
@@ -982,83 +969,38 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       )}
 
       {/* Modal Xác Nhận Xóa/Kích hoạt */}
-      {confirmModal.isOpen && (
-        <div className="modal-overlay" style={{ zIndex: 9999 }}>
-          <div
-            className="modal-content"
-            style={{ width: "400px", textAlign: "center", padding: "24px" }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                marginBottom: "16px",
-              }}
+      <AppModal
+        open={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, action: null, targetRoom: null, message: "" })}
+        title="Xác nhận thao tác"
+        icon={<AlertCircle size={20} />}
+        color={confirmModal.action === "DELETE" ? "red" : "orange"}
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => setConfirmModal({ isOpen: false, action: null, targetRoom: null, message: "" })}
             >
-              <div
-                style={{
-                  background:
-                    confirmModal.action === "DELETE" ? "#fee2e2" : "#fef3c7",
-                  padding: "12px",
-                  borderRadius: "50%",
-                }}
-              >
-                <AlertCircle
-                  size={32}
-                  color={
-                    confirmModal.action === "DELETE" ? "#ef4444" : "#d97706"
-                  }
-                />
-              </div>
-            </div>
-            <h3 style={{ marginTop: 0, color: "#1e293b", fontSize: "18px" }}>
-              Xác nhận thao tác
-            </h3>
-            <p
-              style={{
-                color: "#475569",
-                margin: "16px 0 24px 0",
-                lineHeight: "1.5",
-              }}
+              Hủy bỏ
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              style={{ background: confirmModal.action === "DELETE" ? "#dc2626" : undefined }}
+              onClick={executeConfirmAction}
+              disabled={loading}
             >
-              {confirmModal.message}
-            </p>
-            <div
-              style={{ display: "flex", justifyContent: "center", gap: "12px" }}
-            >
-              <button
-                className="btn-secondary"
-                onClick={() =>
-                  setConfirmModal({
-                    isOpen: false,
-                    action: null,
-                    targetRoom: null,
-                    message: "",
-                  })
-                }
-              >
-                Hủy bỏ
-              </button>
-              <button
-                style={{
-                  padding: "8px 24px",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontWeight: 600,
-                  border: "none",
-                  background:
-                    confirmModal.action === "DELETE" ? "#ef4444" : "#3b82f6",
-                  color: "white",
-                }}
-                onClick={executeConfirmAction}
-                disabled={loading}
-              >
-                {loading ? "Đang xử lý..." : "Đồng ý"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              {loading ? "Đang xử lý..." : "Đồng ý"}
+            </button>
+          </>
+        }
+      >
+        <p style={{ textAlign: "center", color: "#475569", margin: "8px 0 0 0", lineHeight: "1.6" }}>
+          {confirmModal.message}
+        </p>
+      </AppModal>
 
       {/* Modal Thêm/Sửa Phòng */}
       {canModify && showModal && (
@@ -1797,7 +1739,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
               setShowDetailModal(false);
               setAllRoomContracts([]);
               setRoomDeposits([]);
-              toastr.success("Thanh lý hợp đồng thành công! Phòng đã được giải phóng.");
+              showToast("success", "Thành công", "Thanh lý hợp đồng thành công! Phòng đã được giải phóng.");
               fetchData();
             }}
           />
