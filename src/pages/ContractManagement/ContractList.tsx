@@ -1,7 +1,21 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FileText, Home, Clock, Building, Eye, PlusCircle, List as ListIcon, Map as MapIcon, ChevronDown, ChevronRight, CheckCircle, AlertCircle, Banknote } from "lucide-react";
+import {
+  FileText,
+  Home,
+  Clock,
+  Building,
+  Eye,
+  PlusCircle,
+  List as ListIcon,
+  Map as MapIcon,
+  ChevronDown,
+  ChevronRight,
+  CheckCircle,
+  AlertCircle,
+  Banknote,
+} from "lucide-react";
 
 // Floor Maps
 import FloorMap from "../RoomManagement/RoomList/components/FloorMap";
@@ -461,7 +475,8 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
 
           {floors.map((floor) => {
             const floorRooms = rooms.filter((r) => {
-              const fId = typeof r.floorId === "object" ? r.floorId?._id : r.floorId;
+              const fId =
+                typeof r.floorId === "object" ? r.floorId?._id : r.floorId;
               return fId === floor._id;
             });
 
@@ -514,187 +529,518 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
                               return roomId === room._id;
                             });
 
-                            const contractIds = roomContracts.map((c: any) => c._id);
+                            const contractIds = roomContracts.map(
+                              (c: any) => c._id,
+                            );
                             const roomDeposits = deposits.filter((d: any) => {
                               const depositRoomId = d.room?._id || d.room;
                               if (depositRoomId !== room._id) return false;
                               if (d.status !== "Held") return false;
                               if (!d.contractId) return true;
-                              const cid = typeof d.contractId === "object" ? d.contractId._id : d.contractId;
+                              const cid =
+                                typeof d.contractId === "object"
+                                  ? d.contractId._id
+                                  : d.contractId;
                               return !contractIds.includes(cid);
                             });
 
-                            const totalOptions = roomContracts.length + roomDeposits.length;
-                            const isRoomExpanded = expandedRooms.includes(room._id);
+                            const totalOptions =
+                              roomContracts.length + roomDeposits.length;
+                            const isRoomExpanded = expandedRooms.includes(
+                              room._id,
+                            );
 
                             return (
                               <React.Fragment key={room._id}>
-                                <tr onClick={() => totalOptions > 0 && toggleRoom(room._id)} style={{ cursor: totalOptions > 0 ? "pointer" : "default" }}>
-                                  <td style={{ fontFamily: "monospace", color: "#64748b", fontWeight: 600 }}>
+                                <tr
+                                  onClick={() =>
+                                    totalOptions > 0 && toggleRoom(room._id)
+                                  }
+                                  style={{
+                                    cursor:
+                                      totalOptions > 0 ? "pointer" : "default",
+                                  }}
+                                >
+                                  <td
+                                    style={{
+                                      fontFamily: "monospace",
+                                      color: "#64748b",
+                                      fontWeight: 600,
+                                    }}
+                                  >
                                     {room.roomCode || "---"}
                                   </td>
                                   <td className="font-bold">{room.name}</td>
                                   <td>{renderStatus(room)}</td>
                                   <td>
                                     {totalOptions === 0 ? (
-                                      <span className="text-muted-italic">Trống</span>
+                                      <span className="text-muted-italic">
+                                        Trống
+                                      </span>
                                     ) : (
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#3579c6', fontWeight: 600 }}>
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: "8px",
+                                          color: "#3579c6",
+                                          fontWeight: 600,
+                                        }}
+                                      >
                                         {totalOptions} lựa chọn
-                                        {isRoomExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                        {isRoomExpanded ? (
+                                          <ChevronDown size={16} />
+                                        ) : (
+                                          <ChevronRight size={16} />
+                                        )}
                                       </div>
                                     )}
                                   </td>
                                   <td>
                                     <div className="action-group">
-                                      <button className="btn-icon-sm view" onClick={(e) => { e.stopPropagation(); handleRoomSelect(room, e); }} title="Xử lý">
-                                         <Eye size={16} />
+                                      <button
+                                        className="btn-icon-sm view"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleRoomSelect(room, e);
+                                        }}
+                                        title="Xử lý"
+                                      >
+                                        <Eye size={16} />
                                       </button>
                                     </div>
                                   </td>
                                 </tr>
                                 {isRoomExpanded && totalOptions > 0 && (
-                                  <tr style={{ backgroundColor: "#fafbfc", borderBottom: "2px solid #e2e8f0" }}>
+                                  <tr
+                                    style={{
+                                      backgroundColor: "#fafbfc",
+                                      borderBottom: "2px solid #e2e8f0",
+                                    }}
+                                  >
                                     <td colSpan={5} style={{ padding: "0" }}>
-                                      <div style={{ padding: "20px 24px", borderTop: "1px dashed #cbd5e1" }}>
-                                        <h4 style={{ margin: "0 0 16px 0", fontSize: "14px", color: "#475569", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
-                                          <ListIcon size={16} /> Danh sách Hợp đồng / Cọc lẻ của {room.name}
+                                      <div
+                                        style={{
+                                          padding: "20px 24px",
+                                          borderTop: "1px dashed #cbd5e1",
+                                        }}
+                                      >
+                                        <h4
+                                          style={{
+                                            margin: "0 0 16px 0",
+                                            fontSize: "14px",
+                                            color: "#475569",
+                                            fontWeight: 600,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "8px",
+                                          }}
+                                        >
+                                          <ListIcon size={16} /> Danh sách Hợp
+                                          đồng / Cọc lẻ của {room.name}
                                         </h4>
-                                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
-                                          
-                                          {roomContracts.map((contract: any) => {
-                                            const isActive = contract.status === "active" && isContractStartedByLocalCalendar(contract.startDate);
-                                            const isPending = contract.status === "active" && !isContractStartedByLocalCalendar(contract.startDate);
-                                            const showDeclinedRenewal = isActive && (contract.renewalStatus === "declined" || room?.contractRenewalStatus === "declined");
-                                            const statusLine = isActive ? "Đang hiệu lực" : isPending ? `Sắp tới` : contract.status === "Pending" ? "Đang chờ ký" : contract.status === "terminated" ? "Đã chấm dứt" : "Chưa có hiệu lực";
-                                            
-                                            return (
+                                        <div
+                                          style={{
+                                            display: "grid",
+                                            gridTemplateColumns:
+                                              "repeat(auto-fill, minmax(280px, 1fr))",
+                                            gap: "16px",
+                                          }}
+                                        >
+                                          {roomContracts.map(
+                                            (contract: any) => {
+                                              const isActive =
+                                                contract.status === "active" &&
+                                                isContractStartedByLocalCalendar(
+                                                  contract.startDate,
+                                                );
+                                              const isPending =
+                                                contract.status === "active" &&
+                                                !isContractStartedByLocalCalendar(
+                                                  contract.startDate,
+                                                );
+                                              const showDeclinedRenewal =
+                                                isActive &&
+                                                (contract.renewalStatus ===
+                                                  "declined" ||
+                                                  room?.contractRenewalStatus ===
+                                                    "declined");
+                                              const statusLine = isActive
+                                                ? "Đang hiệu lực"
+                                                : isPending
+                                                  ? `Sắp tới`
+                                                  : contract.status ===
+                                                      "Pending"
+                                                    ? "Đang chờ ký"
+                                                    : contract.status ===
+                                                        "terminated"
+                                                      ? "Đã chấm dứt"
+                                                      : "Chưa có hiệu lực";
+
+                                              return (
+                                                <div
+                                                  key={contract._id}
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleViewContract(
+                                                      contract._id,
+                                                    );
+                                                  }}
+                                                  className="rd-panel"
+                                                  style={{
+                                                    padding: "16px",
+                                                    backgroundColor: "#ffffff",
+                                                    border: `1px solid ${isActive ? "#93bbdf" : "#e2e8f0"}`,
+                                                    borderLeft: isActive
+                                                      ? "4px solid #3579c6"
+                                                      : isPending
+                                                        ? "4px solid #f59e0b"
+                                                        : "4px solid #94a3b8",
+                                                    borderRadius: "8px",
+                                                    cursor: "pointer",
+                                                    boxShadow:
+                                                      "0 1px 2px rgba(0,0,0,0.05)",
+                                                    transition:
+                                                      "transform 0.2s, box-shadow 0.2s",
+                                                    display: "flex",
+                                                    flexDirection: "row",
+                                                    alignItems: "flex-start",
+                                                    gap: "12px",
+                                                    margin: 0,
+                                                  }}
+                                                  onMouseEnter={(e) => {
+                                                    e.currentTarget.style.transform =
+                                                      "translateY(-2px)";
+                                                    e.currentTarget.style.boxShadow =
+                                                      "0 4px 6px rgba(0,0,0,0.05)";
+                                                  }}
+                                                  onMouseLeave={(e) => {
+                                                    e.currentTarget.style.transform =
+                                                      "none";
+                                                    e.currentTarget.style.boxShadow =
+                                                      "0 1px 2px rgba(0,0,0,0.05)";
+                                                  }}
+                                                >
+                                                  <div
+                                                    style={{
+                                                      padding: "10px",
+                                                      backgroundColor: isActive
+                                                        ? "#eff6ff"
+                                                        : "#f8fafc",
+                                                      borderRadius: "50%",
+                                                      color: isActive
+                                                        ? "#3579c6"
+                                                        : "#64748b",
+                                                    }}
+                                                  >
+                                                    <FileText size={20} />
+                                                  </div>
+                                                  <div
+                                                    style={{
+                                                      flex: 1,
+                                                      display: "flex",
+                                                      flexDirection: "column",
+                                                      gap: "6px",
+                                                    }}
+                                                  >
+                                                    <div
+                                                      style={{
+                                                        display: "flex",
+                                                        justifyContent:
+                                                          "space-between",
+                                                        alignItems:
+                                                          "flex-start",
+                                                      }}
+                                                    >
+                                                      <span
+                                                        style={{
+                                                          fontWeight: 700,
+                                                          color: "#1e293b",
+                                                          fontSize: "14px",
+                                                        }}
+                                                      >
+                                                        HĐ:{" "}
+                                                        {contract.contractCode}
+                                                      </span>
+                                                      <span
+                                                        style={{
+                                                          fontSize: "11px",
+                                                          fontWeight: 600,
+                                                          padding: "2px 8px",
+                                                          borderRadius: "12px",
+                                                          backgroundColor:
+                                                            isActive
+                                                              ? "#dbeafe"
+                                                              : isPending
+                                                                ? "#fef3c7"
+                                                                : "#f1f5f9",
+                                                          color: isActive
+                                                            ? "#1d4ed8"
+                                                            : isPending
+                                                              ? "#d97706"
+                                                              : "#64748b",
+                                                          whiteSpace: "nowrap",
+                                                        }}
+                                                      >
+                                                        {statusLine}
+                                                      </span>
+                                                    </div>
+                                                    <div
+                                                      style={{
+                                                        fontSize: "12px",
+                                                        color: "#64748b",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: "12px",
+                                                      }}
+                                                    >
+                                                      <span>
+                                                        Bắt đầu:{" "}
+                                                        <strong
+                                                          style={{
+                                                            color: "#475569",
+                                                          }}
+                                                        >
+                                                          {formatDdMmYy(
+                                                            contract.startDate,
+                                                          )}
+                                                        </strong>
+                                                      </span>
+                                                      <span
+                                                        style={{
+                                                          color: "#cbd5e1",
+                                                        }}
+                                                      >
+                                                        |
+                                                      </span>
+                                                      <span>
+                                                        Kết thúc:{" "}
+                                                        <strong
+                                                          style={{
+                                                            color: "#475569",
+                                                          }}
+                                                        >
+                                                          {formatDdMmYy(
+                                                            contract.endDate,
+                                                          )}
+                                                        </strong>
+                                                      </span>
+                                                    </div>
+                                                    {showDeclinedRenewal && (
+                                                      <span
+                                                        style={{
+                                                          display:
+                                                            "inline-block",
+                                                          fontSize: "11px",
+                                                          color: "#ef4444",
+                                                          backgroundColor:
+                                                            "#fee2e2",
+                                                          padding: "2px 6px",
+                                                          borderRadius: "4px",
+                                                          fontWeight: 600,
+                                                          width: "fit-content",
+                                                          marginTop: "4px",
+                                                        }}
+                                                      >
+                                                        Từ chối gia hạn
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              );
+                                            },
+                                          )}
+
+                                          {roomDeposits.map(
+                                            (deposit: any, idx: number) => (
                                               <div
-                                                key={contract._id}
-                                                onClick={(e) => { e.stopPropagation(); handleViewContract(contract._id); }}
+                                                key={deposit._id}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleCreateFromDeposit(
+                                                    deposit._id,
+                                                  );
+                                                }}
                                                 className="rd-panel"
                                                 style={{
                                                   padding: "16px",
                                                   backgroundColor: "#ffffff",
-                                                  border: `1px solid ${isActive ? "#93bbdf" : "#e2e8f0"}`,
-                                                  borderLeft: isActive ? "4px solid #3579c6" : isPending ? "4px solid #f59e0b" : "4px solid #94a3b8",
+                                                  border: "1px solid #e2e8f0",
+                                                  borderLeft:
+                                                    "4px solid #10b981",
                                                   borderRadius: "8px",
                                                   cursor: "pointer",
-                                                  boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-                                                  transition: "transform 0.2s, box-shadow 0.2s",
+                                                  boxShadow:
+                                                    "0 1px 2px rgba(0,0,0,0.05)",
+                                                  transition:
+                                                    "transform 0.2s, box-shadow 0.2s",
                                                   display: "flex",
                                                   flexDirection: "row",
                                                   alignItems: "flex-start",
                                                   gap: "12px",
-                                                  margin: 0
+                                                  margin: 0,
                                                 }}
                                                 onMouseEnter={(e) => {
-                                                  e.currentTarget.style.transform = "translateY(-2px)";
-                                                  e.currentTarget.style.boxShadow = "0 4px 6px rgba(0,0,0,0.05)";
+                                                  e.currentTarget.style.transform =
+                                                    "translateY(-2px)";
+                                                  e.currentTarget.style.boxShadow =
+                                                    "0 4px 6px rgba(0,0,0,0.05)";
                                                 }}
                                                 onMouseLeave={(e) => {
-                                                  e.currentTarget.style.transform = "none";
-                                                  e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.05)";
+                                                  e.currentTarget.style.transform =
+                                                    "none";
+                                                  e.currentTarget.style.boxShadow =
+                                                    "0 1px 2px rgba(0,0,0,0.05)";
                                                 }}
                                               >
-                                                <div style={{ padding: "10px", backgroundColor: isActive ? "#eff6ff" : "#f8fafc", borderRadius: "50%", color: isActive ? "#3579c6" : "#64748b" }}>
-                                                  <FileText size={20} />
+                                                <div
+                                                  style={{
+                                                    padding: "10px",
+                                                    backgroundColor: "#ecfdf5",
+                                                    borderRadius: "50%",
+                                                    color: "#10b981",
+                                                  }}
+                                                >
+                                                  <Banknote size={20} />
                                                 </div>
-                                                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
-                                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                                                    <span style={{ fontWeight: 700, color: "#1e293b", fontSize: "14px" }}>HĐ: {contract.contractCode}</span>
-                                                    <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "12px", backgroundColor: isActive ? "#dbeafe" : isPending ? "#fef3c7" : "#f1f5f9", color: isActive ? "#1d4ed8" : isPending ? "#d97706" : "#64748b", whiteSpace: "nowrap" }}>
-                                                      {statusLine}
+                                                <div
+                                                  style={{
+                                                    flex: 1,
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    gap: "6px",
+                                                  }}
+                                                >
+                                                  <div
+                                                    style={{
+                                                      display: "flex",
+                                                      justifyContent:
+                                                        "space-between",
+                                                      alignItems: "flex-start",
+                                                    }}
+                                                  >
+                                                    <span
+                                                      style={{
+                                                        fontWeight: 700,
+                                                        color: "#1e293b",
+                                                        fontSize: "14px",
+                                                      }}
+                                                    >
+                                                      Cọc lẻ #{idx + 1}
+                                                    </span>
+                                                    <span
+                                                      style={{
+                                                        fontSize: "11px",
+                                                        fontWeight: 600,
+                                                        color: "#10b981",
+                                                        backgroundColor:
+                                                          "#d1fae5",
+                                                        padding: "2px 8px",
+                                                        borderRadius: "12px",
+                                                        whiteSpace: "nowrap",
+                                                      }}
+                                                    >
+                                                      Ký Hợp đồng
                                                     </span>
                                                   </div>
-                                                  <div style={{ fontSize: "12px", color: "#64748b", display: "flex", flexDirection: "column" }}>
-                                                    <span>Bắt đầu: <strong style={{color:"#475569"}}>{formatDdMmYy(contract.startDate)}</strong></span>
-                                                    <span>Kết thúc: <strong style={{color:"#475569"}}>{formatDdMmYy(contract.endDate)}</strong></span>
-                                                  </div>
-                                                  {showDeclinedRenewal && (
-                                                    <span style={{ display: "inline-block", fontSize: "11px", color: "#ef4444", backgroundColor: "#fee2e2", padding: "2px 6px", borderRadius: "4px", fontWeight: 600, width: "fit-content", marginTop: "4px" }}>
-                                                      Từ chối gia hạn
+                                                  <div
+                                                    style={{
+                                                      fontSize: "12px",
+                                                      color: "#64748b",
+                                                      display: "flex",
+                                                      flexDirection: "column",
+                                                    }}
+                                                  >
+                                                    <span>
+                                                      Khách:{" "}
+                                                      <strong
+                                                        style={{
+                                                          color: "#475569",
+                                                        }}
+                                                      >
+                                                        {deposit.name ||
+                                                          "Chưa có tên"}
+                                                      </strong>
                                                     </span>
-                                                  )}
+                                                    <span>
+                                                      Tiền cọc:{" "}
+                                                      <strong
+                                                        style={{
+                                                          color: "#059669",
+                                                          fontSize: "13px",
+                                                        }}
+                                                      >
+                                                        {deposit.amount?.toLocaleString(
+                                                          "vi-VN",
+                                                        )}{" "}
+                                                        đ
+                                                      </strong>
+                                                    </span>
+                                                  </div>
                                                 </div>
                                               </div>
-                                            );
-                                          })}
-
-                                          {roomDeposits.map((deposit: any, idx: number) => (
-                                            <div
-                                              key={deposit._id}
-                                              onClick={(e) => { e.stopPropagation(); handleCreateFromDeposit(deposit._id); }}
-                                              className="rd-panel"
-                                              style={{
-                                                padding: "16px",
-                                                backgroundColor: "#ffffff",
-                                                border: "1px solid #e2e8f0",
-                                                borderLeft: "4px solid #10b981",
-                                                borderRadius: "8px",
-                                                cursor: "pointer",
-                                                boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-                                                transition: "transform 0.2s, box-shadow 0.2s",
-                                                display: "flex",
-                                                flexDirection: "row",
-                                                alignItems: "flex-start",
-                                                gap: "12px",
-                                                margin: 0
-                                              }}
-                                              onMouseEnter={(e) => {
-                                                e.currentTarget.style.transform = "translateY(-2px)";
-                                                e.currentTarget.style.boxShadow = "0 4px 6px rgba(0,0,0,0.05)";
-                                              }}
-                                              onMouseLeave={(e) => {
-                                                e.currentTarget.style.transform = "none";
-                                                e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.05)";
-                                              }}
-                                            >
-                                              <div style={{ padding: "10px", backgroundColor: "#ecfdf5", borderRadius: "50%", color: "#10b981" }}>
-                                                <Banknote size={20} />
-                                              </div>
-                                              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
-                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                                                  <span style={{ fontWeight: 700, color: "#1e293b", fontSize: "14px" }}>Cọc lẻ #{idx + 1}</span>
-                                                  <span style={{ fontSize: "11px", fontWeight: 600, color: "#10b981", backgroundColor: "#d1fae5", padding: "2px 8px", borderRadius: "12px", whiteSpace: "nowrap" }}>
-                                                    Ký Hợp đồng
-                                                  </span>
-                                                </div>
-                                                <div style={{ fontSize: "12px", color: "#64748b", display: "flex", flexDirection: "column" }}>
-                                                  <span>Khách: <strong style={{color:"#475569"}}>{deposit.name || "Chưa có tên"}</strong></span>
-                                                  <span>Tiền cọc: <strong style={{color: "#059669", fontSize: "13px"}}>{deposit.amount?.toLocaleString("vi-VN")} đ</strong></span>
-                                                </div>
-                                              </div>
-                                            </div>
-                                          ))}
-
-                                          {!readOnly && allowCreateNewContractOption(room, roomContracts, roomDeposits) && (
-                                            <div
-                                              onClick={(e) => { e.stopPropagation(); setActionPopup({ room, show: true } as any); handleCreateNewContract(); setActionPopup(EMPTY_ACTION_POPUP); }}
-                                              className="rd-panel"
-                                              style={{
-                                                padding: "16px",
-                                                backgroundColor: "#f8fafc",
-                                                border: "2px dashed #cbd5e1",
-                                                borderRadius: "8px",
-                                                cursor: "pointer",
-                                                transition: "background-color 0.2s",
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                gap: "8px",
-                                                margin: 0,
-                                                minHeight: "100px"
-                                              }}
-                                              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#f1f5f9"; }}
-                                              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#f8fafc"; }}
-                                            >
-                                              <PlusCircle size={24} color="#64748b" />
-                                              <span style={{ fontSize: "14px", fontWeight: 600, color: "#475569" }}>Tạo Hợp đồng, Cọc mới</span>
-                                            </div>
+                                            ),
                                           )}
 
+                                          {!readOnly &&
+                                            allowCreateNewContractOption(
+                                              room,
+                                              roomContracts,
+                                              roomDeposits,
+                                            ) && (
+                                              <div
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  navigate(
+                                                    "/manager/contracts/create",
+                                                    {
+                                                      state: {
+                                                        roomId: room._id,
+                                                      },
+                                                    },
+                                                  );
+                                                }}
+                                                className="rd-panel"
+                                                style={{
+                                                  padding: "16px",
+                                                  backgroundColor: "#f8fafc",
+                                                  border: "2px dashed #cbd5e1",
+                                                  borderRadius: "8px",
+                                                  cursor: "pointer",
+                                                  transition:
+                                                    "background-color 0.2s",
+                                                  display: "flex",
+                                                  flexDirection: "column",
+                                                  alignItems: "center",
+                                                  justifyContent: "center",
+                                                  gap: "8px",
+                                                  margin: 0,
+                                                  minHeight: "100px",
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                  e.currentTarget.style.backgroundColor =
+                                                    "#f1f5f9";
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                  e.currentTarget.style.backgroundColor =
+                                                    "#f8fafc";
+                                                }}
+                                              >
+                                                <PlusCircle
+                                                  size={24}
+                                                  color="#64748b"
+                                                />
+                                                <span
+                                                  style={{
+                                                    fontSize: "14px",
+                                                    fontWeight: 600,
+                                                    color: "#475569",
+                                                  }}
+                                                >
+                                                  Tạo Hợp đồng, Cọc mới
+                                                </span>
+                                              </div>
+                                            )}
                                         </div>
                                       </div>
                                     </td>
@@ -706,7 +1052,9 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
                         </tbody>
                       </table>
                     ) : (
-                      <div className="empty-floor">Chưa có phòng nào ở tầng này.</div>
+                      <div className="empty-floor">
+                        Chưa có phòng nào ở tầng này.
+                      </div>
                     )}
                   </div>
                 )}
@@ -731,7 +1079,17 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
           </div>
 
           {/* Floor Map Content */}
-          <div className="contract-floor-map" style={{ border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden", minHeight: "400px", background: "#fff", padding: "16px" }}>
+          <div
+            className="contract-floor-map"
+            style={{
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              overflow: "hidden",
+              minHeight: "400px",
+              background: "#fff",
+              padding: "16px",
+            }}
+          >
             {floors.map((floor, idx) => {
               if (activeFloorTab !== idx) return null;
 
