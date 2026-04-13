@@ -11,6 +11,7 @@ import {
     TrendingUp,
     FileInput,
     Activity,
+    Wallet,
 } from 'lucide-react';
 import './AccountantSidebar.css';
 import logo from '../../../../assets/images/Logo.png';
@@ -27,6 +28,12 @@ const MENU_ITEMS = [
         title: "Hóa Đơn",
         icon: <Receipt size={20} />,
         path: "/accountant/invoices",
+        subItems: []
+    },
+    {
+        title: "Danh Sách Cọc",
+        icon: <Wallet size={20} />,
+        path: "/accountant/deposits",
         subItems: []
     },
     {
