@@ -4,24 +4,18 @@ import { bookingRequestService } from "../../services/bookingRequestService";
 import { format } from "date-fns";
 import api from "../../services/api";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Typography,
-  Box,
-  CircularProgress,
-  Chip,
-  Button,
-  Tooltip,
-} from "@mui/material";
-import SearchIcon from '@mui/icons-material/Search';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import toastr from "toastr";
-import "toastr/build/toastr.min.css";
+  Search,
+  RefreshCw,
+  Eye,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  ClipboardList,
+  UserCheck,
+  Receipt,
+} from "lucide-react";
+import "./BookingRequestList.css";
+import { Pagination } from "../../components/common/Pagination";
 
 interface Room {
   _id: string;
@@ -44,37 +38,11 @@ interface BookingRequest {
   startDate: string;
   duration: number;
   prepayMonths: number | "all";
-  coResidents: any[];
+  coResidents: { name: string; phone: string }[];
   createdAt: string;
 }
 
-const POLL_INTERVAL_MS = 5000; // 5 giây – giống deposit polling
-
-const getStatusChip = (req: BookingRequest) => {
-  switch (req.status) {
-    case "Processed":
-      return <Chip label="✅ Đã ký HĐ" color="success" size="small" sx={{ fontWeight: "bold" }} />;
-    case "Awaiting Payment":
-      return (
-        <Tooltip title={`Mã CK: ${req.transactionCode || "—"} | ${(req.totalAmount || 0).toLocaleString("vi-VN")} VNĐ`}>
-          <Chip
-            label="⏳ Chờ thanh toán"
-            color="warning"
-            size="small"
-            sx={{ fontWeight: "bold", cursor: "help" }}
-          />
-        </Tooltip>
-      );
-    case "Pending":
-      return <Chip label="📋 Chờ duyệt" color="info" size="small" sx={{ fontWeight: "bold" }} />;
-    case "Rejected":
-      return <Chip label="❌ Từ chối" color="error" size="small" sx={{ fontWeight: "bold" }} />;
-    case "Expired":
-      return <Chip label="⌛ Hết hạn" color="default" size="small" sx={{ fontWeight: "bold" }} />;
-    default:
-      return <Chip label={req.status} size="small" />;
-  }
-};
+const POLL_INTERVAL_MS = 5000;
 
 const BookingRequestList = () => {
   const navigate = useNavigate();
@@ -88,9 +56,7 @@ const BookingRequestList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const ROWS_PER_PAGE = 10;
 
-  // Ref để tránh gọi đồng thời nhiều polling
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Ref lưu danh sách request hiện tại (để polling đọc mà không cần re-render)
   const requestsRef = useRef<BookingRequest[]>([]);
   requestsRef.current = requests;
 
@@ -103,8 +69,8 @@ const BookingRequestList = () => {
       } else {
         setError("Tải danh sách thất bại");
       }
-    } catch (err: any) {
-      setError(err.message || "Đã xảy ra lỗi");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Đã xảy ra lỗi");
     } finally {
       if (!silent) setLoading(false);
     }
@@ -114,41 +80,35 @@ const BookingRequestList = () => {
     fetchRequests();
   }, [fetchRequests]);
 
-  // Polling cho các request đang "Awaiting Payment"
   useEffect(() => {
     if (pollingRef.current) clearInterval(pollingRef.current);
 
     pollingRef.current = setInterval(async () => {
       const awaitingList = requestsRef.current.filter(
-        (r) => r.status === "Awaiting Payment" && r.transactionCode
+        (r) => r.status === "Awaiting Payment" && r.transactionCode,
       );
       if (awaitingList.length === 0) return;
 
       for (const req of awaitingList) {
         try {
           const res = await api.get(
-            `/booking-requests/payment-status/${encodeURIComponent(req.transactionCode!)}`
+            `/booking-requests/payment-status/${encodeURIComponent(req.transactionCode!)}`,
           );
           const pollData = res.data?.data;
           if (!pollData) continue;
 
           if (pollData.status === "Processed") {
-            // Thanh toán thành công, tạo HĐ xong → reload danh sách
-            toastr.success(
-              `✅ Khách ${req.name} (${req.roomId?.name}) đã thanh toán thành công! Hợp đồng đã được tạo.`,
-              "Thanh toán thành công",
-              { timeOut: 8000 }
-            );
             fetchRequests(true);
-            break; // Reload rồi thì break, list sẽ refresh
+            break;
           } else if (pollData.status === "Expired") {
-            // Hết hạn → update UI ngay không cần reload
             setRequests((prev) =>
-              prev.map((r) => r._id === req._id ? { ...r, status: "Expired" } : r)
+              prev.map((r) =>
+                r._id === req._id ? { ...r, status: "Expired" } : r,
+              ),
             );
           }
         } catch {
-          // Bỏ qua lỗi mạng giống deposit polling
+          // Bỏ qua lỗi mạng
         }
       }
     }, POLL_INTERVAL_MS);
@@ -156,177 +116,309 @@ const BookingRequestList = () => {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, []); // Mount một lần, đọc requestsRef.current để luôn có data mới nhất
+  }, [fetchRequests]);
 
   const filteredRequests = requests.filter((req) => {
     const matchName = req.name.toLowerCase().includes(filterName.toLowerCase());
-    const matchRoom = filterRoom === "" || req.roomId?.name?.toLowerCase().includes(filterRoom.toLowerCase());
+    const matchRoom =
+      filterRoom === "" ||
+      req.roomId?.name?.toLowerCase().includes(filterRoom.toLowerCase());
     return matchName && matchRoom;
   });
 
-  const totalPages = Math.max(1, Math.ceil(filteredRequests.length / ROWS_PER_PAGE));
-  const paginatedRequests = filteredRequests.slice((currentPage - 1) * ROWS_PER_PAGE, currentPage * ROWS_PER_PAGE);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredRequests.length / ROWS_PER_PAGE),
+  );
+  const paginatedRequests = filteredRequests.slice(
+    (currentPage - 1) * ROWS_PER_PAGE,
+    currentPage * ROWS_PER_PAGE,
+  );
 
   const handleReview = (bookingRequestId: string) => {
-    navigate("/manager/booking-contracts/send", { state: { bookingRequestId } });
+    navigate("/manager/booking-contracts/send", {
+      state: { bookingRequestId },
+    });
+  };
+
+  const pendingCount = requests.filter((r) => r.status === "Pending").length;
+  const awaitingCount = requests.filter(
+    (r) => r.status === "Awaiting Payment",
+  ).length;
+  const processedCount = requests.filter(
+    (r) => r.status === "Processed",
+  ).length;
+  const totalCount = requests.length;
+
+  const getStatusBadge = (status: BookingRequest["status"]) => {
+    switch (status) {
+      case "Processed":
+        return (
+          <span className="br-status-badge br-status-badge--processed">
+            <CheckCircle2 size={14} />
+            Đã ký HĐ
+          </span>
+        );
+      case "Awaiting Payment":
+        return (
+          <span className="br-status-badge br-status-badge--awaiting">
+            <Clock size={14} />
+            Chờ thanh toán
+          </span>
+        );
+      case "Pending":
+        return (
+          <span className="br-status-badge br-status-badge--pending">
+            <ClipboardList size={14} />
+            Chờ duyệt
+          </span>
+        );
+      case "Rejected":
+        return (
+          <span className="br-status-badge br-status-badge--rejected">
+            <XCircle size={14} />
+            Từ chối
+          </span>
+        );
+      case "Expired":
+        return (
+          <span className="br-status-badge br-status-badge--expired">
+            <Clock size={14} />
+            Hết hạn
+          </span>
+        );
+      default:
+        return null;
+    }
   };
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-        <CircularProgress />
-      </Box>
+      <div className="br-container">
+        <div className="br-loading">
+          <div className="br-loading-spinner"></div>
+          <span>Đang tải dữ liệu...</span>
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ mt: 4, textAlign: "center", color: "error.main" }}>
-        <Typography variant="h6">Lỗi lấy dữ liệu</Typography>
-        <Typography variant="body1">{error}</Typography>
-      </Box>
+      <div className="br-container">
+        <div className="br-error">
+          <XCircle size={48} />
+          <h3>Lỗi lấy dữ liệu</h3>
+          <p>{error}</p>
+          <button
+            className="br-btn br-btn--outline"
+            onClick={() => fetchRequests()}
+          >
+            <RefreshCw size={16} /> Thử lại
+          </button>
+        </div>
+      </div>
     );
   }
 
-  const awaitingCount = requests.filter(r => r.status === "Awaiting Payment").length;
-
   return (
-    <Box sx={{ p: 4, fontFamily: "'Inter', sans-serif" }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-        <Typography variant="h4" sx={{ fontWeight: "bold", color: "#1e293b" }}>
-          Khách Đặt Phòng Online
-        </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          {awaitingCount > 0 && (
-            <Chip
-              label={`🔄 Đang chờ thanh toán: ${awaitingCount}`}
-              color="warning"
-              size="small"
-              sx={{ fontWeight: 600 }}
+    <div className="br-container">
+      {/* HEADER */}
+      <div className="br-header">
+        <div className="br-header-top">
+          <div className="br-title-block">
+            <div className="br-title-row">
+              <div className="br-title-icon">
+                <ClipboardList size={22} strokeWidth={2} />
+              </div>
+              <div className="br-title-text">
+                <h2>Khách Đặt Phòng Online</h2>
+                <p className="br-subtitle">
+                  Quản lý các yêu cầu đặt phòng và làm hợp đồng cho khách
+                  {awaitingCount > 0 && (
+                    <span style={{ color: "#f59e0b", fontWeight: 600 }}>
+                      {" "}
+                      — Đang tự động kiểm tra thanh toán mỗi 5 giây...
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="br-header-aside">
+            <div className="br-stats-summary">
+              <div className="br-stat-item">
+                <Receipt size={16} className="br-stat-icon br-icon-primary" />
+                <div className="br-stat-text">
+                  <span className="br-stat-value">{totalCount}</span>
+                  <span className="br-stat-label">Tổng số</span>
+                </div>
+              </div>
+              <div className="br-stat-divider"></div>
+              <div className="br-stat-item">
+                <ClipboardList
+                  size={16}
+                  className="br-stat-icon br-icon-warning"
+                />
+                <div className="br-stat-text">
+                  <span className="br-stat-value">{pendingCount}</span>
+                  <span className="br-stat-label">Chờ duyệt</span>
+                </div>
+              </div>
+              <div className="br-stat-divider"></div>
+              <div className="br-stat-item">
+                <UserCheck size={16} className="br-stat-icon br-icon-success" />
+                <div className="br-stat-text">
+                  <span className="br-stat-value">{processedCount}</span>
+                  <span className="br-stat-label">Đã ký</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* TOOLBAR LỌC & TÌM KIẾM */}
+      <div className="br-toolbar">
+        <div className="br-toolbar-left">
+          <div className="br-search-box">
+            <Search size={18} className="br-search-icon" />
+            <input
+              type="text"
+              className="br-search-input"
+              placeholder="Tìm theo tên khách..."
+              value={filterName}
+              onChange={(e) => {
+                setFilterName(e.target.value);
+                setCurrentPage(1);
+              }}
             />
-          )}
-          <Button
-            startIcon={<RefreshIcon />}
-            onClick={() => fetchRequests(true)}
-            size="small"
-            variant="outlined"
-            sx={{ textTransform: "none" }}
-          >
-            Tải lại
-          </Button>
-        </Box>
-      </Box>
-      <Typography variant="body1" sx={{ color: "#64748b", mb: 4 }}>
-        Quản lý các yêu cầu đặt phòng và làm hợp đồng cho khách
-        {awaitingCount > 0 && (
-          <span style={{ color: "#f59e0b", fontWeight: 600 }}>
-            {" "}— Đang tự động kiểm tra thanh toán mỗi 5 giây...
+          </div>
+
+          <div className="br-search-box">
+            <Search size={18} className="br-search-icon" />
+            <input
+              type="text"
+              className="br-search-input"
+              placeholder="Tìm theo số phòng..."
+              value={filterRoom}
+              onChange={(e) => {
+                setFilterRoom(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="br-toolbar-right">
+          <span className="br-display-info">
+            Hiển thị {(currentPage - 1) * ROWS_PER_PAGE + 1}–
+            {Math.min(currentPage * ROWS_PER_PAGE, filteredRequests.length)} /{" "}
+            <strong>{filteredRequests.length}</strong> bản ghi
           </span>
-        )}
-      </Typography>
+          {awaitingCount > 0 && (
+            <span className="br-awaiting-chip">
+              <Clock size={14} />
+              Chờ thanh toán: {awaitingCount}
+            </span>
+          )}
+        </div>
+      </div>
 
-      <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-        <Box sx={{ flex: 1, display: "flex", alignItems: "center", bgcolor: "#fff", borderRadius: 2, p: 1, boxShadow: 1 }}>
-          <SearchIcon sx={{ color: "#94a3b8", ml: 1, mr: 1 }} />
-          <input
-            type="text"
-            placeholder="Tìm theo tên khách..."
-            value={filterName}
-            onChange={(e) => setFilterName(e.target.value)}
-            style={{ border: "none", outline: "none", flex: 1, fontSize: "16px" }}
-          />
-        </Box>
-        <Box sx={{ flex: 1, display: "flex", alignItems: "center", bgcolor: "#fff", borderRadius: 2, p: 1, boxShadow: 1 }}>
-          <SearchIcon sx={{ color: "#94a3b8", ml: 1, mr: 1 }} />
-          <input
-            type="text"
-            placeholder="Tìm theo số phòng..."
-            value={filterRoom}
-            onChange={(e) => setFilterRoom(e.target.value)}
-            style={{ border: "none", outline: "none", flex: 1, fontSize: "16px" }}
-          />
-        </Box>
-      </Box>
-
-      <TableContainer component={Paper} elevation={0} sx={{ borderRadius: 2, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: "#f8fafc" }}>
-              <TableCell sx={{ fontWeight: 600, color: "#334155" }}>STT</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: "#334155" }}>Phòng</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: "#334155" }}>Khách hàng</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: "#334155" }}>SĐT</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: "#334155" }}>Ngày muốn vào</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: "#334155" }}>Mã CK / Số tiền</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: "#334155" }}>Trạng thái</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600, color: "#334155" }}>Thao tác</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
+      {/* BẢNG DỮ LIỆU */}
+      <div className="br-table-container">
+        <table className="br-table">
+          <thead>
+            <tr>
+              <th className="br-cell-stt">STT</th>
+              <th className="br-cell-room">Phòng</th>
+              <th className="br-cell-customer">Khách hàng</th>
+              <th className="br-cell-phone">SĐT</th>
+              <th className="br-cell-date">Ngày muốn vào</th>
+              <th className="br-cell-transaction">Mã CK / Số tiền</th>
+              <th className="br-cell-status">Trạng thái</th>
+              <th className="br-cell-actions">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
             {paginatedRequests.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 4, color: "#64748b" }}>
+              <tr>
+                <td colSpan={8} className="br-empty-cell">
                   Chưa có khách đặt phòng online
-                </TableCell>
-              </TableRow>
+                </td>
+              </tr>
             ) : (
               paginatedRequests.map((req, index) => (
-                <TableRow key={req._id} hover
-                  sx={req.status === "Awaiting Payment" ? { bgcolor: "#fffbeb" } : {}}
+                <tr
+                  key={req._id}
+                  className={
+                    req.status === "Awaiting Payment" ? "br-row-awaiting" : ""
+                  }
                 >
-                  <TableCell>{(currentPage - 1) * ROWS_PER_PAGE + index + 1}</TableCell>
-                  <TableCell sx={{ fontWeight: 500 }}>{req.roomId?.name || "N/A"}</TableCell>
-                  <TableCell>{req.name}</TableCell>
-                  <TableCell>{req.phone}</TableCell>
-                  <TableCell>
-                    {req.startDate ? format(new Date(req.startDate), "dd/MM/yyyy") : "N/A"}
-                  </TableCell>
-                  <TableCell>
-                    {req.transactionCode ? (
-                      <Box>
-                        <Typography variant="caption" sx={{ fontFamily: "monospace", fontWeight: 700, color: "#1d4ed8", display: "block" }}>
-                          {req.transactionCode}
-                        </Typography>
-                        {req.totalAmount && (
-                          <Typography variant="caption" sx={{ color: "#991b1b" }}>
-                            {req.totalAmount.toLocaleString("vi-VN")} VNĐ
-                          </Typography>
-                        )}
-                      </Box>
-                    ) : (
-                      <Typography variant="caption" sx={{ color: "#94a3b8" }}>—</Typography>
+                  <td className="br-cell-stt">
+                    {(currentPage - 1) * ROWS_PER_PAGE + index + 1}
+                  </td>
+                  <td className="br-cell-room">{req.roomId?.name || "N/A"}</td>
+                  <td className="br-cell-customer">
+                    {req.email && (
+                      <span className="br-customer-email">{req.email}</span>
                     )}
-                  </TableCell>
-                  <TableCell>{getStatusChip(req)}</TableCell>
-                  <TableCell align="right">
-                    <Button
-                      variant="contained"
-                      size="small"
+                  </td>
+                  <td className="br-cell-phone">{req.phone}</td>
+                  <td className="br-cell-date">
+                    {req.startDate
+                      ? format(new Date(req.startDate), "dd/MM/yyyy")
+                      : "N/A"}
+                  </td>
+                  <td className="br-cell-transaction">
+                    {req.transactionCode ? (
+                      <div>
+                        <span className="br-transaction-code">
+                          {req.transactionCode}
+                        </span>
+                        {req.totalAmount && (
+                          <span className="br-transaction-amount">
+                            {req.totalAmount.toLocaleString("vi-VN")} VNĐ
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span style={{ color: "#94a3b8" }}>—</span>
+                    )}
+                  </td>
+                  <td className="br-cell-status">
+                    {getStatusBadge(req.status)}
+                  </td>
+                  <td className="br-cell-actions">
+                    <button
+                      className="br-btn br-btn--primary"
                       onClick={() => handleReview(req._id)}
-                      disabled={req.status === "Rejected" || req.status === "Processed"}
-                      sx={{ textTransform: "none", fontWeight: 600, borderRadius: "6px" }}
+                      disabled={
+                        req.status === "Rejected" || req.status === "Processed"
+                      }
                     >
-                      {req.status === "Awaiting Payment" ? "Chờ TT..." : "Xem & Chốt HĐ"}
-                    </Button>
-                  </TableCell>
-                </TableRow>
+                      <Eye size={15} />
+                      {req.status === "Awaiting Payment"
+                        ? "Chờ TT..."
+                        : "Xem & Chốt HĐ"}
+                    </button>
+                  </td>
+                </tr>
               ))
             )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          </tbody>
+        </table>
 
-      {/* Pagination control */}
-      {totalPages > 1 && (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 3, gap: 1 }}>
-          <Button disabled={currentPage === 1} onClick={() => setCurrentPage(c => c - 1)} variant="outlined" size="small">Trước</Button>
-          <Box sx={{ display: "flex", alignItems: "center", px: 2 }}>Trang {currentPage} / {totalPages}</Box>
-          <Button disabled={currentPage === totalPages} onClick={() => setCurrentPage(c => c + 1)} variant="outlined" size="small">Sau</Button>
-        </Box>
-      )}
-    </Box>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredRequests.length}
+          onPageChange={setCurrentPage}
+        />
+      </div>
+    </div>
   );
 };
 
 export default BookingRequestList;
-
