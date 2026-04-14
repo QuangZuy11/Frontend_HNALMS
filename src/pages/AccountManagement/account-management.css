@@ -5319,3 +5319,513 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* =============================================================
+   TenantAccountList — đồng bộ UI theo ManageService
+   ============================================================= */
+
+/* === Page Container === */
+.tenant-account-list-page {
+  --ms-primary: #3579c6;
+  --ms-primary-dark: #2a5fa3;
+  --ms-primary-soft: #f0f7ff;
+  --ms-primary-shadow: rgba(53, 121, 198, 0.28);
+  --ms-text: #334155;
+  --ms-text-muted: #64748b;
+  --ms-text-heading: #1e293b;
+  --ms-border: rgba(226, 232, 240, 0.85);
+  --ms-surface: #ffffff;
+  --ms-page-bg: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+
+  padding: 12px 14px 20px;
+  background: var(--ms-page-bg);
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--ms-text);
+  letter-spacing: -0.01em;
+}
+
+/* === Header (đồng bộ ManageService) === */
+.tenant-account-list-header-new {
+  margin-bottom: 10px;
+}
+
+.tenant-account-list-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.tenant-account-list-title-block {
+  flex: 1;
+  min-width: min(100%, 320px);
+}
+
+.tenant-account-list-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.tenant-account-list-title-text {
+  min-width: 0;
+}
+
+.tenant-account-list-title-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--ms-primary) 0%, var(--ms-primary-dark) 100%);
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px var(--ms-primary-shadow);
+}
+
+.tenant-account-list-title-text h2 {
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: var(--ms-text-heading);
+  margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.tenant-account-list-subtitle {
+  margin: 0;
+  max-width: 640px;
+  font-size: 14px;
+  font-weight: 450;
+  line-height: 1.5;
+  color: var(--ms-text-muted);
+}
+
+/* === Header Aside & Stats === */
+.tenant-account-list-header-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.tenant-account-list-stats-summary {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+}
+
+.tenant-account-list-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+}
+
+.tenant-account-list-stat-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.tenant-account-list-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.tenant-account-list-stat-label {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.tenant-account-list-stat-divider {
+  width: 1px;
+  height: 32px;
+  background-color: #e2e8f0;
+}
+
+.tenant-account-list-stat-icon {
+  padding: 8px;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tenant-account-list-stat-icon.icon-primary {
+  color: #2563eb;
+  background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+}
+
+.tenant-account-list-stat-icon.icon-accent {
+  color: #059669;
+  background: linear-gradient(135deg, #d1fae5 0%, #6ee7b7 100%);
+}
+
+.tenant-account-list-stat-icon.icon-warning {
+  color: #d97706;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+}
+
+@media (max-width: 640px) {
+  .tenant-account-list-stats-summary {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* === Toolbar (đồng bộ ManageService) === */
+.tenant-account-list-toolbar-new {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 10px;
+  margin-top: 0;
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--ms-border);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04);
+}
+
+.tenant-account-list-toolbar-left {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+}
+
+.tenant-account-list-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tenant-account-list-toolbar-icon {
+  color: var(--ms-text-muted);
+  flex-shrink: 0;
+}
+
+/* === Search Box === */
+.tenant-account-list-search-box {
+  position: relative;
+  min-width: 200px;
+  flex: 1;
+  max-width: 320px;
+}
+
+.tenant-account-list-search-input {
+  width: 100%;
+  padding: 10px 14px 10px 42px;
+  border: 1px solid var(--ms-border);
+  border-radius: 10px;
+  background-color: #f8fafc;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--ms-text);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.tenant-account-list-search-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.tenant-account-list-search-input:focus {
+  background-color: #fff;
+  border-color: var(--ms-primary);
+  box-shadow: 0 0 0 3px rgba(53, 121, 198, 0.12);
+  outline: none;
+}
+
+.tenant-account-list-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+  transition: color 0.2s ease;
+}
+
+.tenant-account-list-search-box:focus-within .tenant-account-list-search-icon {
+  color: var(--ms-primary);
+}
+
+/* === Control Group & Select === */
+.tenant-account-list-control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tenant-account-list-custom-select {
+  appearance: none;
+  padding: 9px 36px 9px 12px;
+  border: 1px solid var(--ms-border);
+  border-radius: 10px;
+  background-color: var(--ms-surface);
+  color: var(--ms-text);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 168px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.tenant-account-list-custom-select:hover {
+  border-color: #cbd5e1;
+  background-color: var(--ms-primary-soft);
+  color: var(--ms-primary);
+}
+
+.tenant-account-list-custom-select:focus {
+  border-color: var(--ms-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(53, 121, 198, 0.12);
+}
+
+/* === Btn Clear Filter === */
+.tenant-account-list-btn-clear-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 9px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.tenant-account-list-btn-clear-filter:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+/* === Table Container === */
+.tenant-account-list-table-container {
+  background: var(--ms-surface);
+  border-radius: 12px;
+  border: 1px solid var(--ms-border);
+  overflow-x: auto;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.05);
+  margin-top: 0;
+}
+
+.tenant-account-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  min-width: 900px;
+}
+
+.tenant-account-list-table thead tr {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.tenant-account-list-table th {
+  padding: 14px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ms-text-muted);
+  border-bottom: 1px solid var(--ms-border);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: left;
+}
+
+.tenant-account-list-table td {
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ms-text);
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.tenant-account-list-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.tenant-account-list-table tbody tr:hover {
+  background-color: var(--ms-primary-soft);
+}
+
+.tenant-account-list-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tenant-account-list-table tr.inactive-row td {
+  opacity: 0.55;
+}
+
+/* === Table Cells === */
+.cell-stt {
+  text-align: center;
+  font-weight: 600;
+  color: var(--ms-text-muted);
+  width: 5%;
+}
+
+.cell-name {
+  text-align: left;
+  font-weight: 600;
+  color: var(--ms-text-heading);
+  width: 18%;
+}
+
+.cell-room {
+  text-align: center;
+  width: 10%;
+}
+
+.cell-contact {
+  text-align: left;
+  width: 22%;
+}
+
+.cell-date {
+  text-align: left;
+  color: var(--ms-text-muted);
+  font-size: 13px;
+  font-weight: 450;
+  width: 12%;
+}
+
+.cell-actions {
+  text-align: center;
+  width: 8%;
+}
+
+/* === Status Badge (đồng bộ ManageService) === */
+.tenant-account-list-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.tenant-account-list-status-active {
+  background-color: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.tenant-account-list-status-inactive {
+  background-color: #f1f5f9;
+  color: var(--ms-text-muted);
+  border: 1px solid var(--ms-border);
+}
+
+/* === Table Actions === */
+.table-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+/* === Btn Icon (đồng bộ ManageService) === */
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+}
+
+.btn-icon svg {
+  width: 16px !important;
+  height: 16px !important;
+  fill: none !important;
+  stroke-width: 2px !important;
+}
+
+.btn-view {
+  background-color: var(--ms-primary-soft) !important;
+  color: var(--ms-primary) !important;
+}
+
+.btn-view:hover {
+  background-color: #dbeafe !important;
+  color: var(--ms-primary-dark) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(53, 121, 198, 0.15);
+}
+
+/* === Table Empty Cell === */
+.table-empty-cell {
+  text-align: center;
+  padding: 48px 24px !important;
+  color: var(--ms-text-muted);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .tenant-account-list-page {
+    padding: 10px 12px 16px;
+  }
+
+  .tenant-account-list-title-text h2 {
+    font-size: 1.2rem;
+  }
+
+  .tenant-account-list-header-aside {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .tenant-account-list-stats-summary {
+    justify-content: center;
+  }
+
+  .tenant-account-list-toolbar-new {
+    flex-direction: column;
+  }
+
+  .tenant-account-list-search-box {
+    max-width: none;
+  }
+}

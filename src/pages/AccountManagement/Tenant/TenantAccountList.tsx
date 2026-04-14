@@ -1,20 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Visibility as VisibilityIcon,
-  NavigateBefore as PrevIcon,
-  NavigateNext as NextIcon,
-  FirstPage as FirstPageIcon,
-  LastPage as LastPageIcon,
-  Person as PersonIcon,
-  ContactPhone as ContactPhoneIcon,
-  Badge as BadgeIcon,
-  Gavel as GavelIcon,
-  Lock as LockIcon,
-  LockOpen as LockOpenIcon,
-  Search as SearchIcon,
-  Clear as ClearIcon,
-  Groups as GroupsIcon,
-} from "@mui/icons-material";
+  Search,
+  Eye,
+  PersonStanding,
+  User,
+  Contact,
+  ShieldCheck,
+  Lock,
+  LockOpen,
+  Filter,
+  ArrowUpDown,
+  Users,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
+import { AppModal } from "../../../components/common/Modal";
+import { Pagination } from "../../../components/common/Pagination";
+import { useToast } from "../../../components/common/Toast";
 import { accountService } from "../../../services/accountService";
 import {
   STATUS_LABELS,
@@ -26,18 +29,14 @@ import useAuth from "../../../hooks/useAuth";
 import "../account-management.css";
 
 export default function TenantAccountList() {
+  const { showToast } = useToast();
   const [accounts, setAccounts] = useState<AccountItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const [searchName, setSearchName] = useState("");
   const [searchContact, setSearchContact] = useState("");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
-
-  const [disablingId, setDisablingId] = useState<string | null>(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [detailAccount, setDetailAccount] = useState<AccountDetail | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [sortOption, setSortOption] = useState("newest");
 
   const [page, setPage] = useState(1);
   const ROWS_PER_PAGE = 8;
@@ -45,10 +44,15 @@ export default function TenantAccountList() {
   const { user } = useAuth();
   const isOwner = user?.role === "owner";
 
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [detailAccount, setDetailAccount] = useState<AccountDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  const [disablingId, setDisablingId] = useState<string | null>(null);
+
   const fetchAccounts = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
       const response = await accountService.list("tenants", {
         offset: 0,
         limit: 9999,
@@ -59,21 +63,21 @@ export default function TenantAccountList() {
       } else {
         setAccounts([]);
       }
-    } catch (err) {
-      const errObj = err as { response?: { data?: { message?: string } } };
-      setError(errObj?.response?.data?.message || "Không thể tải danh sách cư dân");
-      setAccounts([]);
+    } catch {
+      showToast("error", "Lỗi kết nối", "Không thể tải danh sách cư dân!");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showToast]);
 
   useEffect(() => {
     fetchAccounts();
   }, [fetchAccounts]);
 
   const filteredAccounts = useMemo(() => {
-    return accounts.filter((acc) => {
+    let result = [...accounts];
+
+    result = result.filter((acc) => {
       const name = (acc.fullname || "").toLowerCase();
       const email = (acc.email || "").toLowerCase();
       const phone = (acc.phoneNumber || "").toLowerCase();
@@ -87,7 +91,21 @@ export default function TenantAccountList() {
 
       return matchName && matchContact && matchStatus;
     });
-  }, [accounts, searchName, searchContact, filterStatus]);
+
+    switch (sortOption) {
+      case "name-asc":
+        result.sort((a, b) => (a.fullname || "").localeCompare(b.fullname || ""));
+        break;
+      case "name-desc":
+        result.sort((a, b) => (b.fullname || "").localeCompare(a.fullname || ""));
+        break;
+      case "newest":
+      default:
+        break;
+    }
+
+    return result;
+  }, [accounts, searchName, searchContact, filterStatus, sortOption]);
 
   const totalPages = Math.max(1, Math.ceil(filteredAccounts.length / ROWS_PER_PAGE));
   const paginatedAccounts = filteredAccounts.slice(
@@ -97,19 +115,7 @@ export default function TenantAccountList() {
 
   useEffect(() => {
     setPage(1);
-  }, [searchName, searchContact, filterStatus]);
-
-  const getVisiblePages = () => {
-    const pages: number[] = [];
-    let start = Math.max(1, page - 2);
-    let end = Math.min(totalPages, page + 2);
-
-    if (page <= 2) end = Math.min(totalPages, 5);
-    if (page >= totalPages - 1) start = Math.max(1, totalPages - 4);
-
-    for (let i = start; i <= end; i += 1) pages.push(i);
-    return pages;
-  };
+  }, [searchName, searchContact, filterStatus, sortOption]);
 
   const handleViewDetail = async (accountId: string) => {
     try {
@@ -121,9 +127,8 @@ export default function TenantAccountList() {
       if (response.success && response.data) {
         setDetailAccount(response.data);
       }
-    } catch (err) {
-      const errObj = err as { response?: { data?: { message?: string } } };
-      alert(errObj?.response?.data?.message || "Không thể tải chi tiết cư dân");
+    } catch {
+      showToast("error", "Lỗi", "Không thể tải chi tiết cư dân.");
       setShowDetailModal(false);
     } finally {
       setDetailLoading(false);
@@ -131,8 +136,6 @@ export default function TenantAccountList() {
   };
 
   const handleDisable = async (accountId: string) => {
-    if (!window.confirm("Bạn có chắc muốn đóng tài khoản cư dân này?")) return;
-
     try {
       setDisablingId(accountId);
       const response = await accountService.disable("tenants", accountId);
@@ -149,18 +152,16 @@ export default function TenantAccountList() {
             prev ? { ...prev, status: updated?.status || prev.status } : prev,
           );
         }
+        showToast("success", "Thành công", "Đã đóng tài khoản cư dân.");
       }
-    } catch (err) {
-      const errObj = err as { response?: { data?: { message?: string } } };
-      alert(errObj?.response?.data?.message || "Không thể đóng tài khoản");
+    } catch {
+      showToast("error", "Lỗi", "Không thể đóng tài khoản.");
     } finally {
       setDisablingId(null);
     }
   };
 
   const handleEnable = async (accountId: string) => {
-    if (!window.confirm("Bạn có chắc muốn mở lại tài khoản này?")) return;
-
     try {
       setDisablingId(accountId);
       const response = await accountService.enable("tenants", accountId);
@@ -177,70 +178,87 @@ export default function TenantAccountList() {
             prev ? { ...prev, status: updated?.status || prev.status } : prev,
           );
         }
+        showToast("success", "Thành công", "Đã mở lại tài khoản cư dân.");
       }
-    } catch (err) {
-      const errObj = err as { response?: { data?: { message?: string } } };
-      alert(errObj?.response?.data?.message || "Không thể mở lại tài khoản");
+    } catch {
+      showToast("error", "Lỗi", "Không thể mở lại tài khoản.");
     } finally {
       setDisablingId(null);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="tenant-account-list-page">
-        <div className="tenant-account-list-card">
-          <div className="tenant-account-list-loading">
-            <div className="tenant-account-list-loading-spinner" />
-            <span className="tenant-account-list-loading-text">Đang tải dữ liệu...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const totalCount = accounts.length;
+  const activeCount = accounts.filter((a) => a.status === "active").length;
+  const inactiveCount = accounts.filter((a) => a.status === "inactive").length;
 
-  if (error) {
-    return (
-      <div className="tenant-account-list-page">
-        <div className="tenant-account-list-card">
-          <div className="tenant-account-list-error">
-            <div className="tenant-account-list-error-icon">!</div>
-            <h3>Lỗi tải danh sách</h3>
-            <p>{error}</p>
-            <button type="button" className="tenant-account-list-btn-retry" onClick={fetchAccounts}>
-              Thử lại
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const clearFilters = () => {
+    setSearchName("");
+    setSearchContact("");
+    setFilterStatus("all");
+  };
+
+  const hasFilters = searchName || searchContact || filterStatus !== "all";
 
   return (
     <div className="tenant-account-list-page">
-      <div className="tenant-account-list-card">
-        {/* Page Header */}
-        <div className="tenant-account-list-header">
-          <div className="tenant-account-list-header-left">
-            <div className="tenant-account-list-header-icon">
-              <GroupsIcon sx={{ fontSize: 22 }} />
-            </div>
-            <div>
-              <h1 className="tenant-account-list-title">Danh sách cư dân</h1>
-              <p className="tenant-account-list-subtitle">Quản lý thông tin cư dân trong tòa nhà</p>
+      {/* HEADER */}
+      <div className="tenant-account-list-header-new">
+        <div className="tenant-account-list-header-top">
+          <div className="tenant-account-list-title-block">
+            <div className="tenant-account-list-title-row">
+              <div className="tenant-account-list-title-icon" aria-hidden>
+                <Users size={22} strokeWidth={2} />
+              </div>
+              <div className="tenant-account-list-title-text">
+                <h2>Quản lý Cư dân</h2>
+                <p className="tenant-account-list-subtitle">
+                  Quản lý thông tin cư dân trong tòa nhà Hoàng Nam.
+                </p>
+              </div>
             </div>
           </div>
-          <div className="tenant-account-list-stats">
-            <span className="tenant-account-list-stats-count">
-              {filteredAccounts.length} cư dân
-            </span>
+
+          <div className="tenant-account-list-header-aside">
+            <div className="tenant-account-list-stats-summary">
+              <div className="tenant-account-list-stat-item">
+                <div className="tenant-account-list-stat-icon icon-accent">
+                  <Users size={16} strokeWidth={2} />
+                </div>
+                <div className="tenant-account-list-stat-text">
+                  <span className="tenant-account-list-stat-value">{totalCount}</span>
+                  <span className="tenant-account-list-stat-label">Tổng số</span>
+                </div>
+              </div>
+              <div className="tenant-account-list-stat-divider" />
+              <div className="tenant-account-list-stat-item">
+                <div className="tenant-account-list-stat-icon icon-primary">
+                  <CheckCircle2 size={16} strokeWidth={2} />
+                </div>
+                <div className="tenant-account-list-stat-text">
+                  <span className="tenant-account-list-stat-value">{activeCount}</span>
+                  <span className="tenant-account-list-stat-label">Hoạt động</span>
+                </div>
+              </div>
+              <div className="tenant-account-list-stat-divider" />
+              <div className="tenant-account-list-stat-item">
+                <div className="tenant-account-list-stat-icon icon-warning">
+                  <AlertTriangle size={16} strokeWidth={2} />
+                </div>
+                <div className="tenant-account-list-stat-text">
+                  <span className="tenant-account-list-stat-value">{inactiveCount}</span>
+                  <span className="tenant-account-list-stat-label">Không hoạt động</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Toolbar */}
-        <div className="tenant-account-list-toolbar">
-          <div className="tenant-account-list-search-wrap">
-            <SearchIcon className="tenant-account-list-search-icon" />
+      {/* TOOLBAR LỌC & TÌM KIẾM */}
+      <div className="tenant-account-list-toolbar-new">
+        <div className="tenant-account-list-toolbar-left">
+          <div className="tenant-account-list-search-box">
+            <Search size={18} className="tenant-account-list-search-icon" />
             <input
               type="text"
               className="tenant-account-list-search-input"
@@ -248,19 +266,10 @@ export default function TenantAccountList() {
               value={searchName}
               onChange={(e) => setSearchName(e.target.value)}
             />
-            {searchName && (
-              <button
-                type="button"
-                className="tenant-account-list-search-clear"
-                onClick={() => setSearchName("")}
-              >
-                <ClearIcon sx={{ fontSize: 16 }} />
-              </button>
-            )}
           </div>
 
-          <div className="tenant-account-list-search-wrap">
-            <ContactPhoneIcon className="tenant-account-list-search-icon" />
+          <div className="tenant-account-list-search-box">
+            <Contact size={18} className="tenant-account-list-search-icon" />
             <input
               type="text"
               className="tenant-account-list-search-input"
@@ -268,362 +277,305 @@ export default function TenantAccountList() {
               value={searchContact}
               onChange={(e) => setSearchContact(e.target.value)}
             />
-            {searchContact && (
-              <button
-                type="button"
-                className="tenant-account-list-search-clear"
-                onClick={() => setSearchContact("")}
-              >
-                <ClearIcon sx={{ fontSize: 16 }} />
-              </button>
-            )}
           </div>
 
-          <div className="tenant-account-list-filter-group">
+          <div className="tenant-account-list-control-group">
+            <Filter size={16} className="tenant-account-list-toolbar-icon" aria-hidden />
             <select
-              className="tenant-account-list-filter-select"
+              className="tenant-account-list-custom-select"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
-              <option value="all">Tất cả</option>
+              <option value="all">Tất cả trạng thái</option>
               <option value="active">Hoạt động</option>
               <option value="inactive">Không hoạt động</option>
             </select>
           </div>
 
-          {(searchName || searchContact || filterStatus !== "all") && (
+          {hasFilters && (
             <button
               type="button"
               className="tenant-account-list-btn-clear-filter"
-              onClick={() => {
-                setSearchName("");
-                setSearchContact("");
-                setFilterStatus("all");
-              }}
+              onClick={clearFilters}
             >
-              <ClearIcon sx={{ fontSize: 14 }} />
               Xóa lọc
             </button>
           )}
         </div>
 
-        {/* Table */}
-        {paginatedAccounts.length === 0 ? (
-          <div className="tenant-account-list-empty">
-            <div className="tenant-account-list-empty-icon">
-              <GroupsIcon sx={{ fontSize: 48, color: "#cbd5e1" }} />
-            </div>
-            <h3>Chưa có cư dân nào</h3>
-            <p>
-              {searchName || searchContact || filterStatus !== "all"
-                ? "Không tìm thấy cư dân phù hợp với bộ lọc."
-                : "Danh sách cư dân đang trống."}
-            </p>
-          </div>
-        ) : (
+        <div className="tenant-account-list-toolbar-right">
+          <ArrowUpDown size={16} className="tenant-account-list-toolbar-icon" aria-hidden />
+          <select
+            className="tenant-account-list-custom-select"
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+          >
+            <option value="newest">Mới nhất</option>
+            <option value="name-asc">Tên: A - Z</option>
+            <option value="name-desc">Tên: Z - A</option>
+          </select>
+        </div>
+      </div>
+
+      {/* BẢNG DỮ LIỆU */}
+      <div className="tenant-account-list-table-container">
+        <table className="tenant-account-list-table">
+          <thead>
+            <tr>
+              <th className="cell-stt">STT</th>
+              <th className="cell-name">Họ và tên</th>
+              <th className="cell-room">Phòng</th>
+              <th className="cell-contact">SĐT / Email</th>
+              <th className="cell-status">Trạng thái</th>
+              <th className="cell-date">Ngày tạo</th>
+              <th className="cell-actions">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedAccounts.length > 0 ? (
+              paginatedAccounts.map((acc, index) => (
+                <tr key={acc._id} className={acc.status === "inactive" ? "inactive-row" : ""}>
+                  <td className="cell-stt">
+                    {(page - 1) * ROWS_PER_PAGE + index + 1}
+                  </td>
+
+                  <td className="cell-name">
+                    {acc.fullname || "-"}
+                  </td>
+
+                  <td className="cell-room">
+                    <span className="tenant-account-list-room-badge">
+                      {acc.roomName || "-"}
+                    </span>
+                  </td>
+
+                  <td className="cell-contact">
+                    <div className="tenant-account-list-contact-cell">
+                      <span className="tenant-account-list-contact-phone">
+                        {acc.phoneNumber || "-"}
+                      </span>
+                      <span className="tenant-account-list-contact-email">
+                        {acc.email || "-"}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td className="cell-status">
+                    <span className={`status-badge ${acc.status === "active" ? "active" : "inactive"}`}>
+                      {acc.status === "active" ? (
+                        <CheckCircle2 size={14} />
+                      ) : (
+                        <XCircle size={14} />
+                      )}
+                      {STATUS_LABELS[acc.status] || acc.status}
+                    </span>
+                  </td>
+
+                  <td className="cell-date">
+                    {formatAccountDate(acc.createdAt)}
+                  </td>
+
+                  <td className="cell-actions">
+                    <div className="table-actions">
+                      <button
+                        className="btn-icon btn-view"
+                        onClick={() => handleViewDetail(acc._id)}
+                        title="Xem chi tiết"
+                      >
+                        <Eye size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={7} className="table-empty-cell">
+                  {loading ? "Đang tải dữ liệu..." : "Không tìm thấy cư dân nào phù hợp."}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        {/* Pagination */}
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          totalItems={filteredAccounts.length}
+          onPageChange={setPage}
+        />
+      </div>
+
+      {/* Modal Chi tiết cư dân */}
+      <AppModal
+        open={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        title="Chi tiết cư dân"
+        icon={<User size={18} />}
+        color="blue"
+        size="md"
+        footer={
           <>
-            <div className="tenant-account-list-table-wrap">
-              <table className="tenant-account-list-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: "5%" }}>STT</th>
-                    <th style={{ width: "16%" }}>Họ và tên</th>
-                    <th style={{ width: "10%" }}>Phòng</th>
-                    <th style={{ width: "22%" }}>SĐT / Email</th>
-                    <th style={{ width: "12%" }}>Trạng thái</th>
-                    <th style={{ width: "12%" }}>Ngày tạo</th>
-                    <th style={{ width: "8%" }}>Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedAccounts.map((acc, index) => (
-                    <tr key={acc._id}>
-                      <td className="tenant-account-list-td-center">
-                        {(page - 1) * ROWS_PER_PAGE + index + 1}
-                      </td>
-                      <td>
-                        <span className="tenant-account-list-tenant-name">
-                          {acc.fullname || "-"}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="tenant-account-list-room-badge">
-                          {acc.roomName || "-"}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="tenant-account-list-contact-cell">
-                          <span className="tenant-account-list-contact-phone">
-                            {acc.phoneNumber || "-"}
-                          </span>
-                          <span className="tenant-account-list-contact-email">
-                            {acc.email || "-"}
-                          </span>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`tenant-account-list-status-badge tenant-account-list-status-${acc.status}`}>
-                          <span className="tenant-account-list-status-dot" />
-                          {STATUS_LABELS[acc.status] || acc.status}
-                        </span>
-                      </td>
-                      <td>{formatAccountDate(acc.createdAt)}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="tenant-account-list-btn-view"
-                          onClick={() => handleViewDetail(acc._id)}
-                          title="Xem chi tiết"
-                        >
-                          <VisibilityIcon sx={{ fontSize: 16 }} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <button
+              type="button"
+              className="ms-btn ms-btn--ghost"
+              onClick={() => setShowDetailModal(false)}
+            >
+              Đóng
+            </button>
+            {!isOwner && detailAccount && (
+              detailAccount.status === "active" ? (
+                <button
+                  type="button"
+                  className="ms-btn ms-btn--danger"
+                  onClick={() => handleDisable(detailAccount._id)}
+                  disabled={disablingId === detailAccount._id}
+                >
+                  <Lock size={16} />
+                  {disablingId === detailAccount._id ? "Đang xử lý..." : "Đóng tài khoản"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="ms-btn ms-btn--primary"
+                  onClick={() => handleEnable(detailAccount._id)}
+                  disabled={disablingId === detailAccount._id}
+                >
+                  <LockOpen size={16} />
+                  {disablingId === detailAccount._id ? "Đang xử lý..." : "Mở lại tài khoản"}
+                </button>
+              )
+            )}
+          </>
+        }
+      >
+        {detailLoading ? (
+          <div className="tenant-detail-loading">
+            <div className="tenant-detail-loading-spinner" />
+            <span className="tenant-detail-loading-text">Đang tải thông tin...</span>
+          </div>
+        ) : detailAccount ? (
+          <>
+            {/* Profile strip */}
+            <div className="tenant-detail-profile-strip">
+              <div className="tenant-detail-avatar">
+                {detailAccount.fullname
+                  ? detailAccount.fullname.split(" ").pop()?.charAt(0).toUpperCase() || "?"
+                  : detailAccount.username?.charAt(0).toUpperCase() || "?"}
+              </div>
+              <div className="tenant-detail-profile-info">
+                <div className="tenant-detail-profile-name">
+                  {detailAccount.fullname || "—"}
+                </div>
+                <div className="tenant-detail-profile-meta">
+                  <span className="tenant-detail-username-tag">
+                    @{detailAccount.username}
+                  </span>
+                  {detailAccount.status === "active" ? (
+                    <span className="tenant-detail-status-active">
+                      <span className="tenant-detail-status-dot" />
+                      Hoạt động
+                    </span>
+                  ) : (
+                    <span className="tenant-detail-status-inactive">
+                      <span className="tenant-detail-status-dot" />
+                      Không hoạt động
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Pagination */}
-            <div className="tenant-account-list-pagination">
-              <span className="tenant-account-list-pagination-info">
-                Tổng: <strong>{filteredAccounts.length}</strong> bản ghi · Trang <strong>{page}</strong>/<strong>{totalPages}</strong>
-              </span>
-              <div className="tenant-account-list-pagination-controls">
-                <button
-                  type="button"
-                  className="tenant-account-list-pagination-btn"
-                  disabled={page === 1}
-                  onClick={() => setPage(1)}
-                  title="Trang đầu"
-                >
-                  <FirstPageIcon sx={{ fontSize: 16 }} />
-                </button>
-                <button
-                  type="button"
-                  className="tenant-account-list-pagination-btn"
-                  disabled={page === 1}
-                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                  title="Trang trước"
-                >
-                  <PrevIcon sx={{ fontSize: 16 }} />
-                </button>
+            {/* Two-column layout */}
+            <div className="tenant-detail-two-col">
+              {/* Left column */}
+              <div className="tenant-detail-col-left">
+                {/* Contact info */}
+                <div className="tenant-detail-section">
+                  <div className="tenant-detail-section-title">
+                    <Contact size={15} className="tenant-detail-section-title-icon" />
+                    Thông tin liên hệ
+                  </div>
+                  <div className="tenant-detail-rows">
+                    <div className="tenant-detail-row">
+                      <span className="tenant-detail-label">Email</span>
+                      <span className="tenant-detail-value">
+                        {detailAccount.email || <span className="tenant-detail-value-empty">—</span>}
+                      </span>
+                    </div>
+                    <div className="tenant-detail-row">
+                      <span className="tenant-detail-label">SĐT</span>
+                      <span className="tenant-detail-value">
+                        {detailAccount.phoneNumber || <span className="tenant-detail-value-empty">—</span>}
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-                {getVisiblePages().map((pageNumber) => (
-                  <button
-                    key={pageNumber}
-                    type="button"
-                    className={`tenant-account-list-pagination-btn ${pageNumber === page ? "active" : ""}`}
-                    onClick={() => setPage(pageNumber)}
-                  >
-                    {pageNumber}
-                  </button>
-                ))}
+                {/* Legal info */}
+                <div className="tenant-detail-section">
+                  <div className="tenant-detail-section-title">
+                    <ShieldCheck size={15} className="tenant-detail-section-title-icon" />
+                    Thông tin pháp lý
+                  </div>
+                  <div className="tenant-detail-rows">
+                    <div className="tenant-detail-row">
+                      <span className="tenant-detail-label">CCCD / CMND</span>
+                      <span className="tenant-detail-value">
+                        {detailAccount.cccd || <span className="tenant-detail-value-empty">—</span>}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-                <button
-                  type="button"
-                  className="tenant-account-list-pagination-btn"
-                  disabled={page === totalPages}
-                  onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                  title="Trang sau"
-                >
-                  <NextIcon sx={{ fontSize: 16 }} />
-                </button>
-                <button
-                  type="button"
-                  className="tenant-account-list-pagination-btn"
-                  disabled={page === totalPages}
-                  onClick={() => setPage(totalPages)}
-                  title="Trang cuối"
-                >
-                  <LastPageIcon sx={{ fontSize: 16 }} />
-                </button>
+              {/* Right column */}
+              <div className="tenant-detail-col-right">
+                {/* Personal info */}
+                <div className="tenant-detail-section">
+                  <div className="tenant-detail-section-title">
+                    <PersonStanding size={15} className="tenant-detail-section-title-icon" />
+                    Thông tin cá nhân
+                  </div>
+                  <div className="tenant-detail-rows">
+                    <div className="tenant-detail-row">
+                      <span className="tenant-detail-label">Họ và tên</span>
+                      <span className="tenant-detail-value">
+                        {detailAccount.fullname || <span className="tenant-detail-value-empty">—</span>}
+                      </span>
+                    </div>
+                    <div className="tenant-detail-row">
+                      <span className="tenant-detail-label">Giới tính</span>
+                      <span className="tenant-detail-value">
+                        {detailAccount.gender === "Male"
+                          ? "Nam"
+                          : detailAccount.gender === "Female"
+                          ? "Nữ"
+                          : detailAccount.gender === "Other"
+                          ? "Khác"
+                          : <span className="tenant-detail-value-empty">—</span>}
+                      </span>
+                    </div>
+                    <div className="tenant-detail-row">
+                      <span className="tenant-detail-label">Ngày sinh</span>
+                      <span className="tenant-detail-value">
+                        {detailAccount.dob ? formatAccountDate(detailAccount.dob) : <span className="tenant-detail-value-empty">—</span>}
+                      </span>
+                    </div>
+                    <div className="tenant-detail-row">
+                      <span className="tenant-detail-label">Địa chỉ</span>
+                      <span className="tenant-detail-value">
+                        {detailAccount.address || <span className="tenant-detail-value-empty">—</span>}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </>
-        )}
-      </div>
-
-      {/* Detail Modal */}
-      {showDetailModal && (
-        <div className="tenant-detail-overlay" onClick={() => setShowDetailModal(false)}>
-          <div className="tenant-detail-modal" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div className="tenant-detail-header">
-              <div className="tenant-detail-header-title">
-                <div className="tenant-detail-header-icon">
-                  <PersonIcon sx={{ fontSize: 20 }} />
-                </div>
-                Chi tiết cư dân
-              </div>
-              <button
-                type="button"
-                className="tenant-detail-close-btn"
-                onClick={() => setShowDetailModal(false)}
-                aria-label="Đóng"
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="tenant-detail-body">
-              {detailLoading ? (
-                <div className="tenant-detail-loading">
-                  <div className="tenant-detail-loading-spinner" />
-                  <span className="tenant-detail-loading-text">Đang tải thông tin...</span>
-                </div>
-              ) : detailAccount ? (
-                <>
-                  {/* Profile strip */}
-                  <div className="tenant-detail-profile-strip">
-                    <div className="tenant-detail-avatar">
-                      {detailAccount.fullname
-                        ? detailAccount.fullname.split(" ").pop()?.charAt(0).toUpperCase() || "?"
-                        : detailAccount.username?.charAt(0).toUpperCase() || "?"}
-                    </div>
-                    <div className="tenant-detail-profile-info">
-                      <div className="tenant-detail-profile-name">
-                        {detailAccount.fullname || "—"}
-                      </div>
-                      <div className="tenant-detail-profile-meta">
-                        <span className="tenant-detail-username-tag">
-                          @{detailAccount.username}
-                        </span>
-                        {detailAccount.status === "active" ? (
-                          <span className="tenant-detail-status-active">
-                            <span className="tenant-detail-status-dot" />
-                            Hoạt động
-                          </span>
-                        ) : (
-                          <span className="tenant-detail-status-inactive">
-                            <span className="tenant-detail-status-dot" />
-                            Không hoạt động
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Two-column layout */}
-                  <div className="tenant-detail-two-col">
-                    {/* Left column */}
-                    <div className="tenant-detail-col-left">
-                      {/* Contact info */}
-                      <div className="tenant-detail-section">
-                        <div className="tenant-detail-section-title">
-                          <ContactPhoneIcon className="tenant-detail-section-title-icon" sx={{ fontSize: 15 }} />
-                          Thông tin liên hệ
-                        </div>
-                        <div className="tenant-detail-rows">
-                          <div className="tenant-detail-row">
-                            <span className="tenant-detail-label">Email</span>
-                            <span className="tenant-detail-value">
-                              {detailAccount.email || <span className="tenant-detail-value-empty">—</span>}
-                            </span>
-                          </div>
-                          <div className="tenant-detail-row">
-                            <span className="tenant-detail-label">SĐT</span>
-                            <span className="tenant-detail-value">
-                              {detailAccount.phoneNumber || <span className="tenant-detail-value-empty">—</span>}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Legal info */}
-                      <div className="tenant-detail-section">
-                        <div className="tenant-detail-section-title">
-                          <GavelIcon className="tenant-detail-section-title-icon" sx={{ fontSize: 15 }} />
-                          Thông tin pháp lý
-                        </div>
-                        <div className="tenant-detail-rows">
-                          <div className="tenant-detail-row">
-                            <span className="tenant-detail-label">CCCD / CMND</span>
-                            <span className="tenant-detail-value">
-                              {detailAccount.cccd || <span className="tenant-detail-value-empty">—</span>}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right column */}
-                    <div className="tenant-detail-col-right">
-                      {/* Personal info */}
-                      <div className="tenant-detail-section">
-                        <div className="tenant-detail-section-title">
-                          <BadgeIcon className="tenant-detail-section-title-icon" sx={{ fontSize: 15 }} />
-                          Thông tin cá nhân
-                        </div>
-                        <div className="tenant-detail-rows">
-                          <div className="tenant-detail-row">
-                            <span className="tenant-detail-label">Họ và tên</span>
-                            <span className="tenant-detail-value">
-                              {detailAccount.fullname || <span className="tenant-detail-value-empty">—</span>}
-                            </span>
-                          </div>
-                          <div className="tenant-detail-row">
-                            <span className="tenant-detail-label">Giới tính</span>
-                            <span className="tenant-detail-value">
-                              {detailAccount.gender === "Male"
-                                ? "Nam"
-                                : detailAccount.gender === "Female"
-                                ? "Nữ"
-                                : detailAccount.gender === "Other"
-                                ? "Khác"
-                                : <span className="tenant-detail-value-empty">—</span>}
-                            </span>
-                          </div>
-                          <div className="tenant-detail-row">
-                            <span className="tenant-detail-label">Ngày sinh</span>
-                            <span className="tenant-detail-value">
-                              {detailAccount.dob ? formatAccountDate(detailAccount.dob) : <span className="tenant-detail-value-empty">—</span>}
-                            </span>
-                          </div>
-                          <div className="tenant-detail-row">
-                            <span className="tenant-detail-label">Địa chỉ</span>
-                            <span className="tenant-detail-value">
-                              {detailAccount.address || <span className="tenant-detail-value-empty">—</span>}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  {!isOwner && (
-                    <div className="tenant-detail-actions">
-                      {detailAccount.status === "active" ? (
-                        <button
-                          type="button"
-                          className="tenant-detail-btn-disable"
-                          onClick={() => handleDisable(detailAccount._id)}
-                          disabled={disablingId === detailAccount._id}
-                        >
-                          <LockIcon sx={{ fontSize: 16 }} />
-                          {disablingId === detailAccount._id ? "Đang xử lý..." : "Đóng tài khoản"}
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="tenant-detail-btn-enable"
-                          onClick={() => handleEnable(detailAccount._id)}
-                          disabled={disablingId === detailAccount._id}
-                        >
-                          <LockOpenIcon sx={{ fontSize: 16 }} />
-                          {disablingId === detailAccount._id ? "Đang xử lý..." : "Mở lại tài khoản"}
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      )}
+        ) : null}
+      </AppModal>
     </div>
   );
 }
