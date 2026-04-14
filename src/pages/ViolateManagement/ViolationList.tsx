@@ -1,7 +1,20 @@
-import { useCallback, useEffect, useState } from 'react';
-import { CheckCircle2, Eye, Plus, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Plus, Search, Eye, X,
+  Filter, ArrowUpDown,
+  ShieldAlert,
+  CheckCircle2,
+  FileText,
+  LayoutGrid,
+  Image as ImageIcon,
+  DollarSign,
+  Clock,
+} from 'lucide-react';
 import { Autocomplete, TextField, createFilterOptions } from '@mui/material';
-import violateService, { Violation, type CreateViolationPayload } from '../../services/violateService';
+import { AppModal } from '../../components/common/Modal';
+import { Pagination } from '../../components/common/Pagination';
+import { useToast } from '../../components/common/Toast';
+import violateService, { type Violation, type CreateViolationPayload } from '../../services/violateService';
 import api from '../../services/api';
 import './ViolationList.css';
 
@@ -28,26 +41,26 @@ interface ViolationWithDetails extends Violation {
 }
 
 export default function ViolationList() {
+  const { showToast } = useToast();
   const [violations, setViolations] = useState<ViolationWithDetails[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingContracts, setLoadingContracts] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [selectedViolation, setSelectedViolation] = useState<ViolationWithDetails | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'Unpaid' | 'Paid'>('ALL');
   const [roomSearch, setRoomSearch] = useState<string>('');
   const [tenantSearch, setTenantSearch] = useState<string>('');
+  const [sortOption, setSortOption] = useState('newest');
+
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage, setItemsPerPage] = useState<number>(11);
-  const [totalItems, setTotalItems] = useState<number>(0);
-  const [totalPages, setTotalPages] = useState<number>(0);
+  const itemsPerPage = 11;
+
   const [violationCode, setViolationCode] = useState<string>('');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
-  const [toast, setToast] = useState<{ title: string; message: string } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Create form state
   const [formData, setFormData] = useState<{
@@ -74,7 +87,9 @@ export default function ViolationList() {
     dueDate: '',
   });
 
-  // Scroll to top on mount
+  // Modal states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
   useEffect(() => {
     const main = document.querySelector('.dashboard-layout-main') as HTMLElement | null;
     if (main) {
@@ -87,7 +102,6 @@ export default function ViolationList() {
   const fetchViolations = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
       const response = await violateService.getViolations({
         status: statusFilter === 'ALL' ? undefined : statusFilter,
         page: currentPage,
@@ -103,53 +117,37 @@ export default function ViolationList() {
           tenantPhone: v.contractId?.tenantId?.phoneNumber || '-',
         }));
         setViolations(transformedData);
-        setTotalItems(response.total || response.data.length);
-        setTotalPages(response.totalPages || Math.ceil(response.data.length / itemsPerPage));
       } else {
         setViolations([]);
-        setTotalItems(0);
-        setTotalPages(0);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Lỗi khi tải danh sách vi phạm:', err);
-      const msg = err?.response?.data?.message || 'Không thể tải danh sách vi phạm';
-      setError(msg);
+      const e = err as { response?: { data?: { message?: string } } };
+      showToast('error', 'Lỗi', e.response?.data?.message || 'Không thể tải danh sách vi phạm.');
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, currentPage, itemsPerPage]);
+  }, [statusFilter, currentPage, showToast]);
 
   useEffect(() => {
     fetchViolations();
   }, [fetchViolations]);
 
   useEffect(() => {
-    if (!toast) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      setToast(null);
-    }, 4000);
-
-    return () => window.clearTimeout(timer);
-  }, [toast]);
+    setCurrentPage(1);
+  }, [statusFilter, roomSearch, tenantSearch, sortOption]);
 
   const fetchContracts = useCallback(async () => {
     try {
       setLoadingContracts(true);
-      console.log('[ViolationList] Fetching contracts with status=Active...');
       const response = await api.get('/contracts', { params: { status: 'Active' } });
-      console.log('[ViolationList] Contracts response:', response.data);
       if (response.data.success && Array.isArray(response.data.data)) {
-        console.log('[ViolationList] Setting contracts:', response.data.data.length, 'items');
         setContracts(response.data.data);
       } else {
-        console.log('[ViolationList] No contracts data or not array');
         setContracts([]);
       }
-    } catch (err: any) {
-      console.error('Lỗi khi tải danh sách hợp đồng:', err);
+    } catch {
+      console.error('Lỗi khi tải danh sách hợp đồng');
     } finally {
       setLoadingContracts(false);
     }
@@ -163,8 +161,8 @@ export default function ViolationList() {
       if (response?.success) {
         setViolationCode(response.data?.invoiceCode || '');
       }
-    } catch (err) {
-      console.error('Lỗi khi lấy mã vi phạm:', err);
+    } catch {
+      console.error('Lỗi khi lấy mã vi phạm');
       setViolationCode('');
     }
   };
@@ -235,7 +233,6 @@ export default function ViolationList() {
 
     try {
       setSubmitting(true);
-      setError(null);
 
       const payload: CreateViolationPayload = {
         contractId: formData.contractId,
@@ -251,17 +248,14 @@ export default function ViolationList() {
       const response = await violateService.createViolation(payload);
 
       if (response.success) {
-        setToast({
-          title: 'Thành công',
-          message: 'Tạo vi phạm thành công!',
-        });
+        showToast('success', 'Thành công', 'Tạo vi phạm thành công!');
         closeCreateModal();
         fetchViolations();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Lỗi khi tạo vi phạm:', err);
-      const msg = err?.response?.data?.message || 'Không thể tạo vi phạm';
-      setError(msg);
+      const e = err as { response?: { data?: { message?: string } } };
+      showToast('error', 'Lỗi hệ thống', e.response?.data?.message || 'Không thể tạo vi phạm.');
     } finally {
       setSubmitting(false);
     }
@@ -286,25 +280,23 @@ export default function ViolationList() {
 
   const handleImagesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
-    if (files.length === 0) {
-      return;
-    }
+    if (files.length === 0) return;
 
     try {
       setUploadingImages(true);
-      const formDataUpload = new FormData();
-      files.forEach((file) => formDataUpload.append('images', file));
+      const fd = new FormData();
+      files.forEach((file) => fd.append('images', file));
 
-      const response = await api.post('/upload/images', formDataUpload, {
+      const response = await api.post('/upload/images', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       if (response.data?.success) {
         setUploadedImages((prev) => [...prev, ...(response.data.data?.urls || [])]);
       }
-    } catch (err) {
-      console.error('Lỗi upload ảnh vi phạm:', err);
-      setError('Không thể upload ảnh vi phạm');
+    } catch {
+      console.error('Lỗi upload ảnh vi phạm');
+      showToast('error', 'Lỗi', 'Không thể upload ảnh vi phạm.');
     } finally {
       setUploadingImages(false);
       e.target.value = '';
@@ -324,40 +316,6 @@ export default function ViolationList() {
       return `${roomName} ${tenantName} ${contractCode}`;
     },
   });
-
-  // Reset về trang 1 khi thay đổi filter
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [statusFilter, roomSearch, tenantSearch]);
-
-  // ─── Control body overflow when modal opens ───────────────────────────────
-  useEffect(() => {
-    document.body.style.overflow = '';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, []);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const handleItemsPerPageChange = (limit: number) => {
-    setItemsPerPage(limit);
-    setCurrentPage(1);
-  };
-
-  const getVisiblePages = () => {
-    const pages: number[] = [];
-    let start = Math.max(1, currentPage - 2);
-    let end = Math.min(totalPages, currentPage + 2);
-
-    if (currentPage <= 2) end = Math.min(totalPages, 5);
-    if (currentPage >= totalPages - 1) start = Math.max(1, totalPages - 4);
-
-    for (let i = start; i <= end; i += 1) pages.push(i);
-    return pages;
-  };
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '-';
@@ -384,570 +342,545 @@ export default function ViolationList() {
     setSelectedImage(null);
   };
 
-  const filteredViolations = violations.filter((v) => {
-    if (roomSearch && !v.roomName?.toLowerCase().includes(roomSearch.toLowerCase())) {
-      return false;
-    }
-    if (tenantSearch && !v.tenantName?.toLowerCase().includes(tenantSearch.toLowerCase())) {
-      return false;
-    }
-    return true;
-  });
+  // --- Stats ---
+  const totalCount = violations.length;
+  const unpaidCount = violations.filter((v) => v.status === 'Unpaid').length;
+  const paidCount = violations.filter((v) => v.status === 'Paid').length;
 
-  // Get selected contract for display
+  // --- Processed list (client-side search, sort is server-side via API) ---
+  const displayedViolations = useMemo(() => {
+    let result = [...violations];
+
+    result = result.filter((v) => {
+      const matchRoom = !roomSearch || v.roomName?.toLowerCase().includes(roomSearch.toLowerCase());
+      const matchTenant = !tenantSearch || v.tenantName?.toLowerCase().includes(tenantSearch.toLowerCase());
+      return matchRoom && matchTenant;
+    });
+
+    if (sortOption === 'name-asc') {
+      result.sort((a, b) => (a.tenantName || '').localeCompare(b.tenantName || ''));
+    } else if (sortOption === 'name-desc') {
+      result.sort((a, b) => (b.tenantName || '').localeCompare(a.tenantName || ''));
+    }
+
+    return result;
+  }, [violations, roomSearch, tenantSearch, sortOption]);
+
+  const totalPages = Math.ceil(totalCount / itemsPerPage) || 1;
   const selectedContract = contracts.find(c => c._id === formData.contractId);
 
+  const hasFilters = roomSearch || tenantSearch || statusFilter !== 'ALL';
+
+  const clearFilters = () => {
+    setRoomSearch('');
+    setTenantSearch('');
+    setStatusFilter('ALL');
+  };
+
   return (
-    <div className="violation-requests-page">
-      {toast && (
-        <div className="success-toast" role="status" aria-live="polite">
-          <div className="success-toast-icon">
-            <CheckCircle2 size={20} />
-          </div>
-          <div className="success-toast-content">
-            <div className="success-toast-title">{toast.title}</div>
-            <div className="success-toast-message">{toast.message}</div>
-          </div>
-          <button
-            type="button"
-            className="success-toast-close"
-            onClick={() => setToast(null)}
-            aria-label="Đóng thông báo"
-          >
-            ×
-          </button>
-        </div>
-      )}
+    <div className="violation-container">
 
-      <div className="violation-requests-card">
-        <div className="violation-requests-header">
-          <div>
-            <h1>Danh sách xử lý vi phạm</h1>
-            <p className="subtitle">
-              Quản lý các vi phạm và bồi thường của cư dân
-            </p>
+      {/* HEADER */}
+      <div className="violation-header">
+        <div className="violation-header-top">
+          <div className="violation-title-block">
+            <div className="violation-title-row">
+              <div className="violation-title-icon" aria-hidden>
+                <ShieldAlert size={22} strokeWidth={2} />
+              </div>
+              <div className="violation-title-text">
+                <h2>Quản lý Xử lý Vi phạm</h2>
+                <p className="violation-subtitle">
+                  Quản lý các vi phạm và bồi thường của cư dân trong tòa nhà Hoàng Nam.
+                </p>
+              </div>
+            </div>
           </div>
-          <button className="btn-create-violation" onClick={openCreateModal}>
-            <Plus size={20} />
-            Tạo vi phạm mới
-          </button>
-        </div>
 
-        <div className="violation-requests-filters">
-          <div className="violation-filter-wrapper">
-            <label htmlFor="tenant-search" className="violation-filter-label">
-              Cư dân:
-            </label>
+          <div className="violation-header-aside">
+            <div className="violation-stats-summary">
+              <div className="violation-stat-item">
+                <div className="violation-stat-icon icon-accent">
+                  <FileText size={16} strokeWidth={2} />
+                </div>
+                <div className="violation-stat-text">
+                  <span className="violation-stat-value">{totalCount}</span>
+                  <span className="violation-stat-label">Tổng số</span>
+                </div>
+              </div>
+              <div className="violation-stat-divider" />
+              <div className="violation-stat-item">
+                <div className="violation-stat-icon icon-warning">
+                  <Clock size={16} strokeWidth={2} />
+                </div>
+                <div className="violation-stat-text">
+                  <span className="violation-stat-value">{unpaidCount}</span>
+                  <span className="violation-stat-label">Chờ thanh toán</span>
+                </div>
+              </div>
+              <div className="violation-stat-divider" />
+              <div className="violation-stat-item">
+                <div className="violation-stat-icon icon-primary">
+                  <CheckCircle2 size={16} strokeWidth={2} />
+                </div>
+                <div className="violation-stat-text">
+                  <span className="violation-stat-value">{paidCount}</span>
+                  <span className="violation-stat-label">Đã thanh toán</span>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" className="btn-primary violation-add-btn" onClick={openCreateModal}>
+              <Plus size={18} /> Tạo vi phạm mới
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* TOOLBAR */}
+      <div className="violation-toolbar">
+        <div className="violation-toolbar-left">
+          <div className="search-box">
+            <Search size={18} className="search-icon" />
             <input
               type="text"
-              id="tenant-search"
-              className="violation-filter-select"
-              placeholder="Nhập tên cư dân"
+              className="search-input"
+              placeholder="Tìm theo tên cư dân..."
               value={tenantSearch}
               onChange={(e) => setTenantSearch(e.target.value)}
             />
           </div>
-          <div className="violation-filter-wrapper">
-            <label htmlFor="room-search" className="violation-filter-label">
-              Phòng:
-            </label>
+
+          <div className="search-box">
+            <LayoutGrid size={18} className="search-icon" />
             <input
               type="text"
-              id="room-search"
-              className="violation-filter-select"
-              placeholder="Nhập số phòng"
+              className="search-input"
+              placeholder="Tìm theo số phòng..."
               value={roomSearch}
               onChange={(e) => setRoomSearch(e.target.value)}
             />
           </div>
-          <div className="violation-filter-wrapper">
-            <label htmlFor="status-filter" className="violation-filter-label">
-              Trạng thái:
-            </label>
+
+          <div className="control-group">
+            <Filter size={16} className="violation-toolbar-icon" aria-hidden />
             <select
-              id="status-filter"
-              className="violation-filter-select"
+              className="custom-select"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'Unpaid' | 'Paid')}
             >
-              <option value="ALL">Tất cả</option>
+              <option value="ALL">Tất cả trạng thái</option>
               <option value="Unpaid">Chờ thanh toán</option>
               <option value="Paid">Đã thanh toán</option>
             </select>
           </div>
+
+          {hasFilters && (
+            <button type="button" className="violation-btn-clear-filter" onClick={clearFilters}>
+              Xóa lọc
+            </button>
+          )}
         </div>
 
-        {error && (
-          <div className="violation-error">
-            <p>{error}</p>
-          </div>
-        )}
+        <div className="violation-toolbar-right">
+          <ArrowUpDown size={16} className="violation-toolbar-icon" aria-hidden />
+          <select
+            className="custom-select"
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+          >
+            <option value="newest">Mới nhất</option>
+            <option value="name-asc">Tên: A - Z</option>
+            <option value="name-desc">Tên: Z - A</option>
+          </select>
+        </div>
+      </div>
 
-        {!loading && !error && violations.length === 0 && (
-          <div className="violation-empty">
-            <p>Chưa có vi phạm nào.</p>
-          </div>
-        )}
+      {/* BẢNG DỮ LIỆU */}
+      <div className="violation-table-container">
+        <table className="violation-table">
+          <thead>
+            <tr>
+              <th className="cell-stt">STT</th>
+              <th className="cell-code">Mã vi phạm</th>
+              <th className="cell-tenant">Cư dân</th>
+              <th className="cell-room">Phòng</th>
+              <th className="cell-title">Tiêu đề</th>
+              <th className="cell-amount">Số tiền (VNĐ)</th>
+              <th className="cell-status">Trạng thái</th>
+              <th className="cell-date">Ngày tạo</th>
+              <th className="cell-due">Hạn thanh toán</th>
+              <th className="cell-actions">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayedViolations.length > 0 ? (
+              displayedViolations.map((v, index) => (
+                <tr key={v._id}>
+                  <td className="cell-stt">
+                    {(currentPage - 1) * itemsPerPage + index + 1}
+                  </td>
 
-        {!loading && !error && violations.length > 0 && (
-          <div className="violation-table-wrap">
-            <table className="violation-table">
-              <thead>
-                <tr>
-                  <th>STT</th>
-                  <th>Mã vi phạm</th>
-                  <th>Cư dân</th>
-                  <th>Phòng</th>
-                  <th>Tiêu đề</th>
-                  <th>Số tiền (VNĐ)</th>
-                  <th>Trạng thái</th>
-                  <th>Ngày tạo</th>
-                  <th>Hạn thanh toán</th>
-                  <th>Thao tác</th>
+                  <td className="cell-code">
+                    <span className="violation-code-text">{v.invoiceCode}</span>
+                  </td>
+
+                  <td className="cell-tenant">
+                    {v.tenantName || '-'}
+                  </td>
+
+                  <td className="cell-room">
+                    <span className="room-badge">{v.roomName || '-'}</span>
+                  </td>
+
+                  <td className="cell-title">
+                    {v.title}
+                  </td>
+
+                  <td className="cell-amount">
+                    {v.totalAmount?.toLocaleString('vi-VN') || 0}
+                  </td>
+
+                  <td className="cell-status">
+                    <span className={`status-badge ${v.status === 'Paid' ? 'active' : 'pending'}`}>
+                      {v.status === 'Paid' ? (
+                        <CheckCircle2 size={14} />
+                      ) : (
+                        <Clock size={14} />
+                      )}
+                      {getStatusLabel(v.status)}
+                    </span>
+                  </td>
+
+                  <td className="cell-date">
+                    {formatDate(v.createdAt)}
+                  </td>
+
+                  <td className="cell-due">
+                    {formatDate(v.dueDate)}
+                  </td>
+
+                  <td className="cell-actions">
+                    <div className="table-actions">
+                      <button
+                        className="btn-icon btn-view"
+                        onClick={() => handleViewDetail(v)}
+                        title="Xem chi tiết"
+                      >
+                        <Eye size={16} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {filteredViolations.map((v, index) => (
-                  <tr key={v._id}>
-                    <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                    <td>
-                      <div className="cell-main">
-                        <div className="cell-title">{v.invoiceCode}</div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="cell-main">
-                        <div className="cell-title">{v.tenantName}</div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="cell-main">
-                        <div className="cell-title">{v.roomName}</div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="cell-main">
-                        <div className="cell-title">{v.title}</div>
-                      </div>
-                    </td>
-                    <td>{v.totalAmount?.toLocaleString('vi-VN') || 0}</td>
-                    <td>
-                      <span className={`status-badge status-${v.status.toLowerCase()}`}>
-                        {getStatusLabel(v.status)}
-                      </span>
-                    </td>
-                    <td>{formatDate(v.createdAt)}</td>
-                    <td>{formatDate(v.dueDate)}</td>
-                    <td>
-                      <div className="action-buttons">
-                        <button
-                          type="button"
-                          className="btn-view-detail"
-                          onClick={() => handleViewDetail(v)}
-                          title="Xem chi tiết"
-                        >
-                          <Eye size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))
+            ) : (
+              <tr>
+                <td colSpan={10} className="table-empty-cell">
+                  {loading ? 'Đang tải dữ liệu...' : 'Không tìm thấy vi phạm nào phù hợp.'}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
 
         {/* Pagination */}
-        {totalPages > 0 && (
-          <div className="violation-pagination violation-pagination--manager">
-            <div className="violation-pagination-info">
-              <span>
-                Hiển thị <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> -{' '}
-                <strong>{Math.min(currentPage * itemsPerPage, totalItems)}</strong> trong{' '}
-                <strong>{totalItems}</strong> kết quả
-              </span>
-            </div>
-            <div className="violation-pagination-items-per-page">
-            </div>
-            <div className="violation-pagination-controls">
-              <button
-                type="button"
-                className="pagination-arrow-btn"
-                onClick={() => handlePageChange(1)}
-                disabled={currentPage === 1}
-              >
-                <span className="repair-page-arrow">«</span>
-              </button>
-              <button
-                type="button"
-                className="pagination-arrow-btn"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <span className="repair-page-arrow">‹</span>
-              </button>
-              {getVisiblePages().map((page) => (
-                <button
-                  key={page}
-                  type="button"
-                  className={`violation-pagination-number ${currentPage === page ? 'active' : ''}`}
-                  onClick={() => handlePageChange(page)}
-                >
-                  {page}
-                </button>
-              ))}
-              <button
-                type="button"
-                className="pagination-arrow-btn"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                <span className="repair-page-arrow">›</span>
-              </button>
-              <button
-                type="button"
-                className="pagination-arrow-btn"
-                onClick={() => handlePageChange(totalPages)}
-                disabled={currentPage === totalPages}
-              >
-                <span className="repair-page-arrow">»</span>
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={displayedViolations.length}
+          onPageChange={setCurrentPage}
+        />
+      </div>
 
-        {/* Modal xem chi tiết */}
+      {/* ==================================================================
+          CÁC MODAL
+          ================================================================== */}
+
+      {/* 1. Modal Chi tiết vi phạm */}
+      <AppModal
+        open={!!selectedViolation}
+        onClose={handleCloseDetail}
+        title="Chi tiết vi phạm"
+        icon={<ShieldAlert size={18} />}
+        color="blue"
+        size="md"
+        footer={
+          <button type="button" className="ms-btn ms-btn--ghost" onClick={handleCloseDetail}>
+            Đóng
+          </button>
+        }
+      >
         {selectedViolation && (
-          <div className="violation-modal-overlay" onClick={handleCloseDetail}>
-            <div className="violation-modal violation-detail-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="violation-modal-header">
-                <h2>Chi tiết vi phạm</h2>
-                <button
-                  type="button"
-                  className="modal-close-btn"
-                  onClick={handleCloseDetail}
-                  aria-label="Đóng"
-                >
-                  ×
-                </button>
+          <div className="vl-detail-body">
+            {/* Profile strip */}
+            <div className="vl-profile-strip">
+              <div className="vl-avatar">
+                {(selectedViolation.tenantName || '?').charAt(0).toUpperCase()}
               </div>
-              <div className="violation-modal-body">
-                <div className="detail-grid-layout">
-                  {/* Thông tin vi phạm */}
-                  <div className="detail-section">
-                    <div className="detail-section-header">
-                      <div className="detail-section-icon">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                          <polyline points="14 2 14 8 20 8"/>
-                          <line x1="16" y1="13" x2="8" y2="13"/>
-                          <line x1="16" y1="17" x2="8" y2="17"/>
-                          <polyline points="10 9 9 9 8 9"/>
-                        </svg>
-                      </div>
-                      <span className="detail-section-title">Thông tin vi phạm</span>
+              <div className="vl-profile-info">
+                <div className="vl-profile-name">{selectedViolation.tenantName}</div>
+                <div className="vl-profile-meta">
+                  <span className="vl-meta-tag">{selectedViolation.roomName}</span>
+                  <span className={`vl-status-tag ${selectedViolation.status === 'Paid' ? 'vl-status-paid' : 'vl-status-unpaid'}`}>
+                    {selectedViolation.status === 'Paid' ? (
+                      <CheckCircle2 size={12} />
+                    ) : (
+                      <Clock size={12} />
+                    )}
+                    {getStatusLabel(selectedViolation.status)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Info sections */}
+            <div className="vl-two-col">
+              {/* Left */}
+              <div className="vl-col-left">
+                <div className="vl-section">
+                  <div className="vl-section-title">
+                    <ShieldAlert size={15} />
+                    Thông tin vi phạm
+                  </div>
+                  <div className="vl-rows">
+                    <div className="vl-row">
+                      <span className="vl-label">Mã vi phạm</span>
+                      <span className="vl-value">{selectedViolation.invoiceCode}</span>
                     </div>
-                    <div className="detail-grid-fields">
-                      <div className="detail-field">
-                        <span className="detail-field-label">Mã vi phạm</span>
-                        <span className="detail-field-value">{selectedViolation.invoiceCode}</span>
-                      </div>
-                      <div className="detail-field">
-                        <span className="detail-field-label">Trạng thái</span>
-                        <span className="detail-field-value">
-                          <span className={`status-badge status-${selectedViolation.status.toLowerCase()}`}>
-                            {getStatusLabel(selectedViolation.status)}
-                          </span>
-                        </span>
-                      </div>
-                      <div className="detail-field" style={{ gridColumn: 'span 2' }}>
-                        <span className="detail-field-label">Nội dung vi phạm</span>
-                        <span className="detail-email-value">{selectedViolation.title}</span>
-                      </div>
+                    <div className="vl-row">
+                      <span className="vl-label">Tiêu đề</span>
+                      <span className="vl-value vl-value--break">{selectedViolation.title}</span>
                     </div>
                   </div>
+                </div>
 
-                  {/* Thông tin cư dân */}
-                  <div className="detail-section">
-                    <div className="detail-section-header">
-                      <div className="detail-section-icon" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                          <circle cx="12" cy="7" r="4"/>
-                        </svg>
-                      </div>
-                      <span className="detail-section-title">Thông tin cư dân</span>
+                <div className="vl-section">
+                  <div className="vl-section-title">
+                    <DollarSign size={15} />
+                    Thông tin thanh toán
+                  </div>
+                  <div className="vl-rows">
+                    <div className="vl-row">
+                      <span className="vl-label">Số tiền</span>
+                      <span className="vl-value vl-value--amount">
+                        {selectedViolation.totalAmount?.toLocaleString('vi-VN')} VNĐ
+                      </span>
                     </div>
-                    <div className="detail-grid-fields">
-                      <div className="detail-field">
-                        <span className="detail-field-label">Cư dân</span>
-                        <span className="detail-field-value">{selectedViolation.tenantName}</span>
-                      </div>
-                      <div className="detail-field">
-                        <span className="detail-field-label">Phòng</span>
-                        <span className="detail-field-value">{selectedViolation.roomName}</span>
-                      </div>
-                      <div className="detail-field" style={{ gridColumn: 'span 2' }}>
-                        <span className="detail-field-label">Số điện thoại</span>
-                        <span className="detail-field-value">{selectedViolation.tenantPhone}</span>
-                      </div>
+                    <div className="vl-row">
+                      <span className="vl-label">Hạn thanh toán</span>
+                      <span className="vl-value">{formatDate(selectedViolation.dueDate)}</span>
+                    </div>
+                    <div className="vl-row">
+                      <span className="vl-label">Ngày tạo</span>
+                      <span className="vl-value">{formatDate(selectedViolation.createdAt)}</span>
                     </div>
                   </div>
+                </div>
+              </div>
 
-                  {/* Thông tin thanh toán */}
-                  <div className="detail-section">
-                    <div className="detail-section-header">
-                      <div className="detail-section-icon" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <line x1="12" y1="1" x2="12" y2="23"/>
-                          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                        </svg>
-                      </div>
-                      <span className="detail-section-title">Thông tin thanh toán</span>
-                    </div>
-                    <div className="detail-grid-fields">
-                      <div className="detail-field">
-                        <span className="detail-field-label">Số tiền</span>
-                        <span className="detail-field-value detail-amount">
-                          {selectedViolation.totalAmount?.toLocaleString('vi-VN')} VNĐ
-                        </span>
-                      </div>
-                      <div className="detail-field">
-                        <span className="detail-field-label">Hạn thanh toán</span>
-                        <span className="detail-field-value">{formatDate(selectedViolation.dueDate)}</span>
-                      </div>
-                      <div className="detail-field">
-                        <span className="detail-field-label">Ngày tạo</span>
-                        <span className="detail-field-value">{formatDate(selectedViolation.createdAt)}</span>
-                      </div>
-                    </div>
+              {/* Right */}
+              <div className="vl-col-right">
+                <div className="vl-section">
+                  <div className="vl-section-title">
+                    <ImageIcon size={15} />
+                    Hình ảnh ({selectedViolation.images?.length || 0})
                   </div>
-
-                  {/* Hình ảnh */}
-                  {selectedViolation.images && selectedViolation.images.length > 0 && (
-                    <div className="detail-section">
-                      <div className="detail-section-header">
-                        <div className="detail-section-icon" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                            <circle cx="8.5" cy="8.5" r="1.5"/>
-                            <polyline points="21 15 16 10 5 21"/>
-                          </svg>
-                        </div>
-                        <span className="detail-section-title">Hình ảnh ({selectedViolation.images.length})</span>
-                      </div>
-                      <div className="detail-images-grid">
-                        {selectedViolation.images.map((url) => (
-                          <button
-                            key={url}
-                            type="button"
-                            className="detail-image-item"
-                            onClick={() => setSelectedImage(url)}
-                          >
-                            <img src={url} alt="Ảnh vi phạm" />
-                          </button>
-                        ))}
-                      </div>
+                  {selectedViolation.images && selectedViolation.images.length > 0 ? (
+                    <div className="vl-images-grid">
+                      {selectedViolation.images.map((url) => (
+                        <button
+                          key={url}
+                          type="button"
+                          className="vl-image-btn"
+                          onClick={() => setSelectedImage(url)}
+                        >
+                          <img src={url} alt="Ảnh vi phạm" />
+                        </button>
+                      ))}
                     </div>
+                  ) : (
+                    <div className="vl-images-empty">Chưa có hình ảnh.</div>
                   )}
                 </div>
               </div>
             </div>
           </div>
         )}
+      </AppModal>
 
-        {selectedImage && (
-          <div className="violation-modal-overlay" onClick={() => setSelectedImage(null)}>
-            <div className="violation-image-modal" onClick={(e) => e.stopPropagation()}>
-              <img src={selectedImage} alt="Ảnh vi phạm" />
-              <button
-                type="button"
-                className="modal-close-btn"
-                onClick={() => setSelectedImage(null)}
-                aria-label="Đóng"
-              >
-                ×
-              </button>
+      {/* 2. Modal Xem ảnh fullscreen */}
+      <AppModal
+        open={!!selectedImage}
+        onClose={() => setSelectedImage(null)}
+        size="md"
+        hideClose
+      >
+        <div className="vl-image-fullscreen">
+          <img src={selectedImage || ''} alt="Ảnh vi phạm" />
+        </div>
+      </AppModal>
+
+      {/* 3. Modal Tạo vi phạm mới */}
+      <AppModal
+        open={showCreateModal}
+        onClose={closeCreateModal}
+        title="Tạo vi phạm mới"
+        icon={<Plus size={18} />}
+        color="blue"
+        size="md"
+        footer={
+          <>
+            <button type="button" className="ms-btn ms-btn--ghost" onClick={closeCreateModal}>
+              Hủy bỏ
+            </button>
+            <button
+              type="submit"
+              form="vl-create-form"
+              className="ms-btn ms-btn--primary"
+              disabled={submitting || loadingContracts}
+            >
+              <CheckCircle2 size={16} />
+              {submitting ? 'Đang tạo...' : 'Tạo vi phạm'}
+            </button>
+          </>
+        }
+      >
+        <form id="vl-create-form" onSubmit={handleCreateSubmit}>
+          <div className="ms-field">
+            <label className="ms-label">Mã vi phạm</label>
+            <div className="ms-input-wrap">
+              <input
+                type="text"
+                className="ms-input"
+                value={violationCode || ''}
+                placeholder="Đang tạo mã..."
+                readOnly
+              />
             </div>
           </div>
-        )}
 
-        {/* Modal tạo vi phạm mới */}
-        {showCreateModal && (
-          <div className="violation-modal-overlay" onClick={closeCreateModal}>
-            <div className="violation-modal violation-create-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="violation-modal-header">
-                <h2>Tạo vi phạm mới</h2>
-                <button
-                  type="button"
-                  className="modal-close-btn"
-                  onClick={closeCreateModal}
-                  aria-label="Đóng"
-                >
-                  <X size={20} />
-                </button>
+          <div className="ms-field">
+            <label className="ms-label">
+              Số phòng <span className="ms-label-required">*</span>
+            </label>
+            <Autocomplete
+              options={contracts}
+              value={selectedContract ?? null}
+              loading={loadingContracts}
+              filterOptions={roomFilterOptions}
+              getOptionLabel={(option) => option.roomId?.name || 'Phòng'}
+              isOptionEqualToValue={(option, value) => option._id === value._id}
+              onChange={(_, value) => handleRoomSelect(value?._id || '')}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Gõ để tìm số phòng"
+                  error={Boolean(formErrors.contractId)}
+                  helperText={formErrors.contractId}
+                />
+              )}
+              slotProps={{
+                popper: { modifiers: [{ name: 'flip', enabled: false }], style: { zIndex: 10000 } },
+              }}
+            />
+          </div>
+
+          <div className="ms-field">
+            <label className="ms-label">
+              Tiêu đề <span className="ms-label-required">*</span>
+            </label>
+            <div className="ms-input-wrap">
+              <input
+                type="text"
+                className={`ms-input ${formErrors.title ? 'ms-input--error' : ''}`}
+                placeholder="Nhập tiêu đề vi phạm"
+                value={formData.title}
+                onChange={handleInputChange}
+                name="title"
+              />
+            </div>
+            {formErrors.title && (
+              <span className="ms-error-text">{formErrors.title}</span>
+            )}
+          </div>
+
+          <div className="ms-field-row">
+            <div className="ms-field">
+              <label className="ms-label">
+                Số tiền (VNĐ) <span className="ms-label-required">*</span>
+              </label>
+              <div className="ms-input-wrap ms-input-wrap--prefix">
+                <span className="ms-input-prefix">₫</span>
+                <input
+                  type="number"
+                  className={`ms-input ms-input--prefix ${formErrors.totalAmount ? 'ms-input--error' : ''}`}
+                  placeholder="0"
+                  value={formData.totalAmount}
+                  onChange={handleInputChange}
+                  name="totalAmount"
+                  min="0"
+                  step="1000"
+                />
               </div>
-              <div className="violation-modal-body">
-                <form onSubmit={handleCreateSubmit} className="create-violation-form">
-                  <div className="form-group">
-                    <label htmlFor="violationCode">Mã vi phạm</label>
-                    <input
-                      type="text"
-                      id="violationCode"
-                      className="form-input"
-                      value={violationCode || ''}
-                      placeholder="Đang tạo mã..."
-                      readOnly
-                    />
-                  </div>
+              {formErrors.totalAmount && (
+                <span className="ms-error-text">{formErrors.totalAmount}</span>
+              )}
+            </div>
 
-                  <div className="form-group">
-                    <label htmlFor="contractId">
-                      Số phòng <span className="required">*</span>
-                    </label>
+            <div className="ms-field">
+              <label className="ms-label">
+                Hạn thanh toán <span className="ms-label-required">*</span>
+              </label>
+              <div className="ms-input-wrap">
+                <input
+                  type="date"
+                  className={`ms-input ${formErrors.dueDate ? 'ms-input--error' : ''}`}
+                  value={formData.dueDate}
+                  onChange={handleInputChange}
+                  name="dueDate"
+                  readOnly
+                />
+              </div>
+              {formErrors.dueDate && (
+                <span className="ms-error-text">{formErrors.dueDate}</span>
+              )}
+            </div>
+          </div>
 
-                    <Autocomplete
-                      id="contractId"
-                      options={contracts}
-                      value={selectedContract ?? null}
-                      loading={loadingContracts}
-                      filterOptions={roomFilterOptions}
-                      getOptionLabel={(option) => option.roomId?.name || 'Phòng'}
-                      isOptionEqualToValue={(option, value) => option._id === value._id}
-                      onChange={(_, value) => handleRoomSelect(value?._id || '')}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          placeholder="Gõ để tìm số phòng"
-                          error={Boolean(formErrors.contractId)}
-                          helperText={formErrors.contractId}
-                        />
-                      )}
-                      slotProps={{
-                        popper: {
-                          modifiers: [{ name: 'flip', enabled: false }],
-                          style: { zIndex: 10000 },
-                        },
-                      }}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="title">
-                      Tiêu đề <span className="required">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="title"
-                      name="title"
-                      className={`form-input ${formErrors.title ? 'input-error' : ''}`}
-                      placeholder="Nhập tiêu đề vi phạm "
-                      value={formData.title}
-                      onChange={handleInputChange}
-                    />
-                    {formErrors.title && (
-                      <span className="error-message">{formErrors.title}</span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="totalAmount">
-                      Số tiền (VNĐ) <span className="required">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      id="totalAmount"
-                      name="totalAmount"
-                      className={`form-input ${formErrors.totalAmount ? 'input-error' : ''}`}
-                      placeholder="Nhập số tiền"
-                      value={formData.totalAmount}
-                      onChange={handleInputChange}
-                      min="0"
-                      step="1000"
-                    />
-                    {formErrors.totalAmount && (
-                      <span className="error-message">{formErrors.totalAmount}</span>
-                    )}
-                    {formData.totalAmount && !formErrors.totalAmount && (
-                      <span className="helper-text">
-                        {parseFloat(formData.totalAmount || '0').toLocaleString('vi-VN')} VNĐ
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="violationImages">Ảnh vi phạm</label>
-                    <input
-                      type="file"
-                      id="violationImages"
-                      className="form-input"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImagesChange}
-                      disabled={uploadingImages}
-                    />
-                    {uploadingImages && (
-                      <span className="helper-text">Đang upload ảnh...</span>
-                    )}
-                    {uploadedImages.length > 0 && (
-                      <div className="violation-image-list">
-                        {uploadedImages.map((url) => (
-                          <div key={url} className="violation-image-item">
-                            <img src={url} alt="Ảnh vi phạm" />
-                            <button
-                              type="button"
-                              className="btn-remove-image"
-                              onClick={() => handleRemoveImage(url)}
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="dueDate">
-                      Hạn thanh toán <span className="required">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      id="dueDate"
-                      name="dueDate"
-                      className={`form-input ${formErrors.dueDate ? 'input-error' : ''}`}
-                      value={formData.dueDate}
-                      onChange={handleInputChange}
-                      readOnly
-                    />
-                    {formErrors.dueDate && (
-                      <span className="error-message">{formErrors.dueDate}</span>
-                    )}
-                  </div>
-
-                  <div className="form-actions">
+          <div className="ms-field">
+            <label className="ms-label">Ảnh vi phạm</label>
+            <div className="ms-input-wrap">
+              <input
+                type="file"
+                className="ms-input"
+                accept="image/*"
+                multiple
+                onChange={handleImagesChange}
+                disabled={uploadingImages}
+              />
+            </div>
+            {uploadingImages && (
+              <span className="ms-helper-text">Đang upload ảnh...</span>
+            )}
+            {uploadedImages.length > 0 && (
+              <div className="vl-image-list">
+                {uploadedImages.map((url) => (
+                  <div key={url} className="vl-image-thumb">
+                    <img src={url} alt="Ảnh vi phạm" />
                     <button
                       type="button"
-                      className="btn-cancel"
-                      onClick={closeCreateModal}
-                      disabled={submitting}
+                      className="vl-image-remove"
+                      onClick={() => handleRemoveImage(url)}
                     >
-                      Hủy
-                    </button>
-                    <button
-                      type="submit"
-                      className="btn-submit"
-                      disabled={submitting || loadingContracts}
-                    >
-                      {submitting ? 'Đang tạo...' : 'Tạo vi phạm'}
+                      <X size={12} />
                     </button>
                   </div>
-                </form>
+                ))}
               </div>
-            </div>
+            )}
           </div>
-        )}
-      </div>
+        </form>
+      </AppModal>
     </div>
   );
 }
