@@ -11,11 +11,14 @@ import {
   IconButton,
   Modal,
   Backdrop,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
+import PrintIcon from "@mui/icons-material/Print";
 
 const API_URL = "http://localhost:9999/api";
 
@@ -164,6 +167,14 @@ const ContractDetail = () => {
   const [loading, setLoading] = useState(true);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [printSnackbarOpen, setPrintSnackbarOpen] = useState(false);
+
+  const handlePrint = () => {
+    window.print();
+    setTimeout(() => {
+      setPrintSnackbarOpen(true);
+    }, 1000);
+  };
 
   useEffect(() => {
     const fetchContract = async () => {
@@ -309,6 +320,32 @@ const ContractDetail = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <style>
+        {`
+          @media print {
+            body * {
+              visibility: hidden;
+            }
+            #printable-contract, #printable-contract * {
+              visibility: visible;
+            }
+            #printable-contract {
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
+              max-width: 100% !important;
+              margin: 0 !important;
+              padding: 40px !important;
+              box-shadow: none !important;
+            }
+            @page {
+              size: auto;
+              margin: 15mm;
+            }
+          }
+        `}
+      </style>
       {/* Top Bar */}
       <Box
         sx={{
@@ -316,6 +353,7 @@ const ContractDetail = () => {
           justifyContent: "space-between",
           alignItems: "center",
           mb: 2,
+          '@media print': { display: 'none' }
         }}
       >
         <Button
@@ -326,6 +364,15 @@ const ContractDetail = () => {
           Quay lại
         </Button>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<PrintIcon />}
+            onClick={handlePrint}
+            sx={{ fontFamily: serifFont, textTransform: "none", mr: 1 }}
+          >
+            In / Tải PDF
+          </Button>
           {contract.status === "active" &&
             !location.pathname.startsWith("/owner") && (
               <Button
@@ -346,6 +393,7 @@ const ContractDetail = () => {
 
       {/* Paper Document */}
       <Paper
+        id="printable-contract"
         elevation={3}
         sx={{
           p: 5,
@@ -936,6 +984,16 @@ const ContractDetail = () => {
           </Box>
 
           {/* Chữ ký */}
+          <Grid container spacing={2} sx={{ mt: 5, mb: 6, textAlign: "center", fontFamily: serifFont, display: 'none', '@media print': { display: 'flex' } }}>
+            <Grid size={{ xs: 6 }}>
+              <Typography sx={{ fontWeight: "bold", fontFamily: serifFont, fontSize: "1.1rem" }}>ĐẠI DIỆN BÊN A</Typography>
+              <Typography sx={{ fontStyle: "italic", mb: 12, fontFamily: serifFont }}>(Ký và ghi rõ họ tên)</Typography>
+            </Grid>
+            <Grid size={{ xs: 6 }}>
+              <Typography sx={{ fontWeight: "bold", fontFamily: serifFont, fontSize: "1.1rem" }}>ĐẠI DIỆN BÊN B</Typography>
+              <Typography sx={{ fontStyle: "italic", mb: 12, fontFamily: serifFont }}>(Ký và ghi rõ họ tên)</Typography>
+            </Grid>
+          </Grid>
         </Box>
 
         {/* Contract Images */}
@@ -945,6 +1003,7 @@ const ContractDetail = () => {
               mt: 4,
               pt: 3,
               borderTop: "1px solid #333",
+              '@media print': { display: 'none' }
             }}
           >
             <Typography
@@ -1063,6 +1122,16 @@ const ContractDetail = () => {
         depositId={contract?.depositId}
         serifFont={serifFont}
       />
+      <Snackbar
+        open={printSnackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setPrintSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={() => setPrintSnackbarOpen(false)} severity="success" sx={{ width: "100%", fontFamily: serifFont, fontSize: "1rem" }}>
+          Đã tải bản in / hợp đồng PDF thành công!
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };
