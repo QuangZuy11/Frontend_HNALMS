@@ -141,6 +141,12 @@ export const transferRequestService = {
     return response.data;
   },
 
+  // [MANAGER] Phát hành hóa đơn chuyển phòng
+  releaseTransferInvoice: async (requestId: string, payload: { managerInvoiceNotes?: string; electricIndex?: number; waterIndex?: number; }) => {
+    const response = await api.post(`/requests/transfer/${requestId}/release-invoice`, payload);
+    return response.data;
+  },
+
   // [MANAGER] Hoàn tất chuyển phòng (Bàn giao phòng)
   completeTransferRequest: async (
     requestId: string,
