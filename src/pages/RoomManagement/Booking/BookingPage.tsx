@@ -904,10 +904,6 @@ export default function BookingPage() {
                                             </span>
                                         </div>
                                         <div className="payment-info-row">
-                                            <span class="payment-info-label">Thời gian giữ phòng:</span>
-                                            <span className="payment-info-value">30 ngày</span>
-                                        </div>
-                                        <div className="payment-info-row">
                                             <span className="payment-info-label">Trạng thái:</span>
                                             <span className="success-badge">Chờ Xác Nhận</span>
                                         </div>

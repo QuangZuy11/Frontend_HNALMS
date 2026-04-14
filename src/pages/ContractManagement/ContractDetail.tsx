@@ -236,6 +236,8 @@ const ContractDetail = () => {
     switch (status) {
       case "active":
         return "success";
+      case "inactive":
+        return "info";
       case "expired":
         return "warning";
       case "terminated":
@@ -248,6 +250,8 @@ const ContractDetail = () => {
     switch (status) {
       case "active":
         return "Đang hiệu lực";
+      case "inactive":
+        return "Hợp đồng chưa hiệu lực";
       case "expired":
         return "Hết hạn";
       case "terminated":

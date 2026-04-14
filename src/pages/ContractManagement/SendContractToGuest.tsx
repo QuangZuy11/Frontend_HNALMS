@@ -2660,7 +2660,7 @@ const SendContractToGuest = () => {
                     Đang gửi cho khách...
                   </>
                 ) : (
-                  "Gửi cho Guest"
+                  "Gửi cho Khách hàng"
                 )}
               </Button>
             </Box>
