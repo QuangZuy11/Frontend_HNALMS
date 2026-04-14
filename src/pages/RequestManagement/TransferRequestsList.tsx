@@ -78,6 +78,8 @@ type StatusFilter = 'ALL' | 'Pending' | 'Approved' | 'Rejected' | 'Completed' | 
 const STATUS_LABELS: Record<string, string> = {
   Pending: 'Chờ duyệt',
   Approved: 'Đã duyệt',
+  InvoiceReleased: 'Chờ TT phát sinh',
+  Paid: 'Đã thanh toán',
   Rejected: 'Từ chối',
   Completed: 'Đã hoàn tất',
   Cancelled: 'Đã hủy',
@@ -86,6 +88,8 @@ const STATUS_LABELS: Record<string, string> = {
 const STATUS_BADGE_CLASS: Record<string, string> = {
   Pending: 'status-pending',
   Approved: 'status-approved',
+  InvoiceReleased: 'status-pending', // can style later
+  Paid: 'status-approved',
   Rejected: 'status-rejected',
   Completed: 'status-completed',
   Cancelled: 'status-cancelled',
@@ -128,6 +132,14 @@ export default function TransferRequestsList() {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [completingRequest, setCompletingRequest] = useState<TransferRequest | null>(null);
   const [completeLoading, setCompleteLoading] = useState(false);
+
+  // Release Invoice modal
+  const [showReleaseInvoiceModal, setShowReleaseInvoiceModal] = useState(false);
+  const [releasingInvoiceRequest, setReleasingInvoiceRequest] = useState<TransferRequest | null>(null);
+  const [electricIndex, setElectricIndex] = useState<string>('');
+  const [waterIndex, setWaterIndex] = useState<string>('');
+  const [managerInvoiceNotes, setManagerInvoiceNotes] = useState('');
+  const [releaseInvoiceLoading, setReleaseInvoiceLoading] = useState(false);
 
   const tableRef = useRef<HTMLDivElement | null>(null);
 
@@ -263,6 +275,36 @@ export default function TransferRequestsList() {
       alert(anyErr?.response?.data?.message || 'Từ chối yêu cầu thất bại');
     } finally {
       setRejectLoading(false);
+    }
+  };
+
+  // ---- Release Invoice ----
+  const openReleaseInvoiceModal = (req: TransferRequest) => {
+    setReleasingInvoiceRequest(req);
+    setElectricIndex('');
+    setWaterIndex('');
+    setManagerInvoiceNotes('');
+    setShowReleaseInvoiceModal(true);
+  };
+
+  const handleReleaseInvoice = async () => {
+    if (!releasingInvoiceRequest) return;
+    try {
+      setReleaseInvoiceLoading(true);
+      await transferRequestService.releaseTransferInvoice(releasingInvoiceRequest._id, {
+        managerInvoiceNotes,
+        electricIndex: electricIndex ? Number(electricIndex) : undefined,
+        waterIndex: waterIndex ? Number(waterIndex) : undefined,
+      });
+      setShowReleaseInvoiceModal(false);
+      setReleasingInvoiceRequest(null);
+      fetchRequests();
+      if (selectedRequest?._id === releasingInvoiceRequest._id) setSelectedRequest(null);
+    } catch (err: unknown) {
+      const anyErr = err as { response?: { data?: { message?: string } } };
+      alert(anyErr?.response?.data?.message || 'Phát hành hóa đơn thất bại');
+    } finally {
+      setReleaseInvoiceLoading(false);
     }
   };
 
@@ -434,6 +476,8 @@ export default function TransferRequestsList() {
               <option value="ALL">Tất cả</option>
               <option value="Pending">Chờ duyệt</option>
               <option value="Approved">Đã duyệt</option>
+              <option value="InvoiceReleased">Chờ thanh toán</option>
+              <option value="Paid">Đã thanh toán</option>
               <option value="Rejected">Từ chối</option>
               <option value="Completed">Đã hoàn tất</option>
               <option value="Cancelled">Đã hủy</option>
@@ -523,6 +567,16 @@ export default function TransferRequestsList() {
                           </>
                         )}
                         {req.status === 'Approved' && (
+                          <button
+                            className="btn-complete"
+                            title="Phát hành hóa đơn"
+                            style={{ backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1' }}
+                            onClick={() => openReleaseInvoiceModal(req)}
+                          >
+                            📄
+                          </button>
+                        )}
+                        {req.status === 'Paid' && (
                           <button
                             className="btn-complete"
                             title="Hoàn tất chuyển phòng"
@@ -645,6 +699,17 @@ export default function TransferRequestsList() {
                 <div className="detail-actions">
                   <button
                     className="btn-complete-full"
+                    style={{ backgroundColor: '#475569' }}
+                    onClick={() => { setSelectedRequest(null); openReleaseInvoiceModal(selectedRequest); }}
+                  >
+                    📄 Phát hành hóa đơn chuyển phòng
+                  </button>
+                </div>
+              )}
+              {selectedRequest.status === 'Paid' && (
+                <div className="detail-actions">
+                  <button
+                    className="btn-complete-full"
                     onClick={() => { setSelectedRequest(null); openCompleteModal(selectedRequest); }}
                   >
                     ✓ Hoàn tất chuyển phòng
@@ -721,6 +786,70 @@ export default function TransferRequestsList() {
                 </button>
                 <button className="btn-submit btn-reject-submit" onClick={handleReject} disabled={rejectLoading}>
                   {rejectLoading ? 'Đang xử lý...' : 'Xác nhận từ chối'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---- Release Invoice Modal ---- */}
+      {showReleaseInvoiceModal && releasingInvoiceRequest && (
+        <div className="tr-modal-overlay" onClick={() => setShowReleaseInvoiceModal(false)}>
+          <div className="tr-modal tr-modal--sm" onClick={(e) => e.stopPropagation()}>
+            <div className="tr-modal-header">
+              <h2>Phát hành hóa đơn chuyển phòng</h2>
+              <button className="modal-close-btn" onClick={() => setShowReleaseInvoiceModal(false)}>×</button>
+            </div>
+            <div className="tr-modal-body">
+              <p style={{ marginBottom: 16, color: '#374151', fontSize: '14px' }}>
+                Nhập chỉ số điện, nước phòng <strong>{getRoomDisplay(releasingInvoiceRequest.currentRoomId)}</strong> để chốt hóa đơn phòng cũ tới ngày chuyển phòng (<strong>{releasingInvoiceRequest.transferDate ? formatDate(releasingInvoiceRequest.transferDate) : '-'}</strong>).
+              </p>
+              
+              <div className="complete-form-group">
+                <label>Chỉ số điện cuối cùng (Phòng cũ)</label>
+                <input
+                  type="number"
+                  placeholder="Để trống nếu không thay đổi/tự tự động dùng chỉ số gần nhất..."
+                  value={electricIndex}
+                  onChange={(e) => setElectricIndex(e.target.value)}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px', marginBottom: '12px' }}
+                />
+              </div>
+
+              <div className="complete-form-group">
+                <label>Chỉ số nước cuối cùng (Phòng cũ)</label>
+                <input
+                  type="number"
+                  placeholder="Để trống nếu không thay đổi/tự tự động dùng chỉ số gần nhất..."
+                  value={waterIndex}
+                  onChange={(e) => setWaterIndex(e.target.value)}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px', marginBottom: '12px' }}
+                />
+              </div>
+
+              <div className="complete-form-group">
+                <label>Ghi chú hóa đơn</label>
+                <textarea
+                  value={managerInvoiceNotes}
+                  onChange={(e) => setManagerInvoiceNotes(e.target.value)}
+                  placeholder="Ghi chú thêm về việc phát hành hóa đơn..."
+                  rows={2}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px', resize: 'vertical' }}
+                />
+              </div>
+
+              <div className="complete-form-actions" style={{ marginTop: '20px' }}>
+                <button className="btn-cancel" onClick={() => setShowReleaseInvoiceModal(false)} disabled={releaseInvoiceLoading}>
+                  Hủy
+                </button>
+                <button 
+                  className="btn-submit btn-complete-submit" 
+                  onClick={handleReleaseInvoice} 
+                  disabled={releaseInvoiceLoading}
+                  style={{ backgroundColor: '#2563eb' }}
+                >
+                  {releaseInvoiceLoading ? 'Đang phát hành...' : 'Phát hành Hóa Đơn'}
                 </button>
               </div>
             </div>
