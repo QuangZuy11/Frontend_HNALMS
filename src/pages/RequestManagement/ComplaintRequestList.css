@@ -1,100 +1,42 @@
-.complaint-success-toast {
-  position: fixed;
-  top: 18px;
-  right: 18px;
-  z-index: 1300;
-  min-width: 320px;
-  max-width: 440px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.82) 0%, rgba(46, 125, 50, 0.82) 100%);
-  backdrop-filter: blur(2px);
-  box-shadow: 0 12px 28px rgba(46, 125, 50, 0.25);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  animation: complaintToastSlideIn 0.28s ease;
-}
+/* ============================================================
+   ComplaintRequestList — đồng bộ UI theo ManageService
+   Base styles từ RepairRequestsList.css + extend
+   ============================================================ */
+@import url('./RepairRequestsList.css');
 
-.complaint-success-toast--error {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.82) 0%, rgba(185, 28, 28, 0.82) 100%);
-  box-shadow: 0 12px 28px rgba(185, 28, 28, 0.25);
-}
-
-.complaint-success-toast-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
+/* --- Priority Badge --- */
+.priority-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 auto;
-}
-
-.complaint-success-toast-content {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.complaint-success-toast-title {
-  font-size: 22px;
-  line-height: 1.1;
-  font-weight: 700;
-  margin-bottom: 2px;
-}
-
-.complaint-success-toast-message {
-  font-size: 19px;
-  line-height: 1.25;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
   font-weight: 600;
+  font-family: inherit;
 }
 
-.complaint-success-toast-close {
-  margin-left: auto;
-  width: 24px;
-  height: 24px;
-  border: none;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22);
-  color: #ffffff;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  flex: 0 0 auto;
+.priority-badge.priority-high {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
 }
 
-.complaint-success-toast-close:hover {
-  background: rgba(255, 255, 255, 0.32);
+.priority-badge.priority-medium {
+  background-color: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
 }
 
-@keyframes complaintToastSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-12px) scale(0.98);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+.priority-badge.priority-low {
+  background-color: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
 }
 
-.complaint-status-confirm-modal {
-  max-width: 420px;
-}
-
-.complaint-status-confirm-text {
-  font-size: 15px;
-  color: #374151;
-  line-height: 1.6;
-  margin: 0;
-}
-
-.complaint-status-confirm-text strong {
-  color: #1e293b;
+/* Table cell for priority */
+.cell-priority {
+  text-align: center;
+  width: 10%;
 }

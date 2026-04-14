@@ -1,2 +1,0 @@
-// Delete request detail
-export { }

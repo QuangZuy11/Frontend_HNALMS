@@ -1,2 +1,0 @@
-// Request detail
-export { }

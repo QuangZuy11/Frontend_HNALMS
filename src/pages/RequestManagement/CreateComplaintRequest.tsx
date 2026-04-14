@@ -1,2 +1,0 @@
-// Create complaint request
-export { }

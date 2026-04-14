@@ -1,11 +1,22 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Eye } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Eye, Wrench,
+  CheckCircle2, XCircle,
+  Clock, AlertCircle,
+  Filter, ArrowUpDown,
+  Search, LayoutGrid,
+  DollarSign,
+  Image as ImageIcon,
+  Check,
+} from 'lucide-react';
+import { AppModal } from '../../components/common/Modal';
+import { Pagination } from '../../components/common/Pagination';
+import { useToast } from '../../components/common/Toast';
 import { requestService } from '../../services/requestService';
 import { useAuth } from '../../hooks/useAuth';
-import './RepairRequestsList.css';
 import './MaintenanceRequestsList.css';
 
-interface RepairRequest {
+interface MaintenanceRequest {
   _id: string;
   type: 'Sửa chữa' | 'Bảo trì' | string;
   description: string;
@@ -36,22 +47,21 @@ interface RepairRequest {
 }
 
 export default function MaintenanceRequestsList() {
-  const [requests, setRequests] = useState<RepairRequest[]>([]);
+  const { showToast } = useToast();
+  const [requests, setRequests] = useState<MaintenanceRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedRequest, setSelectedRequest] = useState<RepairRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<MaintenanceRequest | null>(null);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showMaintenanceStatusConfirmModal, setShowMaintenanceStatusConfirmModal] = useState(false);
   const [pendingMaintenanceStatusChange, setPendingMaintenanceStatusChange] = useState<{
-    request: RepairRequest;
+    request: MaintenanceRequest;
     nextStatus: 'Pending' | 'Processing' | 'Done';
   } | null>(null);
   const [autoPaymentVoucher, setAutoPaymentVoucher] = useState<string>('');
   const [autoPaymentVoucherLoading, setAutoPaymentVoucherLoading] = useState(false);
   const [autoPaymentVoucherError, setAutoPaymentVoucherError] = useState<string>('');
-  const [maintenanceToast, setMaintenanceToast] = useState<{ title: string; message: string } | null>(null);
   const [paymentForm, setPaymentForm] = useState({
     financialTitle: '',
     financialAmount: '',
@@ -65,71 +75,49 @@ export default function MaintenanceRequestsList() {
   >('ALL');
   const [roomSearch, setRoomSearch] = useState<string>('');
   const [tenantSearch, setTenantSearch] = useState<string>('');
+  const [sortOption, setSortOption] = useState('newest');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+  const itemsPerPage = 11;
   const { isManager } = useAuth();
   const tableRef = useRef<HTMLDivElement | null>(null);
 
   const fetchRequests = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
       const response = await requestService.getRepairRequests(
         roomSearch,
         tenantSearch,
         currentPage,
         itemsPerPage,
-        'Bảo trì'
+        'Bảo trì',
       );
       if (response.success && Array.isArray(response.data)) {
-        setRequests(response.data as RepairRequest[]);
+        setRequests(response.data as MaintenanceRequest[]);
       } else {
         setRequests([]);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Lỗi khi tải danh sách yêu cầu bảo trì:', err);
-      const msg =
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (err as any)?.response?.data?.message ||
-        (err as Error).message ||
-        'Không thể tải danh sách yêu cầu bảo trì';
-      setError(msg);
+      const e = err as { response?: { data?: { message?: string } } };
+      showToast('error', 'Lỗi', e.response?.data?.message || 'Không thể tải danh sách yêu cầu bảo trì.');
     } finally {
       setLoading(false);
     }
-  }, [roomSearch, tenantSearch, currentPage, itemsPerPage]);
+  }, [roomSearch, tenantSearch, currentPage, showToast]);
 
   useEffect(() => {
     fetchRequests();
   }, [fetchRequests]);
 
   useEffect(() => {
-    if (!maintenanceToast) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      setMaintenanceToast(null);
-    }, 4000);
-
-    return () => window.clearTimeout(timer);
-  }, [maintenanceToast]);
-
-  // Reset về trang 1 khi thay đổi filter
-  useEffect(() => {
     setCurrentPage(1);
-  }, [roomSearch, tenantSearch, statusFilter]);
+  }, [roomSearch, tenantSearch, statusFilter, sortOption]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     if (tableRef.current) {
       tableRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  };
-
-  const handleItemsPerPageChange = (limit: number) => {
-    setItemsPerPage(limit);
-    setCurrentPage(1);
   };
 
   const formatDate = (dateStr?: string) => {
@@ -142,7 +130,7 @@ export default function MaintenanceRequestsList() {
     });
   };
 
-  const getStatusLabel = (request: RepairRequest) => {
+  const getStatusLabel = (request: MaintenanceRequest) => {
     if (request.status === 'Pending') return 'Chờ xử lý';
     if (request.status === 'Processing') return 'Đang xử lý';
     if (request.status === 'Unpaid') return 'Chờ thanh toán';
@@ -155,7 +143,15 @@ export default function MaintenanceRequestsList() {
     return 'Đã xử lý';
   };
 
-  const handleViewDetail = (request: RepairRequest) => {
+  const getStatusIcon = (status: string) => {
+    if (status === 'Pending') return <Clock size={14} />;
+    if (status === 'Processing') return <AlertCircle size={14} />;
+    if (status === 'Paid') return <CheckCircle2 size={14} />;
+    if (status === 'Unpaid') return <XCircle size={14} />;
+    return <CheckCircle2 size={14} />;
+  };
+
+  const handleViewDetail = (request: MaintenanceRequest) => {
     setSelectedRequest(request);
   };
 
@@ -172,7 +168,7 @@ export default function MaintenanceRequestsList() {
   };
 
   const applyMaintenanceStatusUpdate = async (
-    request: RepairRequest,
+    request: MaintenanceRequest,
     nextStatus: 'Pending' | 'Processing' | 'Done',
   ) => {
     try {
@@ -184,47 +180,32 @@ export default function MaintenanceRequestsList() {
         setRequests((prev) =>
           prev.map((r) => (r._id === updated._id ? { ...r, status: updated.status } : r)),
         );
-
         if (selectedRequest && selectedRequest._id === updated._id) {
           setSelectedRequest((prev) => (prev ? { ...prev, status: updated.status } : prev));
         }
       }
-
-      setMaintenanceToast({
-        title: 'Thành công',
-        message: 'Cập nhật trạng thái thành công!',
-      });
-    } catch (err) {
-      console.error('Lỗi khi cập nhật trạng thái yêu cầu:', err);
-      alert(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (err as any)?.response?.data?.message || 'Không thể cập nhật trạng thái yêu cầu',
-      );
+      showToast('success', 'Thành công', 'Cập nhật trạng thái thành công!');
+    } catch (err: unknown) {
+      console.error('Lỗi khi cập nhật trạng thái:', err);
+      const e = err as { response?: { data?: { message?: string } } };
+      showToast('error', 'Lỗi', e.response?.data?.message || 'Không thể cập nhật trạng thái.');
     } finally {
       setUpdatingId(null);
     }
   };
 
   const handleUpdateStatus = async (
-    request: RepairRequest,
+    request: MaintenanceRequest,
     nextStatus: 'Pending' | 'Processing' | 'Done',
   ) => {
-    // Nếu chuyển sang "Đã xử lý", hiện modal nhập phiếu chi
     if (nextStatus === 'Done') {
       setSelectedRequest(request);
       setShowPaymentModal(true);
       setAutoPaymentVoucher('');
       setAutoPaymentVoucherError('');
-      setPaymentForm({
-        financialTitle: '',
-        financialAmount: '',
-      });
-      setPaymentFormErrors({
-        financialTitle: '',
-        financialAmount: '',
-      });
+      setPaymentForm({ financialTitle: '', financialAmount: '' });
+      setPaymentFormErrors({ financialTitle: '', financialAmount: '' });
 
-      // Auto-generate payment voucher code
       (async () => {
         try {
           setAutoPaymentVoucherLoading(true);
@@ -232,21 +213,16 @@ export default function MaintenanceRequestsList() {
           const code = res?.data?.paymentVoucher;
           if (!code) throw new Error('Không thể tạo mã phiếu chi');
           setAutoPaymentVoucher(code);
-        } catch (err) {
+        } catch (err: unknown) {
+          const e = err as { response?: { data?: { message?: string } }; message?: string };
           console.error('Lỗi khi tạo mã phiếu chi:', err);
-          setAutoPaymentVoucherError(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (err as any)?.response?.data?.message ||
-            (err as Error).message ||
-            'Không thể tạo mã phiếu chi',
-          );
+          setAutoPaymentVoucherError(e.response?.data?.message || e.message || 'Không thể tạo mã phiếu chi');
         } finally {
           setAutoPaymentVoucherLoading(false);
         }
       })();
       return;
     }
-
     setPendingMaintenanceStatusChange({ request, nextStatus });
     setShowMaintenanceStatusConfirmModal(true);
   };
@@ -257,10 +233,7 @@ export default function MaintenanceRequestsList() {
     setShowMaintenanceStatusConfirmModal(false);
     setPendingMaintenanceStatusChange(null);
     await applyMaintenanceStatusUpdate(request, nextStatus);
-    // Hiện toast trước 600ms rồi mới đóng modal chi tiết để user thấy thông báo
-    setTimeout(() => {
-      setSelectedRequest(null);
-    }, 600);
+    setTimeout(() => { setSelectedRequest(null); }, 600);
   };
 
   const handleCloseMaintenanceStatusConfirmModal = () => {
@@ -272,14 +245,8 @@ export default function MaintenanceRequestsList() {
   const handleClosePaymentModal = () => {
     setShowPaymentModal(false);
     setSelectedRequest(null);
-    setPaymentForm({
-      financialTitle: '',
-      financialAmount: '',
-    });
-    setPaymentFormErrors({
-      financialTitle: '',
-      financialAmount: '',
-    });
+    setPaymentForm({ financialTitle: '', financialAmount: '' });
+    setPaymentFormErrors({ financialTitle: '', financialAmount: '' });
     setAutoPaymentVoucher('');
     setAutoPaymentVoucherError('');
     setAutoPaymentVoucherLoading(false);
@@ -288,17 +255,13 @@ export default function MaintenanceRequestsList() {
   const handlePaymentSubmit = async () => {
     if (!selectedRequest) return;
 
-    const errors = {
-      financialTitle: '',
-      financialAmount: '',
-    };
+    const errors = { financialTitle: '', financialAmount: '' };
     let isValid = true;
 
     if (!paymentForm.financialTitle.trim()) {
       errors.financialTitle = 'Vui lòng nhập tiêu đề phiếu chi';
       isValid = false;
     }
-
     if (!paymentForm.financialAmount || paymentForm.financialAmount.trim() === '') {
       errors.financialAmount = 'Vui lòng nhập tổng số tiền';
       isValid = false;
@@ -318,17 +281,11 @@ export default function MaintenanceRequestsList() {
     try {
       setUpdatingId(selectedRequest._id);
       const response = await requestService.updateRepairStatus(
-        selectedRequest._id,
-        'Done',
-        amountNumber,
-        'Bảo trì thiết bị',
-        undefined,
-        {
+        selectedRequest._id, 'Done', amountNumber, 'Bảo trì thiết bị', undefined, {
           financialTitle: paymentForm.financialTitle.trim(),
           financialAmount: amountNumber,
           paymentVoucher: autoPaymentVoucher,
-        },
-        'EXPENSE',
+        }, 'EXPENSE',
       );
       const updated = response.data;
 
@@ -336,406 +293,377 @@ export default function MaintenanceRequestsList() {
         setRequests((prev) =>
           prev.map((r) =>
             r._id === updated._id
-              ? {
-                ...r,
-                status: updated.status,
-                cost: updated.cost,
-                paymentType: updated.paymentType ?? 'EXPENSE',
-              }
+              ? { ...r, status: updated.status, cost: updated.cost, paymentType: updated.paymentType ?? 'EXPENSE' }
               : r,
           ),
         );
-
         if (selectedRequest && selectedRequest._id === updated._id) {
           setSelectedRequest((prev) =>
-            prev
-              ? {
-                ...prev,
-                status: updated.status,
-                cost: updated.cost,
-                paymentType: updated.paymentType ?? 'EXPENSE',
-              }
-              : prev,
+            prev ? { ...prev, status: updated.status, cost: updated.cost, paymentType: updated.paymentType ?? 'EXPENSE' } : prev,
           );
         }
       }
 
       setShowPaymentModal(false);
       setSelectedRequest(null);
-      setPaymentForm({
-        financialTitle: '',
-        financialAmount: '',
-      });
-      setPaymentFormErrors({
-        financialTitle: '',
-        financialAmount: '',
-      });
-      setMaintenanceToast({
-        title: 'Thành công',
-        message: 'Tạo phiếu chi bảo trì thành công!',
-      });
-      // Hiện toast trước 600ms rồi mới đóng modal chi tiết để user thấy thông báo
-      setTimeout(() => {
-        setSelectedRequest(null);
-      }, 600);
-    } catch (err) {
-      console.error('Lỗi khi hoàn thành yêu cầu bảo trì:', err);
-      alert(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (err as any)?.response?.data?.message || 'Không thể hoàn thành yêu cầu',
-      );
+      setPaymentForm({ financialTitle: '', financialAmount: '' });
+      setPaymentFormErrors({ financialTitle: '', financialAmount: '' });
+      showToast('success', 'Thành công', 'Tạo phiếu chi bảo trì thành công!');
+      setTimeout(() => { setSelectedRequest(null); }, 600);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      showToast('error', 'Lỗi', e.response?.data?.message || 'Không thể hoàn thành yêu cầu.');
     } finally {
       setUpdatingId(null);
     }
   };
 
-  // Filter theo status
-  const filteredRequests =
-    statusFilter === 'ALL' ? requests : requests.filter((r) => r.status === statusFilter);
+  const filteredRequests = useMemo(() => {
+    let result = [...requests];
+    if (statusFilter !== 'ALL') result = result.filter((r) => r.status === statusFilter);
+    if (sortOption === 'name-asc') {
+      result.sort((a, b) => (a.tenantId?.fullname || '').localeCompare(b.tenantId?.fullname || ''));
+    } else if (sortOption === 'name-desc') {
+      result.sort((a, b) => (b.tenantId?.fullname || '').localeCompare(a.tenantId?.fullname || ''));
+    }
+    return result;
+  }, [requests, statusFilter, sortOption]);
 
-  // Pagination
-  const totalPages = Math.max(1, Math.ceil(filteredRequests.length / itemsPerPage) || 1);
+  const totalItems = filteredRequests.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   const safePage = Math.min(currentPage, totalPages);
-  const startIndex = (safePage - 1) * itemsPerPage;
-  const paginatedRequests = filteredRequests.slice(startIndex, startIndex + itemsPerPage);
 
-  const getVisiblePages = () => {
-    const pages: number[] = [];
-    let start = Math.max(1, safePage - 2);
-    let end = Math.min(totalPages, safePage + 2);
+  const hasFilters = roomSearch || tenantSearch || statusFilter !== 'ALL';
 
-    if (safePage <= 2) end = Math.min(totalPages, 5);
-    if (safePage >= totalPages - 1) start = Math.max(1, totalPages - 4);
-
-    for (let i = start; i <= end; i += 1) pages.push(i);
-    return pages;
+  const clearFilters = () => {
+    setRoomSearch('');
+    setTenantSearch('');
+    setStatusFilter('ALL');
   };
+
+  const totalCount = requests.length;
+  const pendingCount = requests.filter((r) => r.status === 'Pending').length;
+  const doneCount = requests.filter((r) => r.status === 'Done' || r.status === 'Paid').length;
 
   if (!isManager) {
     return (
-      <div className="repair-requests-page">
-        <p>Bạn không có quyền truy cập trang này.</p>
+      <div className="repair-container">
+        <div className="repair-header">
+          <div className="repair-title-block">
+            <h2 style={{ color: '#dc2626', textAlign: 'center', marginTop: 32 }}>Bạn không có quyền truy cập trang này.</h2>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="repair-requests-page">
-      {maintenanceToast && (
-        <div className="maintenance-success-toast" role="status" aria-live="polite">
-          <div className="maintenance-success-toast-icon">
-            <CheckCircle2 size={20} />
-          </div>
-          <div className="maintenance-success-toast-content">
-            <div className="maintenance-success-toast-title">{maintenanceToast.title}</div>
-            <div className="maintenance-success-toast-message">{maintenanceToast.message}</div>
-          </div>
-          <button
-            type="button"
-            className="maintenance-success-toast-close"
-            onClick={() => setMaintenanceToast(null)}
-            aria-label="Đóng thông báo"
-          >
-            ×
-          </button>
-        </div>
-      )}
+    <div className="repair-container">
 
-      <div className="repair-requests-card">
-        <div className="repair-requests-header">
-          <div>
-            <h2>Danh sách yêu cầu bảo trì</h2>
-            <p className="subtitle">
-              Các yêu cầu bảo trì do cư dân gửi lên tòa nhà
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <div className="repair-filter-wrapper">
-              <label htmlFor="tenant-search" className="repair-filter-label">
-                Cư dân:
-              </label>
-              <input
-                type="text"
-                id="tenant-search"
-                className="repair-filter-select"
-                placeholder="Nhập tên cư dân"
-                value={tenantSearch}
-                onChange={(e) => setTenantSearch(e.target.value)}
-              />
-            </div>
-            <div className="repair-filter-wrapper">
-              <label htmlFor="room-search" className="repair-filter-label">
-                Phòng:
-              </label>
-              <input
-                type="text"
-                id="room-search"
-                className="repair-filter-select"
-                placeholder="Nhập số phòng (ví dụ: 320)"
-                value={roomSearch}
-                onChange={(e) => setRoomSearch(e.target.value)}
-              />
-            </div>
-            <div className="repair-filter-wrapper">
-              <label htmlFor="status-filter" className="repair-filter-label">
-                Trạng thái:
-              </label>
-              <select
-                id="status-filter"
-                className="repair-filter-select"
-                value={statusFilter}
-                onChange={(e) =>
-                  setStatusFilter(
-                    e.target.value as
-                    | 'ALL'
-                    | 'Pending'
-                    | 'Processing'
-                    | 'Done'
-                    | 'Unpaid',
-                  )
-                }
-              >
-                <option value="ALL">Tất cả</option>
-                <option value="Pending">Chờ xử lý</option>
-                <option value="Processing">Đang xử lý</option>
-                <option value="Done">Đã xử lý</option>
-                <option value="Unpaid">Chờ thanh toán</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {error && (
-          <div className="repair-error">
-            <p>{error}</p>
-          </div>
-        )}
-
-        {!loading && !error && filteredRequests.length === 0 && (
-          <div className="repair-empty">
-            <p>Chưa có yêu cầu bảo trì nào.</p>
-          </div>
-        )}
-
-        {!loading && !error && (
-          <div className="repair-table-wrap" ref={tableRef}>
-            <table className="repair-table">
-              <thead>
-                <tr>
-                  <th>STT</th>
-                  <th>Cư dân</th>
-                  <th>Phòng</th>
-                  <th>Thiết bị</th>
-                  <th>Trạng thái</th>
-                  <th>Chi phí (VNĐ)</th>
-                  <th>Người thanh toán</th>
-                  <th>Ngày tạo</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedRequests.map((r, index) => (
-                  <tr key={r._id}>
-                    <td>{startIndex + index + 1}</td>
-                    <td>
-                      <div className="cell-main">
-                        <div className="cell-title">
-                          {r.tenantId?.fullname || r.tenantId?.username || '-'}
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="cell-main">
-                        <div className="cell-title">
-                          {r.room?.name || r.room?.roomCode || '-'}
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="cell-main">
-                        <div className="cell-title">{r.devicesId?.name || '-'}</div>
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`status-badge status-${r.status.toLowerCase()}`}>
-                        {getStatusLabel(r)}
-                      </span>
-                    </td>
-                    <td>{r.cost?.toLocaleString('vi-VN') || 0}</td>
-                    <td>
-                      <div className="cell-main">
-                        <div className="cell-title">Kế toán</div>
-                      </div>
-                    </td>
-                    <td>{formatDate(r.createdDate)}</td>
-                    <td>
-                      <div className="action-buttons">
-                        <button
-                          type="button"
-                          className="btn-view-detail"
-                          onClick={() => handleViewDetail(r)}
-                          title="Xem chi tiết"
-                        >
-                          <Eye size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {/* Modal xem chi tiết */}
-        {selectedRequest && (
-          <div className="repair-modal-overlay" onClick={handleCloseDetail}>
-            <div className="repair-modal repair-detail-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="repair-modal-header">
-                <h2>Chi tiết yêu cầu bảo trì</h2>
-                <button
-                  type="button"
-                  className="modal-close-btn"
-                  onClick={handleCloseDetail}
-                  aria-label="Đóng"
-                >
-                  ×
-                </button>
+      {/* HEADER */}
+      <div className="repair-header">
+        <div className="repair-header-top">
+          <div className="repair-title-block">
+            <div className="repair-title-row">
+              <div className="repair-title-icon" aria-hidden>
+                <Wrench size={22} strokeWidth={2} />
               </div>
-              <div className="repair-modal-body">
-                {/* Layout 2 cột chính + ảnh */}
-                <div className="detail-grid-layout">
-                  {/* Cột thông tin bên trái */}
-                  <div className="detail-grid-fields">
-                    {/* Hàng 1: Phòng + Cư dân */}
-                    <div className="detail-field-group">
-                      <div className="detail-field">
-                        <span className="detail-field-label">Phòng</span>
-                        <span className="detail-field-value">
-                          {selectedRequest.room?.name || selectedRequest.room?.roomCode || '-'}
-                        </span>
-                      </div>
-                      <div className="detail-field">
-                        <span className="detail-field-label">Cư dân</span>
-                        <span className="detail-field-value">
-                          {selectedRequest.tenantId?.fullname || selectedRequest.tenantId?.username || '-'}
-                        </span>
-                      </div>
-                    </div>
-                    {/* Hàng 2: Số điện thoại + Thiết bị */}
-                    <div className="detail-field-group">
-                      <div className="detail-field">
-                        <span className="detail-field-label">Số điện thoại</span>
-                        <span className="detail-field-value">
-                          {selectedRequest.tenantId?.phoneNumber || '-'}
-                        </span>
-                      </div>
-                      <div className="detail-field">
-                        <span className="detail-field-label">Thiết bị</span>
-                        <span className="detail-field-value">
-                          {selectedRequest.devicesId?.name || '-'}
-                        </span>
-                      </div>
-                    </div>
-                    {/* Hàng 3: Loại + Trạng thái */}
-                    <div className="detail-field-group">
-                      <div className="detail-field">
-                        <span className="detail-field-label">Loại</span>
-                        <span className="detail-field-value">{selectedRequest.type}</span>
-                      </div>
-                      <div className="detail-field">
-                        <span className="detail-field-label">Trạng thái</span>
-                        <span className="detail-field-value">
-                          <span className={`status-badge status-${selectedRequest.status.toLowerCase()}`}>
-                            {getStatusLabel(selectedRequest)}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                    {/* Hàng 4: Chi phí + Ngày tạo */}
-                    <div className="detail-field-group">
-                      <div className="detail-field">
-                        <span className="detail-field-label">Chi phí (VNĐ)</span>
-                        <span className="detail-field-value">
-                          {selectedRequest.cost?.toLocaleString('vi-VN') || 0}
-                        </span>
-                      </div>
-                      <div className="detail-field">
-                        <span className="detail-field-label">Ngày tạo</span>
-                        <span className="detail-field-value">
-                          {formatDate(selectedRequest.createdDate)}
-                        </span>
-                      </div>
-                    </div>
-                    {/* Hàng 5: Người thanh toán (bảo trì luôn là Kế toán) */}
-                    <div className="detail-field-group">
-                      <div className="detail-field">
-                        <span className="detail-field-label">Người thanh toán</span>
-                        <span className="detail-field-value">Kế toán</span>
-                      </div>
-                      {selectedRequest.notes && (
-                        <div className="detail-field">
-                          <span className="detail-field-label">Ghi chú</span>
-                          <span className="detail-field-value">{selectedRequest.notes}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {/* Hình ảnh bên phải */}
-                  {selectedRequest.images && selectedRequest.images.length > 0 && (
-                    <div className="detail-grid-image">
-                      <button
-                        type="button"
-                        className="detail-main-image-btn"
-                        onClick={() => handleOpenImagePreview(selectedRequest.images[0])}
-                        title="Xem ảnh lớn"
-                      >
-                        <img
-                          src={selectedRequest.images[0]}
-                          alt="Ảnh yêu cầu"
-                          className="detail-main-image"
-                        />
-                      </button>
-                      {selectedRequest.images.length > 1 && (
-                        <div className="detail-extra-images">
-                          {selectedRequest.images.slice(1).map((url, idx) => (
-                            <button
-                              type="button"
-                              key={idx + 1}
-                              className="detail-extra-image-btn"
-                              onClick={() => handleOpenImagePreview(url)}
-                            >
-                              <img src={url} alt={`Ảnh ${idx + 2}`} />
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+              <div className="repair-title-text">
+                <h2>Quản lý Yêu cầu Bảo trì</h2>
+                <p className="repair-subtitle">
+                  Các yêu cầu bảo trì do cư dân gửi lên tòa nhà Hoàng Nam.
+                </p>
+              </div>
+            </div>
+          </div>
 
-                {/* Email - toàn chiều rộng để hiển thị đầy đủ */}
-                <div className="detail-email-row">
-                  <span className="detail-field-label">Email</span>
-                  <span className="detail-email-value">
-                    {selectedRequest.tenantId?.email || '-'}
+          <div className="repair-header-aside">
+            <div className="repair-stats-summary">
+              <div className="repair-stat-item">
+                <div className="repair-stat-icon icon-primary">
+                  <Wrench size={16} strokeWidth={2} />
+                </div>
+                <div className="repair-stat-text">
+                  <span className="repair-stat-value">{totalCount}</span>
+                  <span className="repair-stat-label">Tổng số</span>
+                </div>
+              </div>
+              <div className="repair-stat-divider" />
+              <div className="repair-stat-item">
+                <div className="repair-stat-icon icon-warning">
+                  <Clock size={16} strokeWidth={2} />
+                </div>
+                <div className="repair-stat-text">
+                  <span className="repair-stat-value">{pendingCount}</span>
+                  <span className="repair-stat-label">Chờ xử lý</span>
+                </div>
+              </div>
+              <div className="repair-stat-divider" />
+              <div className="repair-stat-item">
+                <div className="repair-stat-icon icon-primary">
+                  <CheckCircle2 size={16} strokeWidth={2} />
+                </div>
+                <div className="repair-stat-text">
+                  <span className="repair-stat-value">{doneCount}</span>
+                  <span className="repair-stat-label">Đã xử lý</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* TOOLBAR */}
+      <div className="repair-toolbar">
+        <div className="repair-toolbar-left">
+          <div className="search-box">
+            <Search size={18} className="search-icon" />
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Tìm theo tên cư dân..."
+              value={tenantSearch}
+              onChange={(e) => setTenantSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="search-box">
+            <LayoutGrid size={18} className="search-icon" />
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Tìm theo số phòng..."
+              value={roomSearch}
+              onChange={(e) => setRoomSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="control-group">
+            <Filter size={16} className="repair-toolbar-icon" aria-hidden />
+            <select
+              className="custom-select"
+              value={statusFilter}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as typeof statusFilter)
+              }
+            >
+              <option value="ALL">Tất cả trạng thái</option>
+              <option value="Pending">Chờ xử lý</option>
+              <option value="Processing">Đang xử lý</option>
+              <option value="Done">Đã xử lý</option>
+              <option value="Unpaid">Chờ thanh toán</option>
+            </select>
+          </div>
+
+          {hasFilters && (
+            <button type="button" className="repair-btn-clear-filter" onClick={clearFilters}>
+              Xóa lọc
+            </button>
+          )}
+        </div>
+
+        <div className="repair-toolbar-right">
+          <ArrowUpDown size={16} className="repair-toolbar-icon" aria-hidden />
+          <select
+            className="custom-select"
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+          >
+            <option value="newest">Mới nhất</option>
+            <option value="name-asc">Tên: A - Z</option>
+            <option value="name-desc">Tên: Z - A</option>
+          </select>
+        </div>
+      </div>
+
+      {/* TABLE */}
+      <div className="repair-table-container" ref={tableRef}>
+        <table className="repair-table">
+          <thead>
+            <tr>
+              <th className="cell-stt">STT</th>
+              <th className="cell-tenant">Cư dân</th>
+              <th className="cell-room">Phòng</th>
+              <th className="cell-device">Thiết bị</th>
+              <th className="cell-status">Trạng thái</th>
+              <th className="cell-cost">Chi phí (VNĐ)</th>
+              <th className="cell-payer">Người thanh toán</th>
+              <th className="cell-date">Ngày tạo</th>
+              <th className="cell-actions">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredRequests.length > 0 ? (
+              filteredRequests.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage).map((r, index) => (
+                <tr key={r._id}>
+                  <td className="cell-stt">{(safePage - 1) * itemsPerPage + index + 1}</td>
+                  <td className="cell-tenant">{r.tenantId?.fullname || r.tenantId?.username || '-'}</td>
+                  <td className="cell-room">
+                    <span className="room-badge">{r.room?.name || r.room?.roomCode || '-'}</span>
+                  </td>
+                  <td className="cell-device">{r.devicesId?.name || '-'}</td>
+                  <td className="cell-status">
+                    <span className={`status-badge status-${r.status.toLowerCase()}`}>
+                      {getStatusIcon(r.status)}
+                      {getStatusLabel(r)}
+                    </span>
+                  </td>
+                  <td className="cell-cost">{r.cost?.toLocaleString('vi-VN') || 0}</td>
+                  <td className="cell-payer">Kế toán</td>
+                  <td className="cell-date">{formatDate(r.createdDate)}</td>
+                  <td className="cell-actions">
+                    <div className="table-actions">
+                      <button
+                        className="btn-icon btn-view"
+                        onClick={() => handleViewDetail(r)}
+                        title="Xem chi tiết"
+                      >
+                        <Eye size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={9} className="table-empty-cell">
+                  {loading ? 'Đang tải dữ liệu...' : 'Không tìm thấy yêu cầu bảo trì nào phù hợp.'}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        <Pagination
+          currentPage={safePage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          onPageChange={handlePageChange}
+        />
+      </div>
+
+      {/* ==================================================================
+          MODALS
+          ================================================================== */}
+
+      {/* 1. Modal Chi tiết */}
+      <AppModal
+        open={!!selectedRequest}
+        onClose={handleCloseDetail}
+        title="Chi tiết yêu cầu bảo trì"
+        icon={<Wrench size={18} />}
+        color="teal"
+        size="md"
+        footer={
+          <button type="button" className="ms-btn ms-btn--ghost" onClick={handleCloseDetail}>
+            Đóng
+          </button>
+        }
+      >
+        {selectedRequest && (
+          <div className="rr-detail-body">
+            {/* Profile strip */}
+            <div className="rr-profile-strip">
+              <div className="rr-avatar">
+                {(selectedRequest.tenantId?.fullname || selectedRequest.tenantId?.username || '?').charAt(0).toUpperCase()}
+              </div>
+              <div className="rr-profile-info">
+                <div className="rr-profile-name">
+                  {selectedRequest.tenantId?.fullname || selectedRequest.tenantId?.username || '-'}
+                </div>
+                <div className="rr-profile-meta">
+                  <span className="rr-meta-tag">{selectedRequest.room?.name || selectedRequest.room?.roomCode || '-'}</span>
+                  <span className={`rr-status-tag rr-status-${selectedRequest.status.toLowerCase()}`}>
+                    {getStatusIcon(selectedRequest.status)}
+                    {getStatusLabel(selectedRequest)}
                   </span>
                 </div>
+              </div>
+            </div>
 
-                {/* Mô tả */}
-                <div className="detail-description-block">
-                  <span className="detail-field-label">Mô tả</span>
-                  <p className="detail-description-text">{selectedRequest.description || '-'}</p>
+            {/* Info grid */}
+            <div className="rr-two-col">
+              <div className="rr-col-left">
+                <div className="rr-section">
+                  <div className="rr-section-title">
+                    <Wrench size={15} />
+                    Thông tin cơ bản
+                  </div>
+                  <div className="rr-rows">
+                    <div className="rr-row">
+                      <span className="rr-label">Loại</span>
+                      <span className="rr-value">{selectedRequest.type}</span>
+                    </div>
+                    <div className="rr-row">
+                      <span className="rr-label">Thiết bị</span>
+                      <span className="rr-value">{selectedRequest.devicesId?.name || '-'}</span>
+                    </div>
+                    <div className="rr-row">
+                      <span className="rr-label">Chi phí</span>
+                      <span className="rr-value rr-value--amount">
+                        {selectedRequest.cost?.toLocaleString('vi-VN') || 0} VNĐ
+                      </span>
+                    </div>
+                    <div className="rr-row">
+                      <span className="rr-label">Ngày tạo</span>
+                      <span className="rr-value">{formatDate(selectedRequest.createdDate)}</span>
+                    </div>
+                    <div className="rr-row">
+                      <span className="rr-label">Người thanh toán</span>
+                      <span className="rr-value">Kế toán</span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Tình trạng xử lý + nút Xong */}
-                <div className="detail-status-actions">
-                  <div className="detail-status-actions-select-row">
-                    <span className="detail-status-clock">🕐</span>
-                    <span className="detail-status-label">Tình trạng xử lý</span>
+                {selectedRequest.notes && (
+                  <div className="rr-section">
+                    <div className="rr-section-title">
+                      <AlertCircle size={15} />
+                      Ghi chú
+                    </div>
+                    <p className="rr-description">{selectedRequest.notes}</p>
+                  </div>
+                )}
+
+                {selectedRequest.images && selectedRequest.images.length > 0 && (
+                  <div className="rr-section">
+                    <div className="rr-section-title">
+                      <ImageIcon size={15} />
+                      Hình ảnh ({selectedRequest.images.length})
+                    </div>
+                    <div className="rr-images-grid">
+                      {selectedRequest.images.map((url, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          className="rr-image-btn"
+                          onClick={() => handleOpenImagePreview(url)}
+                        >
+                          <img src={url} alt={`Ảnh ${idx + 1}`} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="rr-col-right">
+                <div className="rr-section">
+                  <div className="rr-section-title">
+                    <AlertCircle size={15} />
+                    Mô tả
+                  </div>
+                  <p className="rr-description">{selectedRequest.description || '-'}</p>
+                </div>
+
+                <div className="rr-section">
+                  <div className="rr-section-title">
+                    <Clock size={15} />
+                    Cập nhật trạng thái
+                  </div>
+                  <div className="rr-status-row">
                     <select
-                      className="detail-status-select detail-status-select--inline"
+                      className="rr-status-select"
                       value={selectedRequest.status}
                       onChange={(e) =>
                         handleUpdateStatus(
@@ -748,318 +676,197 @@ export default function MaintenanceRequestsList() {
                         selectedRequest.status === 'Done'
                       }
                     >
-                      <option value="Pending" disabled={selectedRequest.status !== 'Pending'}>
-                        Chờ xử lý
-                      </option>
-                      <option
-                        value="Processing"
-                        disabled={selectedRequest.status === 'Done'}
-                      >
-                        Đang xử lý
-                      </option>
-                      <option value="Done" disabled={false}>
-                        Đã xử lý
-                      </option>
+                      <option value="Pending" disabled={selectedRequest.status !== 'Pending'}>Chờ xử lý</option>
+                      <option value="Processing" disabled={selectedRequest.status === 'Done'}>Đang xử lý</option>
+                      <option value="Done" disabled={false}>Đã xử lý</option>
                     </select>
                     {updatingId === selectedRequest._id && (
-                      <span className="detail-status-updating">Đang cập nhật...</span>
+                      <span className="rr-updating-text">Đang cập nhật...</span>
                     )}
-                    <button
-                      type="button"
-                      className="detail-done-btn-orange"
-                      onClick={handleCloseDetail}
-                    >
-                      Xong
-                    </button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         )}
+      </AppModal>
 
-        {showMaintenanceStatusConfirmModal && pendingMaintenanceStatusChange && (
-          <div className="repair-modal-overlay" onClick={handleCloseMaintenanceStatusConfirmModal}>
-            <div
-              className="repair-modal maintenance-status-confirm-modal"
-              onClick={(e) => e.stopPropagation()}
+      {/* 2. Modal Xem ảnh */}
+      <AppModal
+        open={!!previewImageUrl}
+        onClose={handleCloseImagePreview}
+        size="md"
+        hideClose
+      >
+        <div className="rr-image-fullscreen">
+          <img src={previewImageUrl || ''} alt="Ảnh yêu cầu" />
+        </div>
+      </AppModal>
+
+      {/* 3. Modal Xác nhận chuyển trạng thái */}
+      <AppModal
+        open={showMaintenanceStatusConfirmModal}
+        onClose={handleCloseMaintenanceStatusConfirmModal}
+        title="Xác nhận chuyển trạng thái"
+        icon={<AlertCircle size={18} />}
+        color="orange"
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              className="ms-btn ms-btn--ghost"
+              onClick={handleCloseMaintenanceStatusConfirmModal}
+              disabled={!!updatingId}
             >
-              <div className="repair-modal-header">
-                <h2>Xác nhận chuyển trạng thái</h2>
+              Hủy bỏ
+            </button>
+            <button
+              type="button"
+              className="ms-btn ms-btn--primary"
+              onClick={handleConfirmMaintenanceStatusChange}
+              disabled={!!updatingId}
+            >
+              <Check size={16} />
+              Xác nhận
+            </button>
+          </>
+        }
+      >
+        <div className="rr-confirm-body">
+          <p className="rr-confirm-text">
+            Bạn có chắc muốn chuyển yêu cầu này sang trạng thái{' '}
+            <strong>{pendingMaintenanceStatusChange ? getMaintenanceStatusText(pendingMaintenanceStatusChange.nextStatus) : ''}</strong>?
+          </p>
+        </div>
+      </AppModal>
+
+      {/* 4. Modal Tạo phiếu chi */}
+      <AppModal
+        open={showPaymentModal}
+        onClose={handleClosePaymentModal}
+        title="Tạo phiếu chi bảo trì"
+        icon={<DollarSign size={18} />}
+        color="teal"
+        size="md"
+        footer={
+          <>
+            <button
+              type="button"
+              className="ms-btn ms-btn--ghost"
+              onClick={handleClosePaymentModal}
+              disabled={updatingId === selectedRequest?._id}
+            >
+              Hủy bỏ
+            </button>
+            <button
+              type="submit"
+              form="mm-payment-form"
+              className="ms-btn ms-btn--primary"
+              disabled={
+                updatingId === selectedRequest?._id ||
+                !paymentForm.financialAmount ||
+                autoPaymentVoucherLoading ||
+                !!autoPaymentVoucherError ||
+                !autoPaymentVoucher
+              }
+            >
+              <CheckCircle2 size={16} />
+              {updatingId === selectedRequest?._id ? 'Đang xử lý...' : 'Hoàn thành'}
+            </button>
+          </>
+        }
+      >
+        <form id="mm-payment-form" onSubmit={(e) => { e.preventDefault(); handlePaymentSubmit(); }}>
+          <div className="ms-field">
+            <label className="ms-label">Mã phiếu chi</label>
+            <div className="ms-input-wrap">
+              <input
+                type="text"
+                className="ms-input"
+                value={
+                  autoPaymentVoucherLoading
+                    ? 'Đang tạo mã phiếu chi...'
+                    : autoPaymentVoucher || 'Chưa tạo được mã phiếu chi'
+                }
+                readOnly
+              />
+            </div>
+            {autoPaymentVoucherError && (
+              <div className="rr-retry-row">
+                <span className="ms-error-text">{autoPaymentVoucherError}</span>
                 <button
                   type="button"
-                  className="modal-close-btn"
-                  onClick={handleCloseMaintenanceStatusConfirmModal}
-                  aria-label="Đóng"
-                >
-                  ×
-                </button>
-              </div>
-              <div className="repair-modal-body">
-                <p className="maintenance-status-confirm-text">
-                  Bạn có chắc muốn chuyển yêu cầu này sang trạng thái{' '}
-                  <strong>{getMaintenanceStatusText(pendingMaintenanceStatusChange.nextStatus)}</strong>?
-                </p>
-                <div className="complete-form-actions">
-                  <button
-                    type="button"
-                    className="btn-cancel"
-                    onClick={handleCloseMaintenanceStatusConfirmModal}
-                    disabled={Boolean(updatingId)}
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-submit"
-                    onClick={handleConfirmMaintenanceStatusChange}
-                    disabled={Boolean(updatingId)}
-                  >
-                    Xác nhận
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Modal preview hình ảnh */}
-        {previewImageUrl && (
-          <div className="repair-modal-overlay" onClick={handleCloseImagePreview}>
-            <div className="repair-image-preview-modal" onClick={(e) => e.stopPropagation()}>
-              <button
-                type="button"
-                className="modal-close-btn"
-                onClick={handleCloseImagePreview}
-                aria-label="Đóng"
-              >
-                ×
-              </button>
-              <img src={previewImageUrl} alt="Xem ảnh yêu cầu" className="repair-image-preview" />
-            </div>
-          </div>
-        )}
-
-        {/* Modal nhập phiếu chi khi chọn "Đã xử lý" */}
-        {showPaymentModal && selectedRequest && (
-          <div className="repair-modal-overlay" onClick={handleClosePaymentModal}>
-            <div
-              className="repair-modal repair-complete-modal"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="repair-modal-header">
-                <h2>Tạo phiếu chi bảo trì</h2>
-                <button
-                  type="button"
-                  className="modal-close-btn"
-                  onClick={handleClosePaymentModal}
-                  aria-label="Đóng"
-                >
-                  ×
-                </button>
-              </div>
-              <div className="repair-modal-body">
-                <div className="complete-form-group">
-                  <label>Mã phiếu chi</label>
-                  <input
-                    type="text"
-                    value={
-                      autoPaymentVoucherLoading
-                        ? 'Đang tạo mã phiếu chi...'
-                        : autoPaymentVoucher || 'Chưa tạo được mã phiếu chi'
-                    }
-                    disabled
-                  />
-                  {autoPaymentVoucherError && (
-                    <div
-                      style={{
-                        display: 'flex',
-                        gap: 12,
-                        alignItems: 'center',
-                        marginTop: 6,
-                      }}
-                    >
-                      <span className="error-message" style={{ marginTop: 0 }}>
-                        {autoPaymentVoucherError}
-                      </span>
-                      <button
-                        type="button"
-                        className="btn-cancel"
-                        onClick={() => {
-                          if (autoPaymentVoucherLoading) return;
-                          setAutoPaymentVoucher('');
-                          setAutoPaymentVoucherError('');
-                          (async () => {
-                            try {
-                              setAutoPaymentVoucherLoading(true);
-                              const res = await requestService.getNextMaintenancePaymentVoucher();
-                              const code = res?.data?.paymentVoucher;
-                              if (!code) throw new Error('Không thể tạo mã phiếu chi');
-                              setAutoPaymentVoucher(code);
-                            } catch (err) {
-                              console.error('Lỗi khi tạo mã phiếu chi:', err);
-                              setAutoPaymentVoucherError(
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                (err as any)?.response?.data?.message ||
-                                (err as Error).message ||
-                                'Không thể tạo mã phiếu chi',
-                              );
-                            } finally {
-                              setAutoPaymentVoucherLoading(false);
-                            }
-                          })();
-                        }}
-                        disabled={autoPaymentVoucherLoading}
-                      >
-                        Thử lại
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <div className="complete-form-group">
-                  <label>
-                    Tiêu đề phiếu chi <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={paymentForm.financialTitle}
-                    onChange={(e) => {
-                      setPaymentForm((prev) => ({ ...prev, financialTitle: e.target.value }));
-                      if (paymentFormErrors.financialTitle) {
-                        setPaymentFormErrors((prev) => ({ ...prev, financialTitle: '' }));
+                  className="ms-btn ms-btn--ghost"
+                  onClick={() => {
+                    if (autoPaymentVoucherLoading) return;
+                    setAutoPaymentVoucher('');
+                    setAutoPaymentVoucherError('');
+                    (async () => {
+                      try {
+                        setAutoPaymentVoucherLoading(true);
+                        const res = await requestService.getNextMaintenancePaymentVoucher();
+                        const code = res?.data?.paymentVoucher;
+                        if (!code) throw new Error('Không thể tạo mã phiếu chi');
+                        setAutoPaymentVoucher(code);
+                      } catch (err: unknown) {
+                        const e = err as { response?: { data?: { message?: string } }; message?: string };
+                        setAutoPaymentVoucherError(e.response?.data?.message || e.message || 'Không thể tạo mã phiếu chi');
+                      } finally {
+                        setAutoPaymentVoucherLoading(false);
                       }
-                    }}
-                    placeholder="Nhập tiêu đề phiếu chi"
-                  />
-                  {paymentFormErrors.financialTitle && (
-                    <span className="error-message">{paymentFormErrors.financialTitle}</span>
-                  )}
-                </div>
-                <div className="complete-form-group">
-                  <label>
-                    Tổng số tiền (VNĐ) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={paymentForm.financialAmount}
-                    onChange={(e) => {
-                      setPaymentForm((prev) => ({ ...prev, financialAmount: e.target.value }));
-                      if (paymentFormErrors.financialAmount) {
-                        setPaymentFormErrors((prev) => ({ ...prev, financialAmount: '' }));
-                      }
-                    }}
-                    placeholder="Nhập tổng số tiền"
-                  />
-                  {paymentFormErrors.financialAmount && (
-                    <span className="error-message">{paymentFormErrors.financialAmount}</span>
-                  )}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-                  <button
-                    type="button"
-                    className="btn-submit"
-                    onClick={handlePaymentSubmit}
-                    disabled={
-                      updatingId === selectedRequest._id ||
-                      !paymentForm.financialTitle.trim() ||
-                      !paymentForm.financialAmount ||
-                      autoPaymentVoucherLoading ||
-                      !!autoPaymentVoucherError ||
-                      !autoPaymentVoucher
-                    }
-                    style={{ padding: '6px 16px', fontSize: '14px' }}
-                  >
-                    {updatingId === selectedRequest._id ? 'Đang xử lý...' : 'Hoàn thành'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Pagination đưa ra ngoài thẻ card và dùng chung thiết kế với màn yêu cầu sửa chữa */}
-      {!loading && !error && (
-        <div className={`repair-pagination ${isManager ? 'repair-pagination--manager' : ''}`}>
-          <div className="repair-pagination-info">
-            <span>
-              Tổng: <strong>{filteredRequests.length}</strong> bản ghi | Trang{' '}
-              <strong>{safePage}</strong>/{Math.max(totalPages, 1)}
-            </span>
-            {!isManager && (
-              <div className="repair-pagination-items-per-page">
-                <label htmlFor="items-per-page">Hiển thị:</label>
-                <select
-                  id="items-per-page"
-                  value={itemsPerPage}
-                  onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                  className="repair-pagination-select"
+                    })();
+                  }}
+                  disabled={autoPaymentVoucherLoading}
                 >
-                  <option value={5}>5</option>
-                  <option value={8}>8</option>
-                  <option value={10}>10</option>
-                  <option value={11}>11</option>
-                  <option value={20}>20</option>
-                </select>
+                  Thử lại
+                </button>
               </div>
             )}
           </div>
-          <div className="repair-pagination-controls">
-            <button
-              type="button"
-              className="pagination-arrow-btn"
-              onClick={() => handlePageChange(1)}
-              disabled={safePage === 1 || loading}
-              aria-label="Trang đầu"
-            >
-              «
-            </button>
-            <button
-              type="button"
-              className="pagination-arrow-btn"
-              onClick={() => handlePageChange(safePage - 1)}
-              disabled={safePage === 1 || loading}
-              aria-label="Trang trước"
-            >
-              ‹
-            </button>
 
-            {getVisiblePages().map((pageNumber) => (
-              <button
-                key={pageNumber}
-                type="button"
-                className={pageNumber === safePage ? 'pagination-current-page' : 'pagination-arrow-btn'}
-                onClick={() => handlePageChange(pageNumber)}
-                disabled={loading}
-                aria-label={`Trang ${pageNumber}`}
-              >
-                {pageNumber}
-              </button>
-            ))}
-
-            <button
-              type="button"
-              className="pagination-arrow-btn"
-              onClick={() => handlePageChange(safePage + 1)}
-              disabled={safePage >= totalPages || totalPages === 0 || loading}
-              aria-label="Trang sau"
-            >
-              ›
-            </button>
-            <button
-              type="button"
-              className="pagination-arrow-btn"
-              onClick={() => handlePageChange(totalPages)}
-              disabled={safePage >= totalPages || totalPages === 0 || loading}
-              aria-label="Trang cuối"
-            >
-              »
-            </button>
+          <div className="ms-field">
+            <label className="ms-label">Tiêu đề phiếu chi <span className="ms-label-required">*</span></label>
+            <div className="ms-input-wrap">
+              <input
+                type="text"
+                className={`ms-input ${paymentFormErrors.financialTitle ? 'ms-input--error' : ''}`}
+                placeholder="Nhập tiêu đề phiếu chi"
+                value={paymentForm.financialTitle}
+                onChange={(e) => {
+                  setPaymentForm((prev) => ({ ...prev, financialTitle: e.target.value }));
+                  if (paymentFormErrors.financialTitle) setPaymentFormErrors((prev) => ({ ...prev, financialTitle: '' }));
+                }}
+              />
+            </div>
+            {paymentFormErrors.financialTitle && (
+              <span className="ms-error-text">{paymentFormErrors.financialTitle}</span>
+            )}
           </div>
-        </div>
-      )}
+
+          <div className="ms-field">
+            <label className="ms-label">Tổng số tiền (VNĐ) <span className="ms-label-required">*</span></label>
+            <div className="ms-input-wrap ms-input-wrap--prefix">
+              <span className="ms-input-prefix">₫</span>
+              <input
+                type="number"
+                className={`ms-input ms-input--prefix ${paymentFormErrors.financialAmount ? 'ms-input--error' : ''}`}
+                placeholder="0"
+                value={paymentForm.financialAmount}
+                onChange={(e) => {
+                  setPaymentForm((prev) => ({ ...prev, financialAmount: e.target.value }));
+                  if (paymentFormErrors.financialAmount) setPaymentFormErrors((prev) => ({ ...prev, financialAmount: '' }));
+                }}
+                min="0"
+                step="1000"
+              />
+            </div>
+            {paymentFormErrors.financialAmount && (
+              <span className="ms-error-text">{paymentFormErrors.financialAmount}</span>
+            )}
+          </div>
+        </form>
+      </AppModal>
     </div>
   );
 }

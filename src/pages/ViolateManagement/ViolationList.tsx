@@ -389,9 +389,9 @@ export default function ViolationList() {
                 <ShieldAlert size={22} strokeWidth={2} />
               </div>
               <div className="violation-title-text">
-                <h2>Quản lý Xử lý Vi phạm</h2>
+                <h2>Xử Lý Vi Phạm</h2>
                 <p className="violation-subtitle">
-                  Quản lý các vi phạm và bồi thường của cư dân trong tòa nhà Hoàng Nam.
+                  Quản lý các vi phạm của cư dân trong tòa nhà Hoàng Nam
                 </p>
               </div>
             </div>

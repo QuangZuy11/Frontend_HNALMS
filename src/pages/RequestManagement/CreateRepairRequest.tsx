@@ -1,2 +1,0 @@
-// Create repair request
-export { }
