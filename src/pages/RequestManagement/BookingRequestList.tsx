@@ -235,12 +235,7 @@ const BookingRequestList = () => {
                 <h2>Khách Đặt Phòng Online</h2>
                 <p className="br-subtitle">
                   Quản lý các yêu cầu đặt phòng và làm hợp đồng cho khách
-                  {awaitingCount > 0 && (
-                    <span style={{ color: "#f59e0b", fontWeight: 600 }}>
-                      {" "}
-                      — Đang tự động kiểm tra thanh toán mỗi 5 giây...
-                    </span>
-                  )}
+                  
                 </p>
               </div>
             </div>

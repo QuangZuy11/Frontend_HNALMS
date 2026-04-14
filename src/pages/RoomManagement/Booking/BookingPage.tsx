@@ -271,7 +271,7 @@ export default function BookingPage() {
                 newErrors.startDate = "Không được chọn ngày vào ở quá 6 tháng";
             } else if (room?.contractRenewalStatus !== "declined") {
                 const isFutureMonth = sd.getFullYear() > today.getFullYear() ||
-                                     (sd.getFullYear() === today.getFullYear() && sd.getMonth() > today.getMonth());
+                    (sd.getFullYear() === today.getFullYear() && sd.getMonth() > today.getMonth());
                 if (isFutureMonth && sd.getDate() !== 1) {
                     newErrors.startDate = "Từ tháng sau trở đi chỉ được phép chọn ngày 1 đầu tháng";
                 }
@@ -471,10 +471,10 @@ export default function BookingPage() {
                     {/* ========== MAIN ========== */}
                     <div className="booking-main">
                         {bookingStep === "form" && (
-                            <form className="booking-form-outer" onSubmit={handleSubmit}>
+                            <form className="bkp-form-outer" onSubmit={handleSubmit}>
                                 {!depositAllowed && (
                                     <div className="bk-card">
-                                        <div className="form-submit-error">
+                                        <div className="bkp-submit-error">
                                             {room.successorLeaseBooked
                                                 ? "Kỳ thuê tiếp theo đã có hợp đồng. Phòng không mở đặt cọc thêm."
                                                 : "Phòng hiện không thể đặt cọc trực tuyến."}
@@ -492,31 +492,31 @@ export default function BookingPage() {
 
                                     <div className="bk-fields">
                                         {/* Họ tên */}
-                                        <div className="form-group">
-                                            <label className="form-label">
+                                        <div className="bkp-group">
+                                            <label className="bkp-label">
                                                 <User size={13} style={{ display: "inline", verticalAlign: "-2px", marginRight: "0.3rem" }} />
-                                                Họ Tên Đầy Đủ <span className="form-required">*</span>
+                                                Họ Tên Đầy Đủ <span className="bkp-required">*</span>
                                             </label>
                                             <input
                                                 type="text"
-                                                className={`form-input ${errors.fullName ? "error" : ""}`}
+                                                className={`bkp-input ${errors.fullName ? "error" : ""}`}
                                                 placeholder="Nguyễn Văn A"
                                                 value={fullName}
                                                 onChange={e => setFullName(e.target.value)}
                                             />
-                                            {errors.fullName && <span className="form-error">{errors.fullName}</span>}
+                                            {errors.fullName && <span className="bkp-error">{errors.fullName}</span>}
                                         </div>
 
                                         {/* Email + SĐT */}
-                                        <div className="form-row-2col">
-                                            <div className="form-group">
-                                                <label className="form-label">
+                                        <div className="bkp-row-2col">
+                                            <div className="bkp-group">
+                                                <label className="bkp-label">
                                                     <Mail size={13} style={{ display: "inline", verticalAlign: "-2px", marginRight: "0.3rem" }} />
-                                                    Email <span className="form-required">*</span>
+                                                    Email <span className="bkp-required">*</span>
                                                 </label>
                                                 <input
                                                     type="email"
-                                                    className={`form-input ${errors.email || duplicateErrors.email ? "error" : ""}`}
+                                                    className={`bkp-input ${errors.email || duplicateErrors.email ? "error" : ""}`}
                                                     placeholder="email@example.com"
                                                     value={email}
                                                     onChange={e => {
@@ -525,17 +525,17 @@ export default function BookingPage() {
                                                     }}
                                                 />
                                                 {(errors.email || duplicateErrors.email) && (
-                                                    <span className="form-error">{duplicateErrors.email || errors.email}</span>
+                                                    <span className="bkp-error">{duplicateErrors.email || errors.email}</span>
                                                 )}
                                             </div>
-                                            <div className="form-group">
-                                                <label className="form-label">
+                                            <div className="bkp-group">
+                                                <label className="bkp-label">
                                                     <Phone size={13} style={{ display: "inline", verticalAlign: "-2px", marginRight: "0.3rem" }} />
-                                                    Số Điện Thoại <span className="form-required">*</span>
+                                                    Số Điện Thoại <span className="bkp-required">*</span>
                                                 </label>
                                                 <input
                                                     type="text"
-                                                    className={`form-input ${errors.phone || duplicateErrors.phone ? "error" : ""}`}
+                                                    className={`bkp-input ${errors.phone || duplicateErrors.phone ? "error" : ""}`}
                                                     placeholder="0912345678"
                                                     value={phone}
                                                     onChange={e => {
@@ -544,20 +544,20 @@ export default function BookingPage() {
                                                     }}
                                                 />
                                                 {(errors.phone || duplicateErrors.phone) && (
-                                                    <span className="form-error">{duplicateErrors.phone || errors.phone}</span>
+                                                    <span className="bkp-error">{duplicateErrors.phone || errors.phone}</span>
                                                 )}
                                             </div>
                                         </div>
 
                                         {/* CCCD */}
-                                        <div className="form-group">
-                                            <label className="form-label">
+                                        <div className="bkp-group">
+                                            <label className="bkp-label">
                                                 <IdCard size={13} style={{ display: "inline", verticalAlign: "-2px", marginRight: "0.3rem" }} />
-                                                Số CCCD / CMND <span className="form-required">*</span>
+                                                Số CCCD / CMND <span className="bkp-required">*</span>
                                             </label>
                                             <input
                                                 type="text"
-                                                className={`form-input ${errors.idCard || duplicateErrors.cccd ? "error" : ""}`}
+                                                className={`bkp-input ${errors.idCard || duplicateErrors.cccd ? "error" : ""}`}
                                                 placeholder="012345678901"
                                                 value={idCard}
                                                 onChange={e => {
@@ -566,15 +566,15 @@ export default function BookingPage() {
                                                 }}
                                             />
                                             {(errors.idCard || duplicateErrors.cccd) && (
-                                                <span className="form-error">{duplicateErrors.cccd || errors.idCard}</span>
+                                                <span className="bkp-error">{duplicateErrors.cccd || errors.idCard}</span>
                                             )}
                                         </div>
 
                                         {/* Ngày sinh + HTTQ */}
-                                        <div className="form-row-2col">
-                                            <div className="form-group">
-                                                <label className="form-label">
-                                                    Ngày Sinh <span className="form-required">*</span>
+                                        <div className="bkp-row-2col">
+                                            <div className="bkp-group">
+                                                <label className="bkp-label">
+                                                    Ngày Sinh <span className="bkp-required">*</span>
                                                 </label>
                                                 <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
                                                     <DatePicker
@@ -583,39 +583,52 @@ export default function BookingPage() {
                                                         format="dd/MM/yyyy"
                                                         slotProps={{
                                                             textField: {
-                                                                variant: "outlined",
+                                                                variant: "standard",
                                                                 error: !!errors.dob,
                                                                 sx: {
                                                                     width: '100%',
-                                                                    bgcolor: '#fff',
                                                                     '& .MuiInputBase-root': {
-                                                                        height: '42px',
-                                                                        borderRadius: '6px',
-                                                                        fontFamily: 'inherit',
-                                                                        fontSize: '0.875rem'
+                                                                        fontFamily: "'Inter', sans-serif",
+                                                                        fontSize: '0.9rem',
+                                                                        color: '#1a1a1a',
+                                                                        marginTop: 0,
+                                                                        '&:before': {
+                                                                            borderBottom: errors.dob ? '1.5px solid #ef4444' : '1.5px solid #e0e0e0',
+                                                                        },
+                                                                        '&:hover:not(.Mui-disabled):before': {
+                                                                            borderBottom: errors.dob ? '1.5px solid #ef4444' : '1.5px solid #3579C6',
+                                                                        },
+                                                                        '&:after': {
+                                                                            borderBottom: errors.dob ? '1.5px solid #ef4444' : '1.5px solid #3579C6',
+                                                                        }
                                                                     },
-                                                                    '& .MuiOutlinedInput-notchedOutline': {
-                                                                        borderColor: errors.dob ? '#dc2626' : '#cbd5e1'
+                                                                    '& .MuiInputBase-input': {
+                                                                        padding: '0.5rem 0',
+                                                                        boxSizing: 'border-box',
+                                                                        height: 'auto',
+                                                                    },
+                                                                    '& .MuiInputAdornment-root': {
+                                                                        marginRight: 0,
                                                                     }
                                                                 }
                                                             }
                                                         }}
                                                     />
                                                 </LocalizationProvider>
-                                                {errors.dob && <span className="form-error">{errors.dob}</span>}
+                                                {errors.dob && <span className="bkp-error">{errors.dob}</span>}
                                             </div>
-                                            <div className="form-group">
-                                                <label className="form-label">
-                                                    Hộ Khẩu Thường Trú <span className="form-required">*</span>
+                                            <div className="bkp-group">
+                                                <label className="bkp-label">
+                                                    Hộ Khẩu Thường Trú <span className="bkp-required">*</span>
                                                 </label>
                                                 <input
                                                     type="text"
-                                                    className={`form-input ${errors.address ? "error" : ""}`}
+                                                    className={`bkp-input ${errors.address ? "error" : ""}`}
                                                     placeholder="Địa chỉ..."
                                                     value={address}
                                                     onChange={e => setAddress(e.target.value)}
                                                 />
-                                                {errors.address && <span className="form-error">{errors.address}</span>}
+                                                {errors.address && <span className="bkp-error">{errors.address}</span>}
                                             </div>
                                         </div>
                                     </div>
@@ -630,83 +643,89 @@ export default function BookingPage() {
                                     <p className="bk-card-desc">Chọn ngày vào ở, thời hạn thuê và số tháng muốn trả trước</p>
 
                                     <div className="bk-fields">
-                                        {/* Ngày muốn vào ở */}
-                                        <div className="form-group">
-                                            <label className="form-label">
-                                                <Calendar size={13} style={{ display: "inline", verticalAlign: "-2px", marginRight: "0.3rem" }} />
-                                                Ngày Muốn Vào Ở <span className="form-required">*</span>
-                                            </label>
-                                            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
-                                                <DatePicker
-                                                    value={startDate ? new Date(startDate) : null}
-                                                    onChange={(newValue) => setStartDate(newValue ? toLocalDateString(newValue) : "")}
-                                                    format="dd/MM/yyyy"
-                                                    minDate={new Date(minStartDateStr)}
-                                                    maxDate={maxDateLimit}
-                                                    shouldDisableDate={(date) => {
-                                                        if (!date) return false;
-                                                        if (room?.contractRenewalStatus === "declined") {
+                                        <div className="bkp-row-2col">
+                                            {/* Ngày muốn vào ở */}
+                                            <div className="bkp-group">
+                                                <label className="bkp-label">
+                                                    <Calendar size={13} style={{ display: "inline", verticalAlign: "-2px", marginRight: "0.3rem" }} />
+                                                    Ngày Muốn Vào Ở <span className="bkp-required">*</span>
+                                                </label>
+                                                <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
+                                                    <DatePicker
+                                                        value={startDate ? new Date(startDate) : null}
+                                                        onChange={(newValue) => setStartDate(newValue ? toLocalDateString(newValue) : "")}
+                                                        format="dd/MM/yyyy"
+                                                        minDate={new Date(minStartDateStr)}
+                                                        maxDate={maxDateLimit}
+                                                        shouldDisableDate={(date) => {
+                                                            if (!date) return false;
+                                                            if (room?.contractRenewalStatus === "declined") {
+                                                                return false;
+                                                            }
+                                                            const isFutureMonth =
+                                                                date.getFullYear() > today.getFullYear() ||
+                                                                (date.getFullYear() === today.getFullYear() && date.getMonth() > today.getMonth());
+                                                            if (isFutureMonth) {
+                                                                return date.getDate() !== 1;
+                                                            }
                                                             return false;
-                                                        }
-                                                        const isFutureMonth = 
-                                                            date.getFullYear() > today.getFullYear() ||
-                                                            (date.getFullYear() === today.getFullYear() && date.getMonth() > today.getMonth());
-                                                        if (isFutureMonth) {
-                                                            return date.getDate() !== 1;
-                                                        }
-                                                        return false;
-                                                    }}
-                                                    slotProps={{
-                                                        textField: {
-                                                            variant: "outlined",
-                                                            error: !!errors.startDate,
-                                                            sx: {
-                                                                width: '100%',
-                                                                bgcolor: '#fff',
-                                                                '& .MuiInputBase-root': {
-                                                                    height: '42px',
-                                                                    borderRadius: '6px',
-                                                                    fontFamily: 'inherit',
-                                                                    fontSize: '0.875rem' // matched with standard UI
-                                                                },
-                                                                '& .MuiOutlinedInput-notchedOutline': {
-                                                                    borderColor: errors.startDate ? '#dc2626' : '#cbd5e1'
-                                                                },
-                                                                '&:hover .MuiOutlinedInput-notchedOutline': {
-                                                                    borderColor: '#94a3b8'
-                                                                },
-                                                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                                                    borderColor: '#2563eb',
-                                                                    borderWidth: '1px'
+                                                        }}
+                                                        slotProps={{
+                                                            textField: {
+                                                                variant: "standard",
+                                                                error: !!errors.startDate,
+                                                                sx: {
+                                                                    width: '100%',
+                                                                    '& .MuiInputBase-root': {
+                                                                        fontFamily: "'Inter', sans-serif",
+                                                                        fontSize: '0.9rem',
+                                                                        color: '#1a1a1a',
+                                                                        marginTop: 0,
+                                                                        '&:before': {
+                                                                            borderBottom: errors.startDate ? '1.5px solid #ef4444' : '1.5px solid #e0e0e0',
+                                                                        },
+                                                                        '&:hover:not(.Mui-disabled):before': {
+                                                                            borderBottom: errors.startDate ? '1.5px solid #ef4444' : '1.5px solid #3579C6',
+                                                                        },
+                                                                        '&:after': {
+                                                                            borderBottom: errors.startDate ? '1.5px solid #ef4444' : '1.5px solid #3579C6',
+                                                                        }
+                                                                    },
+                                                                    '& .MuiInputBase-input': {
+                                                                        padding: '0.5rem 0',
+                                                                        boxSizing: 'border-box',
+                                                                        height: 'auto',
+                                                                    },
+                                                                    '& .MuiInputAdornment-root': {
+                                                                        marginRight: 0,
+                                                                    }
                                                                 }
                                                             }
-                                                        }
-                                                    }}
-                                                />
-                                            </LocalizationProvider>
-                                            {room.contractRenewalStatus === "declined" && (
-                                                <span className="form-hint" style={{display: "block", marginTop: "4px"}}>
-                                                    ⚠ Bắt đầu sớm nhất: {new Date(minStartDateStr).toLocaleDateString("vi-VN")} (ngày sau khi HĐ hiện tại kết thúc)
-                                                </span>
-                                            )}
-                                            {room.futureContractStartDate && (
-                                                <span className="form-hint" style={{display: "block", marginTop: "4px"}}>
-                                                    ⚠ Kết thúc trước: {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}
-                                                    {room.nextInactiveContractStart && ` (HĐ kế tiếp bắt đầu từ ${new Date(room.nextInactiveContractStart).toLocaleDateString("vi-VN")})`}
-                                                </span>
-                                            )}
-                                            {errors.startDate && <span className="form-error">{errors.startDate}</span>}
-                                        </div>
+                                                        }}
+                                                    />
+                                                </LocalizationProvider>
+                                                {room.contractRenewalStatus === "declined" && (
+                                                    <span className="bkp-hint" style={{ display: "block", marginTop: "4px" }}>
+                                                        ⚠ Bắt đầu sớm nhất: {new Date(minStartDateStr).toLocaleDateString("vi-VN")} (ngày sau khi HĐ hiện tại kết thúc)
+                                                    </span>
+                                                )}
+                                                {room.futureContractStartDate && (
+                                                    <span className="bkp-hint" style={{ display: "block", marginTop: "4px" }}>
+                                                        ⚠ Kết thúc trước: {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}
+                                                        {room.nextInactiveContractStart && ` (HĐ kế tiếp bắt đầu từ ${new Date(room.nextInactiveContractStart).toLocaleDateString("vi-VN")})`}
+                                                    </span>
+                                                )}
+                                                {errors.startDate && <span className="bkp-error">{errors.startDate}</span>}
+                                            </div>
 
-                                        {/* Số tháng thuê + Số tháng trả trước */}
-                                        <div className="form-row-2col">
-                                            <div className="form-group">
-                                                <label className="form-label">
-                                                    Số Tháng Muốn Thuê <span className="form-required">*</span>
+                                            {/* Số tháng thuê */}
+                                            <div className="bkp-group">
+                                                <label className="bkp-label">
+                                                    Số Tháng Muốn Thuê <span className="bkp-required">*</span>
                                                 </label>
                                                 <input
                                                     type="number"
-                                                    className={`form-input ${errors.duration ? "error" : ""}`}
+                                                    className={`bkp-input ${errors.duration ? "error" : ""}`}
                                                     min={minDuration}
                                                     max={maxDuration}
                                                     value={duration}
@@ -716,19 +735,23 @@ export default function BookingPage() {
                                                     }}
                                                 />
                                                 {minDuration > 1 && (
-                                                    <span className="form-hint">Tối thiểu {minDuration} tháng</span>
+                                                    <span className="bkp-hint">Tối thiểu {minDuration} tháng</span>
                                                 )}
                                                 {maxDuration < 60 && (
-                                                    <span className="form-hint" style={{display: "block"}}>Tối đa {maxDuration} tháng</span>
+                                                    <span className="bkp-hint" style={{ display: "block" }}>Tối đa {maxDuration} tháng</span>
                                                 )}
-                                                {errors.duration && <span className="form-error">{errors.duration}</span>}
+                                                {errors.duration && <span className="bkp-error">{errors.duration}</span>}
                                             </div>
-                                            <div className="form-group">
-                                                <label className="form-label">
+                                        </div>
+
+                                        <div className="bkp-row-2col">
+                                            {/* Số tháng trả trước */}
+                                            <div className="bkp-group">
+                                                <label className="bkp-label">
                                                     Số Tháng Muốn Trả Trước
                                                 </label>
                                                 <select
-                                                    className="form-input"
+                                                    className="bkp-input"
                                                     value={prepayMonths}
                                                     onChange={e => {
                                                         const v = e.target.value;
@@ -740,7 +763,7 @@ export default function BookingPage() {
                                                     ))}
                                                     <option value="all">Tất cả ({duration} tháng)</option>
                                                 </select>
-                                                <span className="form-hint">Tối thiểu {minPrepay} tháng</span>
+                                                <span className="bkp-hint">Tối thiểu {minPrepay} tháng</span>
                                             </div>
                                         </div>
                                     </div>
@@ -783,30 +806,30 @@ export default function BookingPage() {
                                                 <div key={i} className="coresident-row">
                                                     <span className="coresident-index">{i + 1}</span>
                                                     <div className="coresident-fields">
-                                                        <div className="form-group">
-                                                            <label className="form-label">Họ và tên <span className="form-required">*</span></label>
+                                                        <div className="bkp-group">
+                                                            <label className="bkp-label">Họ và tên <span className="bkp-required">*</span></label>
                                                             <input
                                                                 type="text"
-                                                                className={`form-input ${errors.coResidents?.[i]?.fullName ? "error" : ""}`}
+                                                                className={`bkp-input ${errors.coResidents?.[i]?.fullName ? "error" : ""}`}
                                                                 placeholder="Nguyễn Thị B"
                                                                 value={cr.fullName}
                                                                 onChange={e => updateCoResident(i, "fullName", e.target.value)}
                                                             />
                                                             {errors.coResidents?.[i]?.fullName && (
-                                                                <span className="form-error">{errors.coResidents[i].fullName}</span>
+                                                                <span className="bkp-error">{errors.coResidents[i].fullName}</span>
                                                             )}
                                                         </div>
-                                                        <div className="form-group">
-                                                            <label className="form-label">Số CCCD <span className="form-required">*</span></label>
+                                                        <div className="bkp-group">
+                                                            <label className="bkp-label">Số CCCD <span className="bkp-required">*</span></label>
                                                             <input
                                                                 type="text"
-                                                                className={`form-input ${errors.coResidents?.[i]?.cccd ? "error" : ""}`}
+                                                                className={`bkp-input ${errors.coResidents?.[i]?.cccd ? "error" : ""}`}
                                                                 placeholder="012345678901"
                                                                 value={cr.cccd}
                                                                 onChange={e => updateCoResident(i, "cccd", e.target.value)}
                                                             />
                                                             {errors.coResidents?.[i]?.cccd && (
-                                                                <span className="form-error">{errors.coResidents[i].cccd}</span>
+                                                                <span className="bkp-error">{errors.coResidents[i].cccd}</span>
                                                             )}
                                                         </div>
                                                     </div>
@@ -834,7 +857,7 @@ export default function BookingPage() {
                                     </div>
 
                                     {(submitError || duplicateErrors.global) && (
-                                        <div className="form-submit-error" style={{ marginTop: "1rem" }}>
+                                        <div className="bkp-submit-error" style={{ marginTop: "1rem" }}>
                                             {duplicateErrors.global || submitError}
                                         </div>
                                     )}
@@ -881,10 +904,6 @@ export default function BookingPage() {
                                             </span>
                                         </div>
                                         <div className="payment-info-row">
-                                            <span class="payment-info-label">Thời gian giữ phòng:</span>
-                                            <span className="payment-info-value">30 ngày</span>
-                                        </div>
-                                        <div className="payment-info-row">
                                             <span className="payment-info-label">Trạng thái:</span>
                                             <span className="success-badge">Chờ Xác Nhận</span>
                                         </div>
@@ -904,7 +923,7 @@ export default function BookingPage() {
                                         <button className="bk-primary-btn" onClick={() => navigate("/rooms")}>
                                             Quay Lại Danh Sách Phòng
                                         </button>
-                                        <button className="bk-outline-btn" onClick={() => navigate(`/rooms/${id}`)}>  
+                                        <button className="bk-outline-btn" onClick={() => navigate(`/rooms/${id}`)}>
                                             Xem Lại Chi Tiết Phòng
                                         </button>
                                     </div>
@@ -933,40 +952,58 @@ export default function BookingPage() {
                                 </span>
                             </div>
 
-                            <div className="sidebar-deposit-box">
-                                <div className="sidebar-deposit-row">
-                                    <span className="sidebar-price-label">Tiền Cọc</span>
-                                    <span className="sidebar-deposit-value">
-                                        {depositAmount > 0 ? `${depositAmount.toLocaleString("vi-VN")} đ` : "Liên hệ"}
-                                        <span className="sidebar-deposit-note"> = 1 tháng tiền nhà</span>
-                                    </span>
-                                </div>
-                            </div>
-
                             {/* Tóm tắt thông tin đã điền */}
-                            {bookingStep === "form" && startDate && (
-                                <div className="sidebar-summary-box">
-                                    <p className="sidebar-terms-title">📝 Thông tin đã chọn</p>
-                                    <div className="sidebar-summary-row">
-                                        <span>Ngày vào ở:</span>
-                                        <strong>{new Date(startDate).toLocaleDateString("vi-VN")}</strong>
-                                    </div>
-                                    <div className="sidebar-summary-row">
-                                        <span>Thời hạn:</span>
-                                        <strong>{duration} tháng</strong>
-                                    </div>
-                                    <div className="sidebar-summary-row">
-                                        <span>Trả trước:</span>
-                                        <strong>
-                                            {prepayMonths === "all" ? `${duration} tháng` : `${prepayMonths} tháng`}
-                                        </strong>
-                                    </div>
-                                    <div className="sidebar-summary-row">
-                                        <span>Người ở cùng:</span>
-                                        <strong>{coResidents.length} người</strong>
-                                    </div>
-                                </div>
-                            )}
+                            {bookingStep === "form" && startDate && (() => {
+                                const prepayCount = prepayMonths === "all" ? duration : Number(prepayMonths);
+                                const basePrice = room.price || 0;
+                                const prepayAmount = prepayCount * basePrice;
+                                const totalCost = basePrice + prepayAmount;
+
+                                return (
+                                    <>
+                                        <div className="sidebar-summary-box">
+                                            <p className="sidebar-terms-title">Thông tin đã chọn</p>
+                                            <div className="sidebar-summary-row">
+                                                <span>Ngày vào ở:</span>
+                                                <strong>{new Date(startDate).toLocaleDateString("vi-VN")}</strong>
+                                            </div>
+                                            <div className="sidebar-summary-row">
+                                                <span>Thời hạn:</span>
+                                                <strong>{duration} tháng</strong>
+                                            </div>
+                                            <div className="sidebar-summary-row">
+                                                <span>Trả trước:</span>
+                                                <strong>{prepayCount} tháng</strong>
+                                            </div>
+                                            <div className="sidebar-summary-row">
+                                                <span>Người ở cùng:</span>
+                                                <strong>{coResidents.length} người</strong>
+                                            </div>
+                                        </div>
+
+                                        <div className="sidebar-summary-box" style={{ backgroundColor: "#fffbeb", borderColor: "#fde68a" }}>
+                                            <p className="sidebar-terms-title" style={{ color: "#92400e", marginBottom: "0.5rem" }}>Ước tính chi phí</p>
+                                            <div className="sidebar-summary-row">
+                                                <span style={{ color: "#92400e" }}>Tiền cọc (1 tháng):</span>
+                                                <strong style={{ color: "#92400e" }}>{basePrice.toLocaleString("vi-VN")} đ</strong>
+                                            </div>
+                                            <div className="sidebar-summary-row">
+                                                <span style={{ color: "#92400e" }}>Trả trước ({prepayCount} tháng):</span>
+                                                <strong style={{ color: "#92400e" }}>{prepayAmount.toLocaleString("vi-VN")} đ</strong>
+                                            </div>
+                                            <div className="sidebar-summary-row" style={{ marginTop: "0.375rem", paddingTop: "0.5rem", borderTop: "1px dashed #fcd34d", fontWeight: "700" }}>
+                                                <span style={{ color: "#92400e" }}>Tổng cộng:</span>
+                                                <strong style={{ color: "#b45309", fontSize: "1.05rem" }}>
+                                                    {totalCost.toLocaleString("vi-VN")} đ
+                                                </strong>
+                                            </div>
+                                            <div style={{ fontSize: "0.725rem", color: "#b45309", marginTop: "0.625rem", fontStyle: "italic", lineHeight: "1.4" }}>
+                                                * Số tiền chính xác sẽ được xác nhận khi hệ thống lập hợp đồng.
+                                            </div>
+                                        </div>
+                                    </>
+                                );
+                            })()}
 
                             <div className="sidebar-terms">
                                 <p className="sidebar-terms-title">

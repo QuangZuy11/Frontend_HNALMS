@@ -18,6 +18,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import toastr from "toastr";
+import "toastr/build/toastr.min.css";
 
 const API_URL = "http://localhost:9999/api";
 
@@ -123,6 +125,13 @@ const EditContract = () => {
 
   // Fetch contract and services
   useEffect(() => {
+    toastr.options = {
+      positionClass: "toast-top-right",
+      timeOut: 3000,
+      closeButton: true,
+      progressBar: true,
+    };
+
     const fetchData = async () => {
       try {
         const [contractRes, servicesRes] = await Promise.all([
@@ -180,7 +189,7 @@ const EditContract = () => {
 
     const remaining = 5 - contractImages.length;
     if (files.length > remaining) {
-      alert(`Chỉ có thể tải thêm tối đa ${remaining} ảnh.`);
+      toastr.warning(`Chỉ có thể tải thêm tối đa ${remaining} ảnh.`);
       return;
     }
 
@@ -201,7 +210,7 @@ const EditContract = () => {
         setContractImages((prev) => [...prev, ...res.data.data]);
       }
     } catch (err: any) {
-      alert("Lỗi tải ảnh: " + (err.response?.data?.message || err.message));
+      toastr.error("Lỗi tải ảnh: " + (err.response?.data?.message || err.message));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -237,7 +246,7 @@ const EditContract = () => {
   // Submit
   const onSubmit = async (data: EditFormValues) => {
     if (contractImages.length === 0) {
-      alert("Phải có ít nhất 1 ảnh hợp đồng bản cứng.");
+      toastr.warning("Phải có ít nhất 1 ảnh hợp đồng bản cứng.");
       return;
     }
 
@@ -262,11 +271,11 @@ const EditContract = () => {
 
       const res = await axios.put(`${API_URL}/contracts/${id}`, payload);
       if (res.data.success) {
-        alert("Cập nhật hợp đồng thành công!");
+        toastr.success("Cập nhật hợp đồng thành công!");
         navigate(-1);
       }
     } catch (err: any) {
-      alert("Lỗi cập nhật: " + (err.response?.data?.message || err.message));
+      toastr.error("Lỗi cập nhật: " + (err.response?.data?.message || err.message));
     } finally {
       setSaving(false);
     }
@@ -639,7 +648,7 @@ const EditContract = () => {
                 size="small"
                 onClick={() => {
                   if (coResidentFields.length + 1 >= personMax) {
-                    alert(
+                    toastr.warning(
                       `Tối đa ${personMax} người/phòng (gồm cả người thuê chính).`,
                     );
                     return;
