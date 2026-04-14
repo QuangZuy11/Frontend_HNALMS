@@ -68,6 +68,7 @@ import BookingRequestList from "./pages/RequestManagement/BookingRequestList";
 import AccountantDashboard from "./pages/Dashboard/AccountantDashboard";
 import ManagingIncomeExpenses from "./pages/Accountant/managing_income_expenses/managingIncomeExpenses";
 import ReceiptsList from "./pages/Accountant/managing_income_expenses/receiptsList";
+import AccountantDepositList from "./pages/Accountant/DepositList/AccountantDepositList";
 import InvoiceList from "./pages/InvoiceManagement/InvoiceList";
 import OwnerPaymentsList from "./pages/CashFlowManagement/Owner/OwnerPaymentsList";
 import ReportCashFlow from "./pages/ReportManagement/ReportCashFlow";
@@ -327,6 +328,7 @@ function LayoutWrapper() {
           <Route path="profile" element={<ViewProfile />} />
           {/* <Route path="profile/update" element={<UpdateProfile />} /> */}
           <Route path="invoices" element={<InvoiceList />} />
+          <Route path="deposits" element={<AccountantDepositList />} />
           {/* Phiếu thu / chi */}
           <Route path="transactions/receipts" element={<ReceiptsList />} />
           <Route

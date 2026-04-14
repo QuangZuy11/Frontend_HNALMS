@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -19,9 +20,12 @@ import {
     Users,
     Plus,
     Trash2,
+    AlertCircle,
 } from "lucide-react";
 import { roomService } from "../../../services/roomService";
 import { bookingRequestService } from "../../../services/bookingRequestService";
+import toastr from "toastr";
+import "toastr/build/toastr.min.css";
 import "./BookingPage.css";
 
 interface CoResident {
@@ -40,6 +44,13 @@ interface FormErrors {
     duration?: string;
     prepayMonths?: string;
     coResidents?: { fullName?: string; cccd?: string }[];
+}
+
+interface DuplicateErrors {
+    cccd?: string;
+    phone?: string;
+    email?: string;
+    global?: string;
 }
 
 export default function BookingPage() {
@@ -70,8 +81,25 @@ export default function BookingPage() {
     const [coResidents, setCoResidents] = useState<CoResident[]>([]);
 
     const [errors, setErrors] = useState<FormErrors>({});
+    const [duplicateErrors, setDuplicateErrors] = useState<DuplicateErrors>({});
+
+    // Xác định có phải "hợp đồng gap-fill" hay không
+    // Là phòng đã có hợp đồng trước đó → cho phép thuê ngắn hạn
+    const isSecondContract = !!(room?.futureContractStartDate);
+
+    // Số tháng trả trước tối thiểu: gap-fill = 1, bình thường = 2
+    const minPrepay = isSecondContract ? 1 : 2;
+
+    // Số tháng thuê tối thiểu: gap-fill = 1, bình thường = 6
+    const minDuration = isSecondContract ? 1 : 6;
 
     useEffect(() => {
+        toastr.options = {
+            closeButton: true,
+            progressBar: true,
+            positionClass: "toast-top-right",
+            timeOut: 4000,
+        };
         window.scrollTo(0, 0);
     }, []);
 
@@ -182,8 +210,6 @@ export default function BookingPage() {
 
     const minStartDateStr = room ? toLocalDateString(getMinStartDate(room)) : toLocalDateString(new Date());
     const maxDuration = room ? getMaxDuration(room, startDate) : 60;
-    // Số tháng tối đa có thể trả trước
-    const maxPrepay = duration;
     // personMax: sức chứa phòng (bao gồm chủ hợp đồng), nên max co-residents = personMax - 1
     const maxCoResidents = room ? Math.max(0, (room.personMax ?? 2) - 1) : 1;
 
@@ -199,24 +225,42 @@ export default function BookingPage() {
         if (prepayMonths !== "all" && prepayMonths > duration) {
             setPrepayMonths(duration);
         }
-    }, [duration]);
+        if (prepayMonths !== "all" && prepayMonths < minPrepay) {
+            setPrepayMonths(minPrepay);
+        }
+    }, [duration, minPrepay]);
 
-    // ---------- Validation ----------
+    // Tự điều chỉnh duration khi thấp hơn minDuration
+    useEffect(() => {
+        if (duration < minDuration) {
+            setDuration(minDuration);
+        }
+    }, [minDuration]);
+
+    // ---------- Validation (đồng bộ với CreateContract) ----------
     const validate = (): boolean => {
         const newErrors: FormErrors = {};
+
         if (!fullName.trim() || fullName.trim().length < 2)
             newErrors.fullName = "Tên phải ít nhất 2 ký tự";
+
         if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
             newErrors.email = "Email không hợp lệ";
-        if (!phone.trim() || !/^[0-9]{10,11}$/.test(phone))
-            newErrors.phone = "Số điện thoại phải có 10-11 chữ số";
-        if (!idCard.trim() || !/^[0-9]{9,12}$/.test(idCard.replace(/\s/g, "")))
-            newErrors.idCard = "CCCD/CMND phải có 9-12 chữ số";
+
+        // SĐT: 10 chữ số, bắt đầu bằng 0
+        if (!phone.trim() || !/^0[0-9]{9}$/.test(phone.trim()))
+            newErrors.phone = "Số điện thoại phải gồm 10 chữ số, bắt đầu bằng 0";
+
+        // CCCD: 12 chữ số
+        if (!idCard.trim() || !/^[0-9]{12}$/.test(idCard.replace(/\s/g, "")))
+            newErrors.idCard = "CCCD phải gồm đúng 12 chữ số";
+
         if (!dob)
             newErrors.dob = "Ngày sinh là bắt buộc";
+
         if (!address.trim() || address.trim().length < 5)
             newErrors.address = "Hộ khẩu thường trú quá ngắn (ít nhất 5 ký tự)";
-        
+
         if (!startDate) {
             newErrors.startDate = "Vui lòng chọn ngày muốn vào ở";
         } else {
@@ -226,7 +270,7 @@ export default function BookingPage() {
             } else if (sd > maxDateLimit) {
                 newErrors.startDate = "Không được chọn ngày vào ở quá 6 tháng";
             } else if (room?.contractRenewalStatus !== "declined") {
-                const isFutureMonth = sd.getFullYear() > today.getFullYear() || 
+                const isFutureMonth = sd.getFullYear() > today.getFullYear() ||
                                      (sd.getFullYear() === today.getFullYear() && sd.getMonth() > today.getMonth());
                 if (isFutureMonth && sd.getDate() !== 1) {
                     newErrors.startDate = "Từ tháng sau trở đi chỉ được phép chọn ngày 1 đầu tháng";
@@ -234,8 +278,11 @@ export default function BookingPage() {
             }
         }
 
-        if (!duration || duration < 1)
+        const durVal = Number(duration);
+        if (!duration || durVal < 1)
             newErrors.duration = "Số tháng thuê tối thiểu là 1";
+        else if (!isSecondContract && durVal < 6)
+            newErrors.duration = "Hợp đồng mới phải thuê tối thiểu 6 tháng";
 
         // validate co-residents
         const coErrors: { fullName?: string; cccd?: string }[] = coResidents.map((cr, i) => {
@@ -246,7 +293,6 @@ export default function BookingPage() {
                 e.cccd = "CCCD phải đúng 12 chữ số";
             else if (cr.cccd === idCard.trim())
                 e.cccd = "CCCD người ở cùng không được trùng chủ hợp đồng";
-            // Check duplicate with other co-residents
             else if (coResidents.some((other, j) => j !== i && other.cccd === cr.cccd))
                 e.cccd = "CCCD bị trùng với người ở cùng khác";
             return e;
@@ -270,10 +316,68 @@ export default function BookingPage() {
                 room.status === "Trống" ||
                 room.isShortTermAvailable);
         if (!allowed) return;
-        if (!validate()) return;
+
+        // Validate all fields first
+        const isValid = validate();
+        if (!isValid) {
+            toastr.error("Vui lòng kiểm tra lại thông tin đã nhập.");
+            return;
+        }
+
         setIsSubmitting(true);
         setSubmitError(null);
+        setDuplicateErrors({});
+
         try {
+            // 1. Check duplicate CCCD/Phone/Email via API
+            const dupRes = await axios.post("http://localhost:9999/api/booking-requests/check-duplicate", {
+                cccd: idCard.trim(),
+                phone: phone.trim(),
+                email: email.trim(),
+            });
+
+            if (!dupRes.data.success) {
+                const dupType = dupRes.data.type;
+                const dupMsg = dupRes.data.message;
+
+                // Cùng 1 người + đã có đủ HĐ → chặn hẳn
+                if (dupType === "same_person_max_contracts") {
+                    setDuplicateErrors({ global: dupMsg });
+                    setSubmitError(dupMsg);
+                    toastr.error(dupMsg);
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                // Cùng 1 người + chưa đủ HĐ → vẫn cho gửi (reuse tài khoản cũ)
+                if (dupType === "same_person") {
+                    toastr.warning(dupMsg);
+                }
+
+                // Trùng từng trường → gán lỗi vào field + toast
+                if (dupType === "duplicate_cccd") {
+                    setDuplicateErrors(prev => ({ ...prev, cccd: dupMsg }));
+                    toastr.error(dupMsg);
+                } else if (dupType === "duplicate_phone") {
+                    setDuplicateErrors(prev => ({ ...prev, phone: dupMsg }));
+                    toastr.error(dupMsg);
+                } else if (dupType === "duplicate_email") {
+                    setDuplicateErrors(prev => ({ ...prev, email: dupMsg }));
+                    toastr.error(dupMsg);
+                } else if (dupType === "duplicate_phone_email" || dupType === "duplicate_cccd_phone" || dupType === "duplicate_cccd_email") {
+                    setDuplicateErrors({ global: dupMsg });
+                    setSubmitError(dupMsg);
+                    toastr.error(dupMsg);
+                }
+
+                // Nếu có lỗi trùng field cụ thể → không submit
+                if (dupType.startsWith("duplicate_")) {
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+
+            // 2. Gửi yêu cầu đặt phòng
             const res = await bookingRequestService.createBookingRequest({
                 roomId: id!,
                 name: fullName.trim(),
@@ -291,12 +395,14 @@ export default function BookingPage() {
                 setBookingStep("success");
             } else {
                 setSubmitError(res.message || "Đã xảy ra lỗi. Vui lòng thử lại.");
+                toastr.error(res.message || "Đã xảy ra lỗi. Vui lòng thử lại.");
             }
         } catch (err: any) {
             const msg =
                 err?.response?.data?.message ||
                 "Không thể kết nối máy chủ. Vui lòng thử lại.";
             setSubmitError(msg);
+            toastr.error(msg);
         } finally {
             setIsSubmitting(false);
         }
@@ -410,12 +516,17 @@ export default function BookingPage() {
                                                 </label>
                                                 <input
                                                     type="email"
-                                                    className={`form-input ${errors.email ? "error" : ""}`}
+                                                    className={`form-input ${errors.email || duplicateErrors.email ? "error" : ""}`}
                                                     placeholder="email@example.com"
                                                     value={email}
-                                                    onChange={e => setEmail(e.target.value)}
+                                                    onChange={e => {
+                                                        setEmail(e.target.value);
+                                                        if (duplicateErrors.email) setDuplicateErrors(prev => ({ ...prev, email: undefined }));
+                                                    }}
                                                 />
-                                                {errors.email && <span className="form-error">{errors.email}</span>}
+                                                {(errors.email || duplicateErrors.email) && (
+                                                    <span className="form-error">{duplicateErrors.email || errors.email}</span>
+                                                )}
                                             </div>
                                             <div className="form-group">
                                                 <label className="form-label">
@@ -424,12 +535,17 @@ export default function BookingPage() {
                                                 </label>
                                                 <input
                                                     type="text"
-                                                    className={`form-input ${errors.phone ? "error" : ""}`}
+                                                    className={`form-input ${errors.phone || duplicateErrors.phone ? "error" : ""}`}
                                                     placeholder="0912345678"
                                                     value={phone}
-                                                    onChange={e => setPhone(e.target.value)}
+                                                    onChange={e => {
+                                                        setPhone(e.target.value);
+                                                        if (duplicateErrors.phone) setDuplicateErrors(prev => ({ ...prev, phone: undefined }));
+                                                    }}
                                                 />
-                                                {errors.phone && <span className="form-error">{errors.phone}</span>}
+                                                {(errors.phone || duplicateErrors.phone) && (
+                                                    <span className="form-error">{duplicateErrors.phone || errors.phone}</span>
+                                                )}
                                             </div>
                                         </div>
 
@@ -441,12 +557,17 @@ export default function BookingPage() {
                                             </label>
                                             <input
                                                 type="text"
-                                                className={`form-input ${errors.idCard ? "error" : ""}`}
+                                                className={`form-input ${errors.idCard || duplicateErrors.cccd ? "error" : ""}`}
                                                 placeholder="012345678901"
                                                 value={idCard}
-                                                onChange={e => setIdCard(e.target.value)}
+                                                onChange={e => {
+                                                    setIdCard(e.target.value);
+                                                    if (duplicateErrors.cccd) setDuplicateErrors(prev => ({ ...prev, cccd: undefined }));
+                                                }}
                                             />
-                                            {errors.idCard && <span className="form-error">{errors.idCard}</span>}
+                                            {(errors.idCard || duplicateErrors.cccd) && (
+                                                <span className="form-error">{duplicateErrors.cccd || errors.idCard}</span>
+                                            )}
                                         </div>
 
                                         {/* Ngày sinh + HTTQ */}
@@ -586,16 +707,19 @@ export default function BookingPage() {
                                                 <input
                                                     type="number"
                                                     className={`form-input ${errors.duration ? "error" : ""}`}
-                                                    min={1}
+                                                    min={minDuration}
                                                     max={maxDuration}
                                                     value={duration}
                                                     onChange={e => {
-                                                        const v = Math.min(maxDuration, Math.max(1, parseInt(e.target.value) || 1));
+                                                        const v = Math.min(maxDuration, Math.max(minDuration, parseInt(e.target.value) || minDuration));
                                                         setDuration(v);
                                                     }}
                                                 />
+                                                {minDuration > 1 && (
+                                                    <span className="form-hint">Tối thiểu {minDuration} tháng</span>
+                                                )}
                                                 {maxDuration < 60 && (
-                                                    <span className="form-hint">Tối đa {maxDuration} tháng</span>
+                                                    <span className="form-hint" style={{display: "block"}}>Tối đa {maxDuration} tháng</span>
                                                 )}
                                                 {errors.duration && <span className="form-error">{errors.duration}</span>}
                                             </div>
@@ -611,12 +735,12 @@ export default function BookingPage() {
                                                         setPrepayMonths(v === "all" ? "all" : parseInt(v));
                                                     }}
                                                 >
-                                                    {Array.from({ length: maxPrepay }, (_, i) => i + 1).map(n => (
+                                                    {Array.from({ length: Math.max(0, duration - minPrepay + 1) }, (_, i) => minPrepay + i).map(n => (
                                                         <option key={n} value={n}>{n} tháng</option>
                                                     ))}
                                                     <option value="all">Tất cả ({duration} tháng)</option>
                                                 </select>
-                                                <span className="form-hint">Số tháng tiền nhà trả trước khi ký HĐ</span>
+                                                <span className="form-hint">Tối thiểu {minPrepay} tháng</span>
                                             </div>
                                         </div>
                                     </div>
@@ -709,8 +833,10 @@ export default function BookingPage() {
                                         <p>✓ Thông tin CCCD sẽ được dùng để lập hợp đồng thuê chính thức</p>
                                     </div>
 
-                                    {submitError && (
-                                        <div className="form-submit-error" style={{ marginTop: "1rem" }}>{submitError}</div>
+                                    {(submitError || duplicateErrors.global) && (
+                                        <div className="form-submit-error" style={{ marginTop: "1rem" }}>
+                                            {duplicateErrors.global || submitError}
+                                        </div>
                                     )}
 
                                     <button

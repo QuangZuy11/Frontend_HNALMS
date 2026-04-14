@@ -381,6 +381,7 @@ const CreateContract = () => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedDeposit, setSelectedDeposit] = useState<any>(null);
   const [isSecondContract, setIsSecondContract] = useState(false);
+  const [partialMatchError, setPartialMatchError] = useState<{ cccd?: string; phone?: string; email?: string }>({});
 
   const {
     control,
@@ -734,6 +735,28 @@ const CreateContract = () => {
     }
   }, [isSecondContract, setValue, getValues]);
 
+  // Xóa lỗi trùng dữ liệu khi user thay đổi trường CCCD/Phone/Email
+  useEffect(() => {
+    const cccd = watch("tenantInfo.cccd");
+    if (cccd && partialMatchError.cccd) {
+      setPartialMatchError(prev => ({ ...prev, cccd: undefined }));
+    }
+  }, [watch("tenantInfo.cccd")]);
+
+  useEffect(() => {
+    const phone = watch("tenantInfo.phone");
+    if (phone && partialMatchError.phone) {
+      setPartialMatchError(prev => ({ ...prev, phone: undefined }));
+    }
+  }, [watch("tenantInfo.phone")]);
+
+  useEffect(() => {
+    const email = watch("tenantInfo.email");
+    if (email && partialMatchError.email) {
+      setPartialMatchError(prev => ({ ...prev, email: undefined }));
+    }
+  }, [watch("tenantInfo.email")]);
+
   // Helper: determine service category by name
   const getServiceCategory = (serviceName: string): ServiceCategory => {
     const n = serviceName.toLowerCase();
@@ -1079,9 +1102,38 @@ const CreateContract = () => {
         navigate("/manager/contracts");
       }
     } catch (err: any) {
-      toastr.error(
-        "Lỗi tạo hợp đồng: " + (err.response?.data?.message || err.message),
-      );
+      const backendMsg = err.response?.data?.message || err.message;
+      // Xử lý lỗi trùng dữ liệu từ backend
+      if (
+        backendMsg.includes("CCCD") ||
+        backendMsg.includes("điện thoại") ||
+        backendMsg.includes("email") ||
+        backendMsg.includes("trùng") ||
+        backendMsg.includes("sở hữu") ||
+        backendMsg.includes("đăng ký")
+      ) {
+        // Parse lỗi trùng từng trường
+        const newPartialError: { cccd?: string; phone?: string; email?: string } = {};
+        if (backendMsg.includes('CCCD "') && backendMsg.includes('đã thuộc sở hữu')) {
+          newPartialError.cccd = backendMsg;
+        }
+        if (backendMsg.includes('điện thoại "') && (backendMsg.includes('đã được đăng ký') || backendMsg.includes('thuộc về cùng một người'))) {
+          newPartialError.phone = backendMsg;
+        }
+        if (backendMsg.includes('email "') && (backendMsg.includes('đã được đăng ký') || backendMsg.includes('thuộc về cùng một người'))) {
+          newPartialError.email = backendMsg;
+        }
+        if (backendMsg.includes("cùng một người") && backendMsg.includes("hợp đồng")) {
+          // Lỗi cùng 1 người đã có 2 phòng
+          newPartialError.cccd = backendMsg;
+        }
+        setPartialMatchError(newPartialError);
+        toastr.error(backendMsg);
+      } else {
+        toastr.error(
+          "Lỗi tạo hợp đồng: " + backendMsg,
+        );
+      }
     } finally {
       setSubmitting(false);
     }
@@ -1296,9 +1348,11 @@ const CreateContract = () => {
                                 message: "CCCD phải gồm đúng 12 chữ số",
                               },
                             })}
-                            error={!!errors.tenantInfo?.cccd}
+                            error={!!errors.tenantInfo?.cccd || !!partialMatchError.cccd}
                             helperText={
-                              errors.tenantInfo?.cccd?.message as string
+                              (partialMatchError.cccd as string) ||
+                              (errors.tenantInfo?.cccd?.message as string) ||
+                              ""
                             }
                             InputProps={{ style: { fontSize: "1.1rem" } }}
                             sx={{ flex: 1 }}
@@ -1322,9 +1376,11 @@ const CreateContract = () => {
                                   "SĐT phải gồm 10 chữ số, bắt đầu bằng 0",
                               },
                             })}
-                            error={!!errors.tenantInfo?.phone}
+                            error={!!errors.tenantInfo?.phone || !!partialMatchError.phone}
                             helperText={
-                              errors.tenantInfo?.phone?.message as string
+                              (partialMatchError.phone as string) ||
+                              (errors.tenantInfo?.phone?.message as string) ||
+                              ""
                             }
                             InputProps={{ style: { fontSize: "1.1rem" } }}
                             sx={{ flex: 1 }}
@@ -1347,9 +1403,11 @@ const CreateContract = () => {
                                 message: "Email không đúng định dạng",
                               },
                             })}
-                            error={!!errors.tenantInfo?.email}
+                            error={!!errors.tenantInfo?.email || !!partialMatchError.email}
                             helperText={
-                              errors.tenantInfo?.email?.message as string
+                              (partialMatchError.email as string) ||
+                              (errors.tenantInfo?.email?.message as string) ||
+                              ""
                             }
                             InputProps={{ style: { fontSize: "1.1rem" } }}
                             sx={{ flex: 1 }}
