@@ -831,12 +831,21 @@ export default function MoveOutRequestsList() {
                       <span>{formatMoney(depositComparison.depositAmount)}</span>
                     </div>
                   )}
-                  {(selectedRequest.depositRefundAmount !== undefined || (depositComparison && depositComparison.depositRefundAmount > 0)) && (
-                    <div className="detail-row">
-                      <label>Số tiền hoàn cọc:</label>
-                      <span className="text-ok">{formatMoney(selectedRequest.depositRefundAmount ?? depositComparison?.depositRefundAmount ?? 0)}</span>
-                    </div>
-                  )}
+                  {(() => {
+                    // Case 1: Không mất cọc → depositRefundAmount đã gộp cọc + prepaid
+                    const totalRefund = (selectedRequest.depositRefundAmount ?? 0) > 0
+                      ? selectedRequest.depositRefundAmount
+                      // Case 2: Mất cọc nhưng còn tiền phòng trả trước
+                      : (selectedRequest as any).prepaidRentOverpay > 0
+                        ? (selectedRequest as any).prepaidRentOverpay
+                        : null;
+                    return totalRefund != null && totalRefund > 0 ? (
+                      <div className="detail-row">
+                        <label>Tổng tiền được hoàn:</label>
+                        <span className="text-ok">{formatMoney(totalRefund)}</span>
+                      </div>
+                    ) : null;
+                  })()}
 
                   {/* Thanh toán */}
                   {selectedRequest.status === 'Paid' && (

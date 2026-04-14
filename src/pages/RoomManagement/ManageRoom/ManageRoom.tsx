@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import axios from "axios";
 import { Building as BuildingIcon } from "lucide-react";
 
+import toastr from "toastr";
+import "toastr/build/toastr.min.css";
+
 // Floor Maps
 import FloorMap from "../RoomList/components/FloorMap";
 import FloorMapLevel2 from "../RoomList/components/FloorMapLevel2";
@@ -13,13 +16,11 @@ import {
   Plus, Edit, Trash2, Eye, ChevronDown, ChevronRight, CheckCircle,
   AlertCircle, Banknote, X, Building, Home, Tag, Power, Download,
   FileSpreadsheet, List as ListIcon, Map as MapIcon, User, Users,
-  FileText, Phone, Mail, CreditCard, Zap, Gavel, DoorOpen,
+  FileText, Phone, Mail, CreditCard, Zap, Gavel,
 } from "lucide-react";
 import "./ManageRoom.css";
 import LiquidationWizard from "./LiquidationWizard";
 import { isContractStartedByLocalCalendar } from "../../../utils/contractDates";
-import { useToast } from "../../../components/common/Toast/Toast";
-import AppModal from "../../../components/common/Modal/AppModal";
 
 const API_BASE_URL = "http://localhost:9999/api";
 
@@ -54,9 +55,6 @@ interface ManageRoomProps {
 }
 
 const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
-  // --- Toast ---
-  const { showToast } = useToast();
-
   // --- States ---
   const [rooms, setRooms] = useState<Room[]>([]);
   const [floors, setFloors] = useState<Floor[]>([]);
@@ -153,13 +151,19 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       setExpandedFloors(floorsData.map((f: Floor) => f._id));
     } catch (error) {
       console.error("Lỗi tải dữ liệu:", error);
-      showToast("error", "Lỗi", "Không thể tải dữ liệu từ máy chủ.");
+      toastr.error("Không thể tải dữ liệu từ máy chủ.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    toastr.options = {
+      closeButton: true,
+      progressBar: true,
+      positionClass: "toast-top-right",
+      timeOut: 3000,
+    };
     fetchData();
   }, []);
 
@@ -316,10 +320,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       document.body.appendChild(link);
       link.click();
       link.parentNode?.removeChild(link);
-      showToast("success", "Thành công", "Tải file mẫu thành công!");
+      toastr.success("Tải file mẫu thành công!");
     } catch (error) {
-      console.error("Lỗi tải file:", error);
-      showToast("error", "Lỗi", "Lỗi tải file mẫu.");
+      toastr.error("Lỗi tải file mẫu.");
     }
   };
 
@@ -341,17 +344,21 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       const res = await axios.post(`${API_BASE_URL}/excel/import`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      showToast("success", "Thành công", res.data.message || "Nhập file thành công!");
+      toastr.success(res.data.message || "Nhập file thành công!");
       fetchData();
-    } catch (error) {
-      const err = error as { response?: { data?: { message?: string; errors?: string[] } } };
-      const msg = err.response?.data?.message || "Lỗi khi nhập file.";
-      const detailErrors = err.response?.data?.errors;
+    } catch (error: any) {
+      console.error(error);
+      const msg = error.response?.data?.message || "Lỗi khi nhập file.";
+      const detailErrors = error.response?.data?.errors;
 
       if (detailErrors && detailErrors.length > 0) {
-        showToast("error", "Lỗi Import", `${msg}\n- ${detailErrors.join("\n- ")}`);
+        toastr.error(
+          `${msg}<br/>- ${detailErrors.join("<br/>- ")}`,
+          "Lỗi Import",
+          { timeOut: 10000, escapeHtml: false },
+        );
       } else {
-        showToast("error", "Lỗi", msg);
+        toastr.error(msg);
       }
     } finally {
       setLoading(false);
@@ -360,7 +367,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
 
   const handleOpenAdd = () => {
     if (floors.length === 0 || roomTypes.length === 0) {
-      showToast("warning", "Cảnh báo", "Vui lòng tạo Tầng và Loại phòng trước khi thêm phòng mới!");
+      toastr.warning(
+        "Vui lòng tạo Tầng và Loại phòng trước khi thêm phòng mới!",
+      );
       return;
     }
     setIsEditing(false);
@@ -538,20 +547,20 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         await axios.put(`${API_BASE_URL}/rooms/${room._id}`, {
           isActive: !room.isActive,
         });
-        showToast("success", "Thành công", `Đã ${actionText} phòng ${room.name} thành công!`);
+        toastr.success(`Đã ${actionText} phòng ${room.name} thành công!`);
         fetchData();
-      } catch (error) {
-        console.error("Lỗi cập nhật trạng thái:", error);
-        showToast("error", "Lỗi", "Lỗi cập nhật trạng thái.");
+      } catch (error: any) {
+        toastr.error("Lỗi cập nhật trạng thái: " + error.message);
       }
     } else if (confirmModal.action === "DELETE") {
       try {
         await axios.delete(`${API_BASE_URL}/rooms/${room._id}`);
-        showToast("success", "Thành công", "Xóa phòng thành công!");
+        toastr.success("Xóa phòng thành công!");
         fetchData();
-      } catch (e) {
-        const err = e as { response?: { data?: { message?: string } }; message?: string };
-        showToast("error", "Lỗi", "Lỗi xóa phòng: " + (err.response?.data?.message || err.message));
+      } catch (e: any) {
+        toastr.error(
+          "Lỗi xóa phòng: " + (e.response?.data?.message || e.message),
+        );
       }
     }
 
@@ -569,127 +578,127 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     try {
       if (isEditing && currentRoom) {
         await axios.put(`${API_BASE_URL}/rooms/${currentRoom._id}`, formData);
-        showToast("success", "Thành công", "Cập nhật thông tin phòng thành công!");
+        toastr.success("Cập nhật thông tin phòng thành công!");
       } else {
         await axios.post(`${API_BASE_URL}/rooms`, formData);
-        showToast("success", "Thành công", "Thêm phòng mới thành công!");
+        toastr.success("Thêm phòng mới thành công!");
       }
       setShowModal(false);
       fetchData();
-    } catch (error) {
-      const err = error as { response?: { data?: { message?: string } }; message?: string };
-      showToast("error", "Lỗi", "Lỗi lưu dữ liệu: " + (err.response?.data?.message || err.message));
+    } catch (error: any) {
+      toastr.error(
+        "Lỗi lưu dữ liệu: " + (error.response?.data?.message || error.message),
+      );
     }
   };
 
   return (
     <div className="room-container">
-      {/* HEADER */}
-      <div className="room-header">
-        <div className="room-header-top">
-          <div className="room-title-block">
-            <div className="room-title-row">
-              <div className="room-title-icon" aria-hidden>
-                <DoorOpen size={22} strokeWidth={2} />
-              </div>
-              <div className="room-title-text">
-                <h2>{!canModify ? "Danh sách phòng" : "Quản lý Phòng"}</h2>
-                <p className="room-subtitle">
-                  {!canModify
-                    ? "Xem thông tin phòng theo tầng"
-                    : "Quản lý danh mục phòng và trạng thái cho tòa nhà Hoàng Nam."}
-                </p>
-              </div>
+      <div className="page-header">
+        <div>
+          <h2 className="page-title">
+            {!canModify ? "Danh sách phòng" : "Quản lý danh sách phòng"}
+          </h2>
+          <p className="page-subtitle">
+            {!canModify
+              ? "Xem thông tin phòng theo tầng"
+              : "Nhóm theo tầng - Xem dạng bảng"}
+          </p>
+        </div>
+
+        <div className="stats-summary">
+          <div className="stat-item">
+            <Building size={16} className="stat-icon icon-primary" />
+            <div className="stat-text">
+              <span className="stat-value">{totalFloors}</span>
+              <span className="stat-label">Tầng</span>
             </div>
           </div>
-
-          <div className="room-header-aside">
-            <div className="stats-summary">
-              <div className="stat-item">
-                <Building size={16} className="stat-icon icon-primary" />
-                <div className="stat-text">
-                  <span className="stat-value">{totalFloors}</span>
-                  <span className="stat-label">Tầng</span>
-                </div>
-              </div>
-              <div className="stat-divider"></div>
-              <div className="stat-item">
-                <Home size={16} className="stat-icon icon-accent" />
-                <div className="stat-text">
-                  <span className="stat-value">{totalRooms}</span>
-                  <span className="stat-label">Phòng</span>
-                </div>
-              </div>
-              <div className="stat-divider"></div>
-              <div className="stat-item">
-                <Tag size={16} className="stat-icon icon-success" />
-                <div className="stat-text">
-                  <span className="stat-value">{totalTypes}</span>
-                  <span className="stat-label">Loại phòng</span>
-                </div>
-              </div>
+          <div className="stat-divider"></div>
+          <div className="stat-item">
+            <Home size={16} className="stat-icon icon-accent" />
+            <div className="stat-text">
+              <span className="stat-value">{totalRooms}</span>
+              <span className="stat-label">Phòng</span>
             </div>
-
-            {canModify && (
-              <button type="button" className="btn-primary room-header-add-btn" onClick={handleOpenAdd}>
-                <Plus size={18} /> Thêm Phòng
-              </button>
-            )}
+          </div>
+          <div className="stat-divider"></div>
+          <div className="stat-item">
+            <Tag size={16} className="stat-icon icon-success" />
+            <div className="stat-text">
+              <span className="stat-value">{totalTypes}</span>
+              <span className="stat-label">Loại phòng</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* TOOLBAR */}
-      <div className="room-toolbar">
-        <div className="room-toolbar-left">
-          <div style={{ display: "flex", background: "#fff", borderRadius: "8px", border: "1px solid #ddd", padding: "4px", gap: "0" }}>
-            <button
-              onClick={() => setViewMode("list")}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "6px 12px",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                background: viewMode === "list" ? "#3579C6" : "transparent",
-                color: viewMode === "list" ? "#fff" : "#666",
-                fontWeight: viewMode === "list" ? "bold" : "normal",
-                fontSize: "13px",
-              }}
-            >
-              <ListIcon size={16} /> Danh sách
-            </button>
-            <button
-              onClick={() => setViewMode("map")}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "6px 12px",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                background: viewMode === "map" ? "#3579C6" : "transparent",
-                color: viewMode === "map" ? "#fff" : "#666",
-                fontWeight: viewMode === "map" ? "bold" : "normal",
-                fontSize: "13px",
-              }}
-            >
-              <MapIcon size={16} /> Sơ đồ
-            </button>
-          </div>
+      <div
+        className="toolbar-actions"
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "1rem",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          marginBottom: "1rem",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            background: "#fff",
+            borderRadius: "8px",
+            border: "1px solid #ddd",
+            padding: "4px",
+            marginRight: "auto",
+          }}
+        >
+          <button
+            onClick={() => setViewMode("list")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "6px 12px",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              background: viewMode === "list" ? "#3579C6" : "transparent",
+              color: viewMode === "list" ? "#fff" : "#666",
+              fontWeight: viewMode === "list" ? "bold" : "normal",
+            }}
+          >
+            <ListIcon size={16} /> Danh sách
+          </button>
+          <button
+            onClick={() => setViewMode("map")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "6px 12px",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              background: viewMode === "map" ? "#3579C6" : "transparent",
+              color: viewMode === "map" ? "#fff" : "#666",
+              fontWeight: viewMode === "map" ? "bold" : "normal",
+            }}
+          >
+            <MapIcon size={16} /> Sơ đồ
+          </button>
         </div>
 
-        <div className="room-toolbar-right">
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           {canModify && (
             <>
               <button className="btn-secondary" onClick={handleDownloadTemplate}>
-                <Download size={16} /> Tải mẫu Excel
+                <Download size={18} /> Tải mẫu Excel
               </button>
+
               <button className="btn-success" onClick={triggerFileInput}>
-                <FileSpreadsheet size={16} /> Nhập Excel
+                <FileSpreadsheet size={18} /> Nhập Excel
               </button>
               <input
                 type="file"
@@ -698,6 +707,10 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                 accept=".xlsx, .xls"
                 onChange={handleFileUpload}
               />
+
+              <button className="btn-primary" onClick={handleOpenAdd}>
+                <Plus size={18} /> Thêm phòng mới
+              </button>
             </>
           )}
         </div>
@@ -969,647 +982,781 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       )}
 
       {/* Modal Xác Nhận Xóa/Kích hoạt */}
-      <AppModal
-        open={confirmModal.isOpen}
-        onClose={() => setConfirmModal({ isOpen: false, action: null, targetRoom: null, message: "" })}
-        title="Xác nhận thao tác"
-        icon={<AlertCircle size={20} />}
-        color={confirmModal.action === "DELETE" ? "red" : "orange"}
-        size="sm"
-        footer={
-          <>
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => setConfirmModal({ isOpen: false, action: null, targetRoom: null, message: "" })}
+      {confirmModal.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div
+            className="modal-content"
+            style={{ width: "400px", textAlign: "center", padding: "24px" }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                marginBottom: "16px",
+              }}
             >
-              Hủy bỏ
-            </button>
-            <button
-              type="button"
-              className="btn-primary"
-              style={{ background: confirmModal.action === "DELETE" ? "#dc2626" : undefined }}
-              onClick={executeConfirmAction}
-              disabled={loading}
-            >
-              {loading ? "Đang xử lý..." : "Đồng ý"}
-            </button>
-          </>
-        }
-      >
-        <p style={{ textAlign: "center", color: "#475569", margin: "8px 0 0 0", lineHeight: "1.6" }}>
-          {confirmModal.message}
-        </p>
-      </AppModal>
-
-      {/* Modal Thêm/Sửa Phòng */}
-      <AppModal
-        open={canModify && showModal}
-        onClose={() => setShowModal(false)}
-        title={isEditing ? "Sửa Phòng" : "Thêm Phòng Mới"}
-        icon={isEditing ? <Edit size={20} /> : <DoorOpen size={20} />}
-        color="blue"
-        size="md"
-        footer={
-          <>
-            <button
-              type="button"
-              className="ms-btn ms-btn--ghost"
-              onClick={() => setShowModal(false)}
-            >
-              Hủy bỏ
-            </button>
-            <button
-              type="submit"
-              form="room-form"
-              className="ms-btn ms-btn--primary"
-            >
-              <CheckCircle size={16} />
-              {isEditing ? "Cập nhật" : "Thêm phòng"}
-            </button>
-          </>
-        }
-      >
-        <form id="room-form" onSubmit={handleSave}>
-          <div className="room-form-grid">
-            <div className="room-form-field">
-              <label className="room-form-label">
-                <span className="room-form-label-icon"><FileText size={14} /></span>
-                Mã phòng <span className="required">*</span>
-              </label>
-              <div className="room-form-input-wrap">
-                <input
-                  type="text"
-                  className="room-form-input"
-                  value={formData.roomCode}
-                  onChange={(e) =>
-                    setFormData({ ...formData, roomCode: e.target.value })
+              <div
+                style={{
+                  background:
+                    confirmModal.action === "DELETE" ? "#fee2e2" : "#fef3c7",
+                  padding: "12px",
+                  borderRadius: "50%",
+                }}
+              >
+                <AlertCircle
+                  size={32}
+                  color={
+                    confirmModal.action === "DELETE" ? "#ef4444" : "#d97706"
                   }
-                  required
-                  placeholder="VD: R101"
                 />
               </div>
             </div>
-
-            <div className="room-form-field">
-              <label className="room-form-label">
-                <span className="room-form-label-icon"><Home size={14} /></span>
-                Tên hiển thị <span className="required">*</span>
-              </label>
-              <div className="room-form-input-wrap">
-                <input
-                  type="text"
-                  className="room-form-input"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  required
-                  placeholder="VD: Phòng 101"
-                />
-              </div>
-            </div>
-
-            <div className="room-form-field">
-              <label className="room-form-label">
-                <span className="room-form-label-icon"><Building size={14} /></span>
-                Tầng
-              </label>
-              <div className="room-form-select-wrap">
-                <select
-                  className="room-form-select"
-                  value={formData.floorId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, floorId: e.target.value })
-                  }
-                >
-                  {floors.map((f) => (
-                    <option key={f._id} value={f._id}>
-                      {f.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="room-form-field">
-              <label className="room-form-label">
-                <span className="room-form-label-icon"><Tag size={14} /></span>
-                Loại phòng
-              </label>
-              <div className="room-form-select-wrap">
-                <select
-                  className="room-form-select"
-                  value={formData.roomTypeId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, roomTypeId: e.target.value })
-                  }
-                >
-                  {roomTypes.map((t) => (
-                    <option key={t._id} value={t._id}>
-                      {t.typeName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {isEditing && (
-            <div className="room-form-toggle">
-              <div className="room-form-toggle-info">
-                <span className="room-form-toggle-title">Trạng thái hoạt động</span>
-                <span className="room-form-toggle-desc">
-                  Phòng sẽ {formData.isActive ? "hiển thị và có thể cho thuê" : "bị ẩn khỏi danh sách"}
-                </span>
-              </div>
+            <h3 style={{ marginTop: 0, color: "#1e293b", fontSize: "18px" }}>
+              Xác nhận thao tác
+            </h3>
+            <p
+              style={{
+                color: "#475569",
+                margin: "16px 0 24px 0",
+                lineHeight: "1.5",
+              }}
+            >
+              {confirmModal.message}
+            </p>
+            <div
+              style={{ display: "flex", justifyContent: "center", gap: "12px" }}
+            >
               <button
-                type="button"
-                role="switch"
-                aria-checked={formData.isActive}
-                className={`room-form-toggle-switch ${formData.isActive ? 'active' : ''}`}
+                className="btn-secondary"
                 onClick={() =>
-                  setFormData({ ...formData, isActive: !formData.isActive })
+                  setConfirmModal({
+                    isOpen: false,
+                    action: null,
+                    targetRoom: null,
+                    message: "",
+                  })
                 }
               >
-                <span className="room-form-toggle-thumb" />
+                Hủy bỏ
+              </button>
+              <button
+                style={{
+                  padding: "8px 24px",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  border: "none",
+                  background:
+                    confirmModal.action === "DELETE" ? "#ef4444" : "#3b82f6",
+                  color: "white",
+                }}
+                onClick={executeConfirmAction}
+                disabled={loading}
+              >
+                {loading ? "Đang xử lý..." : "Đồng ý"}
               </button>
             </div>
-          )}
-
-          <div className="room-form-field room-form-field--full">
-            <label className="room-form-label">
-              <span className="room-form-label-icon"><FileText size={14} /></span>
-              Mô tả
-            </label>
-            <div className="room-form-textarea-wrap">
-              <textarea
-                className="room-form-textarea"
-                rows={3}
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="Nhập mô tả ngắn gọn về phòng..."
-              />
-              <div className="room-form-textarea-count">
-                {formData.description?.length || 0}/200
-              </div>
-            </div>
           </div>
-        </form>
-      </AppModal>
+        </div>
+      )}
 
-      {/* Modal Xem Chi Tiết Phòng */}
-      {showDetailModal && viewingRoom && (() => {
-        const roomContract = allRoomContracts.find((c: any) => c._id === selectedContractId) || null;
-
-        return (
-      <AppModal
-        open={showDetailModal}
-        onClose={() => setShowDetailModal(false)}
-        title={`Chi tiết Phòng: ${viewingRoom.name}`}
-        icon={<Home size={20} />}
-        color="blue"
-        size="xl"
-      >
-        <div className="rd-modal-container">
-          {/* Dropdown chọn hợp đồng */}
-          {(() => {
-            const activeContracts = allRoomContracts.filter(c => c.status === "active");
-            const inactiveContracts = allRoomContracts.filter(c => c.status !== "active");
-            const depositCount = roomDeposits.length;
-            const totalContracts = activeContracts.length + inactiveContracts.length;
-            const hasAnyContract = totalContracts > 0;
-
-            const depositIdsFromContracts: string[] = [];
-            allRoomContracts.forEach((contract: any) => {
-              if (contract.depositId) {
-                const did = typeof contract.depositId === "object"
-                  ? contract.depositId._id
-                  : contract.depositId;
-                if (did) depositIdsFromContracts.push(did);
-              }
-              if (contract.deposit) {
-                const did = typeof contract.deposit === "object"
-                  ? contract.deposit._id
-                  : contract.deposit;
-                if (did && !depositIdsFromContracts.includes(did)) {
-                  depositIdsFromContracts.push(did);
-                }
-              }
-            });
-
-            const depositLeList = roomDeposits.filter((d: any) => {
-              if (!d.contractId) return true;
-              const cid = typeof d.contractId === "object" ? d.contractId._id : d.contractId;
-              const contractExists = allRoomContracts.some((c: any) => c._id === cid);
-              return !contractExists;
-            });
-
-            const hasAnyData = totalContracts > 0 || depositLeList.length > 0;
-
-            return hasAnyData ? (
-              <div className="rd-contract-selector">
-                <div className="rd-contract-selector-icon">
-                  <FileText size={18} />
+      {/* Modal Thêm/Sửa Phòng */}
+      {canModify && showModal && (
+        <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{isEditing ? "Sửa Phòng" : "Thêm Phòng Mới"}</h3>
+              <button onClick={() => setShowModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleSave}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>
+                    Mã phòng <span style={{ color: "red" }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.roomCode}
+                    onChange={(e) =>
+                      setFormData({ ...formData, roomCode: e.target.value })
+                    }
+                    required
+                    placeholder="VD: R101"
+                  />
                 </div>
-                <div className="rd-contract-selector-content">
-                  <label className="rd-contract-selector-label">Chọn hợp đồng / Cọc lẻ</label>
+                <div className="form-group">
+                  <label>
+                    Tên hiển thị <span style={{ color: "red" }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    required
+                    placeholder="VD: Phòng 101"
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Tầng</label>
                   <select
-                    value={selectedContractId ? selectedContractId : (selectedDepositId ? `deposit_${selectedDepositId}` : "")}
-                    onChange={handleContractSelectChange}
-                    className="rd-contract-selector-select"
+                    value={formData.floorId}
+                    onChange={(e) =>
+                      setFormData({ ...formData, floorId: e.target.value })
+                    }
                   >
-                    {activeContracts.length > 0 && (
-                      <optgroup label="Hợp đồng đang hiệu lực">
-                        {activeContracts.map((contract: any) => (
-                          <option key={contract._id} value={contract._id}>
-                            {contract.contractCode} - {contract.tenantId?.username || "---"} ({formatDate(contract.startDate)} → {formatDate(contract.endDate)})
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                    {inactiveContracts.length > 0 && (
-                      <optgroup label="Hợp đồng chưa/không còn hiệu lực">
-                        {inactiveContracts.map((contract: any) => (
-                          <option key={contract._id} value={contract._id}>
-                            {contract.contractCode} - {contract.tenantId?.username || "---"} ({formatDate(contract.startDate)} → {formatDate(contract.endDate)})
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                    {depositLeList.length > 0 && (
-                      <optgroup label="Cọc lẻ chưa có hợp đồng">
-                        {depositLeList.map((deposit: any) => {
-                          const depositIdx = roomDeposits.findIndex((d: any) => d._id === deposit._id);
-                          return (
-                            <option key={deposit._id} value={`deposit_${deposit._id}`}>
-                              Cọc #{depositIdx + 1} - {deposit.name || "---"} ({formatCurrency(deposit.amount)})
-                            </option>
-                          );
-                        })}
-                      </optgroup>
-                    )}
+                    {floors.map((f) => (
+                      <option key={f._id} value={f._id}>
+                        {f.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
-                <div className="rd-contract-selector-badge">
-                  {hasAnyContract
-                    ? `${totalContracts} HĐ (${activeContracts.length} active)`
-                    : `${depositLeList.length} cọc lẻ`}
+                <div className="form-group">
+                  <label>Loại phòng</label>
+                  <select
+                    value={formData.roomTypeId}
+                    onChange={(e) =>
+                      setFormData({ ...formData, roomTypeId: e.target.value })
+                    }
+                  >
+                    {roomTypes.map((t) => (
+                      <option key={t._id} value={t._id}>
+                        {t.typeName}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            ) : (
-              <div className="rd-no-data-banner">
-                <AlertCircle size={20} />
-                <span>Phòng này hiện chưa có hợp đồng hay cọc lẻ nào.</span>
-              </div>
-            );
-          })()}
 
-          {/* Two-panel layout */}
-          <div className="rd-main-grid">
-            {/* === CỘT TRÁI: Thông tin phòng === */}
-            <div className="rd-left-panel">
-              {/* Room Info Card */}
-              <div className="rd-card rd-card--room">
-                <div className="rd-card-header">
-                  <div className="rd-card-icon">
-                    <Home size={20} />
-                  </div>
-                  <h3 className="rd-card-title">Thông tin Phòng</h3>
+              {isEditing && (
+                <div
+                  className="form-group"
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    id="chkActive"
+                    checked={formData.isActive}
+                    onChange={(e) =>
+                      setFormData({ ...formData, isActive: e.target.checked })
+                    }
+                    style={{ width: "auto", margin: 0 }}
+                  />
+                  <label
+                    htmlFor="chkActive"
+                    style={{ margin: 0, cursor: "pointer" }}
+                  >
+                    Đang hoạt động (Active)
+                  </label>
                 </div>
-                <div className="rd-card-body">
-                  <div className="rd-info-row">
-                    <div className="rd-info-item">
-                      <span className="rd-info-label">Mã phòng</span>
-                      <span className="rd-info-value rd-info-value--code">{viewingRoom?.roomCode || "---"}</span>
-                    </div>
-                    <div className="rd-info-item">
-                      <span className="rd-info-label">Trạng thái</span>
-                      <span className="rd-info-value">{renderStatus(viewingRoom!)}</span>
-                    </div>
-                  </div>
-                  <div className="rd-info-row">
-                    <div className="rd-info-item">
-                      <span className="rd-info-label">Kích hoạt</span>
-                      <span className={`rd-info-badge ${viewingRoom?.isActive ? 'rd-info-badge--active' : 'rd-info-badge--inactive'}`}>
-                        {viewingRoom?.isActive ? "Đang hoạt động" : "Vô hiệu hóa"}
+              )}
+
+              <div className="form-group">
+                <label>Mô tả</label>
+                <textarea
+                  rows={2}
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                />
+              </div>
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setShowModal(false)}
+                >
+                  Hủy
+                </button>
+                <button type="submit" className="btn-primary">
+                  Lưu
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Xem Chi Tiết Phòng */}
+      {showDetailModal &&
+        viewingRoom &&
+        (() => {
+          const roomContract =
+            availableContracts.find((c) => c._id === selectedContractId) ||
+            null;
+          return (
+            <div className="rd-overlay" style={{ zIndex: 1100 }} onClick={() => setShowDetailModal(false)}>
+              <div className="rd-content" onClick={(e) => e.stopPropagation()}>
+                <div className="rd-header">
+                  <h3>Chi tiết Phòng: {viewingRoom.name}</h3>
+                  <button onClick={() => setShowDetailModal(false)}>
+                    <X size={20} />
+                  </button>
+                </div>
+
+                {/* Dropdown chọn hợp đồng */}
+                {(() => {
+                  const activeContracts = allRoomContracts.filter(c => c.status === "active");
+                  const inactiveContracts = allRoomContracts.filter(c => c.status !== "active");
+                  const depositCount = roomDeposits.length;
+                  const totalContracts = activeContracts.length + inactiveContracts.length;
+                  const hasAnyContract = totalContracts > 0;
+
+                  // Lọc cọc lẻ: cọc KHÔNG gắn với bất kỳ hợp đồng nào trong danh sách
+                  // Lấy tất cả depositId từ các hợp đồng
+                  const depositIdsFromContracts: string[] = [];
+                  allRoomContracts.forEach((contract: any) => {
+                    if (contract.depositId) {
+                      const did = typeof contract.depositId === "object"
+                        ? contract.depositId._id
+                        : contract.depositId;
+                      if (did) depositIdsFromContracts.push(did);
+                    }
+                    // Cũng kiểm tra trường deposit
+                    if (contract.deposit) {
+                      const did = typeof contract.deposit === "object"
+                        ? contract.deposit._id
+                        : contract.deposit;
+                      if (did && !depositIdsFromContracts.includes(did)) {
+                        depositIdsFromContracts.push(did);
+                      }
+                    }
+                  });
+
+                  // Cọc lẻ = cọc không nằm trong danh sách depositId từ hợp đồng VÀ không có contractId
+                  const depositLeList = roomDeposits.filter((d: any) => {
+                    // Không có contractId = cọc lẻ
+                    if (!d.contractId) return true;
+                    // Hoặc contractId không nằm trong danh sách hợp đồng
+                    const cid = typeof d.contractId === "object" ? d.contractId._id : d.contractId;
+                    const contractExists = allRoomContracts.some((c: any) => c._id === cid);
+                    return !contractExists;
+                  });
+
+                  // Chỉ hiện dropdown nếu có dữ liệu
+                  const hasAnyData = totalContracts > 0 || depositLeList.length > 0;
+
+                  return hasAnyData ? (
+                    <div className="rd-display-selector">
+                      <label className="rd-display-label">
+                        <FileText size={14} />
+                        Chọn hợp đồng:
+                      </label>
+                      <select
+                        value={selectedContractId ? selectedContractId : (selectedDepositId ? `deposit_${selectedDepositId}` : "")}
+                        onChange={handleContractSelectChange}
+                        className="rd-display-select"
+                      >
+                        {activeContracts.length > 0 && (
+                          <optgroup label="Hợp đồng đang hiệu lực">
+                            {activeContracts.map((contract: any) => (
+                              <option key={contract._id} value={contract._id}>
+                                {contract.contractCode} - {contract.tenantId?.username || "---"} ({formatDate(contract.startDate)} → {formatDate(contract.endDate)})
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {inactiveContracts.length > 0 && (
+                          <optgroup label="Hợp đồng chưa/không còn hiệu lực">
+                            {inactiveContracts.map((contract: any) => (
+                              <option key={contract._id} value={contract._id}>
+                                {contract.contractCode} - {contract.tenantId?.username || "---"} ({formatDate(contract.startDate)} → {formatDate(contract.endDate)})
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {/* Hiện cọc lẻ (chưa gắn hợp đồng) */}
+                        {depositLeList.length > 0 && (
+                          <optgroup label="Cọc lẻ chưa có hợp đồng">
+                            {depositLeList.map((deposit: any, idx: number) => {
+                              const depositIdx = roomDeposits.findIndex((d: any) => d._id === deposit._id);
+                              return (
+                                <option key={deposit._id} value={`deposit_${deposit._id}`}>
+                                  Cọc #{depositIdx + 1} - {deposit.name || "---"} ({formatCurrency(deposit.amount)})
+                                </option>
+                              );
+                            })}
+                          </optgroup>
+                        )}
+                      </select>
+                      <span className="rd-display-hint">
+                        {hasAnyContract
+                          ? `Có ${totalContracts} hợp đồng (${activeContracts.length} đang hiệu lực, ${inactiveContracts.length} không hiệu lực)${depositLeList.length > 0 ? `, ${depositLeList.length} cọc lẻ` : ""}`
+                          : `Có ${depositLeList.length} cọc lẻ chưa có hợp đồng`
+                        }
                       </span>
                     </div>
-                    <div className="rd-info-item">
-                      <span className="rd-info-label">Tầng</span>
-                      <span className="rd-info-value">{getFloorName(viewingRoom?.floorId!)}</span>
+                  ) : (
+                    <div className="rd-no-data-notice">
+                      Phòng này hiện chưa có hợp đồng hay cọc lẻ nào.
                     </div>
-                  </div>
-                  <div className="rd-info-row">
-                    <div className="rd-info-item">
-                      <span className="rd-info-label">Loại phòng</span>
-                      <span className="rd-info-value">{getRoomTypeDetail(viewingRoom?.roomTypeId!)?.typeName || "---"}</span>
-                    </div>
-                    <div className="rd-info-item">
-                      <span className="rd-info-label">Giá niêm yết</span>
-                      <span className="rd-info-value rd-info-value--price">
-                        {getRoomTypeDetail(viewingRoom?.roomTypeId!)?.currentPrice
-                          ? formatCurrency(getRoomTypeDetail(viewingRoom?.roomTypeId!)!.currentPrice)
-                          : "---"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                  );
+                })()}
 
-              {/* Deposit Info */}
-              {(() => {
-                let roomDeposit: any = null;
-                let isDepositLe = false;
-
-                if (selectedDepositId) {
-                  roomDeposit = roomDeposits.find((d: any) => d._id === selectedDepositId);
-                  isDepositLe = true;
-                } else if (roomContract?.depositId) {
-                  roomDeposit = typeof roomContract.depositId === "object"
-                    ? roomContract.depositId
-                    : roomDeposits.find((d: any) => d._id === roomContract.depositId);
-                } else if (selectedContractId) {
-                  roomDeposit = getDepositForRoom(viewingRoom?._id!);
-                }
-
-                if (!roomDeposit) return null;
-
-                return (
-                  <div className="rd-card rd-card--deposit">
-                    <div className="rd-card-header">
-                      <div className="rd-card-icon rd-card-icon--yellow">
-                        <Banknote size={20} />
-                      </div>
-                      <h3 className="rd-card-title">Thông tin Tiền cọc{isDepositLe ? " (Cọc lẻ)" : ""}</h3>
+                <div className="rd-two-panel">
+                  {/* === CỘT TRÁI: Thông tin phòng + Hợp đồng === */}
+                  <div className="rd-panel">
+                    <div className="rd-section-title">
+                      <Home size={16} />
+                      <span>Thông tin Phòng</span>
                     </div>
-                    <div className="rd-card-body">
-                      <div className="rd-info-row">
-                        <div className="rd-info-item rd-info-item--full">
-                          <span className="rd-info-label">Người cọc</span>
-                          <span className="rd-info-value rd-info-value--bold">{roomDeposit.name || "---"}</span>
-                        </div>
+                    <div className="rd-grid">
+                      <div className="rd-field">
+                        <label>Mã phòng:</label>
+                        <span>{viewingRoom.roomCode || "---"}</span>
                       </div>
-                      <div className="rd-info-row">
-                        <div className="rd-info-item">
-                          <span className="rd-info-label">Số điện thoại</span>
-                          <span className="rd-info-value">{roomDeposit.phone || "---"}</span>
-                        </div>
-                        <div className="rd-info-item">
-                          <span className="rd-info-label">Ngày cọc</span>
-                          <span className="rd-info-value">{formatDate(roomDeposit.createdAt)}</span>
-                        </div>
-                      </div>
-                      <div className="rd-info-row">
-                        <div className="rd-info-item">
-                          <span className="rd-info-label">Số tiền đã thu</span>
-                          <span className="rd-info-value rd-info-value--price">{formatCurrency(roomDeposit.amount)}</span>
-                        </div>
-                        <div className="rd-info-item">
-                          <span className="rd-info-label">Trạng thái</span>
-                          <span className="rd-info-badge rd-info-badge--deposit">
-                            <Banknote size={12} />
-                            {roomDeposit.status === "Held" ? "Đang giữ" : roomDeposit.status}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
 
-              {/* Contract Info */}
-              {roomContract && (
-                <div className="rd-card rd-card--contract">
-                  <div className="rd-card-header">
-                    <div className="rd-card-icon rd-card-icon--green">
-                      <FileText size={20} />
-                    </div>
-                    <h3 className="rd-card-title">Hợp đồng</h3>
-                  </div>
-                  <div className="rd-card-body">
-                    <div className="rd-info-row">
-                      <div className="rd-info-item">
-                        <span className="rd-info-label">Mã HĐ</span>
-                        <span className="rd-info-value rd-info-value--code">{roomContract.contractCode}</span>
+                      {/* [SỬA ĐỔI] Gọi hàm renderStatus truyền cả object viewingRoom vào */}
+                      <div className="rd-field">
+                        <label>Trạng thái:</label>
+                        <span>{renderStatus(viewingRoom)}</span>
                       </div>
-                      <div className="rd-info-item">
-                        <span className="rd-info-label">Trạng thái</span>
-                        <span className={`rd-contract-status-badge rd-contract-status-badge--${roomContract.status}`}>
-                          {roomContract.status === "active" ? "Đang hiệu lực"
-                           : roomContract.status === "Pending" ? "Sắp tới"
-                           : roomContract.status === "terminated" ? "Đã chấm dứt"
-                           : roomContract.status === "expired" ? "Hết hạn"
-                           : roomContract.status}
+
+                      <div className="rd-field">
+                        <label>Kích hoạt:</label>
+                        <span
+                          style={{
+                            color: viewingRoom.isActive ? "green" : "red",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {viewingRoom.isActive
+                            ? "Đang hoạt động"
+                            : "Vô hiệu hóa"}
+                        </span>
+                      </div>
+                      <div className="rd-field">
+                        <label>Thuộc Tầng:</label>
+                        <span>{getFloorName(viewingRoom.floorId)}</span>
+                      </div>
+                      <div className="rd-field">
+                        <label>Loại phòng:</label>
+                        <span>
+                          {getRoomTypeDetail(viewingRoom.roomTypeId)
+                            ?.typeName || "---"}
+                        </span>
+                      </div>
+                      <div className="rd-field">
+                        <label>Giá niêm yết:</label>
+                        <span className="text-price">
+                          {getRoomTypeDetail(viewingRoom.roomTypeId)
+                            ? formatCurrency(
+                              getRoomTypeDetail(viewingRoom.roomTypeId)!
+                                .currentPrice,
+                            )
+                            : "---"}
                         </span>
                       </div>
                     </div>
-                    <div className="rd-info-row">
-                      <div className="rd-info-item">
-                        <span className="rd-info-label">Thời hạn</span>
-                        <span className="rd-info-value">{roomContract.duration} tháng</span>
-                      </div>
-                      <div className="rd-info-item">
-                        <span className="rd-info-label">Bắt đầu</span>
-                        <span className="rd-info-value">{formatDate(roomContract.startDate)}</span>
-                      </div>
-                    </div>
-                    <div className="rd-info-row">
-                      <div className="rd-info-item rd-info-item--full">
-                        <span className="rd-info-label">Kết thúc</span>
-                        <span className="rd-info-value">{formatDate(roomContract.endDate)}</span>
-                      </div>
-                    </div>
 
-                    {/* Prepaid Invoice */}
-                    {prepaidInvoice && (
-                      <div className="rd-prepaid-section">
-                        <div className="rd-prepaid-header">
-                          <CreditCard size={16} />
-                          <span>Tiền phòng trả trước</span>
+                    {(() => {
+                      // Xác định cọc được hiển thị
+                      let roomDeposit: any = null;
+                      let isDepositLe = false; // Cờ đánh dấu cọc lẻ
+
+                      if (selectedDepositId) {
+                        // Chọn cọc lẻ từ dropdown
+                        roomDeposit = roomDeposits.find((d: any) => d._id === selectedDepositId);
+                        isDepositLe = true;
+                      } else if (roomContract?.depositId) {
+                        // Hợp đồng có cọc - lấy cọc từ hợp đồng
+                        roomDeposit = typeof roomContract.depositId === "object"
+                          ? roomContract.depositId
+                          : roomDeposits.find((d: any) => d._id === roomContract.depositId);
+                      } else if (selectedContractId) {
+                        // Có hợp đồng nhưng không có cọc cụ thể - thử lấy cọc mặc định
+                        roomDeposit = getDepositForRoom(viewingRoom._id);
+                      }
+
+                      if (!roomDeposit) return null;
+                      return (
+                        <>
+                          <div
+                            className="rd-section-title"
+                            style={{ marginTop: 16 }}
+                          >
+                            <Banknote size={16} />
+                            <span>Thông tin Tiền cọc{isDepositLe ? " (Cọc lẻ)" : ""}</span>
+                          </div>
+                          <div className="rd-grid">
+                            <div className="rd-field full">
+                              <label>Người cọc:</label>
+                              <span style={{ fontWeight: 600 }}>
+                                {roomDeposit.name || "---"}
+                              </span>
+                            </div>
+                            <div className="rd-field">
+                              <label>SĐT:</label>
+                              <span>{roomDeposit.phone || "---"}</span>
+                            </div>
+                            <div className="rd-field">
+                              <label>Ngày cọc:</label>
+                              <span>
+                                {roomDeposit.createdAt
+                                  ? formatDate(roomDeposit.createdAt)
+                                  : "---"}
+                              </span>
+                            </div>
+                            <div className="rd-field">
+                              <label>Đã thu cọc:</label>
+                              <span className="text-price">
+                                {formatCurrency(roomDeposit.amount)}
+                              </span>
+                            </div>
+                            <div className="rd-field">
+                              <label>Trạng thái:</label>
+                              <span className="status-badge deposited">
+                                <Banknote size={12} />
+                                {roomDeposit.status === "Held"
+                                  ? "Đang giữ"
+                                  : roomDeposit.status}
+                              </span>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+
+                    {roomContract && (
+                      <>
+                        <div
+                          className="rd-section-title"
+                          style={{ marginTop: 16 }}
+                        >
+                          <FileText size={16} />
+                          <span>Hợp đồng</span>
                         </div>
-                        <div className="rd-info-row">
-                          <div className="rd-info-item">
-                            <span className="rd-info-label">Số tháng</span>
-                            <span className="rd-info-value rd-info-value--bold">
-                              {prepaidInvoice.title?.match(/(\d+)\s*tháng/)?.[1] || "---"} tháng
+                        <div className="rd-grid">
+                          <div className="rd-field">
+                            <label>Mã HĐ:</label>
+                            <span
+                              style={{
+                                fontFamily: "monospace",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {roomContract.contractCode}
                             </span>
                           </div>
-                          <div className="rd-info-item">
-                            <span className="rd-info-label">Số tiền</span>
-                            <span className="rd-info-value rd-info-value--price">{formatCurrency(prepaidInvoice.totalAmount)}</span>
+                          <div className="rd-field">
+                            <label>Trạng thái:</label>
+                            <span
+                              className={`rd-contract-status rd-status-${roomContract.status}`}
+                            >
+                              {roomContract.status === "active"
+                                ? "Đang hiệu lực"
+                                : roomContract.status === "Pending"
+                                  ? "Sắp tới"
+                                  : roomContract.status === "terminated"
+                                    ? "Đã chấm dứt"
+                                    : roomContract.status === "expired"
+                                      ? "Hết hạn"
+                                      : roomContract.status}
+                            </span>
+                          </div>
+                          <div className="rd-field">
+                            <label>Thời hạn:</label>
+                            <span>{roomContract.duration} tháng</span>
+                          </div>
+                          <div className="rd-field">
+                            <label>Bắt đầu:</label>
+                            <span>{formatDate(roomContract.startDate)}</span>
+                          </div>
+                          <div className="rd-field">
+                            <label>Kết thúc:</label>
+                            <span>{formatDate(roomContract.endDate)}</span>
                           </div>
                         </div>
-                        {roomContract.startDate && roomContract.rentPaidUntil && (
-                          <div className="rd-prepaid-timeline">
-                            <span className="rd-prepaid-date">{formatDate(roomContract.startDate)}</span>
-                            <div className="rd-prepaid-bar">
-                              <div className="rd-prepaid-progress" />
+
+                        {/* THÔNG TIN TRẢ TRƯỚC */}
+                        {prepaidInvoice && (
+                          <>
+                            <div
+                              className="rd-section-title"
+                              style={{ marginTop: 16 }}
+                            >
+                              <CreditCard size={16} />
+                              <span>Tiền phòng trả trước</span>
                             </div>
-                            <span className="rd-prepaid-date">{formatDate(roomContract.rentPaidUntil)}</span>
-                          </div>
+                            <div className="rd-grid">
+                              <div className="rd-field">
+                                <label>Số tháng trả trước:</label>
+                                <span style={{ fontWeight: 700 }}>
+                                  {prepaidInvoice.title?.match(
+                                    /(\d+)\s*tháng/,
+                                  )?.[1] || "---"}{" "}
+                                  tháng
+                                </span>
+                              </div>
+                              <div className="rd-field">
+                                <label>Số tiền đã nộp:</label>
+                                <span className="text-price">
+                                  {formatCurrency(prepaidInvoice.totalAmount)}
+                                </span>
+                              </div>
+                              {roomContract.startDate &&
+                                roomContract.rentPaidUntil && (
+                                  <div className="rd-field full">
+                                    <label>Thời gian đã trả:</label>
+                                    <span
+                                      style={{
+                                        fontWeight: 600,
+                                        color: "#2563eb",
+                                      }}
+                                    >
+                                      {formatDate(roomContract.startDate)} →{" "}
+                                      {formatDate(roomContract.rentPaidUntil)}
+                                    </span>
+                                  </div>
+                                )}
+                            </div>
+                          </>
                         )}
+                      </>
+                    )}
+
+                  </div>
+
+                  {/* === CỘT PHẢI: Người thuê + Dịch vụ === */}
+                  <div className="rd-panel">
+                    {roomContract ? (
+                      <>
+                        <div className="rd-section-title">
+                          <User size={16} />
+                          <span>Người thuê chính</span>
+                        </div>
+                        <div className="rd-grid">
+                          <div className="rd-field full">
+                            <label>
+                              <User size={12} style={{ marginRight: 4 }} />
+                              Họ tên:
+                            </label>
+                            <span>
+                              {roomContract.tenantId?.username || "---"}
+                            </span>
+                          </div>
+                          <div className="rd-field">
+                            <label>
+                              <Phone size={12} style={{ marginRight: 4 }} />
+                              SĐT:
+                            </label>
+                            <span>
+                              {roomContract.tenantId?.phoneNumber || "---"}
+                            </span>
+                          </div>
+                          <div className="rd-field">
+                            <label>
+                              <Mail size={12} style={{ marginRight: 4 }} />
+                              Email:
+                            </label>
+                            <span
+                              style={{ fontSize: 12, wordBreak: "break-all" }}
+                            >
+                              {roomContract.tenantId?.email || "---"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Người ở cùng */}
+                        {roomContract.coResidents &&
+                          roomContract.coResidents.length > 0 && (
+                            <>
+                              <div
+                                className="rd-section-title"
+                                style={{ marginTop: 16 }}
+                              >
+                                <Users size={16} />
+                                <span>
+                                  Người ở cùng (
+                                  {roomContract.coResidents.length})
+                                </span>
+                              </div>
+                              <div className="rd-co-residents-list">
+                                {roomContract.coResidents.map(
+                                  (person: any, idx: number) => (
+                                    <div
+                                      key={idx}
+                                      className="rd-co-resident-card"
+                                    >
+                                      <span className="rd-co-resident-name">
+                                        {person.fullName}
+                                      </span>
+                                      <div className="rd-co-resident-row">
+                                        {person.phone && (
+                                          <span className="rd-co-resident-info">
+                                            <Phone size={11} /> {person.phone}
+                                          </span>
+                                        )}
+                                        {person.cccd && (
+                                          <span className="rd-co-resident-info">
+                                            <CreditCard size={11} />{" "}
+                                            {person.cccd}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            </>
+                          )}
+
+                        {/* Dịch vụ đã đăng ký */}
+                        <div
+                          className="rd-section-title"
+                          style={{ marginTop: 16 }}
+                        >
+                          <Zap size={16} />
+                          <span>Dịch vụ tùy chọn đã đăng ký</span>
+                        </div>
+                        {loadingDetail ? (
+                          <p style={{ color: "#94a3b8", fontSize: 13 }}>
+                            Đang tải...
+                          </p>
+                        ) : roomBookServices.length > 0 ? (
+                          <div className="rd-services-list">
+                            {roomBookServices.map((svc: any, idx: number) => (
+                              <div key={idx} className="rd-service-tag">
+                                <span className="rd-service-tag-name">
+                                  {svc.name}
+                                </span>
+                                <span className="rd-service-tag-price">
+                                  {svc.currentPrice
+                                    ? formatCurrency(svc.currentPrice)
+                                    : ""}
+                                  {svc.quantity > 1 ? ` ×${svc.quantity}` : ""}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p
+                            className="text-muted-italic"
+                            style={{ fontSize: 13 }}
+                          >
+                            Chưa đăng ký dịch vụ nào
+                          </p>
+                        )}
+
+                        {/* Ảnh hợp đồng bản cứng */}
+                        {roomContract?.images && roomContract.images.length > 0 && (
+                          <>
+                            <div
+                              className="rd-section-title"
+                              style={{ marginTop: 16 }}
+                            >
+                              <FileText size={16} />
+                              <span>Ảnh hợp đồng bản cứng ({roomContract.images.length})</span>
+                            </div>
+                            <div className="rd-images-grid">
+                              {roomContract.images.map((url: string, idx: number) => (
+                                <div
+                                  key={idx}
+                                  className="rd-image-item"
+                                  onClick={() => setLightboxImage(url)}
+                                >
+                                  <img src={url} alt={`Hợp đồng ${idx + 1}`} />
+                                  <span className="rd-image-label">Ảnh {idx + 1}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <div className="rd-empty-contract">
+                        <FileText size={20} style={{ color: "#94a3b8" }} />
+                        <span>Phòng hiện chưa có hợp đồng</span>
                       </div>
                     )}
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* === CỘT PHẢI: Người thuê === */}
-            <div className="rd-right-panel">
-              {roomContract ? (
-                <>
-                  {/* Tenant Info */}
-                  <div className="rd-card rd-card--tenant">
-                    <div className="rd-card-header">
-                      <div className="rd-card-icon rd-card-icon--blue">
-                        <User size={20} />
-                      </div>
-                      <h3 className="rd-card-title">Người thuê chính</h3>
-                    </div>
-                    <div className="rd-card-body">
-                      <div className="rd-tenant-profile">
-                        <div className="rd-tenant-avatar">
-                          <User size={28} />
-                        </div>
-                        <div className="rd-tenant-info">
-                          <span className="rd-tenant-name">{roomContract.tenantId?.username || "---"}</span>
-                          <span className="rd-tenant-email">{roomContract.tenantId?.email || "---"}</span>
-                        </div>
-                      </div>
-                      <div className="rd-info-row">
-                        <div className="rd-info-item rd-info-item--full">
-                          <span className="rd-info-label">Số điện thoại</span>
-                          <span className="rd-info-value">
-                            <Phone size={14} style={{ marginRight: 4 }} />
-                            {roomContract.tenantId?.phoneNumber || "---"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                {/* Lightbox xem ảnh phóng to */}
+                {lightboxImage && (
+                  <div className="rd-lightbox" onClick={() => setLightboxImage(null)}>
+                    <button
+                      className="rd-lightbox-close"
+                      onClick={() => setLightboxImage(null)}
+                    >
+                      <X size={24} />
+                    </button>
+                    <img
+                      src={lightboxImage}
+                      alt="Ảnh phóng to"
+                      onClick={(e) => e.stopPropagation()}
+                    />
                   </div>
+                )}
 
-                  {/* Co-residents */}
-                  {roomContract.coResidents && roomContract.coResidents.length > 0 && (
-                    <div className="rd-card rd-card--coresidents">
-                      <div className="rd-card-header">
-                        <div className="rd-card-icon rd-card-icon--purple">
-                          <Users size={20} />
-                        </div>
-                        <h3 className="rd-card-title">Người ở cùng ({roomContract.coResidents.length})</h3>
-                      </div>
-                      <div className="rd-card-body">
-                        <div className="rd-co-residents-grid">
-                          {roomContract.coResidents.map((person: any, idx: number) => (
-                            <div key={idx} className="rd-co-resident-item">
-                              <div className="rd-co-resident-avatar">
-                                <User size={16} />
-                              </div>
-                              <div className="rd-co-resident-details">
-                                <span className="rd-co-resident-name">{person.fullName}</span>
-                                <div className="rd-co-resident-contacts">
-                                  {person.phone && (
-                                    <span><Phone size={11} /> {person.phone}</span>
-                                  )}
-                                  {person.cccd && (
-                                    <span><CreditCard size={11} /> {person.cccd}</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                <div className="rd-actions">
+                  <button
+                    className="btn-secondary"
+                    onClick={() => {
+                      setShowDetailModal(false);
+                      setDisplayMode("active");
+                      setAllRoomContracts([]);
+                      setRoomDeposits([]);
+                    }}
+                  >
+                    Đóng
+                  </button>
+                  {canModify && (
+                    <button
+                      className="btn-primary"
+                      onClick={() => {
+                        setShowDetailModal(false);
+                        handleOpenEdit(viewingRoom);
+                      }}
+                    >
+                      <Edit size={16} /> Chỉnh sửa
+                    </button>
                   )}
-
-                  {/* Services */}
-                  <div className="rd-card rd-card--services">
-                    <div className="rd-card-header">
-                      <div className="rd-card-icon rd-card-icon--orange">
-                        <Zap size={20} />
-                      </div>
-                      <h3 className="rd-card-title">Dịch vụ đã đăng ký</h3>
-                    </div>
-                    <div className="rd-card-body">
-                      {loadingDetail ? (
-                        <div className="rd-loading">Đang tải...</div>
-                      ) : roomBookServices.length > 0 ? (
-                        <div className="rd-services-tags">
-                          {roomBookServices.map((svc: any, idx: number) => (
-                            <div key={idx} className="rd-service-tag">
-                              <Zap size={12} />
-                              <span className="rd-service-tag-name">{svc.name}</span>
-                              <span className="rd-service-tag-price">
-                                {svc.currentPrice ? formatCurrency(svc.currentPrice) : ""}
-                                {svc.quantity > 1 ? ` ×${svc.quantity}` : ""}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="rd-empty-state">
-                          <AlertCircle size={16} />
-                          <span>Chưa đăng ký dịch vụ nào</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Contract Images */}
-                  {roomContract?.images && roomContract.images.length > 0 && (
-                    <div className="rd-card rd-card--images">
-                      <div className="rd-card-header">
-                        <div className="rd-card-icon rd-card-icon--gray">
-                          <FileText size={20} />
-                        </div>
-                        <h3 className="rd-card-title">Ảnh hợp đồng ({roomContract.images.length})</h3>
-                      </div>
-                      <div className="rd-card-body">
-                        <div className="rd-images-gallery">
-                          {roomContract.images.map((url: string, idx: number) => (
-                            <div
-                              key={idx}
-                              className="rd-image-thumb"
-                              onClick={() => setLightboxImage(url)}
-                            >
-                              <img src={url} alt={`Hợp đồng ${idx + 1}`} />
-                              <div className="rd-image-overlay">
-                                <Eye size={18} />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="rd-empty-contract">
-                  <FileText size={48} />
-                  <h4>Chưa có hợp đồng</h4>
-                  <p>Phòng này hiện chưa có hợp đồng thuê</p>
+                  {/* Nút Thanh lý — hiện cho cả manager và owner khi hợp đồng đang active */}
+                  {canLiquidate && selectedContractId && (() => {
+                    const selContract = availableContracts.find(
+                      (c: any) => c._id === selectedContractId
+                    );
+                    if (selContract?.status === "active") {
+                      return (
+                        <button
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "8px 16px",
+                            borderRadius: 8,
+                            border: "none",
+                            background: "#ef4444",
+                            color: "#fff",
+                            fontWeight: 700,
+                            fontSize: 14,
+                            cursor: "pointer",
+                          }}
+                          onClick={() => setShowLiquidationWizard(true)}
+                        >
+                          <Gavel size={16} /> Thanh lý HĐ
+                        </button>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-
-          {/* Lightbox */}
-          {lightboxImage && (
-            <div className="rd-lightbox" onClick={() => setLightboxImage(null)}>
-              <button className="rd-lightbox-close" onClick={() => setLightboxImage(null)}>
-                <X size={24} />
-              </button>
-              <img src={lightboxImage} alt="Ảnh phóng to" />
-            </div>
-          )}
-        </div>
-      </AppModal>
-        );
-      })()}
+          );
+        })()}
 
       {/* ── Liquidation Wizard ── */}
       {showLiquidationWizard && selectedContractId && (() => {
@@ -1650,7 +1797,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
               setShowDetailModal(false);
               setAllRoomContracts([]);
               setRoomDeposits([]);
-              showToast("success", "Thành công", "Thanh lý hợp đồng thành công! Phòng đã được giải phóng.");
+              toastr.success("Thanh lý hợp đồng thành công! Phòng đã được giải phóng.");
               fetchData();
             }}
           />
