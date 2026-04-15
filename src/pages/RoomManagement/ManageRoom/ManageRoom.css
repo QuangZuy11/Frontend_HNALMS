@@ -200,12 +200,73 @@
 }
 
 .room-container .btn-primary:hover {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, var(--ms-primary) 0%, var(--ms-primary-dark) 100%) !important;
   box-shadow: 0 6px 16px rgba(53, 121, 198, 0.38);
   transform: translateY(-1px);
 }
 
 .room-container .btn-primary:active {
   transform: translateY(0);
+}
+
+/* Ensure primary button never becomes unreadable on hover/focus */
+.room-container .btn-primary:focus-visible {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, var(--ms-primary) 0%, var(--ms-primary-dark) 100%) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(53, 121, 198, 0.18), 0 6px 16px rgba(53, 121, 198, 0.38);
+}
+
+.room-container .btn-primary svg {
+  color: currentColor;
+}
+
+/* AppModal in Room page — protect header/title contrast from other global CSS */
+.room-container .app-modal-header {
+  background: var(--modal-accent, #2e69b1) !important;
+}
+
+.room-container .app-modal-title {
+  color: #ffffff !important;
+}
+
+.room-container .app-modal-close-btn {
+  color: #ffffff !important;
+}
+
+/* AppModal is portaled to body, so use a dedicated global hook class */
+.mr-app-modal-header {
+  background: var(--modal-accent, #2e69b1) !important;
+}
+
+.mr-app-modal-header .app-modal-title {
+  color: #ffffff !important;
+}
+
+.mr-app-modal-header .app-modal-close-btn {
+  color: #ffffff !important;
+}
+
+/* Detail modal header: dark text for better readability */
+.mr-app-modal-header--detail {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.mr-app-modal-header--detail .app-modal-header-icon {
+  background: #e2e8f0 !important;
+  color: #2563eb !important;
+}
+
+.mr-app-modal-header--detail .app-modal-title {
+  color: #1e293b !important;
+}
+
+.mr-app-modal-header--detail .app-modal-close-btn {
+  color: #64748b !important;
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
 }
 
 /* Secondary Button */
@@ -250,12 +311,21 @@
 }
 
 .room-container .btn-success:hover {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
   box-shadow: 0 6px 16px rgba(16, 185, 129, 0.38);
   transform: translateY(-1px);
 }
 
 .room-container .btn-success:active {
   transform: translateY(0);
+}
+
+.room-container .btn-success:focus-visible {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2), 0 6px 16px rgba(16, 185, 129, 0.38);
 }
 
 /* --- Toolbar --- */
@@ -543,6 +613,22 @@
 .ms-btn--primary:active {
   transform: translateY(0);
   box-shadow: 0 2px 6px rgba(53, 121, 198, 0.3);
+}
+
+.ms-btn--danger {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+.ms-btn--danger:hover {
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+  transform: translateY(-1px);
+}
+
+.ms-btn--danger:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
 }
 
 /* Responsive for Form */
