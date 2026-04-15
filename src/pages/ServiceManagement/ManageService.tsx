@@ -420,7 +420,7 @@ const ManageService = () => {
               Hủy bỏ
             </button>
             <button type="submit" form="ms-add-form" className="ms-btn ms-btn--primary">
-              <CheckCircle2 size={16} />
+              {isEditing ? <CheckCircle2 size={16} /> : <Plus size={16} />}
               {isEditing ? 'Cập nhật' : 'Thêm dịch vụ'}
             </button>
           </>

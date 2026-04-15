@@ -698,30 +698,72 @@ const InvoiceManager = () => {
 
   return (
     <div className="invoice-container">
-      <div className="page-header">
-        <div>
-          <h2>Tổng hợp Hóa đơn Thu chi</h2>
-          <p>Quản lý toàn bộ Hóa đơn Định kỳ hàng tháng & Hóa đơn Phát sinh (Sửa chữa, đền bù...)</p>
+      {/* HEADER: Title on left, Main Actions on right */}
+      <div className="invoice-header">
+        <div className="invoice-header-top">
+          <div className="invoice-title-block">
+            <div className="invoice-title-row">
+              <div className="invoice-title-icon" aria-hidden>
+                <FileText size={22} strokeWidth={2} />
+              </div>
+              <div className="invoice-title-text">
+                <h2>Tổng hợp Hóa đơn Thu chi</h2>
+                <p className="invoice-subtitle">
+                  Quản lý toàn bộ Hóa đơn Định kỳ hàng tháng & Hóa đơn Phát sinh (Sửa chữa, đền bù...).
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="invoice-header-aside">
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                className="btn btn-outline"
+                onClick={handleOpenBulkReading}
+              >
+                <Droplet size={18} /> Ghi Điện Nước
+              </button>
+
+              <button
+                className="btn btn-primary"
+                onClick={() => setConfirmModal({
+                  isOpen: true,
+                  action: 'GENERATE',
+                  message: 'Hệ thống sẽ tự động rà soát Hợp đồng và tạo Hóa đơn nháp ĐỊNH KỲ cho tháng hiện tại. Bạn có chắc chắn muốn tiếp tục?'
+                })}
+              >
+                <Plus size={18} /> Tạo HĐ Định kỳ
+              </button>
+
+              <button
+                className="btn btn-success"
+                onClick={handleOpenReleaseConfirm}
+                disabled={loading}
+              >
+                <Send size={18} /> Phát Hành {selectedInvoiceIds.length > 0 ? `(${selectedInvoiceIds.length})` : ''}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="actions-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ position: 'relative', width: '350px' }}>
-            <Search size={18} style={{ position: 'absolute', left: 12, top: 10, color: '#64748b' }} />
+      {/* TOOLBAR: Search and Filters */}
+      <div className="invoice-toolbar">
+        <div className="invoice-toolbar-left">
+          <div className="search-box">
+            <Search size={18} className="search-icon" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
             <input
               type="text"
               placeholder="Tìm mã HĐ, tiêu đề..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ width: '100%', padding: '10px 10px 10px 36px', borderRadius: 8, border: '1px solid #e2e8f0', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
 
           <select
+            className="filter-select"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            style={{ width: '180px', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0', outline: 'none', background: '#fff', color: '#334155', cursor: 'pointer', boxSizing: 'border-box' }}
           >
             <option value="All">Tất cả trạng thái</option>
             <option value="Draft">Bản Nháp (Chưa gửi)</option>
@@ -730,45 +772,14 @@ const InvoiceManager = () => {
           </select>
 
           <select
+            className="filter-select"
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            style={{ width: '180px', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0', outline: 'none', background: '#fff', color: '#334155', cursor: 'pointer', boxSizing: 'border-box' }}
           >
             <option value="All">Tất cả loại HĐ</option>
             <option value="Periodic">Định kỳ (Tháng)</option>
             <option value="Incurred">Phát sinh (Sửa chữa)</option>
           </select>
-        </div>
-
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button
-            className="btn btn-outline"
-            style={{ whiteSpace: 'nowrap', borderColor: '#0ea5e9', color: '#0ea5e9' }}
-            onClick={handleOpenBulkReading}
-          >
-            <Droplet size={18} /> Ghi Điện Nước
-          </button>
-
-          <button
-            className="btn btn-primary"
-            style={{ whiteSpace: 'nowrap' }}
-            onClick={() => setConfirmModal({
-              isOpen: true,
-              action: 'GENERATE',
-              message: 'Hệ thống sẽ tự động rà soát Hợp đồng và tạo Hóa đơn nháp ĐỊNH KỲ cho tháng hiện tại. Bạn có chắc chắn muốn tiếp tục?'
-            })}
-          >
-            <Plus size={18} /> Tạo HĐ Định kỳ
-          </button>
-
-          <button
-            className="btn btn-success"
-            style={{ whiteSpace: 'nowrap', background: '#16a34a', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500 }}
-            onClick={handleOpenReleaseConfirm}
-            disabled={loading}
-          >
-            <Send size={18} /> Phát Hành {selectedInvoiceIds.length > 0 ? `(${selectedInvoiceIds.length})` : ''}
-          </button>
         </div>
       </div>
 
@@ -787,7 +798,7 @@ const InvoiceManager = () => {
               </th>
               {renderSortableHeader("Mã HĐ", "invoiceCode")}
               {renderSortableHeader("Phòng", "roomId")}
-              <th>Phân loại</th>
+              <th style={{ width: '110px' }}>Phân loại</th>
               {renderSortableHeader("Tiêu đề", "title")}
               {renderSortableHeader("Tổng tiền", "totalAmount")}
               {renderSortableHeader("Hạn chót", "dueDate")}

@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, Download,
   Laptop, AlertTriangle,
   Filter, ArrowUpDown,
-  LayoutGrid, FileText, Sparkles, X, Upload
+  LayoutGrid, FileText, Sparkles, X, Upload, CheckCircle
 } from 'lucide-react';
 import { saveAs } from 'file-saver';
 import './ManagementDevice.css';
@@ -439,6 +439,7 @@ const ManagerDevice = () => {
               Hủy bỏ
             </button>
             <button type="submit" form="device-form" className="ms-btn ms-btn--primary">
+              {isEditing ? <CheckCircle size={16} /> : <Plus size={16} />}
               {isEditing ? 'Cập nhật' : 'Thêm thiết bị'}
             </button>
           </>

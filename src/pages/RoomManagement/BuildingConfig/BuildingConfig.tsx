@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 import {
   Plus, Edit, Trash2, Layers, LayoutTemplate, BedDouble,
-  X, Building, Home, Tag, Upload, Eye,
-  ChevronLeft, ChevronRight, History, AlertTriangle
+  X as LucideX, Building, Home, Tag, Upload, Eye,
+  ChevronLeft, ChevronRight, History, AlertTriangle, CheckCircle
 } from "lucide-react";
 import "./BuildingConfig.css";
 
@@ -453,7 +453,10 @@ const BuildingConfig = () => {
         footer={
           <>
             <button className="ms-btn ms-btn--ghost" onClick={() => setShowFloorModal(false)}>Hủy</button>
-            <button className="ms-btn ms-btn--primary" onClick={handleSaveFloor}>Lưu cấu hình</button>
+            <button className="ms-btn ms-btn--primary" onClick={handleSaveFloor}>
+              {editingFloor ? <CheckCircle size={16} /> : <Plus size={16} />}
+              {editingFloor ? "Lưu thay đổi" : "Thêm tầng mới"}
+            </button>
           </>
         }
       >
@@ -485,7 +488,8 @@ const BuildingConfig = () => {
           <>
             <button className="ms-btn ms-btn--ghost" onClick={() => setShowTypeModal(false)}>Hủy bỏ</button>
             <button className="ms-btn ms-btn--primary" onClick={handleSaveType} disabled={loading}>
-              {loading ? "Đang lưu..." : "Lưu loại phòng"}
+              {loading ? "Đang lưu..." : (editingType ? <CheckCircle size={16} /> : <Plus size={16} />)}
+              {loading ? "" : (editingType ? " Lưu cập nhật" : " Thêm loại mới")}
             </button>
           </>
         }
@@ -521,7 +525,9 @@ const BuildingConfig = () => {
                   {slot ? (
                     <>
                       <img src={slot.url || slot.preview} alt={label} />
-                      <button type="button" className="remove-slot-btn" onClick={e => removeSlot(index, e)}><X size={12} /></button>
+                      <button type="button" className="remove-slot-btn" onClick={e => removeSlot(index, e)}>
+                        <LucideX size={14} />
+                      </button>
                     </>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: 0.5 }}>

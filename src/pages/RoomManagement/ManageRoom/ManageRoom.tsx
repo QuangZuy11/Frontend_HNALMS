@@ -1084,7 +1084,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
               form="mr-room-form"
               className="ms-btn ms-btn--primary"
             >
-              <CheckCircle size={16} />
+              {isEditing ? <CheckCircle size={16} /> : <Plus size={16} />}
               {isEditing ? "Cập nhật" : "Thêm phòng"}
             </button>
           </>
@@ -1257,7 +1257,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                         handleOpenEdit(viewingRoom);
                       }}
                     >
-                      <Edit size={16} /> Chỉnh sửa
+                      <CheckCircle size={16} /> Chỉnh sửa
                     </button>
                   )}
 

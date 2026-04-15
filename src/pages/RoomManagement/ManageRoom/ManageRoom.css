@@ -248,25 +248,25 @@
   color: #ffffff !important;
 }
 
-/* Detail modal header: dark text for better readability */
+/* Detail modal header: Synchronized with the blue theme */
 .mr-app-modal-header--detail {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
-  border-bottom: 1px solid #e2e8f0 !important;
+  background: var(--modal-accent, #2e69b1) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 .mr-app-modal-header--detail .app-modal-header-icon {
-  background: #e2e8f0 !important;
-  color: #2563eb !important;
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
 }
 
 .mr-app-modal-header--detail .app-modal-title {
-  color: #1e293b !important;
+  color: #ffffff !important;
 }
 
 .mr-app-modal-header--detail .app-modal-close-btn {
-  color: #64748b !important;
-  background: #f1f5f9 !important;
-  border-color: #e2e8f0 !important;
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
 }
 
 /* Secondary Button */
