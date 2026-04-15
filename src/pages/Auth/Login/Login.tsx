@@ -156,6 +156,12 @@ export default function LoginPage() {
     const username = usernameRef.current?.value.trim() || "";
     const password = passwordRef.current?.value || "";
 
+    if (!username && !password) {
+      showValidationPopup("Vui lòng nhập tên đăng nhập và mật khẩu");
+      usernameRef.current?.focus();
+      return;
+    }
+
     // Custom validation
     if (!validateUsername(username)) {
       usernameRef.current?.focus();
@@ -348,7 +354,7 @@ export default function LoginPage() {
                     }}
                     autoComplete="username"
                     className="login-input"
-                   
+
                     disabled={loading}
                   />
                 </div>
