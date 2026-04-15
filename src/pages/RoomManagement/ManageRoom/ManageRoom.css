@@ -709,6 +709,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -791,11 +792,13 @@
   font-weight: 700;
   color: var(--ms-primary);
 }
+
 .text-price {
   font-family: monospace;
   font-weight: 700;
   color: #16a34a;
 }
+
 .text-desc {
   max-width: 200px;
   white-space: nowrap;
@@ -804,6 +807,7 @@
   color: var(--ms-text-muted);
   font-size: 13px;
 }
+
 .text-muted-italic {
   color: #cbd5e1;
   font-style: italic;
@@ -952,8 +956,13 @@
 }
 
 @keyframes modalOverlayIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-content {
@@ -977,6 +986,7 @@
     opacity: 0;
     transform: scale(0.95) translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -1227,7 +1237,8 @@
 .rd-field label {
   font-size: 12px;
   text-transform: uppercase;
-  color: var(--ms-text-muted);
+  color: var(--ms-text-muted) !important;
+  /* Thêm !important */
   font-weight: 700;
   letter-spacing: 0.04em;
 }
@@ -1235,7 +1246,8 @@
 .rd-field span,
 .rd-field p {
   font-size: 15px;
-  color: #1e293b;
+  color: #1e293b !important;
+  /* Thêm !important để chống chữ trắng */
   font-weight: 500;
   margin: 0;
   line-height: 1.5;
@@ -1248,7 +1260,8 @@
   gap: 8px;
   font-size: 14px;
   font-weight: 700;
-  color: var(--ms-primary);
+  color: var(--ms-primary) !important;
+  /* Thêm !important */
   margin-top: 8px;
   padding-bottom: 8px;
   border-bottom: 2px solid var(--ms-primary-soft);
@@ -1822,12 +1835,14 @@
 .rd-tenant-name {
   font-size: 16px;
   font-weight: 700;
-  color: #1e293b;
+  color: #1e293b !important;
+  /* Thêm !important */
 }
 
 .rd-tenant-email {
   font-size: 13px;
-  color: #64748b;
+  color: #64748b !important;
+  /* Thêm !important */
   word-break: break-all;
 }
 
@@ -2184,8 +2199,13 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .rd-lightbox img {
