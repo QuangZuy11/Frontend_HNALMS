@@ -13,9 +13,12 @@ import {
   ClipboardList,
   UserCheck,
   Receipt,
+  ChevronDown,
+  ChevronUp,
+  Users,
+  Ban,
 } from "lucide-react";
 import "./BookingRequestList.css";
-import { Pagination } from "../../components/common/Pagination";
 
 interface Room {
   _id: string;
@@ -32,6 +35,7 @@ interface BookingRequest {
   idCard: string;
   roomId: Room;
   status: "Pending" | "Processed" | "Rejected" | "Awaiting Payment" | "Expired";
+  rejectionReason?: string | null;
   paymentStatus?: "Unpaid" | "Paid";
   transactionCode?: string;
   totalAmount?: number;
@@ -40,6 +44,14 @@ interface BookingRequest {
   prepayMonths: number | "all";
   coResidents: { name: string; phone: string }[];
   createdAt: string;
+}
+
+interface RoomGroup {
+  roomId: string;
+  roomName: string;
+  requests: BookingRequest[];
+  hasActive: boolean;   // has Pending or Awaiting Payment
+  hasWinner: boolean;   // has Processed
 }
 
 const POLL_INTERVAL_MS = 5000;
@@ -52,9 +64,10 @@ const BookingRequestList = () => {
 
   const [filterName, setFilterName] = useState("");
   const [filterRoom, setFilterRoom] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const ROWS_PER_PAGE = 10;
+  // Which room groups are expanded
+  const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set());
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const requestsRef = useRef<BookingRequest[]>([]);
@@ -66,6 +79,14 @@ const BookingRequestList = () => {
       const responseData = await bookingRequestService.getAllBookingRequests();
       if (responseData.success) {
         setRequests(responseData.data);
+        // Auto-expand rooms that have active requests
+        const activeRoomIds = new Set<string>(
+          responseData.data
+            .filter((r: BookingRequest) => ["Pending", "Awaiting Payment"].includes(r.status))
+            .map((r: BookingRequest) => r.roomId?._id)
+            .filter(Boolean),
+        );
+        setExpandedRooms(activeRoomIds);
       } else {
         setError("Tải danh sách thất bại");
       }
@@ -108,7 +129,7 @@ const BookingRequestList = () => {
             );
           }
         } catch {
-          // Bỏ qua lỗi mạng
+          // ignore network errors
         }
       }
     }, POLL_INTERVAL_MS);
@@ -118,22 +139,69 @@ const BookingRequestList = () => {
     };
   }, [fetchRequests]);
 
+  // Filter individual requests
   const filteredRequests = requests.filter((req) => {
     const matchName = req.name.toLowerCase().includes(filterName.toLowerCase());
     const matchRoom =
       filterRoom === "" ||
       req.roomId?.name?.toLowerCase().includes(filterRoom.toLowerCase());
-    return matchName && matchRoom;
+    const matchStatus =
+      filterStatus === "all" || req.status === filterStatus;
+    return matchName && matchRoom && matchStatus;
   });
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredRequests.length / ROWS_PER_PAGE),
-  );
-  const paginatedRequests = filteredRequests.slice(
-    (currentPage - 1) * ROWS_PER_PAGE,
-    currentPage * ROWS_PER_PAGE,
-  );
+  // Group by room
+  const roomGroups: RoomGroup[] = (() => {
+    const map = new Map<string, RoomGroup>();
+    filteredRequests.forEach((req) => {
+      const rId = req.roomId?._id || "unknown";
+      if (!map.has(rId)) {
+        map.set(rId, {
+          roomId: rId,
+          roomName: req.roomId?.name || "N/A",
+          requests: [],
+          hasActive: false,
+          hasWinner: false,
+        });
+      }
+      const group = map.get(rId)!;
+      group.requests.push(req);
+      if (["Pending", "Awaiting Payment"].includes(req.status)) group.hasActive = true;
+      if (req.status === "Processed") group.hasWinner = true;
+    });
+
+    // Sort requests within group: active first, then by createdAt desc
+    const statusOrder: Record<string, number> = {
+      "Awaiting Payment": 0,
+      "Pending": 1,
+      "Processed": 2,
+      "Expired": 3,
+      "Rejected": 4,
+    };
+    map.forEach((group) => {
+      group.requests.sort((a, b) => {
+        const so = (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9);
+        if (so !== 0) return so;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    });
+
+    // Sort groups: active rooms first
+    return Array.from(map.values()).sort((a, b) => {
+      if (a.hasActive && !b.hasActive) return -1;
+      if (!a.hasActive && b.hasActive) return 1;
+      return 0;
+    });
+  })();
+
+  const toggleRoom = (roomId: string) => {
+    setExpandedRooms((prev) => {
+      const next = new Set(prev);
+      if (next.has(roomId)) next.delete(roomId);
+      else next.add(roomId);
+      return next;
+    });
+  };
 
   const handleReview = (bookingRequestId: string) => {
     navigate("/manager/booking-contracts/send", {
@@ -142,16 +210,20 @@ const BookingRequestList = () => {
   };
 
   const pendingCount = requests.filter((r) => r.status === "Pending").length;
-  const awaitingCount = requests.filter(
-    (r) => r.status === "Awaiting Payment",
-  ).length;
-  const processedCount = requests.filter(
-    (r) => r.status === "Processed",
-  ).length;
+  const awaitingCount = requests.filter((r) => r.status === "Awaiting Payment").length;
+  const processedCount = requests.filter((r) => r.status === "Processed").length;
   const totalCount = requests.length;
 
-  const getStatusBadge = (status: BookingRequest["status"]) => {
-    switch (status) {
+  const getStatusBadge = (req: BookingRequest) => {
+    if (req.status === "Rejected" && req.rejectionReason === "room_taken") {
+      return (
+        <span className="br-status-badge br-status-badge--room-taken">
+          <Ban size={13} />
+          Phòng đã được chốt
+        </span>
+      );
+    }
+    switch (req.status) {
       case "Processed":
         return (
           <span className="br-status-badge br-status-badge--processed">
@@ -234,8 +306,9 @@ const BookingRequestList = () => {
               <div className="br-title-text">
                 <h2>Khách Đặt Phòng Online</h2>
                 <p className="br-subtitle">
-                  Quản lý các yêu cầu đặt phòng và làm hợp đồng cho khách
-                  
+                  Quản lý các yêu cầu đặt phòng. Mỗi phòng có thể có nhiều yêu
+                  cầu — khi 1 yêu cầu được chốt, các yêu cầu khác cùng phòng
+                  sẽ tự động bị hủy.
                 </p>
               </div>
             </div>
@@ -252,10 +325,7 @@ const BookingRequestList = () => {
               </div>
               <div className="br-stat-divider"></div>
               <div className="br-stat-item">
-                <ClipboardList
-                  size={16}
-                  className="br-stat-icon br-icon-warning"
-                />
+                <ClipboardList size={16} className="br-stat-icon br-icon-warning" />
                 <div className="br-stat-text">
                   <span className="br-stat-value">{pendingCount}</span>
                   <span className="br-stat-label">Chờ duyệt</span>
@@ -274,7 +344,7 @@ const BookingRequestList = () => {
         </div>
       </div>
 
-      {/* TOOLBAR LỌC & TÌM KIẾM */}
+      {/* TOOLBAR */}
       <div className="br-toolbar">
         <div className="br-toolbar-left">
           <div className="br-search-box">
@@ -284,10 +354,7 @@ const BookingRequestList = () => {
               className="br-search-input"
               placeholder="Tìm theo tên khách..."
               value={filterName}
-              onChange={(e) => {
-                setFilterName(e.target.value);
-                setCurrentPage(1);
-              }}
+              onChange={(e) => setFilterName(e.target.value)}
             />
           </div>
 
@@ -298,19 +365,28 @@ const BookingRequestList = () => {
               className="br-search-input"
               placeholder="Tìm theo số phòng..."
               value={filterRoom}
-              onChange={(e) => {
-                setFilterRoom(e.target.value);
-                setCurrentPage(1);
-              }}
+              onChange={(e) => setFilterRoom(e.target.value)}
             />
           </div>
+
+          <select
+            className="br-custom-select"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="all">Tất cả trạng thái</option>
+            <option value="Pending">Chờ duyệt</option>
+            <option value="Awaiting Payment">Chờ thanh toán</option>
+            <option value="Processed">Đã ký HĐ</option>
+            <option value="Rejected">Từ chối / Bị hủy</option>
+            <option value="Expired">Hết hạn</option>
+          </select>
         </div>
 
         <div className="br-toolbar-right">
           <span className="br-display-info">
-            Hiển thị {(currentPage - 1) * ROWS_PER_PAGE + 1}–
-            {Math.min(currentPage * ROWS_PER_PAGE, filteredRequests.length)} /{" "}
-            <strong>{filteredRequests.length}</strong> bản ghi
+            <strong>{roomGroups.length}</strong> phòng /{" "}
+            <strong>{filteredRequests.length}</strong> yêu cầu
           </span>
           {awaitingCount > 0 && (
             <span className="br-awaiting-chip">
@@ -318,99 +394,171 @@ const BookingRequestList = () => {
               Chờ thanh toán: {awaitingCount}
             </span>
           )}
+          <button
+            className="br-btn br-btn--outline"
+            onClick={() => fetchRequests()}
+            title="Tải lại"
+          >
+            <RefreshCw size={15} />
+          </button>
         </div>
       </div>
 
-      {/* BẢNG DỮ LIỆU */}
-      <div className="br-table-container">
-        <table className="br-table">
-          <thead>
-            <tr>
-              <th className="br-cell-stt">STT</th>
-              <th className="br-cell-room">Phòng</th>
-              <th className="br-cell-customer">Khách hàng</th>
-              <th className="br-cell-phone">SĐT</th>
-              <th className="br-cell-date">Ngày muốn vào</th>
-              <th className="br-cell-transaction">Mã CK / Số tiền</th>
-              <th className="br-cell-status">Trạng thái</th>
-              <th className="br-cell-actions">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedRequests.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="br-empty-cell">
-                  Chưa có khách đặt phòng online
-                </td>
-              </tr>
-            ) : (
-              paginatedRequests.map((req, index) => (
-                <tr
-                  key={req._id}
-                  className={
-                    req.status === "Awaiting Payment" ? "br-row-awaiting" : ""
-                  }
-                >
-                  <td className="br-cell-stt">
-                    {(currentPage - 1) * ROWS_PER_PAGE + index + 1}
-                  </td>
-                  <td className="br-cell-room">{req.roomId?.name || "N/A"}</td>
-                  <td className="br-cell-customer">
-                    {req.email && (
-                      <span className="br-customer-email">{req.email}</span>
-                    )}
-                  </td>
-                  <td className="br-cell-phone">{req.phone}</td>
-                  <td className="br-cell-date">
-                    {req.startDate
-                      ? format(new Date(req.startDate), "dd/MM/yyyy")
-                      : "N/A"}
-                  </td>
-                  <td className="br-cell-transaction">
-                    {req.transactionCode ? (
-                      <div>
-                        <span className="br-transaction-code">
-                          {req.transactionCode}
-                        </span>
-                        {req.totalAmount && (
-                          <span className="br-transaction-amount">
-                            {req.totalAmount.toLocaleString("vi-VN")} VNĐ
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <span style={{ color: "#94a3b8" }}>—</span>
-                    )}
-                  </td>
-                  <td className="br-cell-status">
-                    {getStatusBadge(req.status)}
-                  </td>
-                  <td className="br-cell-actions">
-                    <button
-                      className="br-btn br-btn--primary"
-                      onClick={() => handleReview(req._id)}
-                      disabled={
-                        req.status === "Rejected" || req.status === "Processed"
-                      }
-                    >
-                      <Eye size={15} />
-                      {req.status === "Awaiting Payment"
-                        ? "Chờ TT..."
-                        : "Xem & Chốt HĐ"}
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      {/* ROOM GROUPS */}
+      <div className="br-groups-container">
+        {roomGroups.length === 0 ? (
+          <div className="br-empty-state">
+            <ClipboardList size={48} strokeWidth={1.5} />
+            <p>Chưa có yêu cầu đặt phòng nào</p>
+          </div>
+        ) : (
+          roomGroups.map((group) => {
+            const isExpanded = expandedRooms.has(group.roomId);
+            const competitorCount = group.requests.filter(
+              (r) => r.rejectionReason === "room_taken",
+            ).length;
 
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredRequests.length}
-          onPageChange={setCurrentPage}
-        />
+            return (
+              <div
+                key={group.roomId}
+                className={`br-room-group ${group.hasWinner ? "br-room-group--won" : ""} ${group.hasActive && !group.hasWinner ? "br-room-group--active" : ""}`}
+              >
+                {/* Room group header */}
+                <button
+                  className="br-room-header"
+                  onClick={() => toggleRoom(group.roomId)}
+                >
+                  <div className="br-room-header-left">
+                    <div className="br-room-badge">
+                      {group.hasWinner ? (
+                        <CheckCircle2 size={16} className="br-room-icon--won" />
+                      ) : group.hasActive ? (
+                        <Clock size={16} className="br-room-icon--active" />
+                      ) : (
+                        <XCircle size={16} className="br-room-icon--closed" />
+                      )}
+                      <span className="br-room-name">Phòng {group.roomName}</span>
+                    </div>
+
+                    <div className="br-room-meta">
+                      <span className="br-room-count">
+                        <Users size={13} />
+                        {group.requests.length} yêu cầu
+                      </span>
+                      {competitorCount > 0 && (
+                        <span className="br-room-competed">
+                          <Ban size={13} />
+                          {competitorCount} bị hủy do phòng đã chốt
+                        </span>
+                      )}
+                      {group.hasWinner && (
+                        <span className="br-room-won-tag">✓ Đã chốt hợp đồng</span>
+                      )}
+                      {group.hasActive && !group.hasWinner && (
+                        <span className="br-room-active-tag">● Đang chờ duyệt</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="br-room-toggle">
+                    {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  </div>
+                </button>
+
+                {/* Requests table */}
+                {isExpanded && (
+                  <div className="br-room-requests">
+                    <table className="br-table">
+                      <thead>
+                        <tr>
+                          <th className="br-cell-stt">#</th>
+                          <th className="br-cell-customer">Khách hàng</th>
+                          <th className="br-cell-phone">SĐT</th>
+                          <th className="br-cell-date">Ngày vào</th>
+                          <th style={{ width: "8%" }}>Thời hạn</th>
+                          <th className="br-cell-transaction">Mã CK / Số tiền</th>
+                          <th className="br-cell-status">Trạng thái</th>
+                          <th className="br-cell-actions">Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {group.requests.map((req, index) => {
+                          const isLoser = req.rejectionReason === "room_taken";
+                          const isWinner = req.status === "Processed";
+                          return (
+                            <tr
+                              key={req._id}
+                              className={`
+                                ${req.status === "Awaiting Payment" ? "br-row-awaiting" : ""}
+                                ${isLoser ? "br-row-loser" : ""}
+                                ${isWinner ? "br-row-winner" : ""}
+                              `.trim()}
+                            >
+                              <td className="br-cell-stt">{index + 1}</td>
+                              <td className="br-cell-customer">
+                                <span className="br-customer-name">{req.name}</span>
+                                {req.email && (
+                                  <span className="br-customer-email">{req.email}</span>
+                                )}
+                              </td>
+                              <td className="br-cell-phone">{req.phone}</td>
+                              <td className="br-cell-date">
+                                {req.startDate
+                                  ? format(new Date(req.startDate), "dd/MM/yyyy")
+                                  : "N/A"}
+                              </td>
+                              <td style={{ textAlign: "center" }}>
+                                {req.duration} tháng
+                              </td>
+                              <td className="br-cell-transaction">
+                                {req.transactionCode ? (
+                                  <div>
+                                    <span className="br-transaction-code">
+                                      {req.transactionCode}
+                                    </span>
+                                    {req.totalAmount && (
+                                      <span className="br-transaction-amount">
+                                        {req.totalAmount.toLocaleString("vi-VN")} VNĐ
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span style={{ color: "#94a3b8" }}>—</span>
+                                )}
+                              </td>
+                              <td className="br-cell-status">
+                                {getStatusBadge(req)}
+                              </td>
+                              <td className="br-cell-actions">
+                                {isLoser || req.status === "Expired" || req.status === "Rejected" ? (
+                                  <span className="br-no-action">—</span>
+                                ) : req.status === "Processed" ? (
+                                  <span className="br-status-badge br-status-badge--processed" style={{ fontSize: "11px" }}>
+                                    <CheckCircle2 size={12} /> Hoàn tất
+                                  </span>
+                                ) : (
+                                  <button
+                                    className="br-btn br-btn--primary"
+                                    onClick={() => handleReview(req._id)}
+                                  >
+                                    <Eye size={15} />
+                                    {req.status === "Awaiting Payment"
+                                      ? "Chờ TT..."
+                                      : "Xem & Chốt HĐ"}
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );
