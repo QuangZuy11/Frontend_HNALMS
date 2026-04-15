@@ -21,7 +21,8 @@ import {
   SwatchBook,
   Building2,
   ChartBarStacked,
-  RefreshCcwDot
+  RefreshCcwDot,
+  Settings
 } from 'lucide-react';
 import './ManagerSidebar.css';
 import logo from '../../../../assets/images/Logo.png';
@@ -45,7 +46,7 @@ const MENU_ITEMS = [
     path: "/manager",
     subItems: [
       { title: "Danh Sách Phòng", path: "/manager/rooms", icon: <DoorOpen size={16} /> },
-      { title: "Loại Phòng", path: "/manager/building-config", icon: <ChartBarStacked size={16} /> },
+      { title: "Cấu hình tòa nhà", path: "/manager/building-config", icon: <Settings size={16} /> },
     ]
   },
   {

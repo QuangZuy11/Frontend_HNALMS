@@ -33,6 +33,25 @@
     margin-bottom: 20px;
 }
 
+.page-title-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.page-title-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--bc-primary) 0%, var(--bc-primary-dark) 100%);
+    color: #ffffff;
+    flex-shrink: 0;
+    box-shadow: 0 4px 14px var(--bc-primary-shadow);
+}
+
 .page-title {
     font-size: 1.375rem;
     font-weight: 600;
