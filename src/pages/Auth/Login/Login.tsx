@@ -211,6 +211,13 @@ export default function LoginPage() {
         return;
       }
 
+      // Check if user is a tenant
+      if (response.user.role.toLowerCase() === "tenant") {
+        showValidationPopup("Bạn không có quyền đăng nhập vào hệ thống web.");
+        setLoading(false);
+        return;
+      }
+
       console.log("✅ Calling AuthContext.login with:", {
         token: response.token.substring(0, 20) + "...",
         user: response.user,
@@ -251,9 +258,6 @@ export default function LoginPage() {
           break;
         case "accountant":
           navigate("/accountant");
-          break;
-        case "tenant":
-          navigate("/homepage");
           break;
         default:
           navigate("/homepage");
