@@ -1,41 +1,41 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import {
-  Search, FileText, X, CheckCircle, DollarSign, Wrench
+  FileSpreadsheet, Search, Filter, LayoutGrid, ArrowUpDown,
+  FileText, CheckCircle, DollarSign, Wrench, AlertCircle
 } from 'lucide-react';
-
-import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
 
-import toastr from 'toastr';
-import 'toastr/build/toastr.min.css';
-import './InvoiceManage.css';
+import { AppModal } from '../../components/common/Modal';
+import { Pagination } from '../../components/common/Pagination';
+import { useToast } from '../../components/common/Toast';
+import './InvoiceList.css';
 
-const API_BASE_URL = 'http://localhost:9999/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:9999/api';
 
 interface InvoiceItem {
   itemName: string;
+  usage: number;
   oldIndex?: number;
   newIndex?: number;
-  usage: number;
+  isIndex?: boolean;
   unitPrice: number;
   amount: number;
-  isIndex?: boolean;
 }
 
 interface Invoice {
   _id: string;
   invoiceCode: string;
-  contractId?: any; 
-  roomId?: any;     
+  roomId?: any;
+  contractId?: any;
   title: string;
-  type: 'Periodic' | 'Incurred'; // Để FE phân biệt định kỳ hay phát sinh
+  type: 'Periodic' | 'Incurred';
   totalAmount: number;
   status: 'Draft' | 'Unpaid' | 'Paid';
   dueDate: string;
   items?: InvoiceItem[];
-  // Dành riêng cho hóa đơn phát sinh
   deviceName?: string;
   repairDescription?: string;
   createdAt?: string;
@@ -44,51 +44,43 @@ interface Invoice {
 const ITEMS_PER_PAGE = 15;
 
 const InvoiceList = () => {
+  const { showToast } = useToast();
+
+  // -- State --
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Mặc định Kế toán xem hóa đơn Chưa thu (Bỏ qua Draft)
   const [filterStatus, setFilterStatus] = useState<string>('Unpaid');
   const [filterType, setFilterType] = useState<string>('All');
-
+  const [filterRoom, setFilterRoom] = useState<string>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<{ key: string | null, direction: 'asc' | 'desc' }>({
-    key: null,
-    direction: 'asc'
+    key: 'createdAt',
+    direction: 'desc'
   });
 
-  const [currentPage, setCurrentPage] = useState(1);
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     action: 'PAY_SINGLE' | 'PAY_BULK' | null;
     targetId?: string;
-    targetType?: string; // Cần biết type để gọi đúng API thanh toán
+    targetType?: string;
     message: string;
   }>({ isOpen: false, action: null, message: '' });
 
+  // -- Initialization --
   useEffect(() => {
-    toastr.options = { closeButton: true, positionClass: "toast-top-right", timeOut: 3000 };
     fetchInvoices();
   }, []);
 
   useEffect(() => {
     setCurrentPage(1);
     setSelectedInvoiceIds([]);
-  }, [searchTerm, filterStatus, filterType, sortConfig]);
+  }, [searchTerm, filterStatus, filterType, filterRoom, sortConfig]);
 
-  // Helper bóc tách thông tin Phòng
-  const getRoomName = (inv: any) => {
-    if (inv?.roomId && typeof inv.roomId === 'object') return inv.roomId.name;
-    if (inv?.roomId) return inv.roomId;
-    if (inv?.contractId?.roomId && typeof inv.contractId.roomId === 'object') return inv.contractId.roomId.name;
-    return 'Không xác định';
-  };
-
-  // LẤY VÀ GỘP CẢ 2 LOẠI HÓA ĐƠN TỪ 2 API KHÁC NHAU
+  // -- Logic --
   const fetchInvoices = async () => {
     setLoading(true);
     try {
@@ -100,44 +92,110 @@ const InvoiceList = () => {
       const periodicData = (periodicRes.data.data || []).map((inv: any) => ({ ...inv, type: 'Periodic' }));
       const incurredData = (incurredRes.data.data || []).map((inv: any) => ({ ...inv, type: 'Incurred' }));
 
-      const combined = [...periodicData, ...incurredData];
-      
-      // Sắp xếp mới nhất lên đầu
-      combined.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      // Gộp và lọc bỏ bản nháp (Draft) đối với kế toán
+      const combined = [...periodicData, ...incurredData].filter(inv => inv.status !== 'Draft');
 
-      // LỌC BỎ HOÀN TOÀN BẢN NHÁP (Draft) ĐỐI VỚI KẾ TOÁN
-      const validInvoices = combined.filter((inv: Invoice) => inv.status !== 'Draft');
-
-      setInvoices(validInvoices);
+      setInvoices(combined);
       setSelectedInvoiceIds([]);
     } catch (error) {
-      toastr.error("Lỗi tải danh sách hóa đơn");
+      showToast('error', 'Lỗi hệ thống', 'Không thể tải danh sách hóa đơn.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const getRoomName = (inv: any) => {
+    if (inv?.roomId && typeof inv.roomId === 'object') return inv.roomId.name;
+    if (inv?.roomId) return inv.roomId;
+    if (inv?.contractId?.roomId && typeof inv.contractId.roomId === 'object') return inv.contractId.roomId.name;
+    if (inv?.contractId?.roomId) return inv.contractId.roomId;
+    return 'Không xác định';
+  };
+
+  const uniqueRooms = useMemo(() => {
+    const names = invoices.map(inv => getRoomName(inv));
+    return Array.from(new Set(names)).sort();
+  }, [invoices]);
+
+  const sortedAndFilteredInvoices = useMemo(() => {
+    let filtered = invoices.filter(inv => {
+      const matchSearch =
+        inv.invoiceCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inv.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchStatus = filterStatus === 'All' || inv.status === filterStatus;
+      const matchType = filterType === 'All' || inv.type === filterType;
+      const matchRoom = filterRoom === 'ALL' || getRoomName(inv) === filterRoom;
+
+      return matchSearch && matchStatus && matchType && matchRoom;
+    });
+
+    if (sortConfig.key) {
+      filtered.sort((a: any, b: any) => {
+        let valA = a[sortConfig.key!];
+        let valB = b[sortConfig.key!];
+
+        if (sortConfig.key === 'roomId') {
+          valA = getRoomName(a);
+          valB = getRoomName(b);
+        }
+
+        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [invoices, searchTerm, filterStatus, filterType, filterRoom, sortConfig]);
+
+  const totalPages = Math.ceil(sortedAndFilteredInvoices.length / ITEMS_PER_PAGE);
+  const paginatedInvoices = sortedAndFilteredInvoices.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const allUnpaidInView = paginatedInvoices.filter(inv => inv.status === 'Unpaid');
+  const isAllSelected = allUnpaidInView.length > 0 &&
+    allUnpaidInView.every(inv => selectedInvoiceIds.includes(inv._id));
+
+  // -- Handlers --
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedInvoiceIds(prev => prev.filter(id => !allUnpaidInView.find(inv => inv._id === id)));
+    } else {
+      const newIds = allUnpaidInView
+        .map(inv => inv._id)
+        .filter(id => !selectedInvoiceIds.includes(id));
+      setSelectedInvoiceIds(prev => [...prev, ...newIds]);
+    }
+  };
+
+  const toggleSelectOne = (id: string, status: string) => {
+    if (status !== 'Unpaid') return;
+    setSelectedInvoiceIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
 
   const handlePaymentSingle = async (id: string, type: string) => {
     try {
       const endpoint = type === 'Periodic' ? 'periodic' : 'incurred';
       await axios.put(`${API_BASE_URL}/invoices/${endpoint}/${id}/pay`);
-      toastr.success("Xác nhận thanh toán thành công!");
+      showToast('success', 'Thành công', 'Đã xác nhận thanh toán hóa đơn!');
       fetchInvoices();
     } catch (error: any) {
-      toastr.error(error.response?.data?.message || "Lỗi cập nhật thanh toán");
+      const msg = error.response?.data?.message || 'Lỗi cập nhật thanh toán';
+      showToast('error', 'Thất bại', msg);
     }
   };
 
   const handlePaymentBulk = async () => {
     try {
       let idsToPay = selectedInvoiceIds;
-
       if (idsToPay.length === 0) {
         idsToPay = sortedAndFilteredInvoices.filter(inv => inv.status === 'Unpaid').map(inv => inv._id);
       }
 
       if (idsToPay.length === 0) {
-        toastr.warning("Không có hóa đơn Chưa thu nào để xác nhận.");
+        showToast('warning', 'Chú ý', 'Không có hóa đơn Chưa thu nào để xác nhận.');
         return;
       }
 
@@ -148,34 +206,12 @@ const InvoiceList = () => {
         await axios.put(`${API_BASE_URL}/invoices/${endpoint}/${id}/pay`);
       }
 
-      toastr.success(`Đã xác nhận thanh toán thành công ${idsToPay.length} hóa đơn!`);
+      showToast('success', 'Thành công', `Đã xác nhận thanh toán cho ${idsToPay.length} hóa đơn!`);
       fetchInvoices();
     } catch (error: any) {
-      toastr.error("Có lỗi xảy ra trong quá trình xác nhận thanh toán.");
+      showToast('error', 'Lỗi hệ thống', 'Có lỗi xảy ra khi xác nhận thanh toán hàng loạt.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleOpenPaymentConfirm = () => {
-    const unpaidCount = sortedAndFilteredInvoices.filter(inv => inv.status === 'Unpaid').length;
-
-    if (selectedInvoiceIds.length > 0) {
-      setConfirmModal({
-        isOpen: true,
-        action: 'PAY_BULK',
-        message: `Bạn đang chọn xác nhận thanh toán cho ${selectedInvoiceIds.length} hóa đơn. Hành động này không thể hoàn tác. Tiếp tục?`
-      });
-    } else {
-      if (unpaidCount === 0) {
-        toastr.warning("Không có hóa đơn Chưa thu nào trong danh sách lọc hiện tại!");
-        return;
-      }
-      setConfirmModal({
-        isOpen: true,
-        action: 'PAY_BULK',
-        message: `Bạn KHÔNG TÍCH CHỌN hóa đơn nào. Hệ thống sẽ tự động xác nhận thanh toán TẤT CẢ ${unpaidCount} hóa đơn đang báo nợ (Chưa thu) trên màn hình. Bạn có chắc chắn không?`
-      });
     }
   };
 
@@ -185,22 +221,42 @@ const InvoiceList = () => {
     } else if (confirmModal.action === 'PAY_BULK') {
       await handlePaymentBulk();
     }
-    setConfirmModal({ isOpen: false, action: null, message: '', targetId: undefined, targetType: undefined });
+    setConfirmModal({ isOpen: false, action: null, message: '' });
+  };
+
+  const handleOpenPaymentConfirm = () => {
+    const unpaidCount = sortedAndFilteredInvoices.filter(inv => inv.status === 'Unpaid').length;
+    if (selectedInvoiceIds.length > 0) {
+      setConfirmModal({
+        isOpen: true,
+        action: 'PAY_BULK',
+        message: `Bạn đang chọn xác nhận thanh toán cho ${selectedInvoiceIds.length} hóa đơn. Hành động này không thể hoàn tác. Tiếp tục?`
+      });
+    } else {
+      if (unpaidCount === 0) {
+        showToast('warning', 'Thông báo', 'Không có hóa đơn Chưa thu nào trong danh sách!');
+        return;
+      }
+      setConfirmModal({
+        isOpen: true,
+        action: 'PAY_BULK',
+        message: `Bạn chưa chọn hóa đơn nào. Hệ thống sẽ xác nhận thanh toán TẤT CẢ ${unpaidCount} hóa đơn Chưa thu hiển thị trên màn hình. Tiếp tục?`
+      });
+    }
   };
 
   const handleViewDetail = async (invoice: Invoice) => {
     try {
       const endpoint = invoice.type === 'Periodic' ? 'periodic' : 'incurred';
       const res = await axios.get(`${API_BASE_URL}/invoices/${endpoint}/${invoice._id}`);
-      
-      // Gán lại type để component biết render giao diện nào
       setSelectedInvoice({ ...res.data.data, type: invoice.type });
       setShowDetailModal(true);
     } catch (error) {
-      toastr.error("Không thể lấy chi tiết hóa đơn");
+      showToast('error', 'Lỗi', 'Không thể lấy thông tin chi tiết hóa đơn.');
     }
   };
 
+  // -- Render Helpers --
   const formatCurrency = (val: number) => {
     if (isNaN(val) || val === null || val === undefined) return '0 ₫';
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
@@ -216,191 +272,121 @@ const InvoiceList = () => {
     setSortConfig({ key, direction });
   };
 
-  const sortedAndFilteredInvoices = useMemo(() => {
-    const filtered = invoices.filter(inv => {
-      const matchSearch =
-        inv.invoiceCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        inv.title.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchStatus = filterStatus === 'All' || inv.status === filterStatus;
-      const matchType = filterType === 'All' || inv.type === filterType;
-      
-      return matchSearch && matchStatus && matchType;
-    });
-
-    if (sortConfig.key !== null) {
-      filtered.sort((a: any, b: any) => {
-        let valA = a[sortConfig.key!];
-        let valB = b[sortConfig.key!];
-
-        if (sortConfig.key === 'roomId') {
-          valA = getRoomName(a);
-          valB = getRoomName(b);
-        }
-
-        if (sortConfig.key === 'dueDate') {
-          valA = new Date(valA).getTime();
-          valB = new Date(valB).getTime();
-        }
-
-        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-
-    return filtered;
-  }, [invoices, searchTerm, filterStatus, filterType, sortConfig]);
-
-  const totalPages = Math.ceil(sortedAndFilteredInvoices.length / ITEMS_PER_PAGE);
-  const paginatedInvoices = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return sortedAndFilteredInvoices.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [sortedAndFilteredInvoices, currentPage]);
-
-  const allUnpaidInView = paginatedInvoices.filter(i => i.status === 'Unpaid');
-  const isAllSelected = allUnpaidInView.length > 0 && allUnpaidInView.every(inv => selectedInvoiceIds.includes(inv._id));
-
-  const toggleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
-      const unpaidIdsOnPage = paginatedInvoices.filter(inv => inv.status === 'Unpaid').map(inv => inv._id);
-      setSelectedInvoiceIds(prev => [...new Set([...prev, ...unpaidIdsOnPage])]);
-    } else {
-      const unpaidIdsOnPage = paginatedInvoices.map(inv => inv._id);
-      setSelectedInvoiceIds(prev => prev.filter(id => !unpaidIdsOnPage.includes(id)));
-    }
-  };
-
-  const toggleSelectOne = (id: string, status: string) => {
-    if (status !== 'Unpaid') return;
-    setSelectedInvoiceIds(prev =>
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
-  };
-
-  const renderStatusBadge = (status: string) => {
-    let bgColor = '';
-    let textColor = '';
-    let text = '';
-
-    switch (status) {
-      case 'Unpaid':
-        bgColor = '#fef2f2';
-        textColor = '#ef4444';
-        text = 'Chưa thu';
-        break;
-      case 'Paid':
-        bgColor = '#f0fdf4';
-        textColor = '#16a34a';
-        text = 'Đã thu';
-        break;
-      default:
-        bgColor = '#f1f5f9';
-        textColor = '#64748b';
-        text = status;
-    }
-
-    return (
-      <span style={{
-        backgroundColor: bgColor,
-        color: textColor,
-        padding: '4px 10px',
-        borderRadius: '9999px',
-        fontSize: '12px',
-        fontWeight: 600,
-        display: 'inline-block',
-        whiteSpace: 'nowrap'
-      }}>
-        {text}
-      </span>
-    );
-  };
-
-  const renderTypeBadge = (type: string) => {
-    if (type === 'Periodic') {
-      return <span style={{ color: '#0284c7', fontSize: '13px', fontWeight: 600, background: '#e0f2fe', padding: '2px 8px', borderRadius: '4px' }}>Định kỳ</span>;
-    }
-    return <span style={{ color: '#d97706', fontSize: '13px', fontWeight: 600, background: '#fef3c7', padding: '2px 8px', borderRadius: '4px' }}>Phát sinh</span>;
-  };
-
   const renderSortableHeader = (label: string, key: string) => {
     const isSorted = sortConfig.key === key;
     return (
-      <th
-        onClick={() => requestSort(key)}
-        style={{ cursor: 'pointer', userSelect: 'none' }}
-        title="Nhấn để sắp xếp"
-      >
+      <th onClick={() => requestSort(key)} style={{ cursor: 'pointer', userSelect: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           {label}
           {isSorted ? (
             sortConfig.direction === 'asc'
               ? <KeyboardArrowUpIcon fontSize="small" style={{ color: '#2563eb' }} />
               : <KeyboardArrowDownIcon fontSize="small" style={{ color: '#2563eb' }} />
-          ) : (
-            <UnfoldMoreIcon fontSize="small" style={{ color: '#cbd5e1' }} />
-          )}
+          ) : <UnfoldMoreIcon fontSize="small" style={{ color: '#cbd5e1' }} />}
         </div>
       </th>
     );
   };
 
+  const renderStatusBadge = (status: string) => {
+    const label = status === 'Paid' ? 'Đã thanh toán' : 'Chưa thanh toán';
+    const cls = status === 'Paid' ? 'paid' : 'unpaid';
+    return <span className={`status-badge ${cls}`}>{label}</span>;
+  };
+
+  const renderTypeBadge = (type: string) => {
+    const label = type === 'Periodic' ? 'Định kỳ' : 'Phát sinh';
+    const cls = type === 'Periodic' ? 'periodic' : 'incurred';
+    return <span className={`type-badge ${cls}`}>{label}</span>;
+  };
+
   return (
-    <div className="invoice-container">
-      <div className="page-header">
-        <div>
-          <h2>Quản lý Thu chi & Công nợ</h2>
-          <p>Tra cứu hóa đơn và xác nhận thanh toán tiền phòng</p>
+    <div className="invoice-list-container">
+      {/* HEADER */}
+      <div className="invoice-header">
+        <div className="invoice-header-top">
+          <div className="device-title-block">
+            <div className="device-title-row">
+              <div className="device-title-icon" aria-hidden>
+                <FileSpreadsheet size={24} />
+              </div>
+              <div className="device-title-text">
+                <h2>Hóa đơn Kế toán</h2>
+                <p className="device-subtitle">Quản lý, đối soát công nợ và xác nhận thanh toán hóa đơn khách thuê.</p>
+              </div>
+            </div>
+          </div>
+          <div className="invoice-header-aside">
+            <button
+              className="btn btn-success"
+              onClick={handleOpenPaymentConfirm}
+              disabled={loading}
+            >
+              <CheckCircle size={18} />
+              Xác nhận Đã Thu {selectedInvoiceIds.length > 0 ? `(${selectedInvoiceIds.length})` : ''}
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="actions-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '16px' }}>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ position: 'relative', width: '400px' }}>
-            <Search size={18} style={{ position: 'absolute', left: 12, top: 10, color: '#64748b' }} />
+      {/* TOOLBAR */}
+      <div className="invoice-toolbar">
+        <div className="invoice-toolbar-left">
+          <div className="invoice-search-box">
+            <Search className="invoice-search-icon" size={18} />
             <input
               type="text"
-              placeholder="Tìm mã HĐ, tiêu đề..."
+              placeholder="Tìm mã hóa đơn, tiêu đề..."
+              className="invoice-search-input"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ width: '100%', padding: '10px 10px 10px 36px', borderRadius: 8, border: '1px solid #e2e8f0', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
 
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            style={{ width: '180px', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0', outline: 'none', background: '#fff', color: '#334155', cursor: 'pointer', boxSizing: 'border-box' }}
-          >
-            <option value="All">Tất cả trạng thái</option>
-            <option value="Unpaid">Chưa thu (Đang nợ)</option>
-            <option value="Paid">Đã thu (Hoàn tất)</option>
-          </select>
+          <div className="invoice-filter-group">
+            <div className="invoice-filter-item" title="Lọc theo phòng">
+              <LayoutGrid size={16} color="#64748b" />
+              <select
+                className="invoice-filter-select"
+                value={filterRoom}
+                onChange={(e) => setFilterRoom(e.target.value)}
+              >
+                <option value="ALL">Tất cả phòng</option>
+                {uniqueRooms.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
 
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            style={{ width: '180px', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0', outline: 'none', background: '#fff', color: '#334155', cursor: 'pointer', boxSizing: 'border-box' }}
-          >
-            <option value="All">Tất cả loại HĐ</option>
-            <option value="Periodic">Định kỳ (Tháng)</option>
-            <option value="Incurred">Phát sinh (Sửa chữa)</option>
-          </select>
-        </div>
+            <div className="invoice-filter-item" title="Trạng thái">
+              <Filter size={16} color="#64748b" />
+              <select
+                className="invoice-filter-select"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <option value="All">Tất cả trạng thái</option>
+                <option value="Unpaid">Chưa thanh toán</option>
+                <option value="Paid">Đã thanh toán</option>
+              </select>
+            </div>
 
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button
-            className="btn btn-success"
-            style={{ whiteSpace: 'nowrap', background: '#10b981', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}
-            onClick={handleOpenPaymentConfirm}
-            disabled={loading}
-          >
-            <DollarSign size={18} /> Xác Nhận Đã Thu {selectedInvoiceIds.length > 0 ? `(${selectedInvoiceIds.length})` : ''}
-          </button>
+            <div className="invoice-filter-item" title="Loại hóa đơn">
+              <ArrowUpDown size={16} color="#64748b" />
+              <select
+                className="invoice-filter-select"
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+              >
+                <option value="All">Tất cả loại HD</option>
+                <option value="Periodic">Định kỳ</option>
+                <option value="Incurred">Phát sinh</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="table-container" style={{ borderRadius: '8px 8px 0 0', borderBottom: 'none' }}>
+      {/* TABLE */}
+      <div className="table-container">
         <table className="invoice-table">
           <thead>
             <tr>
@@ -409,8 +395,8 @@ const InvoiceList = () => {
                   type="checkbox"
                   checked={isAllSelected}
                   onChange={toggleSelectAll}
-                  style={{ cursor: 'pointer', width: '16px', height: '16px' }}
                   disabled={allUnpaidInView.length === 0}
+                  style={{ cursor: 'pointer', width: '16px', height: '16px' }}
                 />
               </th>
               {renderSortableHeader("Mã HĐ", "invoiceCode")}
@@ -425,13 +411,14 @@ const InvoiceList = () => {
           </thead>
           <tbody>
             {paginatedInvoices.map((inv) => {
+              const isSelected = selectedInvoiceIds.includes(inv._id);
               const isUnpaid = inv.status === 'Unpaid';
               return (
-                <tr key={inv._id} style={{ background: selectedInvoiceIds.includes(inv._id) ? '#ecfdf5' : 'transparent' }}>
+                <tr key={inv._id} style={{ background: isSelected ? '#eff6ff' : 'transparent' }}>
                   <td style={{ textAlign: 'center' }}>
                     <input
                       type="checkbox"
-                      checked={selectedInvoiceIds.includes(inv._id)}
+                      checked={isSelected}
                       onChange={() => toggleSelectOne(inv._id, inv.status)}
                       disabled={!isUnpaid}
                       style={{ cursor: isUnpaid ? 'pointer' : 'not-allowed', width: '16px', height: '16px' }}
@@ -441,44 +428,40 @@ const InvoiceList = () => {
                   <td style={{ fontWeight: 600 }}>{getRoomName(inv)}</td>
                   <td>{renderTypeBadge(inv.type)}</td>
                   <td>{inv.title}</td>
-                  <td className="text-price" style={{ color: isUnpaid ? '#ef4444' : '#334155' }}>
+                  <td style={{ fontWeight: 700, color: isUnpaid ? '#ef4444' : '#0f172a' }}>
                     {formatCurrency(inv.totalAmount)}
                   </td>
                   <td>{formatDate(inv.dueDate)}</td>
-
                   <td>{renderStatusBadge(inv.status)}</td>
-
                   <td>
                     <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                       {isUnpaid && (
                         <button
                           className="btn-icon"
-                          title="Xác nhận thanh toán"
+                          title="Thanh toán"
                           onClick={() => setConfirmModal({
                             isOpen: true,
                             action: 'PAY_SINGLE',
                             targetId: inv._id,
-                            targetType: inv.type, // Truyền type vào để định tuyến API
+                            targetType: inv.type,
                             message: `Xác nhận khách thuê phòng ${getRoomName(inv)} đã thanh toán hóa đơn này?`
                           })}
                         >
-                          <CheckCircle size={18} color="#10b981" />
+                          <CheckCircle size={18} color="#16a34a" />
                         </button>
                       )}
-
-                      <button className="btn-icon" title="Xem chi tiết" onClick={() => handleViewDetail(inv)}>
-                        <FileText size={18} color="#475569" />
+                      <button className="btn-icon" title="Chi tiết" onClick={() => handleViewDetail(inv)}>
+                        <FileText size={18} />
                       </button>
                     </div>
                   </td>
                 </tr>
               );
             })}
-
             {paginatedInvoices.length === 0 && (
               <tr>
-                <td colSpan={9} style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
-                  Không tìm thấy hóa đơn nào khớp với kết quả lọc.
+                <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                  Không tìm thấy dữ liệu hóa đơn nào.
                 </td>
               </tr>
             )}
@@ -486,190 +469,152 @@ const InvoiceList = () => {
         </table>
       </div>
 
-      {sortedAndFilteredInvoices.length > 0 && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: '#fff', border: '1px solid #e2e8f0', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
-          <div style={{ fontSize: '14px', color: '#64748b' }}>
-            Hiển thị <b>{(currentPage - 1) * ITEMS_PER_PAGE + 1}</b> đến <b>{Math.min(currentPage * ITEMS_PER_PAGE, sortedAndFilteredInvoices.length)}</b> trong tổng số <b>{sortedAndFilteredInvoices.length}</b> hóa đơn
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              style={{ padding: '6px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: currentPage === 1 ? '#f1f5f9' : '#fff', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', color: currentPage === 1 ? '#94a3b8' : '#334155', fontWeight: 500 }}
-            >
-              Trước
-            </button>
-            <span style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', background: '#f1f5f9', padding: '6px 16px', borderRadius: '6px' }}>
-              Trang {currentPage} / {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              style={{ padding: '6px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: currentPage === totalPages ? '#f1f5f9' : '#fff', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', color: currentPage === totalPages ? '#94a3b8' : '#334155', fontWeight: 500 }}
-            >
-              Sau
-            </button>
-          </div>
-        </div>
-      )}
+      {/* PAGINATION */}
+      <div className="invoice-pagination-wrapper">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={sortedAndFilteredInvoices.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+        />
+      </div>
 
-      {showDetailModal && selectedInvoice && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ width: '700px' }}>
-            <div className="modal-header">
-              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <FileText size={20} /> Chi tiết Hóa đơn {selectedInvoice.type === 'Periodic' ? 'Định kỳ' : 'Phát sinh'}
-              </h3>
-              <button onClick={() => setShowDetailModal(false)} className="btn-icon"><X size={20} /></button>
-            </div>
-            <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-              <div className="detail-row">
-                <span className="detail-label">Mã hóa đơn:</span>
-                <span className="detail-value text-code">{selectedInvoice.invoiceCode}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Phòng:</span>
-                <span className="detail-value" style={{ fontWeight: 'bold' }}>
-                  {getRoomName(selectedInvoice)}
-                </span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Tiêu đề:</span>
-                <span className="detail-value">{selectedInvoice.title}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Hạn thanh toán:</span>
-                <span className="detail-value" style={{ color: selectedInvoice.status === 'Unpaid' ? '#ef4444' : '#334155', fontWeight: 600 }}>
-                  {formatDate(selectedInvoice.dueDate)}
-                </span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Trạng thái:</span>
-                <span className="detail-value" style={{ textAlign: 'left' }}>
-                  {renderStatusBadge(selectedInvoice.status)}
-                </span>
-              </div>
-
-              {/* NẾU LÀ HÓA ĐƠN ĐỊNH KỲ -> HIỂN THỊ BẢNG ITEMS */}
-              {selectedInvoice.type === 'Periodic' && selectedInvoice.items && selectedInvoice.items.length > 0 && (
-                <div style={{ marginTop: '20px', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
-                  <table className="invoice-table" style={{ margin: 0, width: '100%', fontSize: '14px' }}>
-                    <thead style={{ background: '#f8fafc' }}>
-                      <tr>
-                        <th style={{ padding: '10px 12px', textAlign: 'left' }}>Nội dung thu</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'center' }}>Số lượng / Chỉ số</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'right' }}>Đơn giá</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'right' }}>Thành tiền</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedInvoice.items.map((item, index) => (
-                        <tr key={index} style={{ borderTop: '1px solid #e2e8f0' }}>
-                          <td style={{ padding: '10px 12px' }}>{item.itemName}</td>
-                          <td style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b' }}>
-                            {item.isIndex === true ? (
-                              <span style={{ fontSize: '13px' }}>
-                                Tiêu thụ: <b>{item.usage}</b> <br /> (Cũ: {item.oldIndex} - Mới: {item.newIndex})
-                              </span>
-                            ) : (
-                              <span>{item.usage}</span>
-                            )}
-                          </td>
-                          <td style={{ padding: '10px 12px', textAlign: 'right', color: '#64748b' }}>
-                            {formatCurrency(item.unitPrice)}
-                          </td>
-                          <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 600, color: '#334155' }}>
-                            {formatCurrency(item.amount)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              {/* NẾU LÀ HÓA ĐƠN PHÁT SINH -> HIỂN THỊ CHI TIẾT LỖI HỎNG HÓC */}
-              {selectedInvoice.type === 'Incurred' && (
-                <div style={{ marginTop: '20px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', background: '#f8fafc' }}>
-                  <h4 style={{ margin: '0 0 12px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Wrench size={16} color="#d97706" /> Nguồn gốc phát sinh (Sửa chữa)
-                  </h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '8px', fontSize: '14px' }}>
-                    <span style={{ color: '#64748b' }}>Thiết bị lỗi:</span>
-                    <span style={{ fontWeight: 600, color: '#1e293b' }}>{selectedInvoice.deviceName || "Không xác định"}</span>
-                    
-                    <span style={{ color: '#64748b' }}>Mô tả từ khách:</span>
-                    <span style={{ color: '#334155', fontStyle: 'italic' }}>"{selectedInvoice.repairDescription || "Không có mô tả"}"</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="detail-row" style={{ borderBottom: 'none', marginTop: 12, background: selectedInvoice.status === 'Paid' ? '#f0fdf4' : '#fef2f2', padding: 16, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'nowrap', border: `1px solid ${selectedInvoice.status === 'Paid' ? '#bbf7d0' : '#fecaca'}` }}>
-                <span className="detail-label" style={{ fontSize: 16, fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', width: 'auto', marginRight: '20px' }}>
-                  TỔNG CẦN THU:
-                </span>
-                <span className="detail-value text-price" style={{ fontSize: 24, color: selectedInvoice.status === 'Paid' ? '#16a34a' : '#dc2626', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}>
-                  {formatCurrency(selectedInvoice.totalAmount)}
-                </span>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-outline" onClick={() => setShowDetailModal(false)}>Đóng lại</button>
-              {selectedInvoice.status === 'Unpaid' && (
-                <button
-                  className="btn btn-success"
-                  style={{ background: '#10b981', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
-                  onClick={() => {
-                    setShowDetailModal(false);
-                    setConfirmModal({
-                      isOpen: true,
-                      action: 'PAY_SINGLE',
-                      targetId: selectedInvoice._id,
-                      targetType: selectedInvoice.type,
-                      message: 'Xác nhận khách thuê đã thanh toán hóa đơn này?'
-                    });
-                  }}
-                >
-                  Xác nhận đã thu tiền
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {confirmModal.isOpen && (
-        <div className="modal-overlay" style={{ zIndex: 9999 }}>
-          <div className="modal-content" style={{ width: '420px', textAlign: 'center', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-              <div style={{ background: '#d1fae5', padding: '12px', borderRadius: '50%' }}>
-                <DollarSign size={32} color="#059669" />
-              </div>
-            </div>
-            <h3 style={{ marginTop: 0, color: '#1e293b', fontSize: '18px' }}>Xác nhận thanh toán</h3>
-            <p style={{ color: '#475569', margin: '16px 0 24px 0', lineHeight: '1.5' }}>
-              {confirmModal.message}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-              <button
-                className="btn btn-outline"
-                onClick={() => setConfirmModal({ isOpen: false, action: null, message: '', targetId: undefined, targetType: undefined })}
-              >
-                Hủy bỏ
-              </button>
+      {/* MODAL: DETAIL */}
+      <AppModal
+        open={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        size="lg"
+        title={`Chi tiết Hóa đơn ${selectedInvoice?.type === 'Periodic' ? 'Định kỳ' : 'Phát sinh'}`}
+        icon={<FileText size={20} />}
+        footer={
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button className="btn btn-outline" onClick={() => setShowDetailModal(false)}>Đóng lại</button>
+            {selectedInvoice?.status === 'Unpaid' && (
               <button
                 className="btn btn-success"
-                style={{ background: '#10b981', color: 'white', border: 'none', padding: '8px 24px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
-                onClick={executeConfirmAction}
-                disabled={loading}
+                onClick={() => {
+                  setShowDetailModal(false);
+                  setConfirmModal({
+                    isOpen: true,
+                    action: 'PAY_SINGLE',
+                    targetId: selectedInvoice?._id,
+                    targetType: selectedInvoice?.type,
+                    message: `Xác nhận khách thuê phòng ${getRoomName(selectedInvoice)} đã thanh toán hóa đơn này?`
+                  });
+                }}
               >
-                {loading ? 'Đang xử lý...' : 'Đồng ý xác nhận'}
+                Xác nhận đã thu tiền
               </button>
+            )}
+          </div>
+        }
+      >
+        {selectedInvoice && (
+          <div className="modal-body-content" style={{ padding: '4px 0' }}>
+            <div className="detail-row">
+              <span className="detail-label">Mã hóa đơn:</span>
+              <span className="detail-value text-code">{selectedInvoice.invoiceCode}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Phòng:</span>
+              <span className="detail-value highlight">{getRoomName(selectedInvoice)}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Tiêu đề:</span>
+              <span className="detail-value">{selectedInvoice.title}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Hạn thanh toán:</span>
+              <span className="detail-value" style={{ color: selectedInvoice.status === 'Unpaid' ? '#ef4444' : 'inherit' }}>
+                {formatDate(selectedInvoice.dueDate)}
+              </span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Trạng thái:</span>
+              <span className="detail-value">{renderStatusBadge(selectedInvoice.status)}</span>
+            </div>
+
+            {selectedInvoice.type === 'Periodic' && selectedInvoice.items && (
+              <div style={{ marginTop: 24, border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+                <table className="invoice-table" style={{ margin: 0 }}>
+                  <thead style={{ background: '#f8fafc' }}>
+                    <tr>
+                      <th style={{ padding: '12px' }}>Nội dung thu</th>
+                      <th style={{ padding: '12px', textAlign: 'center' }}>Số lượng / Chỉ số</th>
+                      <th style={{ padding: '12px', textAlign: 'right' }}>Đơn giá</th>
+                      <th style={{ padding: '12px', textAlign: 'right' }}>Thành tiền</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedInvoice.items.map((item, idx) => (
+                      <tr key={idx}>
+                        <td style={{ padding: '12px' }}>{item.itemName}</td>
+                        <td style={{ padding: '12px', textAlign: 'center' }}>
+                          {item.isIndex ? (
+                            <span style={{ fontSize: 13 }}>
+                              Tiêu thụ: <b>{item.usage}</b><br />
+                              <span style={{ color: '#64748b' }}>(Cũ: {item.oldIndex} - Mới: {item.newIndex})</span>
+                            </span>
+                          ) : item.usage}
+                        </td>
+                        <td style={{ padding: '12px', textAlign: 'right' }}>{formatCurrency(item.unitPrice)}</td>
+                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: 600 }}>{formatCurrency(item.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {selectedInvoice.type === 'Incurred' && (
+              <div style={{ marginTop: 24, padding: 16, background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontWeight: 700, color: '#0f172a' }}>
+                  <Wrench size={16} /> Nguồn gốc phát sinh (Sửa chữa)
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '8px 16px', fontSize: 14 }}>
+                  <span style={{ color: '#64748b' }}>Thiết bị lỗi:</span>
+                  <span style={{ fontWeight: 600 }}>{selectedInvoice.deviceName || 'Không xác định'}</span>
+                  <span style={{ color: '#64748b' }}>Mô tả từ khách:</span>
+                  <span style={{ color: '#334155', fontStyle: 'italic' }}>"{selectedInvoice.repairDescription || 'Không có mô tả'}"</span>
+                </div>
+              </div>
+            )}
+
+            <div className={`total-summary-box ${selectedInvoice.status === 'Paid' ? 'paid' : 'unpaid'}`}>
+              <span className="total-label">TỔNG CẦN THU:</span>
+              <span className="total-value">{formatCurrency(selectedInvoice.totalAmount)}</span>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </AppModal>
 
+      {/* MODAL: CONFIRM */}
+      <AppModal
+        open={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, action: null, message: '' })}
+        title="Xác nhận thao tác"
+        icon={<AlertCircle size={20} />}
+        color="green"
+        size="sm"
+        footer={
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', width: '100%' }}>
+            <button className="btn btn-outline" onClick={() => setConfirmModal({ isOpen: false, action: null, message: '' })}>Hủy bỏ</button>
+            <button className="btn btn-success" onClick={executeConfirmAction} disabled={loading}>
+              {loading ? 'Đang xử lý...' : 'Đồng ý xác nhận'}
+            </button>
+          </div>
+        }
+      >
+        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+            <div style={{ background: '#dcfce7', color: '#16a34a', padding: 16, borderRadius: '50%' }}>
+              <DollarSign size={40} />
+            </div>
+          </div>
+          <p style={{ color: '#334155', fontSize: 15, lineHeight: 1.6, margin: 0 }}>{confirmModal.message}</p>
+        </div>
+      </AppModal>
     </div>
   );
 };
