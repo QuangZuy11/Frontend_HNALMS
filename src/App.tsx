@@ -294,9 +294,9 @@ function LayoutWrapper() {
             element={<ComplaintRequestList />}
           />
           <Route path="requests/transfers" element={<TransferRequestsList />} />
-          <Route path="/manager/requests/move-outs" element={<MoveOutRequestsList />} />
-          <Route path="/manager/requests/bookings" element={<BookingRequestList />} />
-          <Route path="/manager/booking-contracts/send" element={<SendContractToGuest />} />
+          <Route path="requests/move-outs" element={<MoveOutRequestsList />} />
+          <Route path="requests/bookings" element={<BookingRequestList />} />
+          <Route path="booking-contracts/send" element={<SendContractToGuest />} />
           <Route path="notifications" element={<ManagerNotificationList />} />
           <Route path="profile" element={<ManagerProfile />} />
           <Route path="contracts" element={<ContractList />} />
