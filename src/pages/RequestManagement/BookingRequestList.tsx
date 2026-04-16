@@ -119,7 +119,7 @@ const BookingRequestList = () => {
   }, [fetchRequests]);
 
   const filteredRequests = requests.filter((req) => {
-    const matchName = req.name.toLowerCase().includes(filterName.toLowerCase());
+    const matchName = (req.name || "").toLowerCase().includes(filterName.toLowerCase());
     const matchRoom =
       filterRoom === "" ||
       req.roomId?.name?.toLowerCase().includes(filterRoom.toLowerCase());
