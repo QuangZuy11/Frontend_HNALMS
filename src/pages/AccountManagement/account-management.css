@@ -247,16 +247,37 @@
   color: #1e293b;
 }
 
-.tenant-account-list-room-badge {
+.tenant-account-list-room-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.tenant-account-list-room-count {
   display: inline-flex;
   align-items: center;
-  padding: 0.18rem 0.5rem;
-  background: #eff6ff;
-  color: #1e40af;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
-  font-size: 0.78rem;
+  gap: 0.25rem;
   font-weight: 700;
+  color: #1e293b;
+  font-size: 0.85rem;
+}
+
+.tenant-account-list-room-icon {
+  color: #64748b;
+}
+
+.tenant-account-list-room-details {
+  font-size: 0.78rem;
+  color: #64748b;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tenant-account-list-room-empty {
+  color: #9ca3af;
+  font-weight: 500;
 }
 
 .tenant-account-list-contact-cell {

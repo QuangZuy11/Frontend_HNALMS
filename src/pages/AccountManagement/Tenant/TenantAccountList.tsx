@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
+  Home,
 } from "lucide-react";
 import { AppModal } from "../../../components/common/Modal";
 import { Pagination } from "../../../components/common/Pagination";
@@ -344,9 +345,24 @@ export default function TenantAccountList() {
                   </td>
 
                   <td className="cell-room">
-                    <span className="tenant-account-list-room-badge">
-                      {acc.roomName || "-"}
-                    </span>
+                    {acc.roomName ? (
+                      (() => {
+                        const rooms = acc.roomName.split(',').map(r => r.trim()).filter(Boolean);
+                        return (
+                          <div className="tenant-account-list-room-summary">
+                            <div className="tenant-account-list-room-count">
+                              <Home size={14} className="tenant-account-list-room-icon" />
+                              <span>{rooms.length} phòng</span>
+                            </div>
+                            <div className="tenant-account-list-room-details" title={rooms.join(', ')}>
+                              {rooms.join(', ')}
+                            </div>
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      <span className="tenant-account-list-room-empty">-</span>
+                    )}
                   </td>
 
                   <td className="cell-contact">
@@ -567,6 +583,22 @@ export default function TenantAccountList() {
                       <span className="tenant-detail-label">Địa chỉ</span>
                       <span className="tenant-detail-value">
                         {detailAccount.address || <span className="tenant-detail-value-empty">—</span>}
+                      </span>
+                    </div>
+                    <div className="tenant-detail-row">
+                      <span className="tenant-detail-label">Danh sách phòng</span>
+                      <span className="tenant-detail-value" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                        {detailAccount.roomName ? (
+                           detailAccount.roomName.split(',').map((r, i) => (
+                             <span key={i} style={{ 
+                               background: '#f1f5f9', border: '1px solid #cbd5e1', 
+                               borderRadius: '4px', padding: '0.1rem 0.4rem', 
+                               fontSize: '0.75rem', fontWeight: 600, color: '#334155' 
+                             }}>
+                               {r.trim()}
+                             </span>
+                           ))
+                        ) : <span className="tenant-detail-value-empty">—</span>}
                       </span>
                     </div>
                   </div>
