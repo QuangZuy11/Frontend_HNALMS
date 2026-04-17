@@ -33,6 +33,17 @@ interface BookingRequest {
   phone: string;
   email: string;
   idCard: string;
+  // Khi guest trùng cả 3 trường, booking chỉ lưu userInfoId, không lưu name/phone/email
+  userInfoId?: {
+    _id: string;
+    fullname: string;
+    phone: string;
+    email: string;
+    cccd: string;
+    dob?: string;
+    address?: string;
+    gender?: string;
+  } | null;
   roomId: Room;
   status: "Pending" | "Processed" | "Rejected" | "Awaiting Payment" | "Expired";
   rejectionReason?: string | null;
@@ -45,6 +56,16 @@ interface BookingRequest {
   coResidents: { name: string; phone: string }[];
   createdAt: string;
 }
+
+// Helper: lấy tên hiển thị từ booking request (có thể có userInfoId hoặc name trực tiếp)
+const getReqName = (req: BookingRequest): string =>
+  req.name || (req.userInfoId ? req.userInfoId.fullname : "") || "";
+
+const getReqPhone = (req: BookingRequest): string =>
+  req.phone || (req.userInfoId ? req.userInfoId.phone : "") || "";
+
+const getReqEmail = (req: BookingRequest): string =>
+  req.email || (req.userInfoId ? req.userInfoId.email : "") || "";
 
 interface RoomGroup {
   roomId: string;
@@ -141,8 +162,9 @@ const BookingRequestList = () => {
 
   // Filter individual requests
   const filteredRequests = requests.filter((req) => {
-    const safeName = req.name || "";
-    const matchName = safeName.toLowerCase().includes(filterName.toLowerCase());
+    // Tính tên, phone, email từ cả name trực tiếp lẫn populated userInfoId
+    const displayName = getReqName(req);
+    const matchName = displayName.toLowerCase().includes(filterName.toLowerCase());
     const matchRoom =
       filterRoom === "" ||
       req.roomId?.name?.toLowerCase().includes(filterRoom.toLowerCase());
@@ -497,12 +519,15 @@ const BookingRequestList = () => {
                             >
                               <td className="br-cell-stt">{index + 1}</td>
                               <td className="br-cell-customer">
-                                <span className="br-customer-name">{req.name}</span>
-                                {req.email && (
-                                  <span className="br-customer-email">{req.email}</span>
+                                <span className="br-customer-name">{getReqName(req) || <em style={{ color: "#94a3b8" }}>Chưa có tên</em>}</span>
+                                {getReqEmail(req) && (
+                                  <span className="br-customer-email">{getReqEmail(req)}</span>
+                                )}
+                                {req.userInfoId && (
+                                  <span style={{ fontSize: "10px", color: "#6366f1", fontWeight: 600, marginTop: "2px", display: "block" }}>● Tài khoản cũ</span>
                                 )}
                               </td>
-                              <td className="br-cell-phone">{req.phone}</td>
+                              <td className="br-cell-phone">{getReqPhone(req)}</td>
                               <td className="br-cell-date">
                                 {req.startDate
                                   ? format(new Date(req.startDate), "dd/MM/yyyy")
