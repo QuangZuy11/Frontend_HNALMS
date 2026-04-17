@@ -352,16 +352,7 @@ export default function BookingPage() {
                 const dupType = dupData.type;
                 const dupMsg = dupData.message;
 
-                // Cùng 1 người + đã có đủ HĐ → chặn hẳn
-                if (dupType === "same_person_max_contracts") {
-                    setDuplicateErrors({ global: dupMsg });
-                    setSubmitError(dupMsg);
-                    toastr.error(dupMsg);
-                    setIsSubmitting(false);
-                    return;
-                }
-
-                // Cùng 1 người + chưa đủ HĐ → vẫn cho gửi (reuse tài khoản cũ)
+                // Cùng 1 người → vẫn cho gửi (reuse tài khoản cũ)
                 if (dupType === "same_person") {
                     toastr.warning(dupMsg);
                     // Không return → tiếp tục gửi booking request bình thường
