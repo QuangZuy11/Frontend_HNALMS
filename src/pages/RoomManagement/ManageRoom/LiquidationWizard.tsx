@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import ReactDOM from "react-dom";
 import axios from "axios";
 import {
   X,
@@ -427,7 +428,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
       ? contract.roomId.name
       : contract.roomId;
 
-  return (
+  return ReactDOM.createPortal(
     <div className="lqw-overlay" onClick={onClose}>
       <div className="lqw-modal" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
@@ -1177,7 +1178,8 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
