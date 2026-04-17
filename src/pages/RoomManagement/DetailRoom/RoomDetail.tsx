@@ -504,7 +504,7 @@ export default function RoomDetail() {
                           <div className="service-info">
                             <div className="service-name">{svc.name}</div>
                             <div className="service-description">
-                              {priceDisplay} / tháng / người
+                              {priceDisplay}{svc.description ? ` - ${svc.description}` : ""}
                             </div>
                           </div>
                         </div>
