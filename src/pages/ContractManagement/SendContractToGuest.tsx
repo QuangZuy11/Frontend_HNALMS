@@ -435,16 +435,28 @@ const SendContractToGuest = () => {
               isBookingRequest: true, // flag to distinguish when submitting
             });
 
-            // We set selectedDeposit here, and another useEffect will handle form population
-
-
-            if (requestData.roomId && !selectedRoom) {
-              const room = rooms.find((r: any) =>
-                r._id === requestData.roomId._id || r._id === requestData.roomId
+            // Đặt phòng người dùng đã chọn từ booking request
+            const roomIdFromRequest = requestData.roomId?._id || requestData.roomId;
+            if (roomIdFromRequest && !selectedRoom) {
+              // Tìm trong rooms list trước
+              const roomFromList = rooms.find((r: any) =>
+                r._id === roomIdFromRequest
               );
-              if (room) {
-                setValue("roomId", room._id);
-                handleRoomSelect(room); // Properly initialize room
+              if (roomFromList) {
+                setValue("roomId", roomFromList._id);
+                handleRoomSelect(roomFromList);
+              } else {
+                // rooms chưa load xong → fetch trực tiếp từ API
+                try {
+                  const roomRes = await api.get(`/rooms/${roomIdFromRequest}`);
+                  if (roomRes.data.success) {
+                    const fullRoom = roomRes.data.data;
+                    setSelectedRoom(fullRoom);
+                    setValue("roomId", fullRoom._id);
+                  }
+                } catch (e) {
+                  console.error("[SendContractToGuest] Failed to fetch room by id:", e);
+                }
               }
             }
             return;
@@ -545,36 +557,42 @@ const SendContractToGuest = () => {
     }
   }, [selectedRoom, rooms, preFilledDepositId, preFilledBookingRequestId]);
 
-  // Sinh học dữ liệu khi chọn Deposit từ online booking
+  // Prefill form data khi chọn Deposit hoặc Booking Request
   useEffect(() => {
-    if (selectedDeposit) {
-      setValue("tenantInfo.fullName", selectedDeposit.name || "");
-      setValue("tenantInfo.phone", selectedDeposit.phone || "");
-      setValue("tenantInfo.email", selectedDeposit.email || "");
-      if (selectedDeposit.idCard) {
-        setValue("tenantInfo.cccd", selectedDeposit.idCard);
-      }
-      if (selectedDeposit.dob) {
-        setValue("tenantInfo.dob", formatDate(new Date(selectedDeposit.dob), "yyyy-MM-dd"));
-      }
-      if (selectedDeposit.address) {
-        setValue("tenantInfo.address", selectedDeposit.address);
-      }
-      if (selectedDeposit.startDate) {
-        setValue("startDate", formatDate(new Date(selectedDeposit.startDate), "yyyy-MM-dd"), { shouldValidate: true });
-      }
-      if (selectedDeposit.duration) {
-        setValue("duration", selectedDeposit.duration);
-      }
-      if (selectedDeposit.prepayMonths) {
-        setValue("prepayMonths", selectedDeposit.prepayMonths === "all" ? 12 : Number(selectedDeposit.prepayMonths));
-      }
-      if (selectedDeposit.coResidents && Array.isArray(selectedDeposit.coResidents) && selectedDeposit.coResidents.length > 0) {
-        setValue("coResidents", selectedDeposit.coResidents.map((cr: any) => ({
-          fullName: cr.fullName || "",
-          cccd: cr.cccd || "",
-        })));
-      }
+    if (!selectedDeposit) return;
+
+    // Nếu bù là booking request có userInfoId (tài khoản cũ), ưu tiên dữ liệu từ populated userInfoId
+    const uInfo = selectedDeposit.userInfoId; // populated object từ backend
+    const isPopulatedUserInfo = uInfo && typeof uInfo === "object" && uInfo._id;
+
+    const resolveName    = isPopulatedUserInfo ? (uInfo.fullname || "") : (selectedDeposit.name || "");
+    const resolvePhone   = isPopulatedUserInfo ? (uInfo.phone   || "") : (selectedDeposit.phone || "");
+    const resolveEmail   = isPopulatedUserInfo ? (uInfo.email   || "") : (selectedDeposit.email || "");
+    const resolveCCCD    = isPopulatedUserInfo ? (uInfo.cccd    || "") : (selectedDeposit.idCard || "");
+    const resolveDob     = isPopulatedUserInfo ? (uInfo.dob     || null) : (selectedDeposit.dob || null);
+    const resolveAddress = isPopulatedUserInfo ? (uInfo.address || "") : (selectedDeposit.address || "");
+
+    setValue("tenantInfo.fullName", resolveName);
+    setValue("tenantInfo.phone",    resolvePhone);
+    setValue("tenantInfo.email",    resolveEmail);
+    if (resolveCCCD)    setValue("tenantInfo.cccd",    resolveCCCD);
+    if (resolveDob)     setValue("tenantInfo.dob",     formatDate(new Date(resolveDob), "yyyy-MM-dd"));
+    if (resolveAddress) setValue("tenantInfo.address", resolveAddress);
+
+    if (selectedDeposit.startDate) {
+      setValue("startDate", formatDate(new Date(selectedDeposit.startDate), "yyyy-MM-dd"), { shouldValidate: true });
+    }
+    if (selectedDeposit.duration) {
+      setValue("duration", selectedDeposit.duration);
+    }
+    if (selectedDeposit.prepayMonths) {
+      setValue("prepayMonths", selectedDeposit.prepayMonths === "all" ? 12 : Number(selectedDeposit.prepayMonths));
+    }
+    if (selectedDeposit.coResidents && Array.isArray(selectedDeposit.coResidents) && selectedDeposit.coResidents.length > 0) {
+      setValue("coResidents", selectedDeposit.coResidents.map((cr: any) => ({
+        fullName: cr.fullName || "",
+        cccd: cr.cccd || "",
+      })));
     }
   }, [selectedDeposit, setValue]);
 
@@ -1007,7 +1025,13 @@ const SendContractToGuest = () => {
 
       if (isOnlineBooking) {
         // Send Payment request rather than creating contract immediately
-        const res = await api.post(`/booking-requests/${selectedDeposit._id}/send-payment`, payload);
+        // Truyền thêm userInfoId nếu booking có tài khoản cũ để backend biết reuse
+        const sendPaymentPayload: any = { ...payload };
+        const uInfoId = selectedDeposit?.userInfoId?._id || selectedDeposit?.userInfoId;
+        if (uInfoId && typeof uInfoId === "string") {
+          sendPaymentPayload.userInfoId = uInfoId;
+        }
+        const res = await api.post(`/booking-requests/${selectedDeposit._id}/send-payment`, sendPaymentPayload);
         if (res.data.success) {
           sessionStorage.removeItem("contractFormDraft");
           toastr.success("Đã chốt thông tin và gửi yêu cầu thanh toán (kèm QR) cho khách thành công!");

@@ -16,11 +16,12 @@ import {
   Plus, Edit, Trash2, Eye, ChevronDown, ChevronRight, CheckCircle,
   AlertCircle, Banknote, X, Building, Home, Tag, Power, Download,
   FileSpreadsheet, List as ListIcon, Map as MapIcon, User, Users,
-  FileText, Phone, Mail, CreditCard, Zap, Gavel,
+  FileText, Phone, Mail, CreditCard, Zap, Gavel, DoorOpen,
 } from "lucide-react";
 import "./ManageRoom.css";
 import LiquidationWizard from "./LiquidationWizard";
 import { isContractStartedByLocalCalendar } from "../../../utils/contractDates";
+import { AppModal } from "../../../components/common/Modal";
 
 const API_BASE_URL = "http://localhost:9999/api";
 
@@ -595,15 +596,31 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   return (
     <div className="room-container">
       <div className="page-header">
-        <div>
-          <h2 className="page-title">
-            {!canModify ? "Danh sách phòng" : "Quản lý danh sách phòng"}
-          </h2>
-          <p className="page-subtitle">
-            {!canModify
-              ? "Xem thông tin phòng theo tầng"
-              : "Nhóm theo tầng - Xem dạng bảng"}
-          </p>
+        <div className="room-title-row" style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+          <div className="room-title-icon" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            width: '48px', 
+            height: '48px', 
+            borderRadius: '12px', 
+            background: 'linear-gradient(135deg, #3579c6 0%, #2a5fa3 100%)',
+            color: '#ffffff',
+            flexShrink: 0,
+            boxShadow: '0 4px 14px rgba(53, 121, 198, 0.3)'
+          }} aria-hidden>
+            <DoorOpen size={22} strokeWidth={2} />
+          </div>
+          <div className="room-title-text">
+            <h2>
+              {!canModify ? "Danh sách phòng" : "Quản lý danh sách phòng"}
+            </h2>
+            <p className="page-subtitle">
+              {!canModify
+                ? "Xem thông tin phòng theo tầng"
+                : "Nhóm theo tầng - Xem dạng bảng"}
+            </p>
+          </div>
         </div>
 
         <div className="stats-summary">
@@ -1061,132 +1078,160 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       )}
 
       {/* Modal Thêm/Sửa Phòng */}
-      {canModify && showModal && (
-        <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{isEditing ? "Sửa Phòng" : "Thêm Phòng Mới"}</h3>
-              <button onClick={() => setShowModal(false)}>
-                <X size={20} />
-              </button>
+      <AppModal
+        open={Boolean(canModify && showModal)}
+        onClose={() => setShowModal(false)}
+        title={isEditing ? "Cập nhật Phòng" : "Thêm Phòng Mới"}
+        icon={isEditing ? <Edit size={18} /> : <Plus size={18} />}
+        color="blue"
+        size="lg"
+        headerClassName="mr-app-modal-header"
+        footer={
+          <>
+            <button
+              type="button"
+              className="ms-btn ms-btn--ghost"
+              onClick={() => setShowModal(false)}
+            >
+              Hủy bỏ
+            </button>
+            <button
+              type="submit"
+              form="mr-room-form"
+              className="ms-btn ms-btn--primary"
+            >
+              {isEditing ? <CheckCircle size={16} /> : <Plus size={16} />}
+              {isEditing ? "Cập nhật" : "Thêm phòng"}
+            </button>
+          </>
+        }
+      >
+        <form id="mr-room-form" onSubmit={handleSave}>
+          <div className="room-form-grid">
+            <div className="room-form-field">
+              <label className="room-form-label">
+                <span className="room-form-label-icon"><CreditCard size={14} /></span>
+                Mã phòng <span className="required">*</span>
+              </label>
+              <div className="room-form-input-wrap">
+                <input
+                  type="text"
+                  className="room-form-input"
+                  value={formData.roomCode}
+                  onChange={(e) =>
+                    setFormData({ ...formData, roomCode: e.target.value })
+                  }
+                  required
+                  placeholder="VD: R101"
+                />
+              </div>
             </div>
-            <form onSubmit={handleSave}>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>
-                    Mã phòng <span style={{ color: "red" }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.roomCode}
-                    onChange={(e) =>
-                      setFormData({ ...formData, roomCode: e.target.value })
-                    }
-                    required
-                    placeholder="VD: R101"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>
-                    Tên hiển thị <span style={{ color: "red" }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    required
-                    placeholder="VD: Phòng 101"
-                  />
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Tầng</label>
-                  <select
-                    value={formData.floorId}
-                    onChange={(e) =>
-                      setFormData({ ...formData, floorId: e.target.value })
-                    }
-                  >
-                    {floors.map((f) => (
-                      <option key={f._id} value={f._id}>
-                        {f.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Loại phòng</label>
-                  <select
-                    value={formData.roomTypeId}
-                    onChange={(e) =>
-                      setFormData({ ...formData, roomTypeId: e.target.value })
-                    }
-                  >
-                    {roomTypes.map((t) => (
-                      <option key={t._id} value={t._id}>
-                        {t.typeName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
 
-              {isEditing && (
-                <div
-                  className="form-group"
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 10,
-                  }}
+            <div className="room-form-field">
+              <label className="room-form-label">
+                <span className="room-form-label-icon"><Home size={14} /></span>
+                Tên hiển thị <span className="required">*</span>
+              </label>
+              <div className="room-form-input-wrap">
+                <input
+                  type="text"
+                  className="room-form-input"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  required
+                  placeholder="VD: Phòng 101"
+                />
+              </div>
+            </div>
+
+            <div className="room-form-field">
+              <label className="room-form-label">
+                <span className="room-form-label-icon"><Building size={14} /></span>
+                Tầng
+              </label>
+              <div className="room-form-select-wrap">
+                <select
+                  className="room-form-select"
+                  value={formData.floorId}
+                  onChange={(e) =>
+                    setFormData({ ...formData, floorId: e.target.value })
+                  }
                 >
-                  <input
-                    type="checkbox"
-                    id="chkActive"
-                    checked={formData.isActive}
-                    onChange={(e) =>
-                      setFormData({ ...formData, isActive: e.target.checked })
-                    }
-                    style={{ width: "auto", margin: 0 }}
-                  />
-                  <label
-                    htmlFor="chkActive"
-                    style={{ margin: 0, cursor: "pointer" }}
-                  >
-                    Đang hoạt động (Active)
-                  </label>
-                </div>
-              )}
+                  {floors.map((f) => (
+                    <option key={f._id} value={f._id}>
+                      {f.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-              <div className="form-group">
-                <label>Mô tả</label>
+            <div className="room-form-field">
+              <label className="room-form-label">
+                <span className="room-form-label-icon"><Tag size={14} /></span>
+                Loại phòng
+              </label>
+              <div className="room-form-select-wrap">
+                <select
+                  className="room-form-select"
+                  value={formData.roomTypeId}
+                  onChange={(e) =>
+                    setFormData({ ...formData, roomTypeId: e.target.value })
+                  }
+                >
+                  {roomTypes.map((t) => (
+                    <option key={t._id} value={t._id}>
+                      {t.typeName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {isEditing && (
+              <div className="room-form-field room-form-field--full">
+                <div className="room-form-toggle">
+                  <div className="room-form-toggle-info">
+                    <span className="room-form-toggle-title">Trạng thái hoạt động</span>
+                    <span className="room-form-toggle-desc">
+                      Phòng sẽ {formData.isActive ? "hiển thị và có thể sử dụng" : "bị vô hiệu hóa"}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={formData.isActive}
+                    className={`room-form-toggle-switch ${formData.isActive ? "active" : ""}`}
+                    onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
+                  >
+                    <span className="room-form-toggle-thumb" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="room-form-field room-form-field--full">
+              <label className="room-form-label">
+                <span className="room-form-label-icon"><FileText size={14} /></span>
+                Mô tả
+              </label>
+              <div className="room-form-textarea-wrap">
                 <textarea
-                  rows={2}
+                  className="room-form-textarea"
+                  rows={3}
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
+                  placeholder="Nhập mô tả ngắn gọn về phòng..."
                 />
               </div>
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => setShowModal(false)}
-                >
-                  Hủy
-                </button>
-                <button type="submit" className="btn-primary">
-                  Lưu
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
-        </div>
-      )}
+        </form>
+      </AppModal>
 
       {/* Modal Xem Chi Tiết Phòng */}
       {showDetailModal &&
@@ -1196,14 +1241,63 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
             availableContracts.find((c) => c._id === selectedContractId) ||
             null;
           return (
-            <div className="rd-overlay" style={{ zIndex: 1100 }} onClick={() => setShowDetailModal(false)}>
-              <div className="rd-content" onClick={(e) => e.stopPropagation()}>
-                <div className="rd-header">
-                  <h3>Chi tiết Phòng: {viewingRoom.name}</h3>
-                  <button onClick={() => setShowDetailModal(false)}>
-                    <X size={20} />
+            <AppModal
+              open={showDetailModal && Boolean(viewingRoom)}
+              onClose={() => setShowDetailModal(false)}
+              title={`Chi tiết Phòng: ${viewingRoom.name}`}
+              icon={<Eye size={18} />}
+              color="blue"
+              size="xl"
+              headerClassName="mr-app-modal-header mr-app-modal-header--detail"
+              footer={
+                <>
+                  <button
+                    type="button"
+                    className="ms-btn ms-btn--ghost"
+                    onClick={() => {
+                      setShowDetailModal(false);
+                      setDisplayMode("active");
+                      setAllRoomContracts([]);
+                      setRoomDeposits([]);
+                    }}
+                  >
+                    Đóng
                   </button>
-                </div>
+
+                  {canModify && (
+                    <button
+                      type="button"
+                      className="ms-btn ms-btn--primary"
+                      onClick={() => {
+                        setShowDetailModal(false);
+                        handleOpenEdit(viewingRoom);
+                      }}
+                    >
+                      <CheckCircle size={16} /> Chỉnh sửa
+                    </button>
+                  )}
+
+                  {/* Nút Thanh lý — hiện cho cả manager và owner khi hợp đồng đang active */}
+                  {canLiquidate && selectedContractId && (() => {
+                    const selContract = availableContracts.find(
+                      (c: any) => c._id === selectedContractId
+                    );
+                    if (selContract?.status === "active") {
+                      return (
+                        <button
+                          type="button"
+                          className="ms-btn ms-btn--danger"
+                          onClick={() => setShowLiquidationWizard(true)}
+                        >
+                          <Gavel size={16} /> Thanh lý HĐ
+                        </button>
+                      );
+                    }
+                    return null;
+                  })()}
+                </>
+              }
+            >
 
                 {/* Dropdown chọn hợp đồng */}
                 {(() => {
@@ -1699,62 +1793,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                     />
                   </div>
                 )}
-
-                <div className="rd-actions">
-                  <button
-                    className="btn-secondary"
-                    onClick={() => {
-                      setShowDetailModal(false);
-                      setDisplayMode("active");
-                      setAllRoomContracts([]);
-                      setRoomDeposits([]);
-                    }}
-                  >
-                    Đóng
-                  </button>
-                  {canModify && (
-                    <button
-                      className="btn-primary"
-                      onClick={() => {
-                        setShowDetailModal(false);
-                        handleOpenEdit(viewingRoom);
-                      }}
-                    >
-                      <Edit size={16} /> Chỉnh sửa
-                    </button>
-                  )}
-                  {/* Nút Thanh lý — hiện cho cả manager và owner khi hợp đồng đang active */}
-                  {canLiquidate && selectedContractId && (() => {
-                    const selContract = availableContracts.find(
-                      (c: any) => c._id === selectedContractId
-                    );
-                    if (selContract?.status === "active") {
-                      return (
-                        <button
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                            padding: "8px 16px",
-                            borderRadius: 8,
-                            border: "none",
-                            background: "#ef4444",
-                            color: "#fff",
-                            fontWeight: 700,
-                            fontSize: 14,
-                            cursor: "pointer",
-                          }}
-                          onClick={() => setShowLiquidationWizard(true)}
-                        >
-                          <Gavel size={16} /> Thanh lý HĐ
-                        </button>
-                      );
-                    }
-                    return null;
-                  })()}
-                </div>
-              </div>
-            </div>
+            </AppModal>
           );
         })()}
 

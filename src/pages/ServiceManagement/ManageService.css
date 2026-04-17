@@ -200,6 +200,8 @@
 }
 
 .service-container .btn-primary:hover {
+  background: linear-gradient(135deg, var(--ms-primary) 0%, var(--ms-primary-dark) 100%) !important;
+  color: #fff !important;
   box-shadow: 0 6px 16px rgba(53, 121, 198, 0.38);
   transform: translateY(-1px);
 }
@@ -1087,6 +1089,8 @@
 }
 
 .ms-btn--primary:hover {
+  background: linear-gradient(135deg, #2e69b1 0%, #245a90 100%) !important;
+  color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(46, 105, 177, 0.4);
   transform: translateY(-1px);
 }
@@ -1103,6 +1107,8 @@
 }
 
 .ms-btn--danger:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+  color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
   transform: translateY(-1px);
 }

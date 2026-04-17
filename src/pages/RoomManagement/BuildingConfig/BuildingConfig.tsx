@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 import {
   Plus, Edit, Trash2, Layers, LayoutTemplate, BedDouble,
-  X, Building, Home, Tag, Upload, Eye,
-  ChevronLeft, ChevronRight, History, AlertTriangle
+  X as LucideX, Building, Home, Tag, Upload, Eye,
+  ChevronLeft, ChevronRight, History, AlertTriangle, CheckCircle, Settings
 } from "lucide-react";
 import "./BuildingConfig.css";
 
@@ -280,9 +280,25 @@ const BuildingConfig = () => {
   return (
     <div className="config-container">
       <div className="page-header">
-        <div className="page-title-group">
-          <h2 className="page-title">Cấu hình Tòa nhà</h2>
-          <p className="page-subtitle">Quản lý sơ đồ tầng và các hạng mục kiến trúc phòng thuê.</p>
+        <div className="page-title-row" style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+          <div className="page-title-icon" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            width: '48px', 
+            height: '48px', 
+            borderRadius: '12px', 
+            background: 'linear-gradient(135deg, #3579c6 0%, #2a5fa3 100%)',
+            color: '#ffffff',
+            flexShrink: 0,
+            boxShadow: '0 4px 14px rgba(53, 121, 198, 0.3)'
+          }} aria-hidden>
+            <Settings size={22} strokeWidth={2} />
+          </div>
+          <div className="page-title-group">
+            <h2 className="page-title">Cấu hình Tòa nhà</h2>
+            <p className="page-subtitle">Quản lý sơ đồ tầng và các hạng mục kiến trúc phòng thuê.</p>
+          </div>
         </div>
 
         <div className="stats-summary">
@@ -453,7 +469,10 @@ const BuildingConfig = () => {
         footer={
           <>
             <button className="ms-btn ms-btn--ghost" onClick={() => setShowFloorModal(false)}>Hủy</button>
-            <button className="ms-btn ms-btn--primary" onClick={handleSaveFloor}>Lưu cấu hình</button>
+            <button className="ms-btn ms-btn--primary" onClick={handleSaveFloor}>
+              {editingFloor ? <CheckCircle size={16} /> : <Plus size={16} />}
+              {editingFloor ? "Lưu thay đổi" : "Thêm tầng mới"}
+            </button>
           </>
         }
       >
@@ -485,7 +504,8 @@ const BuildingConfig = () => {
           <>
             <button className="ms-btn ms-btn--ghost" onClick={() => setShowTypeModal(false)}>Hủy bỏ</button>
             <button className="ms-btn ms-btn--primary" onClick={handleSaveType} disabled={loading}>
-              {loading ? "Đang lưu..." : "Lưu loại phòng"}
+              {loading ? "Đang lưu..." : (editingType ? <CheckCircle size={16} /> : <Plus size={16} />)}
+              {loading ? "" : (editingType ? " Lưu cập nhật" : " Thêm loại mới")}
             </button>
           </>
         }
@@ -521,7 +541,9 @@ const BuildingConfig = () => {
                   {slot ? (
                     <>
                       <img src={slot.url || slot.preview} alt={label} />
-                      <button type="button" className="remove-slot-btn" onClick={e => removeSlot(index, e)}><X size={12} /></button>
+                      <button type="button" className="remove-slot-btn" onClick={e => removeSlot(index, e)}>
+                        <LucideX size={14} />
+                      </button>
                     </>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: 0.5 }}>
