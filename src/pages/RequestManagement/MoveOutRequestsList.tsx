@@ -589,7 +589,7 @@ export default function MoveOutRequestsList() {
                   <th>Phòng</th>
                   <th>Lý do</th>
                   <th>Ngày yêu cầu</th>
-                  <th>Ngày trả dự kiến</th>
+                  <th>Ngày trả phòng</th>
                   <th>Trạng thái</th>
                   <th>Thao tác</th>
                 </tr>
@@ -766,7 +766,7 @@ export default function MoveOutRequestsList() {
                     <span>{formatDate(selectedRequest.requestDate ?? selectedRequest.createdAt)}</span>
                   </div>
                   <div className="detail-row">
-                    <label>Ngày trả dự kiến:</label>
+                    <label>Ngày trả phòng:</label>
                     <span>{formatDate(selectedRequest.expectedMoveOutDate)}</span>
                   </div>
                   <div className="detail-row">
@@ -1057,7 +1057,7 @@ export default function MoveOutRequestsList() {
                   <span>{getRoomNumber(releasingRequest)}</span>
                 </div>
                 <div className="detail-row">
-                  <label>Ngày trả dự kiến:</label>
+                  <label>Ngày trả phòng:</label>
                   <span>{formatDate(releasingRequest.expectedMoveOutDate)}</span>
                 </div>
               </div>
@@ -1179,7 +1179,7 @@ export default function MoveOutRequestsList() {
                   <span>{getRoomNumber(completingRequest)}</span>
                 </div>
                 <div className="detail-row">
-                  <label>Ngày trả dự kiến:</label>
+                  <label>Ngày trả phòng:</label>
                   <span>{formatDate(completingRequest.expectedMoveOutDate)}</span>
                 </div>
               </div>
