@@ -156,6 +156,12 @@ export default function LoginPage() {
     const username = usernameRef.current?.value.trim() || "";
     const password = passwordRef.current?.value || "";
 
+    if (!username && !password) {
+      showValidationPopup("Vui lòng nhập tên đăng nhập và mật khẩu");
+      usernameRef.current?.focus();
+      return;
+    }
+
     // Custom validation
     if (!validateUsername(username)) {
       usernameRef.current?.focus();
@@ -205,6 +211,13 @@ export default function LoginPage() {
         return;
       }
 
+      // Check if user is a tenant
+      if (response.user.role.toLowerCase() === "tenant") {
+        showValidationPopup("Bạn không có quyền đăng nhập vào hệ thống web.");
+        setLoading(false);
+        return;
+      }
+
       console.log("✅ Calling AuthContext.login with:", {
         token: response.token.substring(0, 20) + "...",
         user: response.user,
@@ -245,9 +258,6 @@ export default function LoginPage() {
           break;
         case "accountant":
           navigate("/accountant");
-          break;
-        case "tenant":
-          navigate("/homepage");
           break;
         default:
           navigate("/homepage");
@@ -348,7 +358,7 @@ export default function LoginPage() {
                     }}
                     autoComplete="username"
                     className="login-input"
-                   
+
                     disabled={loading}
                   />
                 </div>
