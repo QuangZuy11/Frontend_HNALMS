@@ -244,7 +244,7 @@
 }
 
 /* --- Detail Modal Structure (130px Grid) --- */
-.detail-row {
+.il-detail-modal-content .il-detail-row {
   display: grid;
   grid-template-columns: 130px 1fr;
   padding: 12px 0;
@@ -252,23 +252,23 @@
   align-items: center;
 }
 
-.detail-row:last-child {
+.il-detail-modal-content .il-detail-row:last-child {
   border-bottom: none;
 }
 
-.detail-label {
+.il-detail-modal-content .il-detail-label {
   font-size: 14px;
   font-weight: 600;
   color: #64748b;
 }
 
-.detail-value {
+.il-detail-modal-content .il-detail-value {
   font-size: 14px;
   color: #1e293b;
   font-weight: 500;
 }
 
-.detail-value.highlight {
+.il-detail-modal-content .il-detail-value.highlight {
   color: #1d4ed8;
   font-weight: 700;
 }
