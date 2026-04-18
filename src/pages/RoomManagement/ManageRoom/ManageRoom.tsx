@@ -16,7 +16,7 @@ import {
   Plus, Edit, Trash2, Eye, ChevronDown, ChevronRight, CheckCircle,
   AlertCircle, Banknote, X, Building, Home, Tag, Power, Download,
   FileSpreadsheet, List as ListIcon, Map as MapIcon, User, Users,
-  FileText, Phone, Mail, CreditCard, Zap, Gavel, DoorOpen,
+  FileText, Phone, Mail, CreditCard, Zap, Gavel, DoorOpen, Upload
 } from "lucide-react";
 import "./ManageRoom.css";
 import LiquidationWizard from "./LiquidationWizard";
@@ -105,6 +105,10 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
 
   // State cho Liquidation Wizard
   const [showLiquidationWizard, setShowLiquidationWizard] = useState(false);
+
+  // Import Excel States
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -327,18 +331,14 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     }
   };
 
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    e.target.value = "";
+  const handleImportSubmit = async () => {
+    if (!selectedFile) {
+      toastr.warning("Vui lòng chọn file Excel!");
+      return;
+    }
 
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", selectedFile);
 
     try {
       setLoading(true);
@@ -346,6 +346,8 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         headers: { "Content-Type": "multipart/form-data" },
       });
       toastr.success(res.data.message || "Nhập file thành công!");
+      setShowImportModal(false);
+      setSelectedFile(null);
       fetchData();
     } catch (error: any) {
       console.error(error);
@@ -364,6 +366,18 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+    e.target.value = "";
   };
 
   const handleOpenAdd = () => {
@@ -597,13 +611,13 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     <div className="room-container">
       <div className="page-header">
         <div className="room-title-row" style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
-          <div className="room-title-icon" style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            width: '48px', 
-            height: '48px', 
-            borderRadius: '12px', 
+          <div className="room-title-icon" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
             background: 'linear-gradient(135deg, #3579c6 0%, #2a5fa3 100%)',
             color: '#ffffff',
             flexShrink: 0,
@@ -714,16 +728,12 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                 <Download size={18} /> Tải mẫu Excel
               </button>
 
-              <button className="btn-success" onClick={triggerFileInput}>
+              <button className="btn-success" onClick={() => {
+                setSelectedFile(null);
+                setShowImportModal(true);
+              }}>
                 <FileSpreadsheet size={18} /> Nhập Excel
               </button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: "none" }}
-                accept=".xlsx, .xls"
-                onChange={handleFileUpload}
-              />
 
               <button className="btn-primary" onClick={handleOpenAdd}>
                 <Plus size={18} /> Thêm phòng mới
@@ -1299,500 +1309,500 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
               }
             >
 
-                {/* Dropdown chọn hợp đồng */}
-                {(() => {
-                  const activeContracts = allRoomContracts.filter(c => c.status === "active");
-                  const inactiveContracts = allRoomContracts.filter(c => c.status !== "active");
-                  const depositCount = roomDeposits.length;
-                  const totalContracts = activeContracts.length + inactiveContracts.length;
-                  const hasAnyContract = totalContracts > 0;
+              {/* Dropdown chọn hợp đồng */}
+              {(() => {
+                const activeContracts = allRoomContracts.filter(c => c.status === "active");
+                const inactiveContracts = allRoomContracts.filter(c => c.status !== "active");
+                const depositCount = roomDeposits.length;
+                const totalContracts = activeContracts.length + inactiveContracts.length;
+                const hasAnyContract = totalContracts > 0;
 
-                  // Lọc cọc lẻ: cọc KHÔNG gắn với bất kỳ hợp đồng nào trong danh sách
-                  // Lấy tất cả depositId từ các hợp đồng
-                  const depositIdsFromContracts: string[] = [];
-                  allRoomContracts.forEach((contract: any) => {
-                    if (contract.depositId) {
-                      const did = typeof contract.depositId === "object"
-                        ? contract.depositId._id
-                        : contract.depositId;
-                      if (did) depositIdsFromContracts.push(did);
+                // Lọc cọc lẻ: cọc KHÔNG gắn với bất kỳ hợp đồng nào trong danh sách
+                // Lấy tất cả depositId từ các hợp đồng
+                const depositIdsFromContracts: string[] = [];
+                allRoomContracts.forEach((contract: any) => {
+                  if (contract.depositId) {
+                    const did = typeof contract.depositId === "object"
+                      ? contract.depositId._id
+                      : contract.depositId;
+                    if (did) depositIdsFromContracts.push(did);
+                  }
+                  // Cũng kiểm tra trường deposit
+                  if (contract.deposit) {
+                    const did = typeof contract.deposit === "object"
+                      ? contract.deposit._id
+                      : contract.deposit;
+                    if (did && !depositIdsFromContracts.includes(did)) {
+                      depositIdsFromContracts.push(did);
                     }
-                    // Cũng kiểm tra trường deposit
-                    if (contract.deposit) {
-                      const did = typeof contract.deposit === "object"
-                        ? contract.deposit._id
-                        : contract.deposit;
-                      if (did && !depositIdsFromContracts.includes(did)) {
-                        depositIdsFromContracts.push(did);
+                  }
+                });
+
+                // Cọc lẻ = cọc không nằm trong danh sách depositId từ hợp đồng VÀ không có contractId
+                const depositLeList = roomDeposits.filter((d: any) => {
+                  // Không có contractId = cọc lẻ
+                  if (!d.contractId) return true;
+                  // Hoặc contractId không nằm trong danh sách hợp đồng
+                  const cid = typeof d.contractId === "object" ? d.contractId._id : d.contractId;
+                  const contractExists = allRoomContracts.some((c: any) => c._id === cid);
+                  return !contractExists;
+                });
+
+                // Chỉ hiện dropdown nếu có dữ liệu
+                const hasAnyData = totalContracts > 0 || depositLeList.length > 0;
+
+                return hasAnyData ? (
+                  <div className="rd-display-selector">
+                    <label className="rd-display-label">
+                      <FileText size={14} />
+                      Chọn hợp đồng:
+                    </label>
+                    <select
+                      value={selectedContractId ? selectedContractId : (selectedDepositId ? `deposit_${selectedDepositId}` : "")}
+                      onChange={handleContractSelectChange}
+                      className="rd-display-select"
+                    >
+                      {activeContracts.length > 0 && (
+                        <optgroup label="Hợp đồng đang hiệu lực">
+                          {activeContracts.map((contract: any) => (
+                            <option key={contract._id} value={contract._id}>
+                              {contract.contractCode} - {contract.tenantId?.username || "---"} ({formatDate(contract.startDate)} → {formatDate(contract.endDate)})
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                      {inactiveContracts.length > 0 && (
+                        <optgroup label="Hợp đồng chưa/không còn hiệu lực">
+                          {inactiveContracts.map((contract: any) => (
+                            <option key={contract._id} value={contract._id}>
+                              {contract.contractCode} - {contract.tenantId?.username || "---"} ({formatDate(contract.startDate)} → {formatDate(contract.endDate)})
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                      {/* Hiện cọc lẻ (chưa gắn hợp đồng) */}
+                      {depositLeList.length > 0 && (
+                        <optgroup label="Cọc lẻ chưa có hợp đồng">
+                          {depositLeList.map((deposit: any, idx: number) => {
+                            const depositIdx = roomDeposits.findIndex((d: any) => d._id === deposit._id);
+                            return (
+                              <option key={deposit._id} value={`deposit_${deposit._id}`}>
+                                Cọc #{depositIdx + 1} - {deposit.name || "---"} ({formatCurrency(deposit.amount)})
+                              </option>
+                            );
+                          })}
+                        </optgroup>
+                      )}
+                    </select>
+                    <span className="rd-display-hint">
+                      {hasAnyContract
+                        ? `Có ${totalContracts} hợp đồng (${activeContracts.length} đang hiệu lực, ${inactiveContracts.length} không hiệu lực)${depositLeList.length > 0 ? `, ${depositLeList.length} cọc lẻ` : ""}`
+                        : `Có ${depositLeList.length} cọc lẻ chưa có hợp đồng`
                       }
-                    }
-                  });
+                    </span>
+                  </div>
+                ) : (
+                  <div className="rd-no-data-notice">
+                    Phòng này hiện chưa có hợp đồng hay cọc lẻ nào.
+                  </div>
+                );
+              })()}
 
-                  // Cọc lẻ = cọc không nằm trong danh sách depositId từ hợp đồng VÀ không có contractId
-                  const depositLeList = roomDeposits.filter((d: any) => {
-                    // Không có contractId = cọc lẻ
-                    if (!d.contractId) return true;
-                    // Hoặc contractId không nằm trong danh sách hợp đồng
-                    const cid = typeof d.contractId === "object" ? d.contractId._id : d.contractId;
-                    const contractExists = allRoomContracts.some((c: any) => c._id === cid);
-                    return !contractExists;
-                  });
+              <div className="rd-two-panel">
+                {/* === CỘT TRÁI: Thông tin phòng + Hợp đồng === */}
+                <div className="rd-panel">
+                  <div className="rd-section-title">
+                    <Home size={16} />
+                    <span>Thông tin Phòng</span>
+                  </div>
+                  <div className="rd-grid">
+                    <div className="rd-field">
+                      <label>Mã phòng:</label>
+                      <span>{viewingRoom.roomCode || "---"}</span>
+                    </div>
 
-                  // Chỉ hiện dropdown nếu có dữ liệu
-                  const hasAnyData = totalContracts > 0 || depositLeList.length > 0;
+                    {/* [SỬA ĐỔI] Gọi hàm renderStatus truyền cả object viewingRoom vào */}
+                    <div className="rd-field">
+                      <label>Trạng thái:</label>
+                      <span>{renderStatus(viewingRoom)}</span>
+                    </div>
 
-                  return hasAnyData ? (
-                    <div className="rd-display-selector">
-                      <label className="rd-display-label">
-                        <FileText size={14} />
-                        Chọn hợp đồng:
-                      </label>
-                      <select
-                        value={selectedContractId ? selectedContractId : (selectedDepositId ? `deposit_${selectedDepositId}` : "")}
-                        onChange={handleContractSelectChange}
-                        className="rd-display-select"
+                    <div className="rd-field">
+                      <label>Kích hoạt:</label>
+                      <span
+                        style={{
+                          color: viewingRoom.isActive ? "green" : "red",
+                          fontWeight: 600,
+                        }}
                       >
-                        {activeContracts.length > 0 && (
-                          <optgroup label="Hợp đồng đang hiệu lực">
-                            {activeContracts.map((contract: any) => (
-                              <option key={contract._id} value={contract._id}>
-                                {contract.contractCode} - {contract.tenantId?.username || "---"} ({formatDate(contract.startDate)} → {formatDate(contract.endDate)})
-                              </option>
-                            ))}
-                          </optgroup>
-                        )}
-                        {inactiveContracts.length > 0 && (
-                          <optgroup label="Hợp đồng chưa/không còn hiệu lực">
-                            {inactiveContracts.map((contract: any) => (
-                              <option key={contract._id} value={contract._id}>
-                                {contract.contractCode} - {contract.tenantId?.username || "---"} ({formatDate(contract.startDate)} → {formatDate(contract.endDate)})
-                              </option>
-                            ))}
-                          </optgroup>
-                        )}
-                        {/* Hiện cọc lẻ (chưa gắn hợp đồng) */}
-                        {depositLeList.length > 0 && (
-                          <optgroup label="Cọc lẻ chưa có hợp đồng">
-                            {depositLeList.map((deposit: any, idx: number) => {
-                              const depositIdx = roomDeposits.findIndex((d: any) => d._id === deposit._id);
-                              return (
-                                <option key={deposit._id} value={`deposit_${deposit._id}`}>
-                                  Cọc #{depositIdx + 1} - {deposit.name || "---"} ({formatCurrency(deposit.amount)})
-                                </option>
-                              );
-                            })}
-                          </optgroup>
-                        )}
-                      </select>
-                      <span className="rd-display-hint">
-                        {hasAnyContract
-                          ? `Có ${totalContracts} hợp đồng (${activeContracts.length} đang hiệu lực, ${inactiveContracts.length} không hiệu lực)${depositLeList.length > 0 ? `, ${depositLeList.length} cọc lẻ` : ""}`
-                          : `Có ${depositLeList.length} cọc lẻ chưa có hợp đồng`
-                        }
+                        {viewingRoom.isActive
+                          ? "Đang hoạt động"
+                          : "Vô hiệu hóa"}
                       </span>
                     </div>
-                  ) : (
-                    <div className="rd-no-data-notice">
-                      Phòng này hiện chưa có hợp đồng hay cọc lẻ nào.
+                    <div className="rd-field">
+                      <label>Thuộc Tầng:</label>
+                      <span>{getFloorName(viewingRoom.floorId)}</span>
                     </div>
-                  );
-                })()}
-
-                <div className="rd-two-panel">
-                  {/* === CỘT TRÁI: Thông tin phòng + Hợp đồng === */}
-                  <div className="rd-panel">
-                    <div className="rd-section-title">
-                      <Home size={16} />
-                      <span>Thông tin Phòng</span>
+                    <div className="rd-field">
+                      <label>Loại phòng:</label>
+                      <span>
+                        {getRoomTypeDetail(viewingRoom.roomTypeId)
+                          ?.typeName || "---"}
+                      </span>
                     </div>
-                    <div className="rd-grid">
-                      <div className="rd-field">
-                        <label>Mã phòng:</label>
-                        <span>{viewingRoom.roomCode || "---"}</span>
-                      </div>
+                    <div className="rd-field">
+                      <label>Giá niêm yết:</label>
+                      <span className="text-price">
+                        {getRoomTypeDetail(viewingRoom.roomTypeId)
+                          ? formatCurrency(
+                            getRoomTypeDetail(viewingRoom.roomTypeId)!
+                              .currentPrice,
+                          )
+                          : "---"}
+                      </span>
+                    </div>
+                  </div>
 
-                      {/* [SỬA ĐỔI] Gọi hàm renderStatus truyền cả object viewingRoom vào */}
-                      <div className="rd-field">
-                        <label>Trạng thái:</label>
-                        <span>{renderStatus(viewingRoom)}</span>
-                      </div>
+                  {(() => {
+                    // Xác định cọc được hiển thị
+                    let roomDeposit: any = null;
+                    let isDepositLe = false; // Cờ đánh dấu cọc lẻ
 
-                      <div className="rd-field">
-                        <label>Kích hoạt:</label>
-                        <span
-                          style={{
-                            color: viewingRoom.isActive ? "green" : "red",
-                            fontWeight: 600,
-                          }}
+                    if (selectedDepositId) {
+                      // Chọn cọc lẻ từ dropdown
+                      roomDeposit = roomDeposits.find((d: any) => d._id === selectedDepositId);
+                      isDepositLe = true;
+                    } else if (roomContract?.depositId) {
+                      // Hợp đồng có cọc - lấy cọc từ hợp đồng
+                      roomDeposit = typeof roomContract.depositId === "object"
+                        ? roomContract.depositId
+                        : roomDeposits.find((d: any) => d._id === roomContract.depositId);
+                    } else if (selectedContractId) {
+                      // Có hợp đồng nhưng không có cọc cụ thể - thử lấy cọc mặc định
+                      roomDeposit = getDepositForRoom(viewingRoom._id);
+                    }
+
+                    if (!roomDeposit) return null;
+                    return (
+                      <>
+                        <div
+                          className="rd-section-title"
+                          style={{ marginTop: 16 }}
                         >
-                          {viewingRoom.isActive
-                            ? "Đang hoạt động"
-                            : "Vô hiệu hóa"}
-                        </span>
-                      </div>
-                      <div className="rd-field">
-                        <label>Thuộc Tầng:</label>
-                        <span>{getFloorName(viewingRoom.floorId)}</span>
-                      </div>
-                      <div className="rd-field">
-                        <label>Loại phòng:</label>
-                        <span>
-                          {getRoomTypeDetail(viewingRoom.roomTypeId)
-                            ?.typeName || "---"}
-                        </span>
-                      </div>
-                      <div className="rd-field">
-                        <label>Giá niêm yết:</label>
-                        <span className="text-price">
-                          {getRoomTypeDetail(viewingRoom.roomTypeId)
-                            ? formatCurrency(
-                              getRoomTypeDetail(viewingRoom.roomTypeId)!
-                                .currentPrice,
-                            )
-                            : "---"}
-                        </span>
-                      </div>
-                    </div>
+                          <Banknote size={16} />
+                          <span>Thông tin Tiền cọc{isDepositLe ? " (Cọc lẻ)" : ""}</span>
+                        </div>
+                        <div className="rd-grid">
+                          <div className="rd-field full">
+                            <label>Người cọc:</label>
+                            <span style={{ fontWeight: 600 }}>
+                              {roomDeposit.name || "---"}
+                            </span>
+                          </div>
+                          <div className="rd-field">
+                            <label>SĐT:</label>
+                            <span>{roomDeposit.phone || "---"}</span>
+                          </div>
+                          <div className="rd-field">
+                            <label>Ngày cọc:</label>
+                            <span>
+                              {roomDeposit.createdAt
+                                ? formatDate(roomDeposit.createdAt)
+                                : "---"}
+                            </span>
+                          </div>
+                          <div className="rd-field">
+                            <label>Đã thu cọc:</label>
+                            <span className="text-price">
+                              {formatCurrency(roomDeposit.amount)}
+                            </span>
+                          </div>
+                          <div className="rd-field">
+                            <label>Trạng thái:</label>
+                            <span className="status-badge deposited">
+                              <Banknote size={12} />
+                              {roomDeposit.status === "Held"
+                                ? "Đang giữ"
+                                : roomDeposit.status}
+                            </span>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
 
-                    {(() => {
-                      // Xác định cọc được hiển thị
-                      let roomDeposit: any = null;
-                      let isDepositLe = false; // Cờ đánh dấu cọc lẻ
+                  {roomContract && (
+                    <>
+                      <div
+                        className="rd-section-title"
+                        style={{ marginTop: 16 }}
+                      >
+                        <FileText size={16} />
+                        <span>Hợp đồng</span>
+                      </div>
+                      <div className="rd-grid">
+                        <div className="rd-field">
+                          <label>Mã HĐ:</label>
+                          <span
+                            style={{
+                              fontFamily: "monospace",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {roomContract.contractCode}
+                          </span>
+                        </div>
+                        <div className="rd-field">
+                          <label>Trạng thái:</label>
+                          <span
+                            className={`rd-contract-status rd-status-${roomContract.status}`}
+                          >
+                            {roomContract.status === "active"
+                              ? "Đang hiệu lực"
+                              : roomContract.status === "Pending"
+                                ? "Sắp tới"
+                                : roomContract.status === "terminated"
+                                  ? "Đã chấm dứt"
+                                  : roomContract.status === "expired"
+                                    ? "Hết hạn"
+                                    : roomContract.status}
+                          </span>
+                        </div>
+                        <div className="rd-field">
+                          <label>Thời hạn:</label>
+                          <span>{roomContract.duration} tháng</span>
+                        </div>
+                        <div className="rd-field">
+                          <label>Bắt đầu:</label>
+                          <span>{formatDate(roomContract.startDate)}</span>
+                        </div>
+                        <div className="rd-field">
+                          <label>Kết thúc:</label>
+                          <span>{formatDate(roomContract.endDate)}</span>
+                        </div>
+                      </div>
 
-                      if (selectedDepositId) {
-                        // Chọn cọc lẻ từ dropdown
-                        roomDeposit = roomDeposits.find((d: any) => d._id === selectedDepositId);
-                        isDepositLe = true;
-                      } else if (roomContract?.depositId) {
-                        // Hợp đồng có cọc - lấy cọc từ hợp đồng
-                        roomDeposit = typeof roomContract.depositId === "object"
-                          ? roomContract.depositId
-                          : roomDeposits.find((d: any) => d._id === roomContract.depositId);
-                      } else if (selectedContractId) {
-                        // Có hợp đồng nhưng không có cọc cụ thể - thử lấy cọc mặc định
-                        roomDeposit = getDepositForRoom(viewingRoom._id);
-                      }
-
-                      if (!roomDeposit) return null;
-                      return (
+                      {/* THÔNG TIN TRẢ TRƯỚC */}
+                      {prepaidInvoice && (
                         <>
                           <div
                             className="rd-section-title"
                             style={{ marginTop: 16 }}
                           >
-                            <Banknote size={16} />
-                            <span>Thông tin Tiền cọc{isDepositLe ? " (Cọc lẻ)" : ""}</span>
+                            <CreditCard size={16} />
+                            <span>Tiền phòng trả trước</span>
                           </div>
                           <div className="rd-grid">
-                            <div className="rd-field full">
-                              <label>Người cọc:</label>
-                              <span style={{ fontWeight: 600 }}>
-                                {roomDeposit.name || "---"}
+                            <div className="rd-field">
+                              <label>Số tháng trả trước:</label>
+                              <span style={{ fontWeight: 700 }}>
+                                {prepaidInvoice.title?.match(
+                                  /(\d+)\s*tháng/,
+                                )?.[1] || "---"}{" "}
+                                tháng
                               </span>
                             </div>
                             <div className="rd-field">
-                              <label>SĐT:</label>
-                              <span>{roomDeposit.phone || "---"}</span>
-                            </div>
-                            <div className="rd-field">
-                              <label>Ngày cọc:</label>
-                              <span>
-                                {roomDeposit.createdAt
-                                  ? formatDate(roomDeposit.createdAt)
-                                  : "---"}
-                              </span>
-                            </div>
-                            <div className="rd-field">
-                              <label>Đã thu cọc:</label>
+                              <label>Số tiền đã nộp:</label>
                               <span className="text-price">
-                                {formatCurrency(roomDeposit.amount)}
+                                {formatCurrency(prepaidInvoice.totalAmount)}
                               </span>
                             </div>
-                            <div className="rd-field">
-                              <label>Trạng thái:</label>
-                              <span className="status-badge deposited">
-                                <Banknote size={12} />
-                                {roomDeposit.status === "Held"
-                                  ? "Đang giữ"
-                                  : roomDeposit.status}
-                              </span>
-                            </div>
+                            {roomContract.startDate &&
+                              roomContract.rentPaidUntil && (
+                                <div className="rd-field full">
+                                  <label>Thời gian đã trả:</label>
+                                  <span
+                                    style={{
+                                      fontWeight: 600,
+                                      color: "#2563eb",
+                                    }}
+                                  >
+                                    {formatDate(roomContract.startDate)} →{" "}
+                                    {formatDate(roomContract.rentPaidUntil)}
+                                  </span>
+                                </div>
+                              )}
                           </div>
                         </>
-                      );
-                    })()}
+                      )}
+                    </>
+                  )}
 
-                    {roomContract && (
-                      <>
-                        <div
-                          className="rd-section-title"
-                          style={{ marginTop: 16 }}
-                        >
-                          <FileText size={16} />
-                          <span>Hợp đồng</span>
-                        </div>
-                        <div className="rd-grid">
-                          <div className="rd-field">
-                            <label>Mã HĐ:</label>
-                            <span
-                              style={{
-                                fontFamily: "monospace",
-                                fontWeight: 600,
-                              }}
-                            >
-                              {roomContract.contractCode}
-                            </span>
-                          </div>
-                          <div className="rd-field">
-                            <label>Trạng thái:</label>
-                            <span
-                              className={`rd-contract-status rd-status-${roomContract.status}`}
-                            >
-                              {roomContract.status === "active"
-                                ? "Đang hiệu lực"
-                                : roomContract.status === "Pending"
-                                  ? "Sắp tới"
-                                  : roomContract.status === "terminated"
-                                    ? "Đã chấm dứt"
-                                    : roomContract.status === "expired"
-                                      ? "Hết hạn"
-                                      : roomContract.status}
-                            </span>
-                          </div>
-                          <div className="rd-field">
-                            <label>Thời hạn:</label>
-                            <span>{roomContract.duration} tháng</span>
-                          </div>
-                          <div className="rd-field">
-                            <label>Bắt đầu:</label>
-                            <span>{formatDate(roomContract.startDate)}</span>
-                          </div>
-                          <div className="rd-field">
-                            <label>Kết thúc:</label>
-                            <span>{formatDate(roomContract.endDate)}</span>
-                          </div>
-                        </div>
+                </div>
 
-                        {/* THÔNG TIN TRẢ TRƯỚC */}
-                        {prepaidInvoice && (
+                {/* === CỘT PHẢI: Người thuê + Dịch vụ === */}
+                <div className="rd-panel">
+                  {roomContract ? (
+                    <>
+                      <div className="rd-section-title">
+                        <User size={16} />
+                        <span>Người thuê chính</span>
+                      </div>
+                      <div className="rd-grid">
+                        <div className="rd-field full">
+                          <label>
+                            <User size={12} style={{ marginRight: 4 }} />
+                            Họ tên:
+                          </label>
+                          <span>
+                            {roomContract.tenantId?.username || "---"}
+                          </span>
+                        </div>
+                        <div className="rd-field">
+                          <label>
+                            <Phone size={12} style={{ marginRight: 4 }} />
+                            SĐT:
+                          </label>
+                          <span>
+                            {roomContract.tenantId?.phoneNumber || "---"}
+                          </span>
+                        </div>
+                        <div className="rd-field">
+                          <label>
+                            <Mail size={12} style={{ marginRight: 4 }} />
+                            Email:
+                          </label>
+                          <span
+                            style={{ fontSize: 12, wordBreak: "break-all" }}
+                          >
+                            {roomContract.tenantId?.email || "---"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Người ở cùng */}
+                      {roomContract.coResidents &&
+                        roomContract.coResidents.length > 0 && (
                           <>
                             <div
                               className="rd-section-title"
                               style={{ marginTop: 16 }}
                             >
-                              <CreditCard size={16} />
-                              <span>Tiền phòng trả trước</span>
+                              <Users size={16} />
+                              <span>
+                                Người ở cùng (
+                                {roomContract.coResidents.length})
+                              </span>
                             </div>
-                            <div className="rd-grid">
-                              <div className="rd-field">
-                                <label>Số tháng trả trước:</label>
-                                <span style={{ fontWeight: 700 }}>
-                                  {prepaidInvoice.title?.match(
-                                    /(\d+)\s*tháng/,
-                                  )?.[1] || "---"}{" "}
-                                  tháng
-                                </span>
-                              </div>
-                              <div className="rd-field">
-                                <label>Số tiền đã nộp:</label>
-                                <span className="text-price">
-                                  {formatCurrency(prepaidInvoice.totalAmount)}
-                                </span>
-                              </div>
-                              {roomContract.startDate &&
-                                roomContract.rentPaidUntil && (
-                                  <div className="rd-field full">
-                                    <label>Thời gian đã trả:</label>
-                                    <span
-                                      style={{
-                                        fontWeight: 600,
-                                        color: "#2563eb",
-                                      }}
-                                    >
-                                      {formatDate(roomContract.startDate)} →{" "}
-                                      {formatDate(roomContract.rentPaidUntil)}
+                            <div className="rd-co-residents-list">
+                              {roomContract.coResidents.map(
+                                (person: any, idx: number) => (
+                                  <div
+                                    key={idx}
+                                    className="rd-co-resident-card"
+                                  >
+                                    <span className="rd-co-resident-name">
+                                      {person.fullName}
                                     </span>
+                                    <div className="rd-co-resident-row">
+                                      {person.phone && (
+                                        <span className="rd-co-resident-info">
+                                          <Phone size={11} /> {person.phone}
+                                        </span>
+                                      )}
+                                      {person.cccd && (
+                                        <span className="rd-co-resident-info">
+                                          <CreditCard size={11} />{" "}
+                                          {person.cccd}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
-                                )}
+                                ),
+                              )}
                             </div>
                           </>
                         )}
-                      </>
-                    )}
 
-                  </div>
-
-                  {/* === CỘT PHẢI: Người thuê + Dịch vụ === */}
-                  <div className="rd-panel">
-                    {roomContract ? (
-                      <>
-                        <div className="rd-section-title">
-                          <User size={16} />
-                          <span>Người thuê chính</span>
+                      {/* Dịch vụ đã đăng ký */}
+                      <div
+                        className="rd-section-title"
+                        style={{ marginTop: 16 }}
+                      >
+                        <Zap size={16} />
+                        <span>Dịch vụ tùy chọn đã đăng ký</span>
+                      </div>
+                      {loadingDetail ? (
+                        <p style={{ color: "#94a3b8", fontSize: 13 }}>
+                          Đang tải...
+                        </p>
+                      ) : roomBookServices.length > 0 ? (
+                        <div className="rd-services-list">
+                          {roomBookServices.map((svc: any, idx: number) => (
+                            <div key={idx} className="rd-service-tag">
+                              <span className="rd-service-tag-name">
+                                {svc.name}
+                              </span>
+                              <span className="rd-service-tag-price">
+                                {svc.currentPrice
+                                  ? formatCurrency(svc.currentPrice)
+                                  : ""}
+                                {svc.quantity > 1 ? ` ×${svc.quantity}` : ""}
+                              </span>
+                            </div>
+                          ))}
                         </div>
-                        <div className="rd-grid">
-                          <div className="rd-field full">
-                            <label>
-                              <User size={12} style={{ marginRight: 4 }} />
-                              Họ tên:
-                            </label>
-                            <span>
-                              {roomContract.tenantId?.username || "---"}
-                            </span>
-                          </div>
-                          <div className="rd-field">
-                            <label>
-                              <Phone size={12} style={{ marginRight: 4 }} />
-                              SĐT:
-                            </label>
-                            <span>
-                              {roomContract.tenantId?.phoneNumber || "---"}
-                            </span>
-                          </div>
-                          <div className="rd-field">
-                            <label>
-                              <Mail size={12} style={{ marginRight: 4 }} />
-                              Email:
-                            </label>
-                            <span
-                              style={{ fontSize: 12, wordBreak: "break-all" }}
-                            >
-                              {roomContract.tenantId?.email || "---"}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Người ở cùng */}
-                        {roomContract.coResidents &&
-                          roomContract.coResidents.length > 0 && (
-                            <>
-                              <div
-                                className="rd-section-title"
-                                style={{ marginTop: 16 }}
-                              >
-                                <Users size={16} />
-                                <span>
-                                  Người ở cùng (
-                                  {roomContract.coResidents.length})
-                                </span>
-                              </div>
-                              <div className="rd-co-residents-list">
-                                {roomContract.coResidents.map(
-                                  (person: any, idx: number) => (
-                                    <div
-                                      key={idx}
-                                      className="rd-co-resident-card"
-                                    >
-                                      <span className="rd-co-resident-name">
-                                        {person.fullName}
-                                      </span>
-                                      <div className="rd-co-resident-row">
-                                        {person.phone && (
-                                          <span className="rd-co-resident-info">
-                                            <Phone size={11} /> {person.phone}
-                                          </span>
-                                        )}
-                                        {person.cccd && (
-                                          <span className="rd-co-resident-info">
-                                            <CreditCard size={11} />{" "}
-                                            {person.cccd}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ),
-                                )}
-                              </div>
-                            </>
-                          )}
-
-                        {/* Dịch vụ đã đăng ký */}
-                        <div
-                          className="rd-section-title"
-                          style={{ marginTop: 16 }}
+                      ) : (
+                        <p
+                          className="text-muted-italic"
+                          style={{ fontSize: 13 }}
                         >
-                          <Zap size={16} />
-                          <span>Dịch vụ tùy chọn đã đăng ký</span>
-                        </div>
-                        {loadingDetail ? (
-                          <p style={{ color: "#94a3b8", fontSize: 13 }}>
-                            Đang tải...
-                          </p>
-                        ) : roomBookServices.length > 0 ? (
-                          <div className="rd-services-list">
-                            {roomBookServices.map((svc: any, idx: number) => (
-                              <div key={idx} className="rd-service-tag">
-                                <span className="rd-service-tag-name">
-                                  {svc.name}
-                                </span>
-                                <span className="rd-service-tag-price">
-                                  {svc.currentPrice
-                                    ? formatCurrency(svc.currentPrice)
-                                    : ""}
-                                  {svc.quantity > 1 ? ` ×${svc.quantity}` : ""}
-                                </span>
+                          Chưa đăng ký dịch vụ nào
+                        </p>
+                      )}
+
+                      {/* Ảnh hợp đồng bản cứng */}
+                      {roomContract?.images && roomContract.images.length > 0 && (
+                        <>
+                          <div
+                            className="rd-section-title"
+                            style={{ marginTop: 16 }}
+                          >
+                            <FileText size={16} />
+                            <span>Ảnh hợp đồng bản cứng ({roomContract.images.length})</span>
+                          </div>
+                          <div className="rd-images-grid">
+                            {roomContract.images.map((url: string, idx: number) => (
+                              <div
+                                key={idx}
+                                className="rd-image-item"
+                                onClick={() => setLightboxImage(url)}
+                              >
+                                <img src={url} alt={`Hợp đồng ${idx + 1}`} />
+                                <span className="rd-image-label">Ảnh {idx + 1}</span>
                               </div>
                             ))}
                           </div>
-                        ) : (
-                          <p
-                            className="text-muted-italic"
-                            style={{ fontSize: 13 }}
-                          >
-                            Chưa đăng ký dịch vụ nào
-                          </p>
-                        )}
-
-                        {/* Ảnh hợp đồng bản cứng */}
-                        {roomContract?.images && roomContract.images.length > 0 && (
-                          <>
-                            <div
-                              className="rd-section-title"
-                              style={{ marginTop: 16 }}
-                            >
-                              <FileText size={16} />
-                              <span>Ảnh hợp đồng bản cứng ({roomContract.images.length})</span>
-                            </div>
-                            <div className="rd-images-grid">
-                              {roomContract.images.map((url: string, idx: number) => (
-                                <div
-                                  key={idx}
-                                  className="rd-image-item"
-                                  onClick={() => setLightboxImage(url)}
-                                >
-                                  <img src={url} alt={`Hợp đồng ${idx + 1}`} />
-                                  <span className="rd-image-label">Ảnh {idx + 1}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <div className="rd-empty-contract">
-                        <FileText size={20} style={{ color: "#94a3b8" }} />
-                        <span>Phòng hiện chưa có hợp đồng</span>
-                      </div>
-                    )}
-                  </div>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <div className="rd-empty-contract">
+                      <FileText size={20} style={{ color: "#94a3b8" }} />
+                      <span>Phòng hiện chưa có hợp đồng</span>
+                    </div>
+                  )}
                 </div>
+              </div>
 
-                {/* Lightbox xem ảnh phóng to */}
-                {lightboxImage && (
-                  <div className="rd-lightbox" onClick={() => setLightboxImage(null)}>
-                    <button
-                      className="rd-lightbox-close"
-                      onClick={() => setLightboxImage(null)}
-                    >
-                      <X size={24} />
-                    </button>
-                    <img
-                      src={lightboxImage}
-                      alt="Ảnh phóng to"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                )}
+              {/* Lightbox xem ảnh phóng to */}
+              {lightboxImage && (
+                <div className="rd-lightbox" onClick={() => setLightboxImage(null)}>
+                  <button
+                    className="rd-lightbox-close"
+                    onClick={() => setLightboxImage(null)}
+                  >
+                    <X size={24} />
+                  </button>
+                  <img
+                    src={lightboxImage}
+                    alt="Ảnh phóng to"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              )}
             </AppModal>
           );
         })()}
@@ -1842,6 +1852,57 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
           />
         );
       })()}
+
+      {/* ── Modal Import Excel ── */}
+      <AppModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        title="Import dữ liệu từ Excel"
+        icon={<FileSpreadsheet size={18} />}
+        color="green"
+        size="md"
+        headerClassName="mr-app-modal-header"
+        footer={
+          <>
+            <button type="button" className="ms-btn ms-btn--ghost" onClick={() => setShowImportModal(false)}>
+              Hủy bỏ
+            </button>
+            <button type="button" className="ms-btn ms-btn--primary" onClick={handleImportSubmit} disabled={!selectedFile || loading}>
+              {loading ? "Đang xử lý..." : "Tiến hành Import"}
+            </button>
+          </>
+        }
+      >
+        <div className="upload-area" onClick={() => fileInputRef.current?.click()}>
+          <input
+            type="file"
+            hidden
+            ref={fileInputRef}
+            accept=".xlsx, .xls"
+            onChange={handleFileUpload}
+          />
+          <Upload size={40} color="#94a3b8" style={{ marginBottom: "12px" }} />
+          {selectedFile ? (
+            <div>
+              <p style={{ color: "#059669", fontWeight: 600 }}>{selectedFile.name}</p>
+              <p style={{ fontSize: "12px", color: "#64748b" }}>Sẵn sàng để import</p>
+            </div>
+          ) : (
+            <div>
+              <p style={{ fontWeight: 500 }}>Click để chọn file Excel</p>
+              <p style={{ fontSize: "12px", color: "#94a3b8" }}>Chỉ hỗ trợ .xlsx, .xls</p>
+            </div>
+          )}
+        </div>
+        <div style={{ marginTop: "16px", fontSize: "13px", color: "#64748b" }}>
+          <p style={{ fontWeight: 600, marginBottom: "4px" }}>Lưu ý:</p>
+          <ul style={{ paddingLeft: "20px" }}>
+            <li>Sử dụng đúng file mẫu để đảm bảo dữ liệu chính xác.</li>
+            <li>Các cột <b>Tên phòng, Mã phòng, Tầng, Loại phòng</b> là thông tin bắt buộc.</li>
+            <li>Hệ thống sẽ dựa vào Mã phòng để tránh trùng lặp dữ liệu.</li>
+          </ul>
+        </div>
+      </AppModal>
     </div>
   );
 };
