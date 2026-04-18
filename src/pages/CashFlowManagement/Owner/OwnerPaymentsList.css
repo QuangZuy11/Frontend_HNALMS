@@ -6,10 +6,10 @@
    ============================================================ */
 
 .opay-container {
-  --opay-primary: #3579c6;
-  --opay-primary-dark: #2a5fa3;
+  --opay-primary: #306db4;
+  --opay-primary-dark: #2558a0;
   --opay-primary-soft: #f0f7ff;
-  --opay-primary-shadow: rgba(53, 121, 198, 0.28);
+  --opay-primary-shadow: rgba(48, 109, 180, 0.28);
   --opay-success: #16a34a;
   --opay-success-soft: #dcfce7;
   --opay-danger: #dc2626;
@@ -62,10 +62,10 @@
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #e85d75 0%, #c2415a 100%);
+  background: linear-gradient(135deg, #306db4 0%, #2558a0 100%);
   color: #fff;
   flex-shrink: 0;
-  box-shadow: 0 4px 14px rgba(200, 65, 90, 0.3);
+  box-shadow: 0 4px 14px rgba(48, 109, 180, 0.3);
 }
 
 .opay-title-text h2 {
@@ -146,7 +146,7 @@
   justify-content: center;
 }
 
-.opay-icon-total   { color: #be185d; background: linear-gradient(135deg, #fce7f3, #fbcfe8); }
+.opay-icon-total   { color: #306db4; background: linear-gradient(135deg, #dbeafe, #bfdbfe); }
 .opay-icon-pending { color: #d97706; background: linear-gradient(135deg, #fef3c7, #fde68a); }
 .opay-icon-approved{ color: #2563eb; background: linear-gradient(135deg, #bfdbfe, #93c5fd); }
 .opay-icon-paid    { color: #059669; background: linear-gradient(135deg, #d1fae5, #6ee7b7); }
@@ -562,8 +562,8 @@
 }
 
 .opay-modal-icon--detail {
-  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
-  color: #be185d;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #306db4;
 }
 
 .opay-modal-icon--reject {
@@ -674,7 +674,7 @@
 .opay-detail-value.amount {
   font-size: 15px;
   font-weight: 700;
-  color: #be185d;
+  color: #306db4;
   font-variant-numeric: tabular-nums;
 }
 

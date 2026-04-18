@@ -12,8 +12,6 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  ThumbsUp,
-  ThumbsDown,
 } from "lucide-react";
 import { cashFlowService } from "../../../services/cashFlowService";
 import "./OwnerPaymentsList.css";
@@ -614,7 +612,6 @@ export default function OwnerPaymentsList() {
                     className="opay-btn opay-btn--reject"
                     onClick={() => handleOpenRejectModal(selectedTicket)}
                   >
-                    <ThumbsDown size={16} />
                     Từ chối
                   </button>
                   <button
@@ -625,7 +622,6 @@ export default function OwnerPaymentsList() {
                       setSelectedTicket(null);
                     }}
                   >
-                    <ThumbsUp size={16} />
                     Duyệt phiếu
                   </button>
                 </>
@@ -650,7 +646,6 @@ export default function OwnerPaymentsList() {
             className="opay-modal opay-modal--reject"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="opay-modal-header">
               <div className="opay-modal-header-left">
                 <div className="opay-modal-icon opay-modal-icon--reject">
@@ -671,7 +666,6 @@ export default function OwnerPaymentsList() {
               </button>
             </div>
 
-            {/* Body */}
             <div className="opay-modal-body">
               <div className="opay-field">
                 <label className="opay-label">
@@ -693,7 +687,6 @@ export default function OwnerPaymentsList() {
               </div>
             </div>
 
-            {/* Footer */}
             <div className="opay-modal-footer">
               <button
                 type="button"
@@ -708,7 +701,6 @@ export default function OwnerPaymentsList() {
                 onClick={handleConfirmReject}
                 disabled={!rejectReason.trim()}
               >
-                <ThumbsDown size={16} />
                 Xác nhận từ chối
               </button>
             </div>
