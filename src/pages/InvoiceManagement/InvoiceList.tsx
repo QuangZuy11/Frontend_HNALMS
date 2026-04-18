@@ -511,28 +511,28 @@ const InvoiceList = () => {
         }
       >
         {selectedInvoice && (
-          <div className="modal-body-content" style={{ padding: '4px 0' }}>
-            <div className="detail-row">
-              <span className="detail-label">Mã hóa đơn:</span>
-              <span className="detail-value text-code">{selectedInvoice.invoiceCode}</span>
+          <div className="modal-body-content il-detail-modal-content" style={{ padding: '4px 0' }}>
+            <div className="il-detail-row">
+              <span className="il-detail-label">Mã hóa đơn:</span>
+              <span className="il-detail-value text-code">{selectedInvoice.invoiceCode}</span>
             </div>
-            <div className="detail-row">
-              <span className="detail-label">Phòng:</span>
-              <span className="detail-value highlight">{getRoomName(selectedInvoice)}</span>
+            <div className="il-detail-row">
+              <span className="il-detail-label">Phòng:</span>
+              <span className="il-detail-value highlight">{getRoomName(selectedInvoice)}</span>
             </div>
-            <div className="detail-row">
-              <span className="detail-label">Tiêu đề:</span>
-              <span className="detail-value">{selectedInvoice.title}</span>
+            <div className="il-detail-row">
+              <span className="il-detail-label">Tiêu đề:</span>
+              <span className="il-detail-value">{selectedInvoice.title}</span>
             </div>
-            <div className="detail-row">
-              <span className="detail-label">Hạn thanh toán:</span>
-              <span className="detail-value" style={{ color: selectedInvoice.status === 'Unpaid' ? '#ef4444' : 'inherit' }}>
+            <div className="il-detail-row">
+              <span className="il-detail-label">Hạn thanh toán:</span>
+              <span className="il-detail-value" style={{ color: selectedInvoice.status === 'Unpaid' ? '#ef4444' : 'inherit' }}>
                 {formatDate(selectedInvoice.dueDate)}
               </span>
             </div>
-            <div className="detail-row">
-              <span className="detail-label">Trạng thái:</span>
-              <span className="detail-value">{renderStatusBadge(selectedInvoice.status)}</span>
+            <div className="il-detail-row">
+              <span className="il-detail-label">Trạng thái:</span>
+              <span className="il-detail-value">{renderStatusBadge(selectedInvoice.status)}</span>
             </div>
 
             {selectedInvoice.type === 'Periodic' && selectedInvoice.items && (

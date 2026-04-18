@@ -61,10 +61,10 @@
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #e85d75 0%, #c2415a 100%);
+  background: linear-gradient(135deg, #306db4 0%, #2558a0 100%);
   color: #fff;
   flex-shrink: 0;
-  box-shadow: 0 4px 14px rgba(200, 65, 90, 0.3);
+  box-shadow: 0 4px 14px rgba(48, 109, 180, 0.3);
 }
 
 .pchi-title-text h2 {
@@ -148,8 +148,8 @@
 }
 
 .pchi-icon-total {
-  color: #be185d;
-  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+  color: #306db4;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
 }
 
 .pchi-icon-pending {
@@ -170,7 +170,7 @@
 /* ─── ADD BUTTON ─────────────────────────── */
 .pchi-add-btn {
   padding: 10px 18px;
-  background: linear-gradient(135deg, #e85d75 0%, #c2415a 100%);
+  background: #306db4;
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -182,16 +182,18 @@
   align-items: center;
   gap: 8px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(200, 65, 90, 0.3);
+  box-shadow: 0 4px 12px rgba(48, 109, 180, 0.3);
   letter-spacing: -0.01em;
 }
 
 .pchi-add-btn:hover {
+  background: #2558a0;
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(200, 65, 90, 0.4);
+  box-shadow: 0 6px 16px rgba(48, 109, 180, 0.4);
 }
 
 .pchi-add-btn:active {
+  background: #2558a0;
   transform: translateY(0);
 }
 
@@ -678,13 +680,13 @@
 }
 
 .pchi-modal-icon--detail {
-  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
-  color: #be185d;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1d4ed8;
 }
 
 .pchi-modal-icon--create {
-  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
-  color: #be185d;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1d4ed8;
 }
 
 .pchi-modal-title {
@@ -790,7 +792,7 @@
 .pchi-detail-value.amount {
   font-size: 15px;
   font-weight: 700;
-  color: #be185d;
+  color: #306db4;
   font-variant-numeric: tabular-nums;
 }
 
@@ -840,19 +842,20 @@
 }
 
 .pchi-btn--primary {
-  background: linear-gradient(135deg, #e85d75 0%, #c2415a 100%);
+  background: #306db4;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(200, 65, 90, 0.3);
+  box-shadow: 0 2px 8px rgba(48, 109, 180, 0.3);
 }
 
 .pchi-btn--primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(200, 65, 90, 0.4) !important;
-  background: linear-gradient(135deg, #e85d75 0%, #c2415a 100%) !important;
+  box-shadow: 0 4px 12px rgba(48, 109, 180, 0.4) !important;
+  background: #2558a0 !important;
   color: #fff !important;
 }
 
 .pchi-btn--primary:active {
+  background: #2558a0;
   transform: translateY(0);
 }
 
@@ -929,9 +932,13 @@
 }
 
 .pchi-input:focus {
-  border-color: #e85d75;
+  border-color: #306db4;
   background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(232, 93, 117, 0.12);
+  box-shadow: 0 0 0 3px rgba(48, 109, 180, 0.12);
+}
+
+.pchi-input:invalid {
+  box-shadow: none;
 }
 
 .pchi-input:disabled {
