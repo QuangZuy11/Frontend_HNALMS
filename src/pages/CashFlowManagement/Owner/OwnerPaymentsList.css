@@ -1,41 +1,42 @@
 /* ============================================================
-   ManagingIncomeExpenses (Phiếu Chi) — inspired by ManageService design
-   Prefix: pchi- (tránh đè CSS từ các component khác)
-   Font: Inter | Primary: #3579c6 / #2a5fa3 | Slate text
+   OwnerPaymentsList — Phiếu Chi role Owner
+   Prefix: opay- (tránh đè CSS từ các component khác)
+   Inspired by pchi- (Accountant) design language
+   Primary: #3579c6 | Danger/Action: #e85d75 | Success: #16a34a
    ============================================================ */
 
-.pchi-container {
-  --pchi-primary: #3579c6;
-  --pchi-primary-dark: #2a5fa3;
-  --pchi-primary-soft: #f0f7ff;
-  --pchi-primary-shadow: rgba(53, 121, 198, 0.28);
-  --pchi-danger: #dc2626;
-  --pchi-danger-soft: #fef2f2;
-  --pchi-success: #16a34a;
-  --pchi-success-soft: #dcfce7;
-  --pchi-warning: #d97706;
-  --pchi-warning-soft: #fef3c7;
-  --pchi-text: #334155;
-  --pchi-text-muted: #64748b;
-  --pchi-text-heading: #1e293b;
-  --pchi-border: rgba(226, 232, 240, 0.85);
-  --pchi-surface: #ffffff;
-  --pchi-page-bg: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+.opay-container {
+  --opay-primary: #3579c6;
+  --opay-primary-dark: #2a5fa3;
+  --opay-primary-soft: #f0f7ff;
+  --opay-primary-shadow: rgba(53, 121, 198, 0.28);
+  --opay-success: #16a34a;
+  --opay-success-soft: #dcfce7;
+  --opay-danger: #dc2626;
+  --opay-danger-soft: #fef2f2;
+  --opay-warning: #d97706;
+  --opay-warning-soft: #fef3c7;
+  --opay-text: #334155;
+  --opay-text-muted: #64748b;
+  --opay-text-heading: #1e293b;
+  --opay-border: rgba(226, 232, 240, 0.85);
+  --opay-surface: #ffffff;
+  --opay-page-bg: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
 
   padding: 12px 14px 20px;
-  background: var(--pchi-page-bg);
+  background: var(--opay-page-bg);
   min-height: 100vh;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  color: var(--pchi-text);
+  color: var(--opay-text);
   letter-spacing: -0.01em;
 }
 
 /* ─── HEADER ─────────────────────────────── */
-.pchi-header {
+.opay-header {
   margin-bottom: 10px;
 }
 
-.pchi-header-top {
+.opay-header-top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -43,18 +44,18 @@
   flex-wrap: wrap;
 }
 
-.pchi-title-block {
+.opay-title-block {
   flex: 1;
   min-width: min(100%, 320px);
 }
 
-.pchi-title-row {
+.opay-title-row {
   display: flex;
   align-items: flex-start;
   gap: 14px;
 }
 
-.pchi-title-icon {
+.opay-title-icon {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -67,26 +68,25 @@
   box-shadow: 0 4px 14px rgba(200, 65, 90, 0.3);
 }
 
-.pchi-title-text h2 {
+.opay-title-text h2 {
   font-size: 1.375rem;
   font-weight: 600;
-  color: var(--pchi-text-heading);
+  color: var(--opay-text-heading);
   margin: 0 0 6px 0;
   letter-spacing: -0.02em;
   line-height: 1.25;
 }
 
-.pchi-subtitle {
+.opay-subtitle {
   margin: 0;
-  max-width: 640px;
   font-size: 14px;
   font-weight: 450;
   line-height: 1.5;
-  color: var(--pchi-text-muted);
+  color: var(--opay-text-muted);
 }
 
 /* ─── STATS CARD (bên phải header) ──────── */
-.pchi-header-aside {
+.opay-header-aside {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -94,7 +94,7 @@
   flex-shrink: 0;
 }
 
-.pchi-stats-summary {
+.opay-stats-summary {
   display: flex;
   align-items: center;
   background-color: white;
@@ -102,42 +102,41 @@
   border-radius: 10px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  flex-shrink: 0;
 }
 
-.pchi-stat-item {
+.opay-stat-item {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 0 16px;
 }
 
-.pchi-stat-text {
+.opay-stat-text {
   display: flex;
   flex-direction: column;
   line-height: 1.2;
 }
 
-.pchi-stat-value {
+.opay-stat-value {
   font-size: 18px;
   font-weight: 700;
   color: #1e293b;
 }
 
-.pchi-stat-label {
+.opay-stat-label {
   font-size: 11px;
   color: #64748b;
   text-transform: uppercase;
   font-weight: 600;
 }
 
-.pchi-stat-divider {
+.opay-stat-divider {
   width: 1px;
   height: 32px;
   background-color: #e2e8f0;
 }
 
-.pchi-stat-icon {
+.opay-stat-icon {
   padding: 8px;
   border-radius: 8px;
   width: 36px;
@@ -147,56 +146,13 @@
   justify-content: center;
 }
 
-.pchi-icon-total {
-  color: #be185d;
-  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
-}
+.opay-icon-total   { color: #be185d; background: linear-gradient(135deg, #fce7f3, #fbcfe8); }
+.opay-icon-pending { color: #d97706; background: linear-gradient(135deg, #fef3c7, #fde68a); }
+.opay-icon-approved{ color: #2563eb; background: linear-gradient(135deg, #bfdbfe, #93c5fd); }
+.opay-icon-paid    { color: #059669; background: linear-gradient(135deg, #d1fae5, #6ee7b7); }
 
-.pchi-icon-pending {
-  color: #d97706;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-}
-
-.pchi-icon-approved {
-  color: #2563eb;
-  background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
-}
-
-.pchi-icon-paid {
-  color: #059669;
-  background: linear-gradient(135deg, #d1fae5 0%, #6ee7b7 100%);
-}
-
-/* ─── ADD BUTTON ─────────────────────────── */
-.pchi-add-btn {
-  padding: 10px 18px;
-  background: linear-gradient(135deg, #e85d75 0%, #c2415a 100%);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 14px;
-  font-family: inherit;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(200, 65, 90, 0.3);
-  letter-spacing: -0.01em;
-}
-
-.pchi-add-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(200, 65, 90, 0.4);
-}
-
-.pchi-add-btn:active {
-  transform: translateY(0);
-}
-
-/* ─── TOOLBAR (lọc + tìm kiếm) ──────────── */
-.pchi-toolbar {
+/* ─── TOOLBAR ────────────────────────────── */
+.opay-toolbar {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
@@ -205,11 +161,11 @@
   background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
   padding: 12px 16px;
   border-radius: 12px;
-  border: 1px solid var(--pchi-border);
+  border: 1px solid var(--opay-border);
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04);
 }
 
-.pchi-toolbar-left {
+.opay-toolbar-left {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
@@ -218,167 +174,129 @@
   min-width: 0;
 }
 
-.pchi-toolbar-right {
+.opay-toolbar-right {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.pchi-toolbar-icon {
-  color: var(--pchi-text-muted);
+.opay-toolbar-icon {
+  color: var(--opay-text-muted);
   flex-shrink: 0;
 }
 
-.pchi-control-group {
+.opay-control-group {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.pchi-control-label {
+.opay-control-label {
   font-size: 13px;
   font-weight: 500;
-  color: var(--pchi-text-muted);
+  color: var(--opay-text-muted);
   white-space: nowrap;
 }
 
-.pchi-custom-select,
-.pchi-date-input {
+.opay-custom-select,
+.opay-date-input {
   appearance: none;
   padding: 9px 36px 9px 12px;
-  border: 1px solid var(--pchi-border);
+  border: 1px solid var(--opay-border);
   border-radius: 10px;
-  background-color: var(--pchi-surface);
-  color: var(--pchi-text);
+  background-color: var(--opay-surface);
+  color: var(--opay-text);
   font-size: 14px;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
   min-width: 140px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
 }
 
-.pchi-custom-select {
+.opay-custom-select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
 }
 
-.pchi-date-input {
+.opay-date-input {
   padding: 9px 12px;
   cursor: text;
 }
 
-.pchi-custom-select:hover,
-.pchi-date-input:hover {
+.opay-custom-select:hover,
+.opay-date-input:hover {
   border-color: #cbd5e1;
-  background-color: var(--pchi-primary-soft);
-  color: var(--pchi-primary);
+  background-color: var(--opay-primary-soft);
+  color: var(--opay-primary);
 }
 
-.pchi-custom-select:focus,
-.pchi-date-input:focus {
-  border-color: var(--pchi-primary);
-  outline: none;
+.opay-custom-select:focus,
+.opay-date-input:focus {
+  border-color: var(--opay-primary);
   box-shadow: 0 0 0 3px rgba(53, 121, 198, 0.12);
 }
 
 /* ─── TABLE CONTAINER ────────────────────── */
-.pchi-table-container {
-  background: var(--pchi-surface);
+.opay-table-container {
+  background: var(--opay-surface);
   border-radius: 12px;
-  border: 1px solid var(--pchi-border);
+  border: 1px solid var(--opay-border);
   overflow-x: auto;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.05);
 }
 
-.pchi-table {
+.opay-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
   min-width: 780px;
 }
 
-.pchi-table th {
+.opay-table th {
   background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   padding: 14px 16px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--pchi-text-muted);
-  border-bottom: 1px solid var(--pchi-border);
+  color: var(--opay-text-muted);
+  border-bottom: 1px solid var(--opay-border);
   white-space: nowrap;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
-.pchi-table td {
+.opay-table td {
   padding: 14px 16px;
   font-size: 14px;
   font-weight: 500;
-  color: var(--pchi-text);
+  color: var(--opay-text);
   border-bottom: 1px solid #f1f5f9;
   vertical-align: middle;
 }
 
-.pchi-table tr:last-child td {
-  border-bottom: none;
-}
+.opay-table tr:last-child td { border-bottom: none; }
 
-.pchi-table tbody tr {
+.opay-table tbody tr {
   transition: background-color 0.15s ease;
 }
 
-.pchi-table tbody tr:hover {
-  background-color: var(--pchi-primary-soft);
+.opay-table tbody tr:hover {
+  background-color: var(--opay-primary-soft);
 }
 
-/* ─── TABLE CELLS ─────────────────────────── */
-.pchi-cell-stt {
-  text-align: center;
-  font-weight: 600;
-  color: var(--pchi-text-muted);
-  width: 5%;
-}
-
-.pchi-cell-code {
-  text-align: left;
-  width: 16%;
-}
-
-.pchi-cell-title {
-  text-align: left;
-  font-weight: 600;
-  color: var(--pchi-text-heading);
-  width: 28%;
-}
-
-.pchi-cell-amount {
-  text-align: right;
-  font-weight: 700;
-  color: var(--pchi-text-heading);
-  width: 15%;
-  font-variant-numeric: tabular-nums;
-}
-
-.pchi-cell-status {
-  text-align: center;
-  width: 15%;
-}
-
-.pchi-cell-date {
-  text-align: left;
-  width: 13%;
-  color: var(--pchi-text-muted);
-  font-size: 13px;
-}
-
-.pchi-cell-actions {
-  text-align: center;
-  width: 8%;
-}
+/* ─── CELLS ──────────────────────────────── */
+.opay-cell-stt     { text-align: center; font-weight: 600; color: var(--opay-text-muted); width: 5%; }
+.opay-cell-code    { width: 16%; }
+.opay-cell-title   { font-weight: 600; color: var(--opay-text-heading); width: 27%; }
+.opay-cell-amount  { text-align: right; font-weight: 700; width: 15%; font-variant-numeric: tabular-nums; }
+.opay-cell-status  { text-align: center; width: 15%; }
+.opay-cell-date    { color: var(--opay-text-muted); font-size: 13px; width: 12%; }
+.opay-cell-actions { text-align: center; width: 10%; }
 
 /* ─── BADGES ─────────────────────────────── */
-.pchi-code-badge {
+.opay-code-badge {
   display: inline-block;
   font-size: 11px;
   font-weight: 700;
@@ -391,7 +309,7 @@
   letter-spacing: 0.02em;
 }
 
-.pchi-status-badge {
+.opay-status-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -400,41 +318,21 @@
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
-  font-family: inherit;
 }
 
-.pchi-status-badge.pending {
-  background-color: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
-}
+.opay-status-badge.pending  { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.opay-status-badge.approved { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+.opay-status-badge.paid     { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.opay-status-badge.rejected { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
 
-.pchi-status-badge.approved {
-  background-color: #e0f2fe;
-  color: #0369a1;
-  border: 1px solid #bae6fd;
-}
-
-.pchi-status-badge.paid {
-  background-color: #dcfce7;
-  color: #15803d;
-  border: 1px solid #bbf7d0;
-}
-
-.pchi-status-badge.rejected {
-  background-color: #fef2f2;
-  color: #b91c1c;
-  border: 1px solid #fecaca;
-}
-
-/* ─── ACTION BUTTONS ─────────────────────── */
-.pchi-table-actions {
+/* ─── TABLE ACTION BUTTONS ───────────────── */
+.opay-table-actions {
   display: flex;
   gap: 8px;
   justify-content: center;
 }
 
-.pchi-btn-icon {
+.opay-btn-icon {
   width: 36px;
   height: 36px;
   border-radius: 10px;
@@ -447,41 +345,33 @@
   padding: 0;
 }
 
-.pchi-btn-icon svg {
-  width: 16px !important;
-  height: 16px !important;
-  stroke: currentColor !important;
-  stroke-width: 2px !important;
-  fill: none !important;
+.opay-btn-view {
+  background-color: var(--opay-primary-soft) !important;
+  color: var(--opay-primary) !important;
 }
 
-.pchi-btn-view {
-  background-color: var(--pchi-primary-soft) !important;
-  color: var(--pchi-primary) !important;
-}
-
-.pchi-btn-view:hover {
+.opay-btn-view:hover {
   background-color: #dbeafe !important;
-  color: var(--pchi-primary-dark) !important;
+  color: var(--opay-primary-dark) !important;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(53, 121, 198, 0.18);
 }
 
 /* ─── EMPTY / ERROR / LOADING ────────────── */
-.pchi-table-empty-cell {
+.opay-table-empty-cell {
   text-align: center;
   padding: 60px 24px !important;
-  color: var(--pchi-text-muted);
+  color: var(--opay-text-muted);
 }
 
-.pchi-empty-inner {
+.opay-empty-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
 }
 
-.pchi-empty-icon {
+.opay-empty-icon {
   width: 64px;
   height: 64px;
   border-radius: 16px;
@@ -492,20 +382,10 @@
   color: #94a3b8;
 }
 
-.pchi-empty-text {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--pchi-text-muted);
-  margin: 0;
-}
+.opay-empty-text  { font-size: 15px; font-weight: 500; color: var(--opay-text-muted); margin: 0; }
+.opay-empty-sub   { font-size: 13px; color: #94a3b8; margin: 0; }
 
-.pchi-empty-sub {
-  font-size: 13px;
-  color: #94a3b8;
-  margin: 0;
-}
-
-.pchi-error-banner {
+.opay-error-banner {
   margin-bottom: 10px;
   padding: 12px 16px;
   border-radius: 10px;
@@ -516,34 +396,34 @@
   font-weight: 500;
 }
 
-.pchi-loading-cell {
+.opay-loading-cell {
   text-align: center;
   padding: 60px 24px !important;
-  color: var(--pchi-text-muted);
+  color: var(--opay-text-muted);
 }
 
-.pchi-loading-inner {
+.opay-loading-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
 }
 
-.pchi-spinner {
+.opay-spinner {
   width: 36px;
   height: 36px;
   border: 3px solid #e2e8f0;
-  border-top-color: var(--pchi-primary);
+  border-top-color: var(--opay-primary);
   border-radius: 50%;
-  animation: pchi-spin 0.7s linear infinite;
+  animation: opay-spin 0.7s linear infinite;
 }
 
-@keyframes pchi-spin {
+@keyframes opay-spin {
   to { transform: rotate(360deg); }
 }
 
 /* ─── PAGINATION ─────────────────────────── */
-.pchi-pagination {
+.opay-pagination {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -555,23 +435,23 @@
   border-radius: 0 0 12px 12px;
 }
 
-.pchi-pagination-info {
+.opay-pagination-info {
   font-size: 13px;
   color: #64748b;
 }
 
-.pchi-pagination-info strong {
+.opay-pagination-info strong {
   color: #1e293b;
   font-weight: 700;
 }
 
-.pchi-pagination-controls {
+.opay-pagination-controls {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-.pchi-page-btn {
+.opay-page-btn {
   min-width: 34px;
   height: 34px;
   border-radius: 8px;
@@ -589,29 +469,29 @@
   font-family: inherit;
 }
 
-.pchi-page-btn:hover:not(:disabled) {
+.opay-page-btn:hover:not(:disabled) {
   background: #f1f5f9;
   border-color: #cbd5e1;
 }
 
-.pchi-page-btn:disabled {
+.opay-page-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-.pchi-page-btn.active {
-  background: var(--pchi-primary);
-  border-color: var(--pchi-primary);
+.opay-page-btn.active {
+  background: var(--opay-primary);
+  border-color: var(--opay-primary);
   color: #ffffff;
 }
 
-.pchi-page-btn.active:hover {
-  background: var(--pchi-primary-dark);
-  border-color: var(--pchi-primary-dark);
+.opay-page-btn.active:hover {
+  background: var(--opay-primary-dark);
+  border-color: var(--opay-primary-dark);
 }
 
 /* ─── MODAL OVERLAY ──────────────────────── */
-.pchi-modal-overlay {
+.opay-modal-overlay {
   position: fixed;
   inset: 0;
   background-color: rgba(15, 23, 42, 0.6);
@@ -622,15 +502,15 @@
   justify-content: center;
   z-index: 9999;
   padding: 16px;
-  animation: pchiOverlayIn 0.2s ease;
+  animation: opayOverlayIn 0.2s ease;
 }
 
-@keyframes pchiOverlayIn {
+@keyframes opayOverlayIn {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 
-.pchi-modal {
+.opay-modal {
   background: #ffffff;
   border-radius: 16px;
   box-shadow:
@@ -642,16 +522,20 @@
   width: min(560px, 95vw);
   max-height: calc(100vh - 80px);
   overflow: hidden;
-  animation: pchiModalIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: opayModalIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes pchiModalIn {
+.opay-modal--reject {
+  width: min(440px, 95vw);
+}
+
+@keyframes opayModalIn {
   from { opacity: 0; transform: scale(0.95) translateY(8px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 /* ─── MODAL HEADER ──────────────────────── */
-.pchi-modal-header {
+.opay-modal-header {
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -659,7 +543,7 @@
   justify-content: space-between;
 }
 
-.pchi-modal-header-left {
+.opay-modal-header-left {
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -667,7 +551,7 @@
   min-width: 0;
 }
 
-.pchi-modal-icon {
+.opay-modal-icon {
   width: 42px;
   height: 42px;
   border-radius: 12px;
@@ -677,17 +561,17 @@
   flex-shrink: 0;
 }
 
-.pchi-modal-icon--detail {
+.opay-modal-icon--detail {
   background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
   color: #be185d;
 }
 
-.pchi-modal-icon--create {
-  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
-  color: #be185d;
+.opay-modal-icon--reject {
+  background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+  color: #b91c1c;
 }
 
-.pchi-modal-title {
+.opay-modal-title {
   font-size: 16px;
   font-weight: 700;
   color: #0f172a;
@@ -696,7 +580,7 @@
   letter-spacing: -0.01em;
 }
 
-.pchi-modal-subtitle-text {
+.opay-modal-subtitle-text {
   font-size: 12px;
   color: #64748b;
   margin: 0;
@@ -704,7 +588,7 @@
   line-height: 1.4;
 }
 
-.pchi-modal-close {
+.opay-modal-close {
   width: 34px;
   height: 34px;
   border-radius: 8px;
@@ -722,13 +606,13 @@
   padding: 0;
 }
 
-.pchi-modal-close:hover {
+.opay-modal-close:hover {
   background: #f1f5f9;
   color: #475569;
 }
 
 /* ─── MODAL BODY ─────────────────────────── */
-.pchi-modal-body {
+.opay-modal-body {
   padding: 20px;
   overflow-y: auto;
   flex: 1;
@@ -738,69 +622,69 @@
 }
 
 /* Section dividers */
-.pchi-section-divider {
+.opay-section-divider {
   width: 100%;
   padding: 8px 14px;
   background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-  color: var(--pchi-text-muted);
+  color: var(--opay-text-muted);
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  border: 1px solid var(--pchi-border);
+  border: 1px solid var(--opay-border);
   border-bottom: 0;
   border-radius: 10px 10px 0 0;
 }
 
-.pchi-section-block {
+.opay-section-block {
   width: 100%;
   margin-top: -1px;
   padding: 4px 14px 8px;
   background: #ffffff;
-  border: 1px solid var(--pchi-border);
+  border: 1px solid var(--opay-border);
   border-radius: 0 0 10px 10px;
 }
 
-.pchi-detail-row {
+.opay-detail-row {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 0;
 }
 
-.pchi-detail-row + .pchi-detail-row {
+.opay-detail-row + .opay-detail-row {
   border-top: 1px dashed #f1f5f9;
 }
 
-.pchi-detail-label {
+.opay-detail-label {
   width: 130px;
   min-width: 130px;
-  color: var(--pchi-text-muted);
+  color: var(--opay-text-muted);
   font-size: 13px;
   font-weight: 500;
 }
 
-.pchi-detail-value {
-  color: var(--pchi-text-heading);
+.opay-detail-value {
+  color: var(--opay-text-heading);
   font-size: 13px;
   font-weight: 600;
   word-break: break-word;
 }
 
-.pchi-detail-value.amount {
+.opay-detail-value.amount {
   font-size: 15px;
   font-weight: 700;
   color: #be185d;
   font-variant-numeric: tabular-nums;
 }
 
-.pchi-detail-value.rejection {
+.opay-detail-value.rejection {
   color: #b91c1c;
   font-style: italic;
 }
 
 /* ─── MODAL FOOTER ───────────────────────── */
-.pchi-modal-footer {
+.opay-modal-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -811,7 +695,7 @@
 }
 
 /* ─── MODAL BUTTONS ──────────────────────── */
-.pchi-btn {
+.opay-btn {
   padding: 10px 20px;
   border-radius: 10px;
   font-size: 14px;
@@ -827,72 +711,77 @@
   white-space: nowrap;
 }
 
-.pchi-btn--ghost {
+.opay-btn--ghost {
   background: transparent;
   color: #64748b;
   border: 1.5px solid #e2e8f0;
 }
 
-.pchi-btn--ghost:hover {
+.opay-btn--ghost:hover {
   background: #f1f5f9;
   color: #334155;
   border-color: #cbd5e1;
 }
 
-.pchi-btn--primary {
-  background: linear-gradient(135deg, #e85d75 0%, #c2415a 100%);
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(200, 65, 90, 0.3);
-}
-
-.pchi-btn--primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(200, 65, 90, 0.4) !important;
-  background: linear-gradient(135deg, #e85d75 0%, #c2415a 100%) !important;
-  color: #fff !important;
-}
-
-.pchi-btn--primary:active {
-  transform: translateY(0);
-}
-
-.pchi-btn--primary:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.pchi-btn--confirm {
+.opay-btn--approve {
   background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
   color: #ffffff;
   box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
 }
 
-.pchi-btn--confirm:hover {
+.opay-btn--approve:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4) !important;
-  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
-  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
 }
 
-.pchi-btn--confirm:active {
-  transform: translateY(0);
-}
-
-.pchi-btn--confirm:disabled {
+.opay-btn--approve:disabled {
   opacity: 0.55;
   cursor: not-allowed;
   transform: none;
 }
 
-/* ─── FORM FIELDS (Create modal) ─────────── */
-.pchi-field {
+.opay-btn--reject {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+.opay-btn--reject:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+.opay-btn--reject:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.opay-btn--confirm-reject {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+.opay-btn--confirm-reject:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+.opay-btn--confirm-reject:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ─── FORM FIELDS (Reject modal) ─────────── */
+.opay-field {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.pchi-label {
+.opay-label {
   font-size: 13px;
   font-weight: 600;
   color: #334155;
@@ -901,13 +790,13 @@
   gap: 6px;
 }
 
-.pchi-label-required {
+.opay-label-required {
   color: #ef4444;
   font-size: 14px;
   line-height: 1;
 }
 
-.pchi-input {
+.opay-textarea {
   width: 100%;
   padding: 10px 14px;
   border-radius: 10px;
@@ -920,101 +809,70 @@
   transition: all 0.2s ease;
   outline: none;
   box-sizing: border-box;
-  -webkit-appearance: none;
+  resize: vertical;
+  min-height: 90px;
 }
 
-.pchi-input::placeholder {
+.opay-textarea::placeholder {
   color: #94a3b8;
   font-weight: 400;
 }
 
-.pchi-input:focus {
-  border-color: #e85d75;
+.opay-textarea:focus {
+  border-color: #dc2626;
   background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(232, 93, 117, 0.12);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
 }
 
-.pchi-input:disabled {
-  background: #f1f5f9;
-  color: #94a3b8;
-  cursor: not-allowed;
-  border-color: #e2e8f0;
-}
-
-.pchi-field-error {
+.opay-field-error {
   font-size: 12px;
   color: #ef4444;
-  font-weight: 500;
-  margin-top: 2px;
-}
-
-.pchi-form-error-banner {
-  padding: 10px 14px;
-  border-radius: 10px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #b91c1c;
-  font-size: 13px;
   font-weight: 500;
 }
 
 /* ─── RESPONSIVE ─────────────────────────── */
 @media (max-width: 768px) {
-  .pchi-container {
+  .opay-container {
     padding: 10px 12px 16px;
   }
 
-  .pchi-title-text h2 {
+  .opay-title-text h2 {
     font-size: 1.2rem;
   }
 
-  .pchi-header-aside {
+  .opay-header-aside {
     width: 100%;
     align-items: stretch;
   }
 
-  .pchi-stats-summary {
+  .opay-stats-summary {
     justify-content: center;
     flex-wrap: wrap;
   }
 
-  .pchi-toolbar {
+  .opay-toolbar {
     flex-direction: column;
   }
 
-  .pchi-toolbar-left {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .pchi-toolbar-right {
+  .opay-toolbar-left {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .pchi-custom-select,
-  .pchi-date-input {
+  .opay-custom-select,
+  .opay-date-input {
     min-width: 0;
     width: 100%;
   }
 }
 
 @media (max-width: 640px) {
-  .pchi-stats-summary {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .pchi-stat-item {
-    padding: 0 10px;
-  }
-
-  .pchi-modal-footer {
+  .opay-modal-footer {
     flex-direction: column-reverse;
     gap: 8px;
   }
 
-  .pchi-btn {
+  .opay-btn {
     width: 100%;
   }
 }

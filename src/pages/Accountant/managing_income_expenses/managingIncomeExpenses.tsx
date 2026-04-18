@@ -1,7 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
+import {
+  Eye,
+  Plus,
+  TrendingDown,
+  FileText,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Banknote,
+  Filter,
+  ArrowUpDown,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { cashFlowService } from "../../../services/cashFlowService";
 import "./managingIncomeExpenses.css";
-import { Eye } from "lucide-react";
 
 interface Room {
   _id: string;
@@ -30,7 +44,6 @@ export default function ManagingIncomeExpenses() {
   const [tickets, setTickets] = useState<FinancialTicket[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  // roomSearch removed (màn này không cần tìm kiếm theo phòng)
   const [statusFilter, setStatusFilter] = useState<
     "all" | "pending" | "approved" | "paid" | "rejected"
   >("all");
@@ -38,35 +51,25 @@ export default function ManagingIncomeExpenses() {
   const [toDate, setToDate] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 11;
-  const [selectedTicket, setSelectedTicket] = useState<FinancialTicket | null>(
-    null,
-  );
+  const [selectedTicket, setSelectedTicket] = useState<FinancialTicket | null>(null);
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [creating, setCreating] = useState<boolean>(false);
   const [autoVoucherCode, setAutoVoucherCode] = useState<string>("");
   const [autoVoucherLoading, setAutoVoucherLoading] = useState<boolean>(false);
   const [autoVoucherError, setAutoVoucherError] = useState<string>("");
-  const [createForm, setCreateForm] = useState<{
-    title: string;
-    amount: string;
-  }>({
+  const [createForm, setCreateForm] = useState<{ title: string; amount: string }>({
     title: "",
     amount: "",
   });
-  const [createErrors, setCreateErrors] = useState<{
-    title: string;
-    amount: string;
-  }>({
+  const [createErrors, setCreateErrors] = useState<{ title: string; amount: string }>({
     title: "",
     amount: "",
   });
   const [formError, setFormError] = useState<string>("");
 
-  // Khoá scroll trang này
+  // Khoá scroll
   useEffect(() => {
-    const main = document.querySelector(
-      ".dashboard-layout-main",
-    ) as HTMLElement;
+    const main = document.querySelector(".dashboard-layout-main") as HTMLElement;
     if (main) main.style.overflowY = "hidden";
     document.body.style.overflow = "hidden";
     return () => {
@@ -80,11 +83,7 @@ export default function ManagingIncomeExpenses() {
       setLoading(true);
       setError(null);
 
-      const params: {
-        from?: string;
-        to?: string;
-      } = {};
-
+      const params: { from?: string; to?: string } = {};
       if (fromDate) params.from = fromDate;
       if (toDate) params.to = toDate;
 
@@ -94,8 +93,7 @@ export default function ManagingIncomeExpenses() {
         message?: string;
       };
 
-      const response: ApiResponse =
-        await cashFlowService.getPaymentTickets(params);
+      const response: ApiResponse = await cashFlowService.getPaymentTickets(params);
 
       if (response.success && Array.isArray(response.data)) {
         setTickets(response.data);
@@ -109,11 +107,10 @@ export default function ManagingIncomeExpenses() {
         typeof err === "object" &&
         err !== null &&
         "response" in err &&
-        (err as { response?: { data?: { message?: string } } }).response?.data
-          ?.message
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message
       ) {
-        msg = (err as { response?: { data?: { message?: string } } }).response!
-          .data!.message as string;
+        msg = (err as { response?: { data?: { message?: string } } }).response!.data!
+          .message as string;
       }
       setError(msg);
     } finally {
@@ -126,10 +123,7 @@ export default function ManagingIncomeExpenses() {
   }, [fetchTickets]);
 
   const resetCreateForm = () => {
-    setCreateForm({
-      title: "",
-      amount: "",
-    });
+    setCreateForm({ title: "", amount: "" });
     setCreateErrors({ title: "", amount: "" });
     setAutoVoucherCode("");
     setAutoVoucherError("");
@@ -137,18 +131,14 @@ export default function ManagingIncomeExpenses() {
     setFormError("");
   };
 
-
   const openCreateModal = async () => {
     setShowCreateModal(true);
     resetCreateForm();
-
     try {
       setAutoVoucherLoading(true);
       const res = await cashFlowService.getNextPaymentVoucher();
       const code = res?.data?.paymentVoucher;
-      if (!code) {
-        throw new Error("Không thể tạo mã phiếu chi");
-      }
+      if (!code) throw new Error("Không thể tạo mã phiếu chi");
       setAutoVoucherCode(code);
     } catch (err) {
       console.error("Lỗi khi tạo mã phiếu chi:", err);
@@ -171,7 +161,6 @@ export default function ManagingIncomeExpenses() {
       errors.title = "Vui lòng nhập tiêu đề";
       isValid = false;
     }
-
     if (!createForm.amount.trim()) {
       errors.amount = "Vui lòng nhập số tiền";
       isValid = false;
@@ -185,11 +174,9 @@ export default function ManagingIncomeExpenses() {
 
     setCreateErrors(errors);
     if (!isValid) {
-      const firstError = errors.title || errors.amount;
-      setFormError(firstError);
+      setFormError(errors.title || errors.amount);
       return;
     }
-
     setFormError("");
 
     try {
@@ -198,7 +185,6 @@ export default function ManagingIncomeExpenses() {
         title: createForm.title.trim(),
         amount: Number(createForm.amount),
       });
-
       if (response?.success && response?.data?._id) {
         setTickets((prev) => [response.data, ...prev]);
         setCurrentPage(1);
@@ -220,11 +206,8 @@ export default function ManagingIncomeExpenses() {
         "Paid",
         ticket.paymentVoucher || undefined,
       );
-
       if (res?.success && res?.data?._id) {
-        setTickets((prev) =>
-          prev.map((t) => (t._id === res.data._id ? res.data : t)),
-        );
+        setTickets((prev) => prev.map((t) => (t._id === res.data._id ? res.data : t)));
         setSelectedTicket((prev) => (prev?._id === res.data._id ? res.data : prev));
       }
     } catch (err) {
@@ -235,16 +218,16 @@ export default function ManagingIncomeExpenses() {
     }
   };
 
-  const getRejectionReason = (ticket: FinancialTicket) =>
-    ticket.rejectionReason ? ticket.rejectionReason : "";
-
   const formatCurrency = (value: number | undefined) => {
-    if (typeof value !== "number") return "0";
-    return value.toLocaleString("vi-VN");
+    if (typeof value !== "number") return "0 ₫";
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(value);
   };
 
   const formatDate = (dateStr?: string) => {
-    if (!dateStr) return "-";
+    if (!dateStr) return "—";
     const d = new Date(dateStr);
     return d.toLocaleDateString("vi-VN", {
       day: "2-digit",
@@ -255,15 +238,12 @@ export default function ManagingIncomeExpenses() {
 
   const toUiStatus = (status?: string): UiPaymentStatus => {
     const s = (status || "").toLowerCase();
-    if (s === "paid" || s.includes("đã thanh toán") || s.includes("da thanh toan")) {
+    if (s === "paid" || s.includes("đã thanh toán") || s.includes("da thanh toan"))
       return "paid";
-    }
-    if (s === "approved" || s.includes("đã duyệt") || s.includes("da duyet")) {
+    if (s === "approved" || s.includes("đã duyệt") || s.includes("da duyet"))
       return "approved";
-    }
-    if (s === "rejected" || s.includes("từ chối") || s.includes("tu choi")) {
+    if (s === "rejected" || s.includes("từ chối") || s.includes("tu choi"))
       return "rejected";
-    }
     return "pending";
   };
 
@@ -275,470 +255,581 @@ export default function ManagingIncomeExpenses() {
     return "Chờ duyệt";
   };
 
+  const statusIcon = (status?: string) => {
+    const ui = toUiStatus(status);
+    if (ui === "paid") return <CheckCircle2 size={12} />;
+    if (ui === "approved") return <CheckCircle2 size={12} />;
+    if (ui === "rejected") return <XCircle size={12} />;
+    return <Clock size={12} />;
+  };
+
   const filteredTickets = tickets.filter((t) => {
     if (statusFilter === "all") return true;
     const ui = toUiStatus(t.status);
-    if (statusFilter === "paid") return ui === "paid";
-    if (statusFilter === "rejected") return ui === "rejected";
-    if (statusFilter === "approved") return ui === "approved";
-    return ui === "pending";
+    return ui === statusFilter;
   });
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredTickets.length / pageSize) || 1,
-  );
-
+  const totalPages = Math.max(1, Math.ceil(filteredTickets.length / pageSize) || 1);
   const safePage = Math.min(currentPage, totalPages);
   const startIndex = (safePage - 1) * pageSize;
-  const paginatedTickets = filteredTickets.slice(
-    startIndex,
-    startIndex + pageSize,
-  );
+  const paginatedTickets = filteredTickets.slice(startIndex, startIndex + pageSize);
+
+  // Stats
+  const totalCount = tickets.length;
+  const pendingCount = tickets.filter((t) => toUiStatus(t.status) === "pending").length;
+  const approvedCount = tickets.filter((t) => toUiStatus(t.status) === "approved").length;
+  const paidCount = tickets.filter((t) => toUiStatus(t.status) === "paid").length;
+
+  // Pagination numbers
+  const buildPageNumbers = () => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages: (number | "...")[] = [];
+    pages.push(1);
+    if (safePage > 3) pages.push("...");
+    for (let i = Math.max(2, safePage - 1); i <= Math.min(totalPages - 1, safePage + 1); i++) {
+      pages.push(i);
+    }
+    if (safePage < totalPages - 2) pages.push("...");
+    pages.push(totalPages);
+    return pages;
+  };
 
   return (
-    <div className="payments-page">
-      <div className="payments-card">
-        <div className="payments-header">
-          <div>
-            <h1>Danh sách phiếu chi</h1>
+    <div className="pchi-container">
+      {/* ─── HEADER ─────────────────────────────── */}
+      <div className="pchi-header">
+        <div className="pchi-header-top">
+          {/* Title block */}
+          <div className="pchi-title-block">
+            <div className="pchi-title-row">
+              <div className="pchi-title-icon" aria-hidden>
+                <TrendingDown size={22} strokeWidth={2} />
+              </div>
+              <div className="pchi-title-text">
+                <h2>Quản lý Phiếu Chi</h2>
+                <p className="pchi-subtitle">
+                  Tạo và theo dõi tất cả các phiếu chi của tòa nhà Hoàng Nam.
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="payments-header-actions">
-            <button
-              type="button"
-              className="payments-create-btn"
-              onClick={openCreateModal}
-            >
-              Tạo phiếu chi
+
+          {/* Stats + Add button */}
+          <div className="pchi-header-aside">
+            <div className="pchi-stats-summary">
+              <div className="pchi-stat-item">
+                <div className="pchi-stat-icon pchi-icon-total">
+                  <FileText size={16} />
+                </div>
+                <div className="pchi-stat-text">
+                  <span className="pchi-stat-value">{totalCount}</span>
+                  <span className="pchi-stat-label">Tổng số</span>
+                </div>
+              </div>
+              <div className="pchi-stat-divider" />
+              <div className="pchi-stat-item">
+                <div className="pchi-stat-icon pchi-icon-pending">
+                  <Clock size={16} />
+                </div>
+                <div className="pchi-stat-text">
+                  <span className="pchi-stat-value">{pendingCount}</span>
+                  <span className="pchi-stat-label">Chờ duyệt</span>
+                </div>
+              </div>
+              <div className="pchi-stat-divider" />
+              <div className="pchi-stat-item">
+                <div className="pchi-stat-icon pchi-icon-approved">
+                  <Banknote size={16} />
+                </div>
+                <div className="pchi-stat-text">
+                  <span className="pchi-stat-value">{approvedCount}</span>
+                  <span className="pchi-stat-label">Đã duyệt</span>
+                </div>
+              </div>
+              <div className="pchi-stat-divider" />
+              <div className="pchi-stat-item">
+                <div className="pchi-stat-icon pchi-icon-paid">
+                  <CheckCircle2 size={16} />
+                </div>
+                <div className="pchi-stat-text">
+                  <span className="pchi-stat-value">{paidCount}</span>
+                  <span className="pchi-stat-label">Đã chi</span>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" className="pchi-add-btn" onClick={openCreateModal}>
+              <Plus size={18} /> Tạo phiếu chi
             </button>
-            <div className="payments-filter-wrapper">
-              <label htmlFor="from-date" className="payments-filter-label">
-                Từ ngày:
-              </label>
-              <input
-                id="from-date"
-                type="date"
-                className="payments-filter-input"
-                value={fromDate}
-                onChange={(e) => {
-                  setFromDate(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-            </div>
-            <div className="payments-filter-wrapper">
-              <label htmlFor="to-date" className="payments-filter-label">
-                Đến ngày:
-              </label>
-              <input
-                id="to-date"
-                type="date"
-                className="payments-filter-input"
-                value={toDate}
-                onChange={(e) => {
-                  setToDate(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-            </div>
-            <div className="payments-filter-wrapper">
-              <label htmlFor="status-filter" className="payments-filter-label">
-                Trạng thái:
-              </label>
-              <select
-                id="status-filter"
-                className="payments-filter-select payments-status-filter"
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(
-                    e.target.value as
-                      | "all"
-                      | "pending"
-                      | "approved"
-                      | "paid"
-                      | "rejected",
-                  );
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="all">Tất cả</option>
-                <option value="pending">Chờ duyệt</option>
-                <option value="approved">Đã duyệt</option>
-                <option value="paid">Đã thanh toán</option>
-                <option value="rejected">Từ chối</option>
-              </select>
-            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── TOOLBAR ────────────────────────────── */}
+      <div className="pchi-toolbar">
+        <div className="pchi-toolbar-left">
+          {/* Từ ngày */}
+          <div className="pchi-control-group">
+            <CalendarDays size={16} className="pchi-toolbar-icon" aria-hidden />
+            <span className="pchi-control-label">Từ ngày:</span>
+            <input
+              id="pchi-from-date"
+              type="date"
+              className="pchi-date-input"
+              value={fromDate}
+              onChange={(e) => {
+                setFromDate(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+
+          {/* Đến ngày */}
+          <div className="pchi-control-group">
+            <span className="pchi-control-label">Đến ngày:</span>
+            <input
+              id="pchi-to-date"
+              type="date"
+              className="pchi-date-input"
+              value={toDate}
+              onChange={(e) => {
+                setToDate(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+
+          {/* Lọc trạng thái */}
+          <div className="pchi-control-group">
+            <Filter size={16} className="pchi-toolbar-icon" aria-hidden />
+            <select
+              id="pchi-status-filter"
+              className="pchi-custom-select"
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(
+                  e.target.value as "all" | "pending" | "approved" | "paid" | "rejected",
+                );
+                setCurrentPage(1);
+              }}
+            >
+              <option value="all">Tất cả trạng thái</option>
+              <option value="pending">Chờ duyệt</option>
+              <option value="approved">Đã duyệt</option>
+              <option value="paid">Đã thanh toán</option>
+              <option value="rejected">Từ chối</option>
+            </select>
           </div>
         </div>
 
-        {error && (
-          <div className="payments-error">
-            <p>{error}</p>
-          </div>
-        )}
-
-        {!loading && !error && filteredTickets.length === 0 && (
-          <div className="payments-empty">
-            <p>Chưa có phiếu chi nào.</p>
-          </div>
-        )}
-
-        {!loading && !error && filteredTickets.length > 0 && (
-          <div className="payments-table-wrap">
-            <table className="payments-table">
-              <thead>
-                <tr>
-                  <th>STT</th>
-                  <th>Mã phiếu</th>
-                  <th>Tiêu đề</th>
-                  <th>Số tiền (VNĐ)</th>
-                  <th>Trạng thái</th>
-                  <th>Ngày tạo</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedTickets.map((t, index) => (
-                  <tr key={t._id}>
-                    <td>{startIndex + index + 1}</td>
-                    <td>
-                      <span className="payments-code-badge">
-                        {t.paymentVoucher || "—"}
-                      </span>
-                    </td>
-                    <td>{t.title}</td>
-                    <td>
-                      <span className="payments-amount">
-                        {formatCurrency(t.amount)}
-                      </span>
-                    </td>
-                    <td>
-                      <span
-                        className={`payments-status-badge ${toUiStatus(t.status)}`}
-                      >
-                        {statusLabel(t.status)}
-                      </span>
-                    </td>
-                    <td>{formatDate(t.createdAt || t.transactionDate)}</td>
-                    <td>
-                      <div className="payments-actions">
-                        <button
-                          type="button"
-                          className="payments-icon-btn"
-                          title="Xem"
-                          onClick={() => setSelectedTicket(t)}
-                        >
-                          <Eye size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {showCreateModal && (
-          <div className="payments-modal-overlay" onClick={closeCreateModal}>
-            <div
-              className="payments-modal"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="payments-modal-header payments-modal-header--detail">
-                <h3>Tạo phiếu chi</h3>
-                <button
-                  type="button"
-                  className="payments-modal-close payments-modal-close--detail"
-                  onClick={closeCreateModal}
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="payments-modal-body">
-                {formError && (
-                  <div
-                    className="payments-error"
-                    style={{ marginTop: 0, marginBottom: 12 }}
-                  >
-                    {formError}
-                  </div>
-                )}
-                <div className="payments-form-group">
-                  <label>Mã phiếu</label>
-                  <input
-                    type="text"
-                    value={
-                      autoVoucherLoading
-                        ? "Đang tạo mã phiếu..."
-                        : autoVoucherCode || "Chưa tạo được mã phiếu"
-                    }
-                    disabled
-                    className="payments-form-input"
-                  />
-                  {autoVoucherError && (
-                    <span className="payments-form-error">
-                      {autoVoucherError}
-                    </span>
-                  )}
-                </div>
-
-                <div className="payments-form-group">
-                  <label>Tiêu đề *</label>
-                  <input
-                    type="text"
-                    value={createForm.title}
-                    onChange={(e) => {
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        title: e.target.value,
-                      }));
-                      if (createErrors.title) {
-                        setCreateErrors((prev) => ({ ...prev, title: "" }));
-                      }
-                    }}
-                    className="payments-form-input"
-                    placeholder="Nhập tiêu đề phiếu chi"
-                  />
-                  {createErrors.title && (
-                    <span className="payments-form-error">
-                      {createErrors.title}
-                    </span>
-                  )}
-                </div>
-
-                <div className="payments-form-group">
-                  <label>Số tiền *</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1000"
-                    value={createForm.amount}
-                    onChange={(e) => {
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        amount: e.target.value,
-                      }));
-                      if (createErrors.amount) {
-                        setCreateErrors((prev) => ({ ...prev, amount: "" }));
-                      }
-                    }}
-                    className="payments-form-input"
-                    placeholder="Nhập số tiền"
-                  />
-                  {createErrors.amount && (
-                    <span className="payments-form-error">
-                      {createErrors.amount}
-                    </span>
-                  )}
-                </div>
-
-
-                <div className="payments-form-group">
-                  <label>Ngày tạo</label>
-                  <input
-                    type="text"
-                    value={formatDate(new Date().toISOString())}
-                    disabled
-                    className="payments-form-input"
-                  />
-                </div>
-              </div>
-
-              <div
-                className="payments-modal-footer"
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: 8,
-                  alignItems: "center",
-                }}
-              >
-                <button
-                  type="button"
-                  className="payments-btn-secondary"
-                  onClick={closeCreateModal}
-                  disabled={creating}
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  className="payments-btn-primary"
-                  onClick={handleCreateTicket}
-                  disabled={
-                    creating ||
-                    autoVoucherLoading ||
-                    !!autoVoucherError ||
-                    !autoVoucherCode ||
-                    !createForm.title.trim() ||
-                    !createForm.amount.trim()
-                  }
-                >
-                  {creating ? "Đang tạo..." : "Tạo phiếu"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {selectedTicket && (
-          <div
-            className="paychi-modal-overlay"
-            onClick={() => setSelectedTicket(null)}
-          >
-            <div
-              className="paychi-modal paychi-modal--detail"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="paychi-modal-header paychi-modal-header--detail">
-                <div>
-                  <h3>Chi tiết phiếu chi</h3>
-                  <p className="paychi-modal-subtitle">
-                    {selectedTicket.title}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="paychi-modal-close paychi-modal-close--detail"
-                  onClick={() => setSelectedTicket(null)}
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="paychi-modal-body paychi-detail-content">
-                <div className="paychi-section-divider">
-                  Thông tin phiếu chi
-                </div>
-                <div className="paychi-section-block">
-                  <div className="paychi-detail-row">
-                    <span className="paychi-detail-label">Mã phiếu:</span>
-                    <span className="paychi-detail-value">
-                      {selectedTicket.paymentVoucher || "-"}
-                    </span>
-                  </div>
-                  <div className="paychi-detail-row">
-                    <span className="paychi-detail-label">Tiêu đề:</span>
-                    <span className="paychi-detail-value">
-                      {selectedTicket.title}
-                    </span>
-                  </div>
-                  <div className="paychi-detail-row">
-                    <span className="paychi-detail-label">Số tiền:</span>
-                    <span className="paychi-detail-value">
-                      {formatCurrency(selectedTicket.amount)} VNĐ
-                    </span>
-                  </div>
-                </div>
-
-                <div className="paychi-section-divider">Thời gian</div>
-                <div className="paychi-section-block">
-                  <div className="paychi-detail-row">
-                    <span className="paychi-detail-label">Ngày tạo:</span>
-                    <span className="paychi-detail-value">
-                      {formatDate(
-                        selectedTicket.createdAt ||
-                          selectedTicket.transactionDate,
-                      )}
-                    </span>
-                  </div>
-                  {toUiStatus(selectedTicket.status) === "paid" && (
-                    <div className="paychi-detail-row">
-                      <span className="paychi-detail-label">
-                        Ngày thanh toán:
-                      </span>
-                      <span className="paychi-detail-value">
-                        {formatDate(selectedTicket.accountantPaidAt)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="paychi-section-divider">Trạng thái</div>
-                <div className="paychi-section-block">
-                  <div className="paychi-detail-row">
-                    <span className="paychi-detail-label">Trạng thái:</span>
-                    <div className="paychi-detail-value paychi-detail-status">
-                      <span
-                        className={`payments-status-badge ${toUiStatus(selectedTicket.status)}`}
-                      >
-                        {statusLabel(selectedTicket.status)}
-                      </span>
-                    </div>
-                  </div>
-                  {toUiStatus(selectedTicket.status) === "rejected" &&
-                    getRejectionReason(selectedTicket) && (
-                    <div className="paychi-detail-row">
-                      <span className="paychi-detail-label">Lý do từ chối:</span>
-                      <span className="paychi-detail-value">
-                        {getRejectionReason(selectedTicket)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="paychi-detail-actions">
-                  {toUiStatus(selectedTicket.status) === "approved" ? (
-                    <button
-                      type="button"
-                      className="paychi-done-btn"
-                      onClick={() => handleConfirmPaid(selectedTicket)}
-                      disabled={creating}
-                    >
-                      {creating ? "Đang lưu..." : "Đã thanh toán"}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="paychi-done-btn"
-                      onClick={() => setSelectedTicket(null)}
-                    >
-                      Xong
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
+        <div className="pchi-toolbar-right">
+          <ArrowUpDown size={16} className="pchi-toolbar-icon" aria-hidden />
+          <span className="pchi-control-label">Mới nhất</span>
+        </div>
       </div>
 
-      {/* Thanh phân trang đặt ngoài bảng, giống màn phiếu thu/hóa đơn */}
-      {!loading && !error && filteredTickets.length > 0 && (
-        <div className="payments-pagination payments-pagination-outside">
-          <div className="payments-pagination-info">
-            Tổng: <strong>{filteredTickets.length}</strong> phiếu chi | Trang{" "}
-            <strong>{safePage}</strong>/{totalPages}
+      {/* ─── ERROR BANNER ───────────────────────── */}
+      {error && <div className="pchi-error-banner">{error}</div>}
+
+      {/* ─── TABLE ─────────────────────────────── */}
+      <div className="pchi-table-container">
+        <table className="pchi-table">
+          <thead>
+            <tr>
+              <th className="pchi-cell-stt">STT</th>
+              <th className="pchi-cell-code">Mã phiếu</th>
+              <th className="pchi-cell-title">Tiêu đề</th>
+              <th className="pchi-cell-amount">Số tiền (VNĐ)</th>
+              <th className="pchi-cell-status">Trạng thái</th>
+              <th className="pchi-cell-date">Ngày tạo</th>
+              <th className="pchi-cell-actions">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="pchi-loading-cell">
+                  <div className="pchi-loading-inner">
+                    <div className="pchi-spinner" />
+                    <p className="pchi-empty-text">Đang tải dữ liệu...</p>
+                  </div>
+                </td>
+              </tr>
+            ) : !error && filteredTickets.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="pchi-table-empty-cell">
+                  <div className="pchi-empty-inner">
+                    <div className="pchi-empty-icon">
+                      <TrendingDown size={28} />
+                    </div>
+                    <p className="pchi-empty-text">Chưa có phiếu chi nào.</p>
+                    <p className="pchi-empty-sub">
+                      Thử thay đổi bộ lọc hoặc tạo phiếu chi mới.
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              paginatedTickets.map((t, index) => (
+                <tr key={t._id}>
+                  <td className="pchi-cell-stt">{startIndex + index + 1}</td>
+                  <td className="pchi-cell-code">
+                    <span className="pchi-code-badge">{t.paymentVoucher || "—"}</span>
+                  </td>
+                  <td className="pchi-cell-title">{t.title}</td>
+                  <td className="pchi-cell-amount">{formatCurrency(t.amount)}</td>
+                  <td className="pchi-cell-status">
+                    <span className={`pchi-status-badge ${toUiStatus(t.status)}`}>
+                      {statusIcon(t.status)}
+                      {statusLabel(t.status)}
+                    </span>
+                  </td>
+                  <td className="pchi-cell-date">
+                    {formatDate(t.createdAt || t.transactionDate)}
+                  </td>
+                  <td className="pchi-cell-actions">
+                    <div className="pchi-table-actions">
+                      <button
+                        type="button"
+                        className="pchi-btn-icon pchi-btn-view"
+                        title="Xem chi tiết"
+                        onClick={() => setSelectedTicket(t)}
+                      >
+                        <Eye size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+
+        {/* ─── PAGINATION ──────────────────────── */}
+        {!loading && !error && filteredTickets.length > 0 && (
+          <div className="pchi-pagination">
+            <div className="pchi-pagination-info">
+              Tổng: <strong>{filteredTickets.length}</strong> phiếu chi &nbsp;|&nbsp; Trang{" "}
+              <strong>{safePage}</strong>/{totalPages}
+            </div>
+            <div className="pchi-pagination-controls">
+              <button
+                type="button"
+                className="pchi-page-btn"
+                disabled={safePage === 1}
+                onClick={() => setCurrentPage(1)}
+                title="Trang đầu"
+              >
+                «
+              </button>
+              <button
+                type="button"
+                className="pchi-page-btn"
+                disabled={safePage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                title="Trang trước"
+              >
+                <ChevronLeft size={14} />
+              </button>
+
+              {buildPageNumbers().map((p, i) =>
+                p === "..." ? (
+                  <span key={`ellipsis-${i}`} style={{ padding: "0 4px", color: "#94a3b8" }}>
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    type="button"
+                    className={`pchi-page-btn${safePage === p ? " active" : ""}`}
+                    onClick={() => setCurrentPage(p as number)}
+                    aria-current={safePage === p ? "page" : undefined}
+                  >
+                    {p}
+                  </button>
+                ),
+              )}
+
+              <button
+                type="button"
+                className="pchi-page-btn"
+                disabled={safePage === totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                title="Trang sau"
+              >
+                <ChevronRight size={14} />
+              </button>
+              <button
+                type="button"
+                className="pchi-page-btn"
+                disabled={safePage === totalPages}
+                onClick={() => setCurrentPage(totalPages)}
+                title="Trang cuối"
+              >
+                »
+              </button>
+            </div>
           </div>
-          <div className="payments-pagination-controls">
-            <button
-              type="button"
-              className="payments-page-nav"
-              disabled={safePage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            >
-              {"<"}
-            </button>
+        )}
+      </div>
 
-            <button
-              type="button"
-              className="payments-page-number active"
-              aria-current="page"
-            >
-              {safePage}
-            </button>
+      {/* ─── CREATE MODAL ──────────────────────── */}
+      {showCreateModal && (
+        <div className="pchi-modal-overlay" onClick={closeCreateModal}>
+          <div className="pchi-modal" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="pchi-modal-header">
+              <div className="pchi-modal-header-left">
+                <div className="pchi-modal-icon pchi-modal-icon--create">
+                  <Plus size={20} />
+                </div>
+                <div>
+                  <p className="pchi-modal-title">Tạo phiếu chi</p>
+                  <p className="pchi-modal-subtitle-text">Nhập thông tin phiếu chi mới</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="pchi-modal-close"
+                onClick={closeCreateModal}
+                title="Đóng"
+              >
+                ✕
+              </button>
+            </div>
 
-            <button
-              type="button"
-              className="payments-page-nav"
-              disabled={safePage === totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            >
-              {">"}
-            </button>
+            {/* Body */}
+            <div className="pchi-modal-body">
+              {formError && <div className="pchi-form-error-banner">{formError}</div>}
+
+              {/* Mã phiếu (auto) */}
+              <div className="pchi-field">
+                <label className="pchi-label">Mã phiếu (tự động)</label>
+                <input
+                  type="text"
+                  className="pchi-input"
+                  value={
+                    autoVoucherLoading
+                      ? "Đang tạo mã phiếu..."
+                      : autoVoucherCode || "Chưa tạo được mã phiếu"
+                  }
+                  disabled
+                />
+                {autoVoucherError && (
+                  <span className="pchi-field-error">{autoVoucherError}</span>
+                )}
+              </div>
+
+              {/* Tiêu đề */}
+              <div className="pchi-field">
+                <label className="pchi-label">
+                  Tiêu đề <span className="pchi-label-required">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="pchi-input"
+                  value={createForm.title}
+                  onChange={(e) => {
+                    setCreateForm((prev) => ({ ...prev, title: e.target.value }));
+                    if (createErrors.title) setCreateErrors((prev) => ({ ...prev, title: "" }));
+                  }}
+                  placeholder="Nhập tiêu đề phiếu chi"
+                />
+                {createErrors.title && (
+                  <span className="pchi-field-error">{createErrors.title}</span>
+                )}
+              </div>
+
+              {/* Số tiền */}
+              <div className="pchi-field">
+                <label className="pchi-label">
+                  Số tiền (VNĐ) <span className="pchi-label-required">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  className="pchi-input"
+                  value={createForm.amount}
+                  onChange={(e) => {
+                    setCreateForm((prev) => ({ ...prev, amount: e.target.value }));
+                    if (createErrors.amount)
+                      setCreateErrors((prev) => ({ ...prev, amount: "" }));
+                  }}
+                  placeholder="Nhập số tiền (tối thiểu 1.000 VNĐ)"
+                />
+                {createErrors.amount && (
+                  <span className="pchi-field-error">{createErrors.amount}</span>
+                )}
+              </div>
+
+              {/* Ngày tạo */}
+              <div className="pchi-field">
+                <label className="pchi-label">Ngày tạo</label>
+                <input
+                  type="text"
+                  className="pchi-input"
+                  value={formatDate(new Date().toISOString())}
+                  disabled
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="pchi-modal-footer">
+              <button
+                type="button"
+                className="pchi-btn pchi-btn--ghost"
+                onClick={closeCreateModal}
+                disabled={creating}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                className="pchi-btn pchi-btn--primary"
+                onClick={handleCreateTicket}
+                disabled={
+                  creating ||
+                  autoVoucherLoading ||
+                  !!autoVoucherError ||
+                  !autoVoucherCode ||
+                  !createForm.title.trim() ||
+                  !createForm.amount.trim()
+                }
+              >
+                <Plus size={16} />
+                {creating ? "Đang tạo..." : "Tạo phiếu chi"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── DETAIL MODAL ──────────────────────── */}
+      {selectedTicket && (
+        <div className="pchi-modal-overlay" onClick={() => setSelectedTicket(null)}>
+          <div className="pchi-modal" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="pchi-modal-header">
+              <div className="pchi-modal-header-left">
+                <div className="pchi-modal-icon pchi-modal-icon--detail">
+                  <TrendingDown size={20} />
+                </div>
+                <div>
+                  <p className="pchi-modal-title">Chi tiết phiếu chi</p>
+                  <p className="pchi-modal-subtitle-text">{selectedTicket.title}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="pchi-modal-close"
+                onClick={() => setSelectedTicket(null)}
+                title="Đóng"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="pchi-modal-body">
+              {/* Section: Thông tin phiếu chi */}
+              <div className="pchi-section-divider">Thông tin phiếu chi</div>
+              <div className="pchi-section-block">
+                <div className="pchi-detail-row">
+                  <span className="pchi-detail-label">Mã phiếu:</span>
+                  <span className="pchi-detail-value">
+                    <span className="pchi-code-badge">
+                      {selectedTicket.paymentVoucher || "—"}
+                    </span>
+                  </span>
+                </div>
+                <div className="pchi-detail-row">
+                  <span className="pchi-detail-label">Tiêu đề:</span>
+                  <span className="pchi-detail-value">{selectedTicket.title}</span>
+                </div>
+                <div className="pchi-detail-row">
+                  <span className="pchi-detail-label">Số tiền:</span>
+                  <span className="pchi-detail-value amount">
+                    {formatCurrency(selectedTicket.amount)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Section: Thời gian */}
+              <div className="pchi-section-divider">Thời gian</div>
+              <div className="pchi-section-block">
+                <div className="pchi-detail-row">
+                  <span className="pchi-detail-label">Ngày tạo:</span>
+                  <span className="pchi-detail-value">
+                    {formatDate(selectedTicket.createdAt || selectedTicket.transactionDate)}
+                  </span>
+                </div>
+                {toUiStatus(selectedTicket.status) === "paid" && (
+                  <div className="pchi-detail-row">
+                    <span className="pchi-detail-label">Ngày thanh toán:</span>
+                    <span className="pchi-detail-value">
+                      {formatDate(selectedTicket.accountantPaidAt)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Section: Trạng thái */}
+              <div className="pchi-section-divider">Trạng thái</div>
+              <div className="pchi-section-block">
+                <div className="pchi-detail-row">
+                  <span className="pchi-detail-label">Trạng thái:</span>
+                  <span className="pchi-detail-value">
+                    <span className={`pchi-status-badge ${toUiStatus(selectedTicket.status)}`}>
+                      {statusIcon(selectedTicket.status)}
+                      {statusLabel(selectedTicket.status)}
+                    </span>
+                  </span>
+                </div>
+                {toUiStatus(selectedTicket.status) === "rejected" &&
+                  selectedTicket.rejectionReason && (
+                    <div className="pchi-detail-row">
+                      <span className="pchi-detail-label">Lý do từ chối:</span>
+                      <span className="pchi-detail-value rejection">
+                        {selectedTicket.rejectionReason}
+                      </span>
+                    </div>
+                  )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="pchi-modal-footer">
+              {toUiStatus(selectedTicket.status) === "approved" ? (
+                <>
+                  <button
+                    type="button"
+                    className="pchi-btn pchi-btn--ghost"
+                    onClick={() => setSelectedTicket(null)}
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    type="button"
+                    className="pchi-btn pchi-btn--confirm"
+                    onClick={() => handleConfirmPaid(selectedTicket)}
+                    disabled={creating}
+                  >
+                    <CheckCircle2 size={16} />
+                    {creating ? "Đang lưu..." : "Xác nhận đã chi"}
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="pchi-btn pchi-btn--ghost"
+                  onClick={() => setSelectedTicket(null)}
+                >
+                  Đóng
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

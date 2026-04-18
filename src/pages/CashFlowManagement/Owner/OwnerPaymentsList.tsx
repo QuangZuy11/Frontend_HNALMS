@@ -1,7 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
+import {
+  Eye,
+  TrendingDown,
+  FileText,
+  Clock,
+  Banknote,
+  CheckCircle2,
+  XCircle,
+  Filter,
+  ArrowUpDown,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  ThumbsUp,
+  ThumbsDown,
+} from "lucide-react";
 import { cashFlowService } from "../../../services/cashFlowService";
-import { Eye } from "lucide-react";
-import "../../Accountant/managing_income_expenses/managingIncomeExpenses.css";
+import "./OwnerPaymentsList.css";
 
 interface OwnerPaymentTicket {
   _id: string;
@@ -24,9 +39,7 @@ export default function OwnerPaymentsList() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 11;
-  const [selectedTicket, setSelectedTicket] = useState<OwnerPaymentTicket | null>(
-    null,
-  );
+  const [selectedTicket, setSelectedTicket] = useState<OwnerPaymentTicket | null>(null);
   const [showRejectModal, setShowRejectModal] = useState<boolean>(false);
   const [rejectReason, setRejectReason] = useState<string>("");
   const [rejectError, setRejectError] = useState<string>("");
@@ -47,16 +60,11 @@ export default function OwnerPaymentsList() {
         message?: string;
       };
 
-      const params: {
-        from?: string;
-        to?: string;
-      } = {};
-
+      const params: { from?: string; to?: string } = {};
       if (fromDate) params.from = fromDate;
       if (toDate) params.to = toDate;
 
-      const response: ApiResponse =
-        await cashFlowService.getOwnerPaymentTickets(params);
+      const response: ApiResponse = await cashFlowService.getOwnerPaymentTickets(params);
 
       if (response.success && Array.isArray(response.data)) {
         setTickets(response.data);
@@ -70,11 +78,10 @@ export default function OwnerPaymentsList() {
         typeof err === "object" &&
         err !== null &&
         "response" in err &&
-        (err as { response?: { data?: { message?: string } } }).response?.data
-          ?.message
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message
       ) {
-        msg = (err as { response?: { data?: { message?: string } } }).response!
-          .data!.message as string;
+        msg = (err as { response?: { data?: { message?: string } } }).response!.data!
+          .message as string;
       }
       setError(msg);
     } finally {
@@ -87,38 +94,23 @@ export default function OwnerPaymentsList() {
   }, [fetchTickets]);
 
   const formatCurrency = (value: number | undefined) => {
-    if (typeof value !== "number") return "0";
-    return value.toLocaleString("vi-VN");
+    if (typeof value !== "number") return "0 ₫";
+    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
   };
 
   const formatDate = (dateStr?: string) => {
-    if (!dateStr) return "-";
+    if (!dateStr) return "—";
     const d = new Date(dateStr);
-    return d.toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+    return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
   };
 
   const toUiStatus = (status?: string): UiPaymentStatus => {
     const s = (status || "").toLowerCase();
-    if (
-      s === "paid" ||
-      s.includes("đã thanh toán") ||
-      s.includes("da thanh toan")
-    ) {
-      return "paid";
-    }
-    if (s === "approved" || s.includes("đã duyệt") || s.includes("da duyet")) {
-      return "approved";
-    }
-    if (s === "rejected" || s.includes("từ chối") || s.includes("tu choi")) {
-      return "rejected";
-    }
+    if (s === "paid" || s.includes("đã thanh toán") || s.includes("da thanh toan")) return "paid";
+    if (s === "approved" || s.includes("đã duyệt") || s.includes("da duyet")) return "approved";
+    if (s === "rejected" || s.includes("từ chối") || s.includes("tu choi")) return "rejected";
     return "pending";
   };
-
 
   const statusLabel = (status?: string) => {
     const ui = toUiStatus(status);
@@ -128,14 +120,13 @@ export default function OwnerPaymentsList() {
     return "Chờ duyệt";
   };
 
-  const filteredTickets = tickets.filter((t) => {
-    if (statusFilter === "all") return true;
-    const ui = toUiStatus(t.status);
-    if (statusFilter === "paid") return ui === "paid";
-    if (statusFilter === "rejected") return ui === "rejected";
-    if (statusFilter === "approved") return ui === "approved";
-    return ui === "pending";
-  });
+  const statusIcon = (status?: string) => {
+    const ui = toUiStatus(status);
+    if (ui === "paid") return <CheckCircle2 size={12} />;
+    if (ui === "approved") return <CheckCircle2 size={12} />;
+    if (ui === "rejected") return <XCircle size={12} />;
+    return <Clock size={12} />;
+  };
 
   const toApiStatus = (
     ui: UiPaymentStatus,
@@ -154,9 +145,7 @@ export default function OwnerPaymentsList() {
     reason?: string,
   ) => {
     setTickets((prev) =>
-      prev.map((t) =>
-        t._id === ticketId ? { ...t, status: toApiStatus(uiStatus) } : t,
-      ),
+      prev.map((t) => (t._id === ticketId ? { ...t, status: toApiStatus(uiStatus) } : t)),
     );
 
     try {
@@ -172,23 +161,22 @@ export default function OwnerPaymentsList() {
           prev.map((t) =>
             t._id === ticketId
               ? {
-                ...t,
+                  ...t,
+                  status: res.data.status,
+                  accountantPaidAt: res.data.accountantPaidAt,
+                  rejectionReason: res.data.rejectionReason ?? null,
+                }
+              : t,
+          ),
+        );
+        setSelectedTicket((prev) =>
+          prev && prev._id === ticketId
+            ? {
+                ...prev,
                 status: res.data.status,
                 accountantPaidAt: res.data.accountantPaidAt,
                 rejectionReason: res.data.rejectionReason ?? null,
               }
-              : t,
-          ),
-        );
-
-        setSelectedTicket((prev) =>
-          prev && prev._id === ticketId
-            ? {
-              ...prev,
-              status: res.data.status,
-              accountantPaidAt: res.data.accountantPaidAt,
-              rejectionReason: res.data.rejectionReason ?? null,
-            }
             : prev,
         );
       }
@@ -214,388 +202,516 @@ export default function OwnerPaymentsList() {
 
   const handleConfirmReject = async () => {
     if (!selectedTicket) return;
-
     if (!rejectReason.trim()) {
       setRejectError("Vui lòng nhập lý do từ chối");
       return;
     }
-
     setRejectError("");
     setShowRejectModal(false);
     await handleChangeStatus(selectedTicket._id, "rejected", rejectReason.trim());
   };
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredTickets.length / pageSize) || 1,
-  );
+  const filteredTickets = tickets.filter((t) => {
+    if (statusFilter === "all") return true;
+    return toUiStatus(t.status) === statusFilter;
+  });
 
+  const totalPages = Math.max(1, Math.ceil(filteredTickets.length / pageSize) || 1);
   const safePage = Math.min(currentPage, totalPages);
   const startIndex = (safePage - 1) * pageSize;
-  const paginatedTickets = filteredTickets.slice(
-    startIndex,
-    startIndex + pageSize,
-  );
+  const paginatedTickets = filteredTickets.slice(startIndex, startIndex + pageSize);
+
+  // Stats
+  const totalCount = tickets.length;
+  const pendingCount = tickets.filter((t) => toUiStatus(t.status) === "pending").length;
+  const approvedCount = tickets.filter((t) => toUiStatus(t.status) === "approved").length;
+  const paidCount = tickets.filter((t) => toUiStatus(t.status) === "paid").length;
+
+  // Pagination numbers
+  const buildPageNumbers = () => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages: (number | "...")[] = [];
+    pages.push(1);
+    if (safePage > 3) pages.push("...");
+    for (let i = Math.max(2, safePage - 1); i <= Math.min(totalPages - 1, safePage + 1); i++) {
+      pages.push(i);
+    }
+    if (safePage < totalPages - 2) pages.push("...");
+    pages.push(totalPages);
+    return pages;
+  };
 
   return (
-    <div className="payments-page">
-      <div className="payments-card">
-        <div className="payments-header">
-          <div>
-            <h1>Danh sách phiếu chi</h1>
+    <div className="opay-container">
+      {/* ─── HEADER ─────────────────────────────── */}
+      <div className="opay-header">
+        <div className="opay-header-top">
+          {/* Title block */}
+          <div className="opay-title-block">
+            <div className="opay-title-row">
+              <div className="opay-title-icon" aria-hidden>
+                <TrendingDown size={22} strokeWidth={2} />
+              </div>
+              <div className="opay-title-text">
+                <h2>Danh sách Phiếu Chi</h2>
+                <p className="opay-subtitle">
+                  Theo dõi và phê duyệt các phiếu chi của tòa nhà.
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="payments-header-actions">
-            <div className="payments-filter-wrapper">
-              <label htmlFor="from-date" className="payments-filter-label">
-                Từ ngày:
-              </label>
-              <input
-                id="from-date"
-                type="date"
-                className="payments-filter-input"
-                value={fromDate}
-                onChange={(e) => {
-                  setFromDate(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-            </div>
-            <div className="payments-filter-wrapper">
-              <label htmlFor="to-date" className="payments-filter-label">
-                Đến ngày:
-              </label>
-              <input
-                id="to-date"
-                type="date"
-                className="payments-filter-input"
-                value={toDate}
-                onChange={(e) => {
-                  setToDate(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-            </div>
-            <div className="payments-filter-wrapper">
-              <label htmlFor="status-filter" className="payments-filter-label">
-                Trạng thái:
-              </label>
-              <select
-                id="status-filter"
-                className="payments-filter-select payments-status-filter"
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(
-                    e.target.value as
-                    | "all"
-                    | "pending"
-                    | "approved"
-                    | "paid"
-                    | "rejected",
-                  );
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="all">Tất cả</option>
-                <option value="pending">Chờ duyệt</option>
-                <option value="approved">Đã duyệt</option>
-                <option value="paid">Đã thanh toán</option>
-                <option value="rejected">Từ chối</option>
-              </select>
+
+          {/* Stats */}
+          <div className="opay-header-aside">
+            <div className="opay-stats-summary">
+              <div className="opay-stat-item">
+                <div className="opay-stat-icon opay-icon-total">
+                  <FileText size={16} />
+                </div>
+                <div className="opay-stat-text">
+                  <span className="opay-stat-value">{totalCount}</span>
+                  <span className="opay-stat-label">Tổng số</span>
+                </div>
+              </div>
+              <div className="opay-stat-divider" />
+              <div className="opay-stat-item">
+                <div className="opay-stat-icon opay-icon-pending">
+                  <Clock size={16} />
+                </div>
+                <div className="opay-stat-text">
+                  <span className="opay-stat-value">{pendingCount}</span>
+                  <span className="opay-stat-label">Chờ duyệt</span>
+                </div>
+              </div>
+              <div className="opay-stat-divider" />
+              <div className="opay-stat-item">
+                <div className="opay-stat-icon opay-icon-approved">
+                  <Banknote size={16} />
+                </div>
+                <div className="opay-stat-text">
+                  <span className="opay-stat-value">{approvedCount}</span>
+                  <span className="opay-stat-label">Đã duyệt</span>
+                </div>
+              </div>
+              <div className="opay-stat-divider" />
+              <div className="opay-stat-item">
+                <div className="opay-stat-icon opay-icon-paid">
+                  <CheckCircle2 size={16} />
+                </div>
+                <div className="opay-stat-text">
+                  <span className="opay-stat-value">{paidCount}</span>
+                  <span className="opay-stat-label">Đã chi</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {error && (
-          <div className="payments-error">
-            <p>{error}</p>
+      {/* ─── TOOLBAR ────────────────────────────── */}
+      <div className="opay-toolbar">
+        <div className="opay-toolbar-left">
+          <div className="opay-control-group">
+            <CalendarDays size={16} className="opay-toolbar-icon" aria-hidden />
+            <span className="opay-control-label">Từ ngày:</span>
+            <input
+              id="opay-from-date"
+              type="date"
+              className="opay-date-input"
+              value={fromDate}
+              onChange={(e) => { setFromDate(e.target.value); setCurrentPage(1); }}
+            />
           </div>
-        )}
 
-        {!loading && !error && filteredTickets.length === 0 && (
-          <div className="payments-empty">
-            <p>Chưa có phiếu chi nào.</p>
+          <div className="opay-control-group">
+            <span className="opay-control-label">Đến ngày:</span>
+            <input
+              id="opay-to-date"
+              type="date"
+              className="opay-date-input"
+              value={toDate}
+              onChange={(e) => { setToDate(e.target.value); setCurrentPage(1); }}
+            />
           </div>
-        )}
 
-        {!loading && !error && filteredTickets.length > 0 && (
-          <div className="payments-table-wrap">
-            <table className="payments-table">
-              <thead>
-                <tr>
-                  <th>STT</th>
-                  <th>Mã phiếu</th>
-                  <th>Tiêu đề</th>
-                  <th>Số tiền (VNĐ)</th>
-                  <th>Trạng thái</th>
-                  <th>Ngày tạo</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedTickets.map((t, index) => (
-                  <tr key={t._id}>
-                    <td>{startIndex + index + 1}</td>
-                    <td>
-                      <span className="payments-code-badge">
-                        {t.paymentVoucher || "—"}
-                      </span>
-                    </td>
-                    <td>{t.title}</td>
-                    <td>
-                      <span className="payments-amount">
-                        {formatCurrency(t.amount)}
-                      </span>
-                    </td>
-                    <td>
-                      <span
-                        className={`payments-status-badge ${toUiStatus(t.status)}`}
-                      >
-                        {statusLabel(t.status)}
-                      </span>
-                    </td>
-                    <td>{formatDate(t.createdAt || t.transactionDate)}</td>
-                    <td>
-                      <div className="payments-actions">
-                        <button
-                          type="button"
-                          className="payments-icon-btn"
-                          title="Xem"
-                          onClick={() => setSelectedTicket(t)}
-                        >
-                          <Eye size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {selectedTicket && (
-          <div
-            className="paychi-modal-overlay"
-            onClick={() => setSelectedTicket(null)}
-          >
-            <div
-              className="paychi-modal paychi-modal--detail"
-              onClick={(e) => e.stopPropagation()}
+          <div className="opay-control-group">
+            <Filter size={16} className="opay-toolbar-icon" aria-hidden />
+            <select
+              id="opay-status-filter"
+              className="opay-custom-select"
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(
+                  e.target.value as "all" | "pending" | "approved" | "paid" | "rejected",
+                );
+                setCurrentPage(1);
+              }}
             >
-              <div className="paychi-modal-header paychi-modal-header--detail">
-                <div>
-                  <h3>Chi tiết phiếu chi</h3>
-                  <p className="paychi-modal-subtitle">
-                    {selectedTicket.title}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="paychi-modal-close paychi-modal-close--detail"
-                  onClick={() => setSelectedTicket(null)}
-                >
-                  ✕
-                </button>
-              </div>
+              <option value="all">Tất cả trạng thái</option>
+              <option value="pending">Chờ duyệt</option>
+              <option value="approved">Đã duyệt</option>
+              <option value="paid">Đã thanh toán</option>
+              <option value="rejected">Từ chối</option>
+            </select>
+          </div>
+        </div>
 
-              <div className="paychi-modal-body paychi-detail-content">
-                <div className="paychi-section-divider">Thông tin phiếu chi</div>
-                <div className="paychi-section-block">
-                  <div className="paychi-detail-row">
-                    <span className="paychi-detail-label">Mã phiếu:</span>
-                    <span className="paychi-detail-value">
-                      {selectedTicket.paymentVoucher || "-"}
-                    </span>
-                  </div>
-                  <div className="paychi-detail-row">
-                    <span className="paychi-detail-label">Tiêu đề:</span>
-                    <span className="paychi-detail-value">
-                      {selectedTicket.title}
-                    </span>
-                  </div>
-                  <div className="paychi-detail-row">
-                    <span className="paychi-detail-label">Số tiền:</span>
-                    <span className="paychi-detail-value">
-                      {formatCurrency(selectedTicket.amount)} VNĐ
-                    </span>
-                  </div>
-                </div>
+        <div className="opay-toolbar-right">
+          <ArrowUpDown size={16} className="opay-toolbar-icon" aria-hidden />
+          <span className="opay-control-label">Mới nhất</span>
+        </div>
+      </div>
 
-                <div className="paychi-section-divider">Thời gian</div>
-                <div className="paychi-section-block">
-                  <div className="paychi-detail-row">
-                    <span className="paychi-detail-label">Ngày tạo:</span>
-                    <span className="paychi-detail-value">
-                      {formatDate(
-                        selectedTicket.createdAt ||
-                        selectedTicket.transactionDate,
-                      )}
-                    </span>
+      {/* ─── ERROR BANNER ───────────────────────── */}
+      {error && <div className="opay-error-banner">{error}</div>}
+
+      {/* ─── TABLE ─────────────────────────────── */}
+      <div className="opay-table-container">
+        <table className="opay-table">
+          <thead>
+            <tr>
+              <th className="opay-cell-stt">STT</th>
+              <th className="opay-cell-code">Mã phiếu</th>
+              <th className="opay-cell-title">Tiêu đề</th>
+              <th className="opay-cell-amount">Số tiền (VNĐ)</th>
+              <th className="opay-cell-status">Trạng thái</th>
+              <th className="opay-cell-date">Ngày tạo</th>
+              <th className="opay-cell-actions">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="opay-loading-cell">
+                  <div className="opay-loading-inner">
+                    <div className="opay-spinner" />
+                    <p className="opay-empty-text">Đang tải dữ liệu...</p>
                   </div>
-                  {toUiStatus(selectedTicket.status) === "paid" && (
-                    <div className="paychi-detail-row">
-                      <span className="paychi-detail-label">
-                        Ngày thanh toán:
-                      </span>
-                      <span className="paychi-detail-value">
-                        {formatDate(selectedTicket.accountantPaidAt)}
-                      </span>
+                </td>
+              </tr>
+            ) : !error && filteredTickets.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="opay-table-empty-cell">
+                  <div className="opay-empty-inner">
+                    <div className="opay-empty-icon">
+                      <TrendingDown size={28} />
                     </div>
-                  )}
-                </div>
-
-                <div className="paychi-section-divider">Trạng thái</div>
-                <div className="paychi-section-block">
-                  <div className="paychi-detail-row">
-                    <span className="paychi-detail-label">Trạng thái:</span>
-                    <span className="paychi-detail-value">
-                      {statusLabel(selectedTicket.status)}
-                    </span>
+                    <p className="opay-empty-text">Chưa có phiếu chi nào.</p>
+                    <p className="opay-empty-sub">Thử thay đổi bộ lọc để xem kết quả khác.</p>
                   </div>
-                  {toUiStatus(selectedTicket.status) === "rejected" &&
-                    selectedTicket.rejectionReason && (
-                      <div className="paychi-detail-row">
-                        <span className="paychi-detail-label">Lý do từ chối:</span>
-                        <span className="paychi-detail-value">
-                          {selectedTicket.rejectionReason}
-                        </span>
-                      </div>
-                    )}
-                </div>
+                </td>
+              </tr>
+            ) : (
+              paginatedTickets.map((t, index) => (
+                <tr key={t._id}>
+                  <td className="opay-cell-stt">{startIndex + index + 1}</td>
+                  <td className="opay-cell-code">
+                    <span className="opay-code-badge">{t.paymentVoucher || "—"}</span>
+                  </td>
+                  <td className="opay-cell-title">{t.title}</td>
+                  <td className="opay-cell-amount">{formatCurrency(t.amount)}</td>
+                  <td className="opay-cell-status">
+                    <span className={`opay-status-badge ${toUiStatus(t.status)}`}>
+                      {statusIcon(t.status)}
+                      {statusLabel(t.status)}
+                    </span>
+                  </td>
+                  <td className="opay-cell-date">
+                    {formatDate(t.createdAt || t.transactionDate)}
+                  </td>
+                  <td className="opay-cell-actions">
+                    <div className="opay-table-actions">
+                      <button
+                        type="button"
+                        className="opay-btn-icon opay-btn-view"
+                        title="Xem chi tiết"
+                        onClick={() => setSelectedTicket(t)}
+                      >
+                        <Eye size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
 
-                <div className="paychi-detail-actions">
-                  {toUiStatus(selectedTicket.status) === "pending" ? (
-                    <>
-                      <button
-                        type="button"
-                        className="paychi-done-btn"
-                        onClick={() =>
-                          handleChangeStatus(selectedTicket._id, "approved")
-                        }
-                      >
-                        Duyệt
-                      </button>
-                      <button
-                        type="button"
-                        className="paychi-cancel-btn"
-                        onClick={() => handleOpenRejectModal(selectedTicket)}
-                      >
-                        Từ chối
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      className="paychi-done-btn"
-                      onClick={() => setSelectedTicket(null)}
-                    >
-                      Xong
-                    </button>
-                  )}
-                </div>
-              </div>
+        {/* ─── PAGINATION ──────────────────────── */}
+        {!loading && !error && filteredTickets.length > 0 && (
+          <div className="opay-pagination">
+            <div className="opay-pagination-info">
+              Tổng: <strong>{filteredTickets.length}</strong> phiếu chi &nbsp;|&nbsp; Trang{" "}
+              <strong>{safePage}</strong>/{totalPages}
             </div>
-          </div>
-        )}
-
-        {showRejectModal && selectedTicket && (
-          <div className="payments-modal-overlay" onClick={handleCloseRejectModal}>
-            <div
-              className="payments-modal"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="payments-modal-header payments-modal-header--detail">
-                <h3>Lý do từ chối phiếu chi</h3>
-                <button
-                  type="button"
-                  className="payments-modal-close payments-modal-close--detail"
-                  onClick={handleCloseRejectModal}
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="payments-modal-body">
-                <div className="payments-form-group">
-                  <label>Lý do từ chối *</label>
-                  <textarea
-                    value={rejectReason}
-                    onChange={(e) => {
-                      setRejectReason(e.target.value);
-                      if (rejectError) setRejectError("");
-                    }}
-                    className="payments-form-input"
-                    placeholder="Nhập lý do từ chối"
-                    rows={3}
-                  />
-                  {rejectError && (
-                    <span className="payments-form-error">{rejectError}</span>
-                  )}
-                </div>
-              </div>
-
-              <div
-                className="payments-modal-footer"
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: 8,
-                  alignItems: "center",
-                }}
+            <div className="opay-pagination-controls">
+              <button
+                type="button"
+                className="opay-page-btn"
+                disabled={safePage === 1}
+                onClick={() => setCurrentPage(1)}
+                title="Trang đầu"
               >
-                <button
-                  type="button"
-                  className="payments-btn-secondary"
-                  onClick={handleCloseRejectModal}
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  className="payments-btn-primary"
-                  onClick={handleConfirmReject}
-                  disabled={!rejectReason.trim()}
-                >
-                  Xác nhận
-                </button>
-              </div>
+                «
+              </button>
+              <button
+                type="button"
+                className="opay-page-btn"
+                disabled={safePage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                title="Trang trước"
+              >
+                <ChevronLeft size={14} />
+              </button>
+
+              {buildPageNumbers().map((p, i) =>
+                p === "..." ? (
+                  <span key={`ellipsis-${i}`} style={{ padding: "0 4px", color: "#94a3b8" }}>
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    type="button"
+                    className={`opay-page-btn${safePage === p ? " active" : ""}`}
+                    onClick={() => setCurrentPage(p as number)}
+                    aria-current={safePage === p ? "page" : undefined}
+                  >
+                    {p}
+                  </button>
+                ),
+              )}
+
+              <button
+                type="button"
+                className="opay-page-btn"
+                disabled={safePage === totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                title="Trang sau"
+              >
+                <ChevronRight size={14} />
+              </button>
+              <button
+                type="button"
+                className="opay-page-btn"
+                disabled={safePage === totalPages}
+                onClick={() => setCurrentPage(totalPages)}
+                title="Trang cuối"
+              >
+                »
+              </button>
             </div>
           </div>
         )}
       </div>
 
-      {!loading && !error && filteredTickets.length > 0 && (
-        <div className="payments-pagination payments-pagination-outside">
-          <div className="payments-pagination-info">
-            Tổng: <strong>{filteredTickets.length}</strong> phiếu chi | Trang{" "}
-            <strong>{safePage}</strong>/{totalPages}
+      {/* ─── DETAIL MODAL ──────────────────────── */}
+      {selectedTicket && !showRejectModal && (
+        <div className="opay-modal-overlay" onClick={() => setSelectedTicket(null)}>
+          <div className="opay-modal" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="opay-modal-header">
+              <div className="opay-modal-header-left">
+                <div className="opay-modal-icon opay-modal-icon--detail">
+                  <TrendingDown size={20} />
+                </div>
+                <div>
+                  <p className="opay-modal-title">Chi tiết phiếu chi</p>
+                  <p className="opay-modal-subtitle-text">{selectedTicket.title}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="opay-modal-close"
+                onClick={() => setSelectedTicket(null)}
+                title="Đóng"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="opay-modal-body">
+              {/* Section: Thông tin phiếu chi */}
+              <div className="opay-section-divider">Thông tin phiếu chi</div>
+              <div className="opay-section-block">
+                <div className="opay-detail-row">
+                  <span className="opay-detail-label">Mã phiếu:</span>
+                  <span className="opay-detail-value">
+                    <span className="opay-code-badge">
+                      {selectedTicket.paymentVoucher || "—"}
+                    </span>
+                  </span>
+                </div>
+                <div className="opay-detail-row">
+                  <span className="opay-detail-label">Tiêu đề:</span>
+                  <span className="opay-detail-value">{selectedTicket.title}</span>
+                </div>
+                <div className="opay-detail-row">
+                  <span className="opay-detail-label">Số tiền:</span>
+                  <span className="opay-detail-value amount">
+                    {formatCurrency(selectedTicket.amount)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Section: Thời gian */}
+              <div className="opay-section-divider">Thời gian</div>
+              <div className="opay-section-block">
+                <div className="opay-detail-row">
+                  <span className="opay-detail-label">Ngày tạo:</span>
+                  <span className="opay-detail-value">
+                    {formatDate(selectedTicket.createdAt || selectedTicket.transactionDate)}
+                  </span>
+                </div>
+                {toUiStatus(selectedTicket.status) === "paid" && (
+                  <div className="opay-detail-row">
+                    <span className="opay-detail-label">Ngày thanh toán:</span>
+                    <span className="opay-detail-value">
+                      {formatDate(selectedTicket.accountantPaidAt)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Section: Trạng thái */}
+              <div className="opay-section-divider">Trạng thái</div>
+              <div className="opay-section-block">
+                <div className="opay-detail-row">
+                  <span className="opay-detail-label">Trạng thái:</span>
+                  <span className="opay-detail-value">
+                    <span className={`opay-status-badge ${toUiStatus(selectedTicket.status)}`}>
+                      {statusIcon(selectedTicket.status)}
+                      {statusLabel(selectedTicket.status)}
+                    </span>
+                  </span>
+                </div>
+                {toUiStatus(selectedTicket.status) === "rejected" &&
+                  selectedTicket.rejectionReason && (
+                    <div className="opay-detail-row">
+                      <span className="opay-detail-label">Lý do từ chối:</span>
+                      <span className="opay-detail-value rejection">
+                        {selectedTicket.rejectionReason}
+                      </span>
+                    </div>
+                  )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="opay-modal-footer">
+              {toUiStatus(selectedTicket.status) === "pending" ? (
+                <>
+                  <button
+                    type="button"
+                    className="opay-btn opay-btn--ghost"
+                    onClick={() => setSelectedTicket(null)}
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    type="button"
+                    className="opay-btn opay-btn--reject"
+                    onClick={() => handleOpenRejectModal(selectedTicket)}
+                  >
+                    <ThumbsDown size={16} />
+                    Từ chối
+                  </button>
+                  <button
+                    type="button"
+                    className="opay-btn opay-btn--approve"
+                    onClick={() => {
+                      handleChangeStatus(selectedTicket._id, "approved");
+                      setSelectedTicket(null);
+                    }}
+                  >
+                    <ThumbsUp size={16} />
+                    Duyệt phiếu
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="opay-btn opay-btn--ghost"
+                  onClick={() => setSelectedTicket(null)}
+                >
+                  Đóng
+                </button>
+              )}
+            </div>
           </div>
-          <div className="payments-pagination-controls">
-            <button
-              type="button"
-              className="payments-page-nav"
-              disabled={safePage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            >
-              {"<"}
-            </button>
+        </div>
+      )}
 
-            <button
-              type="button"
-              className="payments-page-number active"
-              aria-current="page"
-            >
-              {safePage}
-            </button>
+      {/* ─── REJECT MODAL ──────────────────────── */}
+      {showRejectModal && selectedTicket && (
+        <div className="opay-modal-overlay" onClick={handleCloseRejectModal}>
+          <div
+            className="opay-modal opay-modal--reject"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="opay-modal-header">
+              <div className="opay-modal-header-left">
+                <div className="opay-modal-icon opay-modal-icon--reject">
+                  <XCircle size={20} />
+                </div>
+                <div>
+                  <p className="opay-modal-title">Từ chối phiếu chi</p>
+                  <p className="opay-modal-subtitle-text">{selectedTicket.title}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="opay-modal-close"
+                onClick={handleCloseRejectModal}
+                title="Đóng"
+              >
+                ✕
+              </button>
+            </div>
 
-            <button
-              type="button"
-              className="payments-page-nav"
-              disabled={safePage === totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            >
-              {">"}
-            </button>
+            {/* Body */}
+            <div className="opay-modal-body">
+              <div className="opay-field">
+                <label className="opay-label">
+                  Lý do từ chối <span className="opay-label-required">*</span>
+                </label>
+                <textarea
+                  className="opay-textarea"
+                  value={rejectReason}
+                  onChange={(e) => {
+                    setRejectReason(e.target.value);
+                    if (rejectError) setRejectError("");
+                  }}
+                  placeholder="Nhập lý do từ chối phiếu chi..."
+                  rows={3}
+                />
+                {rejectError && (
+                  <span className="opay-field-error">{rejectError}</span>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="opay-modal-footer">
+              <button
+                type="button"
+                className="opay-btn opay-btn--ghost"
+                onClick={handleCloseRejectModal}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                className="opay-btn opay-btn--confirm-reject"
+                onClick={handleConfirmReject}
+                disabled={!rejectReason.trim()}
+              >
+                <ThumbsDown size={16} />
+                Xác nhận từ chối
+              </button>
+            </div>
           </div>
         </div>
       )}
