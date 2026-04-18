@@ -1026,11 +1026,16 @@ export default function MoveOutRequestsList() {
                 })()}
                 {(() => {
                   if (selectedRequest.status !== 'Paid') return null;
-                  
+
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const todayMs = today.getTime();
+
                   const reqExpectedMoveOutDate = selectedRequest.expectedMoveOutDate ? new Date(selectedRequest.expectedMoveOutDate) : null;
                   if (reqExpectedMoveOutDate) reqExpectedMoveOutDate.setHours(0, 0, 0, 0);
                   const canComplete = reqExpectedMoveOutDate && todayMs >= reqExpectedMoveOutDate.getTime();
                   const expectedDateStr = reqExpectedMoveOutDate ? reqExpectedMoveOutDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '?';
+                  const todayStr = today.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
                   return (
                     <button
