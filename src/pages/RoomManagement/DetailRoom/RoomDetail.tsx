@@ -269,7 +269,7 @@ export default function RoomDetail() {
                           ? "Đã có HĐ kế tiếp"
                           : room.hasFloatingDeposit
                             ? "Đã có cọc kế tiếp"
-                            : "Có thể cọc"}
+                            : "Có thể cọc & Ký Hợp Đồng"}
                       </span>
                     </div>
                   ) : (
@@ -557,7 +557,7 @@ export default function RoomDetail() {
                   )}
                   {room.contractRenewalStatus === "declined" && (room.status === "Occupied" || room.status === "Deposited") && !room.successorLeaseBooked && (
                     <p style={{ color: "var(--warning)", fontWeight: "bold" }}>
-                      ⚠ Người thuê hiện tại đã từ chối gia hạn — bạn có thể đặt cọc cho kỳ thuê tiếp theo.
+                      ⚠ Người thuê hiện tại đã từ chối gia hạn. Bạn có thể đặt cọc và ký Hợp Đồng cho kỳ thuê tiếp theo.
                     </p>
                   )}
                   {room.contractRenewalStatus === "declined" && room.nextInactiveContractStart && !room.successorLeaseBooked && (

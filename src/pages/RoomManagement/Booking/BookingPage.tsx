@@ -1022,14 +1022,14 @@ export default function BookingPage() {
                             })()}
 
                             <div className="sidebar-terms">
-                                <p className="sidebar-terms-title">
+                                {/* <p className="sidebar-terms-title">
                                     <Shield size={14} style={{ display: "inline", verticalAlign: "-2px", marginRight: "0.375rem" }} />
                                     Điều Khoản
-                                </p>
+                                </p> */}
                                 <ul className="sidebar-terms-list">
-                                    <li><span className="check">✓</span><span>Giữ phòng 30 ngày</span></li>
+                                    {/* <li><span className="check">✓</span><span>Giữ phòng 30 ngày</span></li>
                                     <li><span className="check">✓</span><span>Không hoàn lại cọc</span></li>
-                                    <li><span className="check">✓</span><span>Phải ký HĐ trong 30 ngày</span></li>
+                                    <li><span className="check">✓</span><span>Phải ký HĐ trong 30 ngày</span></li> */}
                                     {room.isShortTermAvailable && room.futureContractStartDate && (
                                         <li>
                                             <span className="check" style={{ color: "var(--warning)" }}>⚠</span>

@@ -242,7 +242,7 @@ const BookingRequestList = () => {
       return (
         <span className="br-status-badge br-status-badge--room-taken">
           <Ban size={13} />
-          Phòng đã được chốt
+          Đã hủy
         </span>
       );
     }
@@ -471,7 +471,7 @@ const BookingRequestList = () => {
                       {competitorCount > 0 && (
                         <span className="br-room-competed">
                           <Ban size={13} />
-                          {competitorCount} bị hủy do phòng đã chốt
+                          {competitorCount} yêu cầu đã bị hủy
                         </span>
                       )}
                       {group.hasWinner && (

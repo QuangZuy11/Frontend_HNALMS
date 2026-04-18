@@ -160,7 +160,7 @@ export default function CreateDeposit() {
       } else {
         toastr.error(
           "Có lỗi xảy ra khi tạo cọc: " +
-            (response.data.message || "Unknown error"),
+          (response.data.message || "Unknown error"),
         );
       }
     } catch (err: unknown) {
@@ -169,7 +169,7 @@ export default function CreateDeposit() {
       const axiosError = err as { response?: { data?: { message?: string } } };
       toastr.error(
         "Có lỗi xảy ra: " +
-          (axiosError.response?.data?.message || errorMessage),
+        (axiosError.response?.data?.message || errorMessage),
       );
     } finally {
       setIsSubmitting(false);
@@ -239,96 +239,96 @@ export default function CreateDeposit() {
 
                 <form className="deposit-form" onSubmit={handleSubmit}>
                   <fieldset disabled={isSubmitting} style={{ border: "none", margin: 0, padding: 0 }}>
-                  <div className="form-group">
-                    <label className="form-label">Họ Tên Đầy Đủ *</label>
-                    <input
-                      type="text"
-                      className={`form-input ${errors.fullName ? "error" : ""}`}
-                      placeholder="Nguyễn Văn A"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                    />
-                    {errors.fullName && (
-                      <span className="form-error">{errors.fullName}</span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Email *</label>
-                    <input
-                      type="email"
-                      className={`form-input ${errors.email ? "error" : ""}`}
-                      placeholder="email@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                    {errors.email && (
-                      <span className="form-error">{errors.email}</span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Số Điện Thoại *</label>
-                    <input
-                      type="text"
-                      className={`form-input ${errors.phone ? "error" : ""}`}
-                      placeholder="0912345678"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                    />
-                    {errors.phone && (
-                      <span className="form-error">{errors.phone}</span>
-                    )}
-                  </div>
-
-                  <div className="terms-box">
-                    <p>✓ Sau khi tạo cọc, hệ thống sẽ ghi nhận thông tin</p>
-                    <p>✓ Phòng sẽ được giữ trong vòng 30 ngày</p>
-                    <p>✓ Khách hàng cần ký hợp đồng trong thời gian này</p>
-                    {room.futureContractStartDate && (
-                      <p style={{ color: "#d97706", fontWeight: 500 }}>
-                        ⚠ Lưu ý: Phòng này đã có người đặt cọc từ ngày{" "}
-                        {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}.
-                        Hợp đồng mới phải kết thúc trước ngày này.
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="deposit-amount-display">
-                    <span className="deposit-amount-label">Số tiền cọc:</span>
-                    <span className="deposit-amount-value">
-                      {depositAmount.toLocaleString("vi-VN")}đ
-                    </span>
-                  </div>
-
-                  <div className="confirm-checkbox">
-                    <label>
+                    <div className="form-group">
+                      <label className="form-label">Họ Tên Đầy Đủ *</label>
                       <input
-                        type="checkbox"
-                        checked={paymentConfirmed}
-                        onChange={(e) => setPaymentConfirmed(e.target.checked)}
+                        type="text"
+                        className={`form-input ${errors.fullName ? "error" : ""}`}
+                        placeholder="Nguyễn Văn A"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
                       />
-                      Đã nhận tiền cọc từ khách hàng
-                    </label>
-                  </div>
+                      {errors.fullName && (
+                        <span className="form-error">{errors.fullName}</span>
+                      )}
+                    </div>
 
-                  <button
-                    type="submit"
-                    className="dp-primary-btn green"
-                    disabled={isSubmitting || !paymentConfirmed}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader size={18} className="spin" />
-                        Đang xử lý...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle size={18} />
-                        Tạo Cọc
-                      </>
-                    )}
-                  </button>
+                    <div className="form-group">
+                      <label className="form-label">Email *</label>
+                      <input
+                        type="email"
+                        className={`form-input ${errors.email ? "error" : ""}`}
+                        placeholder="email@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                      />
+                      {errors.email && (
+                        <span className="form-error">{errors.email}</span>
+                      )}
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Số Điện Thoại *</label>
+                      <input
+                        type="text"
+                        className={`form-input ${errors.phone ? "error" : ""}`}
+                        placeholder="0912345678"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                      />
+                      {errors.phone && (
+                        <span className="form-error">{errors.phone}</span>
+                      )}
+                    </div>
+
+                    <div className="terms-box">
+                      <p>✓ Sau khi tạo cọc, hệ thống sẽ ghi nhận thông tin</p>
+                      <p>✓ Phòng sẽ được giữ trong vòng 30 ngày</p>
+                      <p>✓ Khách hàng cần ký hợp đồng trong thời gian này</p>
+                      {room.futureContractStartDate && (
+                        <p style={{ color: "#d97706", fontWeight: 500 }}>
+                          ⚠ Lưu ý: Phòng này đã có người đặt cọc từ ngày{" "}
+                          {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}.
+                          Hợp đồng mới phải kết thúc trước ngày này.
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="deposit-amount-display">
+                      <span className="deposit-amount-label">Số tiền cọc:</span>
+                      <span className="deposit-amount-value">
+                        {depositAmount.toLocaleString("vi-VN")}đ
+                      </span>
+                    </div>
+
+                    <div className="confirm-checkbox">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={paymentConfirmed}
+                          onChange={(e) => setPaymentConfirmed(e.target.checked)}
+                        />
+                        Đã nhận tiền cọc từ khách hàng
+                      </label>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="dp-primary-btn green"
+                      disabled={isSubmitting || !paymentConfirmed}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader size={18} className="spin" />
+                          Đang xử lý...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle size={18} />
+                          Tạo Cọc
+                        </>
+                      )}
+                    </button>
                   </fieldset>
                 </form>
               </div>
@@ -453,7 +453,7 @@ export default function CreateDeposit() {
               </div>
 
               <div className="sidebar-terms">
-                <p className="sidebar-terms-title">
+                {/* <p className="sidebar-terms-title">
                   <Shield
                     size={14}
                     style={{
@@ -477,7 +477,7 @@ export default function CreateDeposit() {
                     <span className="check">✓</span>
                     <span>Phải ký HĐ trong 30 ngày</span>
                   </li>
-                </ul>
+                </ul> */}
                 {room.futureContractStartDate && (
                   <div
                     style={{
