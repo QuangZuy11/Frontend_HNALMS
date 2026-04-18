@@ -238,13 +238,13 @@ const ManagerDevice = () => {
         <div className="device-header-top">
           <div className="device-title-block">
             <div className="device-title-row">
-              <div className="device-title-icon" style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                width: '48px', 
-                height: '48px', 
-                borderRadius: '12px', 
+              <div className="device-title-icon" style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
                 background: 'linear-gradient(135deg, #3579c6 0%, #2a5fa3 100%)',
                 color: '#ffffff',
                 flexShrink: 0,
@@ -294,7 +294,7 @@ const ManagerDevice = () => {
                   <Download size={18} /> File mẫu
                 </button>
                 <button type="button" className="btn-success" onClick={() => setShowImportModal(true)}>
-                  <FileSpreadsheet size={18} /> Import
+                  <FileSpreadsheet size={18} /> Nhập Excel
                 </button>
                 <button type="button" className="btn-primary" onClick={handleOpenAdd}>
                   <Plus size={18} /> Thêm Thiết bị

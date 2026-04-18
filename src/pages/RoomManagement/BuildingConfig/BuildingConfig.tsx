@@ -227,7 +227,7 @@ const BuildingConfig = () => {
       setLoading(true);
       const endpoint = deleteConfig.type === 'FLOOR' ? 'floors' : 'roomtypes';
       await axios.delete(`${API_BASE_URL}/${endpoint}/${deleteConfig.target._id}`);
-      showToast('success', "Xóa thành공", `Đã xóa ${deleteConfig.type === 'FLOOR' ? 'tầng' : 'loại phòng'} thành công.`);
+      showToast('success', "Xóa thành công", `Đã xóa ${deleteConfig.type === 'FLOOR' ? 'tầng' : 'loại phòng'} thành công.`);
       fetchData();
       setShowDeleteModal(false);
     } catch (err: any) {
@@ -281,13 +281,13 @@ const BuildingConfig = () => {
     <div className="config-container">
       <div className="page-header">
         <div className="page-title-row" style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
-          <div className="page-title-icon" style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            width: '48px', 
-            height: '48px', 
-            borderRadius: '12px', 
+          <div className="page-title-icon" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
             background: 'linear-gradient(135deg, #3579c6 0%, #2a5fa3 100%)',
             color: '#ffffff',
             flexShrink: 0,
