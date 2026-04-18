@@ -1,52 +1,56 @@
+/* ===================================================
+   FloorMap.css — Modern, High-Contrast Color System
+   =================================================== */
+
+/* ── Container ── */
 .floor-map-container {
-  background: white;
-  /* Clean white background */
-  border-radius: 0.75rem;
+  background: #ffffff;
+  border-radius: 0.875rem;
   padding: 1rem;
   margin-bottom: 2rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e2e8f0;
   box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  /* Soft elevation */
+    0 4px 12px -2px rgba(0, 0, 0, 0.06),
+    0 2px 6px -1px rgba(0, 0, 0, 0.04);
 }
 
+/* ── Header ── */
 .map-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
-  border-bottom: 2px solid #f3f4f6;
+  border-bottom: 2px solid #f1f5f9;
   padding-bottom: 1rem;
 }
 
+.map-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #0f172a;
+  text-transform: uppercase;
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+
+/* ── Corridor ── */
 .map-corridor {
   grid-column: 1 / -1;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e5e7eb;
-  /* Light gray to match "Nhà Xe" styling context */
-  color: #6b7280;
+  background: linear-gradient(90deg, #e2e8f0 0%, #cbd5e1 50%, #e2e8f0 100%);
+  color: #64748b;
   font-weight: 700;
-  font-size: 0.85rem;
-  padding: 0.5rem;
+  font-size: 0.8rem;
+  padding: 0.45rem;
   border-radius: 0.4rem;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   user-select: none;
   margin: 0.25rem 0;
 }
 
-.map-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #111827;
-  /* Darker, sharper text */
-  text-transform: uppercase;
-  margin: 0;
-  letter-spacing: 0.025em;
-}
-
+/* ── Legend ── */
 .map-legends-container {
   display: flex;
   flex-direction: column;
@@ -56,7 +60,7 @@
 
 .map-legend {
   display: flex;
-  gap: 1.5rem;
+  gap: 1.25rem;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
@@ -64,110 +68,63 @@
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #4b5563;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
 }
 
 .legend-color {
-  width: 0.75rem;
-  height: 0.75rem;
+  width: 0.8rem;
+  height: 0.8rem;
   border-radius: 0.2rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
-/* Manager (sơ đồ HĐ): từ chối gia hạn */
-.room-manager-declined-tag {
-  display: block;
-  margin-top: 3px;
-  font-size: 0.58rem;
-  font-weight: 800;
-  color: #fff;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  padding: 2px 5px;
-  border-radius: 4px;
-  line-height: 1.2;
-  text-align: center;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-/* Guest: declined renewal — nhãn xanh dưới ô phòng */
-.room-guest-can-deposit {
-  display: block;
-  margin-top: 2px;
-  font-size: 0.58rem;
-  font-weight: 800;
-  color: #fff;
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  padding: 2px 5px;
-  border-radius: 4px;
-  line-height: 1.2;
-  text-align: center;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-/* Guest: đã có HĐ kế tiếp sau declined — không còn đặt cọc */
-.room-guest-successor-booked {
-  display: block;
-  margin-top: 2px;
-  font-size: 0.55rem;
-  font-weight: 700;
-  color: #fef3c7;
-  background: rgba(120, 53, 15, 0.92);
-  padding: 2px 5px;
-  border-radius: 4px;
-  line-height: 1.2;
-  text-align: center;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.legend-color.available {
-  background: linear-gradient(145deg, #22c55e 0%, #16a34a 100%);
-  border: none;
-  border-radius: 0.25rem;
-}
-
-.legend-color.occupied {
-  background: linear-gradient(145deg, #e5e7eb 0%, #d1d5db 100%);
-  border: none;
-  border-radius: 0.25rem;
-}
-
-.legend-color.selected {
-  background-color: #eff6ff;
-  border: 2px solid #3b82f6;
-  /* Blue Border */
-}
-
-/* Map Layout */
+/* ── Map Layout ── */
 .map-layout {
   display: flex;
   gap: 2rem;
   overflow-x: auto;
-  /* Allow scroll if screen too small for 8 cols */
 }
 
 .rooms-grid {
   flex: 1;
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  /* Strictly 8 columns */
   grid-template-rows: repeat(4, auto);
-  /* Implicitly 4 rows or auto */
   gap: 0.75rem 0.625rem;
-  /* Tighter gaps: 0.75rem Row, 0.625rem Col */
   align-content: start;
   width: 100%;
-  /* Fill the container width */
   padding-top: 0.5rem;
-  /* Space for hover effect on first row */
 }
 
-/* Room Node - Modern Filled Card Style */
+/* ── Sidebar (Nhà Xe / Sân Phơi) ── */
+.map-sidebar-area {
+  width: 3.5rem;
+  background: linear-gradient(to bottom, #f1f5f9, #e2e8f0);
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-weight: 700;
+  text-align: center;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  min-height: 100px;
+}
+
+/* ══════════════════════════════════════════
+   ROOM NODE — Base
+   ══════════════════════════════════════════ */
 .room-node {
   width: 100%;
-  /* Fill the grid cell */
   min-height: 4.5rem;
   height: auto;
   align-self: stretch;
@@ -179,17 +136,17 @@
   text-align: center;
   padding: 0.3rem 0.2rem 0.35rem;
   box-sizing: border-box;
-  /* Center multi-line text */
   font-weight: 700;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   position: relative;
   overflow: visible;
   border: none;
 }
 
+/* Gloss overlay */
 .room-node::before {
   content: "";
   position: absolute;
@@ -197,36 +154,170 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.15) 0%,
-      transparent 50%);
+  border-radius: inherit;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    transparent 55%
+  );
   pointer-events: none;
+  z-index: 0;
 }
 
 .room-node:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px) scale(1.025);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.22);
 }
 
+/* ── Room name & label ── */
 .room-node-name {
   position: relative;
   z-index: 1;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   flex-shrink: 0;
   line-height: 1.15;
 }
 
-/* Cột nhãn từ chối gia hạn: dễ đọc hơn nhiều dòng trong ô */
+.room-node-label {
+  font-size: 0.65rem;
+  font-weight: 500;
+  opacity: 0.9;
+  margin-top: 0.125rem;
+}
+
+/* ══════════════════════════════════════════
+   STATUS: AVAILABLE / DEPOSITED
+   — filled with vibrant type color
+   ══════════════════════════════════════════ */
+.room-node.status-available,
+.room-node.status-deposited {
+  color: #ffffff;
+}
+
+.room-node.status-available:hover,
+.room-node.status-deposited:hover {
+  filter: brightness(1.08) saturate(1.1);
+}
+
+/* ══════════════════════════════════════════
+   STATUS: OCCUPIED
+   — Disabled/greyed-out look with light stripes (xám gạch nhạt)
+   ══════════════════════════════════════════ */
+.room-node.status-occupied {
+  background: repeating-linear-gradient(
+    -50deg,
+    #f8fafc,
+    #f8fafc 6px,
+    #e2e8f0 6px,
+    #e2e8f0 12px
+  ) !important;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+.room-node.status-occupied::before {
+  display: none; /* Removed dark mask */
+}
+
+.room-node.status-occupied .room-node-name {
+  color: #475569;
+  text-shadow: none;
+}
+
+.room-node.status-occupied:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ══════════════════════════════════════════
+   NOTE / INFO BADGES inside room cells
+   ══════════════════════════════════════════ */
+
+/* Base badge style (inherit & override below) */
+.room-expiry-label,
+.room-contract-dates,
+.room-inactive-label,
+.room-multi-options-date,
+.room-manager-declined-tag,
+.room-guest-can-deposit,
+.room-guest-successor-booked {
+  display: block;
+  position: relative;
+  z-index: 2;
+  font-size: 0.59rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin-top: 3px;
+  white-space: nowrap;
+  letter-spacing: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+/* "Trống từ DD/MM/YY" — RED pill: room is occupied, will be vacant from this date */
+.room-expiry-label {
+  color: #ffffff;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  letter-spacing: -0.01em;
+}
+
+/* Contract dates "DD/MM/YY–DD/MM/YY" — INDIGO pill */
+.room-contract-dates {
+  color: #ffffff;
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  letter-spacing: -0.02em;
+}
+
+/* "Trống đến → DD/MM/YY" — TEAL/EMERALD pill: available until date */
+.room-inactive-label {
+  color: #ffffff;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+/* Multi-options: same green as inactive */
+.room-multi-options-date {
+  color: #ffffff;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Manager: "Từ chối gia hạn" — AMBER pill */
+.room-manager-declined-tag {
+  color: #1c1917;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+}
+
+/* Guest: "Có thể cọc" — LIME-GREEN pill */
+.room-guest-can-deposit {
+  color: #ffffff;
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+}
+
+/* Guest: "Đã có HĐ kế tiếp" — DEEP-ORANGE pill */
+.room-guest-successor-booked {
+  color: #ffffff;
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+}
+
+/* ── Decline meta column ── */
 .room-declined-meta {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0.22rem;
+  gap: 0.2rem;
   width: 100%;
   max-width: 100%;
   margin-top: 0.15rem;
   position: relative;
-  z-index: 1;
+  z-index: 2;
   box-sizing: border-box;
 }
 
@@ -237,7 +328,7 @@
 .room-declined-meta .room-expiry-label,
 .room-declined-meta .room-inactive-label {
   margin-top: 0;
-  font-size: 0.7rem;
+  font-size: 0.67rem;
   padding: 3px 5px;
   line-height: 1.25;
   letter-spacing: 0;
@@ -247,12 +338,13 @@
 
 .room-declined-meta .room-inactive-label--deadline {
   font-variant-numeric: tabular-nums;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
 }
 
 .room-declined-meta .room-manager-declined-tag {
   margin-top: 0;
   font-size: 0.68rem;
-  font-weight: 700;
+  font-weight: 800;
   padding: 3px 6px;
   line-height: 1.25;
 }
@@ -265,164 +357,60 @@
   line-height: 1.25;
 }
 
-.room-expiry-label {
-  font-size: 0.58rem;
-  color: #ffffff;
-  font-weight: 700;
-  line-height: 1.1;
-  margin-top: 3px;
-  position: relative;
-  z-index: 1;
-  background: rgba(239, 68, 68, 0.85);
-  padding: 2px 2px;
-  border-radius: 3px;
-  white-space: nowrap;
-  letter-spacing: -0.02em;
+/* ── Ghosted (filtered out) ── */
+.room-node.ghosted {
+  opacity: 0.32;
+  filter: grayscale(70%) brightness(1.05);
+  pointer-events: none;
+  box-shadow: none;
+  transition:
+    opacity 0.3s ease,
+    filter 0.3s ease;
 }
 
-.room-contract-dates {
-  font-size: 0.58rem;
-  color: #ffffff;
-  font-weight: 700;
-  line-height: 1.1;
-  margin-top: 2px;
-  position: relative;
-  z-index: 1;
-  background: rgba(37, 99, 235, 0.85);
-  padding: 2px 3px;
-  border-radius: 3px;
-  white-space: nowrap;
-  letter-spacing: -0.02em;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+/* ── Legend colors ── */
+.legend-color.available {
+  background: linear-gradient(145deg, #22c55e 0%, #16a34a 100%);
+  border: none;
+  border-radius: 0.25rem;
 }
 
-.room-node-label {
-  font-size: 0.65rem;
-  font-weight: 500;
-  opacity: 0.9;
-  margin-top: 0.125rem;
+.legend-color.occupied {
+  background: repeating-linear-gradient(
+    -50deg,
+    #f8fafc,
+    #f8fafc 4px,
+    #e2e8f0 4px,
+    #e2e8f0 8px
+  );
+  border: 1px solid #cbd5e1;
+  border-radius: 0.25rem;
 }
 
-/* Status: Available - Filled with room type color */
-.room-node.status-available {
-  color: #ffffff;
-  /* White text for contrast */
+.legend-color.selected {
+  background-color: #eff6ff;
+  border: 2px solid #3b82f6;
 }
 
-.room-node.status-available:hover {
-  filter: brightness(1.1);
-}
-
-/* Status: Deposited - Same as available (filled with room type color) */
-.room-node.status-deposited {
-  color: #ffffff;
-}
-
-.room-node.status-deposited:hover {
-  filter: brightness(1.1);
-}
-
-/* Status: Occupied */
-.room-node.status-occupied {
-  background: linear-gradient(145deg, #e5e7eb 0%, #d1d5db 100%);
-  color: #6b7280;
-  cursor: not-allowed;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
-}
-
-.room-node.status-occupied::before {
-  background: repeating-linear-gradient(45deg,
-      transparent,
-      transparent 4px,
-      rgba(0, 0, 0, 0.03) 4px,
-      rgba(0, 0, 0, 0.03) 8px);
-}
-
-.room-node.status-occupied .room-node-name {
-  text-shadow: none;
-}
-
-.room-node.status-occupied:hover {
-  transform: none;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
-}
-
-/* Sidebar Area (Nhà Xe) */
-.map-sidebar-area {
-  width: 3.5rem;
-  /* Increased width */
-  background: linear-gradient(to bottom, #f3f4f6, #e5e7eb);
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #6b7280;
-  font-weight: 700;
-  text-align: center;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  letter-spacing: 0.1em;
-  /* Reduced slightly */
-  text-transform: uppercase;
-  font-size: 0.9rem;
-  /* Increased font size for visibility */
-  white-space: nowrap;
-  /* Prevent wrapping */
-  min-height: 100px;
-  /* Ensure minimum height */
-}
-
-/* Phòng có 2 lựa chọn (deposited + HĐ tương lai): một dòng ngày */
-.room-multi-options-date {
-  font-size: 0.6rem;
-  color: #ffffff;
-  font-weight: 700;
-  line-height: 1.2;
-  text-align: center;
-  background: rgba(16, 185, 129, 0.92);
-  padding: 2px 6px;
-  border-radius: 3px;
-  white-space: nowrap;
-  position: relative;
-  z-index: 1;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-/* Green label for inactive contracts (>30 days): "Trống đến → DD/MM/YYYY" */
-.room-inactive-label {
-  font-size: 0.6rem;
-  color: #ffffff;
-  font-weight: 700;
-  line-height: 1.2;
-  position: relative;
-  z-index: 1;
-  background: rgba(16, 185, 129, 0.92);
-  padding: 2px 4px;
-  border-radius: 3px;
-  white-space: nowrap;
-  letter-spacing: -0.02em;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-}
-
-/* Deposited badge - exclamation mark (always on top via z-index) */
+/* ── Deposited badge "!" ── */
 .deposited-badge {
   position: absolute;
-  top: -6px;
-  right: -6px;
+  top: -7px;
+  right: -7px;
   width: 20px;
   height: 20px;
   border-radius: 50%;
   background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-  color: #1e293b;
-  font-size: 13px;
-  font-weight: 800;
+  color: #1c1917;
+  font-size: 12px;
+  font-weight: 900;
   display: flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.3);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
   z-index: 22;
-  border: 2px solid white;
+  border: 2px solid #ffffff;
 }

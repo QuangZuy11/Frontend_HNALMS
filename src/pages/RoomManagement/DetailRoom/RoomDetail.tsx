@@ -88,7 +88,7 @@ export default function RoomDetail() {
             isShortTermAvailable = true;
           }
         }
-        
+
         if (hasFutureInactiveContract && !hasFloatingDeposit) {
           isShortTermAvailable = true;
         }
@@ -274,12 +274,11 @@ export default function RoomDetail() {
                     </div>
                   ) : (
                     <span
-                      className={`overlay-status ${
-                        depositAllowed
-                          ? "available"
-                          : room.status === "Deposited"
-                            ? "deposited"
-                            : "occupied"
+                      className={`overlay-status ${depositAllowed
+                        ? "available"
+                        : room.status === "Deposited"
+                          ? "deposited"
+                          : "occupied"
                         }`}
                     >
                       {depositAllowed ? "Còn trống" : room.status === "Deposited"
@@ -363,12 +362,11 @@ export default function RoomDetail() {
                   </div>
                 ) : (
                   <span
-                    className={`overlay-status ${
-                      room.status === "Available" || room.status === "Trống" || (room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit)
-                        ? "available"
-                        : room.status === "Deposited"
-                          ? "deposited"
-                          : "occupied"
+                    className={`overlay-status ${room.status === "Available" || room.status === "Trống" || (room.status === "Deposited" && room.hasFutureInactiveContract && !room.hasFloatingDeposit)
+                      ? "available"
+                      : room.status === "Deposited"
+                        ? "deposited"
+                        : "occupied"
                       }`}
                   >
                     {room.status === "Available" || room.status === "Trống"
@@ -504,7 +502,7 @@ export default function RoomDetail() {
                           <div className="service-info">
                             <div className="service-name">{svc.name}</div>
                             <div className="service-description">
-                              {priceDisplay} / tháng / người
+                              {priceDisplay}{svc.description ? ` - ${svc.description}` : ""}
                             </div>
                           </div>
                         </div>
@@ -547,10 +545,10 @@ export default function RoomDetail() {
                   <p>✓ Hỗ trợ ký hợp đồng</p>
                   <p>✓ Nhân viên sẵn sàng tư vấn</p>
                   {room.isShortTermAvailable && room.futureContractStartDate && !room.hasFutureInactiveContract && (
-                     <p style={{ color: "var(--warning)", fontWeight: "bold" }}>⚠ Chỉ thuê đến trước {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}</p>
+                    <p style={{ color: "var(--warning)", fontWeight: "bold" }}>⚠ Chỉ thuê đến trước {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}</p>
                   )}
                   {room.hasFutureInactiveContract && !room.hasFloatingDeposit && room.futureContractStartDate && !room.successorLeaseBooked && (
-                     <p style={{ color: "var(--success, #10b981)", fontWeight: "bold" }}>✓ Phòng hiện trống - Sẽ có Hợp đồng bắt đầu từ {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}</p>
+                    <p style={{ color: "var(--success, #10b981)", fontWeight: "bold" }}>✓ Phòng hiện trống - Sẽ có Hợp đồng bắt đầu từ {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}</p>
                   )}
                   {room.successorLeaseBooked && (
                     <p style={{ color: "#92400e", fontWeight: "bold" }}>
@@ -575,7 +573,7 @@ export default function RoomDetail() {
                   onClick={() => navigate(`/rooms/${id}/booking`)}
                 >
                   {depositAllowed
-                    ? "Đặt Cọc Ngay"
+                    ? "Ký Hợp Đồng"
                     : room.successorLeaseBooked
                       ? "Đã có HĐ kế tiếp"
                       : room.status === "Deposited"

@@ -1,18 +1,6 @@
-/* --- Variables --- */
-:root {
-  --sidebar-bg: #ffffff;
-  --sidebar-text: #334155;
-  --sidebar-text-hover: #3579c6;
-  --sidebar-hover-bg: #f0f7ff;
-  --primary-color: #3579c6;
-  --primary-dark: #2a5fa3;
-  --divider-color: #e2e8f0;
-  --font-family: 'Inter', system-ui, sans-serif;
-}
-
 /* --- Layout chính --- */
 .sidebar-container {
- width: 260px;
+  width: 260px;
   height: 100vh;
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   color: #334155;
@@ -115,6 +103,11 @@
   transform: translateX(2px);
 }
 
+.menu-item:hover .menu-link-content,
+.menu-item:hover .menu-link-content * {
+  color: var(--sidebar-text-hover);
+}
+
 .menu-item:hover .menu-icon {
   color: var(--sidebar-text-hover);
 }
@@ -132,22 +125,44 @@
   color: white;
 }
 
+.menu-item.active:hover .menu-link-content,
+.menu-item.active:hover .menu-link-content * {
+  color: white;
+}
+
 .menu-item.active .menu-icon,
 .menu-item.active:hover .menu-icon {
   color: white;
 }
 
 .menu-item.expanded {
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%);
-  color: #1e56a0;
+  background: linear-gradient(135deg, #3579c6 0%, #2a5fa3 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(53, 121, 198, 0.3);
 }
 
-.menu-item.expanded .menu-icon {
-  color: #3579c6;
+.menu-item.expanded:hover {
+  background: linear-gradient(135deg, #3579c6 0%, #2a5fa3 100%);
+  color: white;
+  transform: translateX(0);
+  box-shadow: 0 4px 16px rgba(53, 121, 198, 0.4);
 }
 
-.menu-item.expanded .menu-arrow {
-  color: #3579c6;
+.menu-item.expanded .menu-link-content,
+.menu-item.expanded .menu-link-content *,
+.menu-item.expanded:hover .menu-link-content,
+.menu-item.expanded:hover .menu-link-content * {
+  color: white;
+}
+
+.menu-item.expanded .menu-icon,
+.menu-item.expanded:hover .menu-icon {
+  color: white;
+}
+
+.menu-item.expanded .menu-arrow,
+.menu-item.expanded:hover .menu-arrow {
+  color: white;
   opacity: 1;
 }
 
@@ -160,7 +175,7 @@
 }
 
 .menu-title {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 500;
   flex: 1;
   letter-spacing: -0.01em;
@@ -193,7 +208,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 450;
   color: #475569;
   text-decoration: none;

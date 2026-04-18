@@ -7,12 +7,13 @@ export interface CoResident {
 
 export interface BookingRequestPayload {
   roomId: string;
-  name: string;
-  phone: string;
-  email: string;
-  idCard: string;
-  dob: string;
-  address: string;
+  userInfoId?: string; // Tùy chọn nếu trùng người cũ
+  name?: string;
+  phone?: string;
+  email?: string;
+  idCard?: string;
+  dob?: string;
+  address?: string;
   startDate: string;
   duration: number;
   prepayMonths: number | "all";

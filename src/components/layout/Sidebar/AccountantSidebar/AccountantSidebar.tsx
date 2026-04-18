@@ -93,7 +93,7 @@ const AccountantSidebar = () => {
                                 {/* Parent Item */}
                                 <div
                                     onClick={() => hasSubItems ? toggleMenu(index, isExpanded) : null}
-                                    className={`menu-item ${isActiveParent ? 'active' : ''}`}
+                                    className={`menu-item ${isActiveParent ? 'active' : ''} ${hasSubItems && isExpanded ? 'expanded' : ''}`}
                                 >
                                     {hasSubItems ? (
                                         <div className="menu-link-content">

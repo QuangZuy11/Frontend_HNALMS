@@ -330,31 +330,35 @@ export default function BookingPage() {
 
         try {
             // 1. Check duplicate CCCD/Phone/Email via API
-            const dupRes = await axios.post("http://localhost:9999/api/booking-requests/check-duplicate", {
-                cccd: idCard.trim(),
-                phone: phone.trim(),
-                email: email.trim(),
-            });
-
-            if (!dupRes.data.success) {
-                const dupType = dupRes.data.type;
-                const dupMsg = dupRes.data.message;
-
-                // Cùng 1 người + đã có đủ HĐ → chặn hẳn
-                if (dupType === "same_person_max_contracts") {
-                    setDuplicateErrors({ global: dupMsg });
-                    setSubmitError(dupMsg);
-                    toastr.error(dupMsg);
-                    setIsSubmitting(false);
-                    return;
+            // Axios ném lỗi khi HTTP >= 400, nên dùng try/catch riêng để đọc body từ err.response.data
+            let dupData: any = null;
+            try {
+                const dupRes = await axios.post("http://localhost:9999/api/booking-requests/check-duplicate", {
+                    cccd: idCard.trim(),
+                    phone: phone.trim(),
+                    email: email.trim(),
+                });
+                dupData = dupRes.data;
+            } catch (dupErr: any) {
+                // HTTP 409 hoặc lỗi khác từ check-duplicate
+                dupData = dupErr?.response?.data || null;
+                if (!dupData) {
+                    // Không kết nối được server → dừng
+                    throw dupErr;
                 }
+            }
 
-                // Cùng 1 người + chưa đủ HĐ → vẫn cho gửi (reuse tài khoản cũ)
+            if (dupData && !dupData.success) {
+                const dupType = dupData.type;
+                const dupMsg = dupData.message;
+
+                // Cùng 1 người → vẫn cho gửi (reuse tài khoản cũ)
                 if (dupType === "same_person") {
                     toastr.warning(dupMsg);
+                    // Không return → tiếp tục gửi booking request bình thường
                 }
 
-                // Trùng từng trường → gán lỗi vào field + toast
+                // Trùng từng trường riêng lẻ → gán lỗi vào field + toast + dừng
                 if (dupType === "duplicate_cccd") {
                     setDuplicateErrors(prev => ({ ...prev, cccd: dupMsg }));
                     toastr.error(dupMsg);
@@ -370,27 +374,39 @@ export default function BookingPage() {
                     toastr.error(dupMsg);
                 }
 
-                // Nếu có lỗi trùng field cụ thể → không submit
-                if (dupType.startsWith("duplicate_")) {
+                // Nếu có lỗi trùng field cụ thể (không phải same_person) → không submit
+                if (dupType && dupType.startsWith("duplicate_")) {
                     setIsSubmitting(false);
                     return;
                 }
             }
 
+            // Trích xuất userInfoId nếu có (từ phản hồi trùng cùng người)
+            const userInfoId = (dupData && dupData.type === "same_person" && dupData.data?.userInfoId) ? dupData.data.userInfoId : undefined;
+
             // 2. Gửi yêu cầu đặt phòng
-            const res = await bookingRequestService.createBookingRequest({
+            const payload: any = {
                 roomId: id!,
-                name: fullName.trim(),
-                phone: phone.trim(),
-                email: email.trim(),
-                idCard: idCard.trim(),
-                dob,
-                address: address.trim(),
                 startDate,
                 duration,
                 prepayMonths,
                 coResidents,
-            });
+            };
+
+            if (userInfoId) {
+                // Nếu đã có userInfoId, chỉ truyền ID đó đi, không gửi full thông tin
+                payload.userInfoId = userInfoId;
+            } else {
+                // Nếu người mới, gửi đầy đủ thông tin
+                payload.name = fullName.trim();
+                payload.phone = phone.trim();
+                payload.email = email.trim();
+                payload.idCard = idCard.trim();
+                payload.dob = dob;
+                payload.address = address.trim();
+            }
+
+            const res = await bookingRequestService.createBookingRequest(payload);
             if (res.success) {
                 setBookingStep("success");
             } else {

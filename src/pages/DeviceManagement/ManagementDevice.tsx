@@ -3,7 +3,7 @@ import axios from 'axios';
 import {
   Plus, Search, Edit, Trash2,
   FileSpreadsheet, Download,
-  Laptop, AlertTriangle,
+  Laptop, AlertTriangle, HardDrive, Cpu,
   Filter, ArrowUpDown,
   LayoutGrid, FileText, Sparkles, X, Upload, CheckCircle
 } from 'lucide-react';
@@ -238,8 +238,19 @@ const ManagerDevice = () => {
         <div className="device-header-top">
           <div className="device-title-block">
             <div className="device-title-row">
-              <div className="device-title-icon" aria-hidden>
-                <Laptop size={22} strokeWidth={2} />
+              <div className="device-title-icon" style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                width: '48px', 
+                height: '48px', 
+                borderRadius: '12px', 
+                background: 'linear-gradient(135deg, #3579c6 0%, #2a5fa3 100%)',
+                color: '#ffffff',
+                flexShrink: 0,
+                boxShadow: '0 4px 14px rgba(53, 121, 198, 0.3)'
+              }} aria-hidden>
+                <Cpu size={22} strokeWidth={2} />
               </div>
               <div className="device-title-text">
                 <h2>Quản lý Thiết bị & Tài sản</h2>

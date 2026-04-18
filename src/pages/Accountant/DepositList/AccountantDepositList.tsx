@@ -1,20 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { format } from "date-fns";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Typography,
-  Box,
-  CircularProgress,
-  Chip,
-} from "@mui/material";
 import api from "../../../services/api";
-import Pagination from "../../../components/common/Pagination/Pagination";
+import {
+  FileText,
+  Filter,
+  Plus,
+  Search,
+  Wallet,
+  DollarSign,
+} from "lucide-react";
 import "./AccountantDepositList.css";
 
 interface Room {
@@ -50,23 +44,6 @@ interface Deposit {
   forfeitedDate: string | null;
 }
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Held":
-      return "primary";
-    case "Refunded":
-      return "success";
-    case "Forfeited":
-      return "error";
-    case "Expired":
-      return "warning";
-    case "Pending":
-      return "info";
-    default:
-      return "default";
-  }
-};
-
 const getStatusLabel = (status: string) => {
   switch (status) {
     case "Held":
@@ -101,7 +78,7 @@ export default function AccountantDepositList() {
   const [filterRoom, setFilterRoom] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  const ROWS_PER_PAGE = 10;
+  const ROWS_PER_PAGE = 8;
   const [currentPage, setCurrentPage] = useState(1);
 
   const fetchDeposits = useCallback(async () => {
@@ -133,22 +110,24 @@ export default function AccountantDepositList() {
     setCurrentPage(1);
   }, [filterName, filterContact, filterRoom, filterStatus]);
 
-  const filteredDeposits = deposits.filter((deposit) => {
-    const matchName = deposit.name
-      .toLowerCase()
-      .includes(filterName.toLowerCase());
-    const matchContact =
-      filterContact === "" ||
-      deposit.phone.toLowerCase().includes(filterContact.toLowerCase()) ||
-      deposit.email.toLowerCase().includes(filterContact.toLowerCase());
-    const matchRoom =
-      filterRoom === "" ||
-      deposit.room?.name?.toLowerCase().includes(filterRoom.toLowerCase());
-    const matchStatus =
-      filterStatus === "all" || deposit.status === filterStatus;
+  const filteredDeposits = useMemo(() => {
+    return deposits.filter((deposit) => {
+      const matchName = deposit.name
+        .toLowerCase()
+        .includes(filterName.toLowerCase());
+      const matchContact =
+        filterContact === "" ||
+        deposit.phone.toLowerCase().includes(filterContact.toLowerCase()) ||
+        deposit.email.toLowerCase().includes(filterContact.toLowerCase());
+      const matchRoom =
+        filterRoom === "" ||
+        deposit.room?.name?.toLowerCase().includes(filterRoom.toLowerCase());
+      const matchStatus =
+        filterStatus === "all" || deposit.status === filterStatus;
 
-    return matchName && matchContact && matchRoom && matchStatus;
-  });
+      return matchName && matchContact && matchRoom && matchStatus;
+    });
+  }, [deposits, filterName, filterContact, filterRoom, filterStatus]);
 
   const totalPages = Math.max(
     1,
@@ -163,8 +142,7 @@ export default function AccountantDepositList() {
     return (
       <div className="adl-container">
         <div className="adl-loading">
-          <CircularProgress />
-          <span>Đang tải dữ liệu...</span>
+          <span>Đang tải dữ liệu tiền cọc...</span>
         </div>
       </div>
     );
@@ -174,238 +152,253 @@ export default function AccountantDepositList() {
     return (
       <div className="adl-container">
         <div className="adl-error">
-          <Typography variant="h6">Lỗi tải dữ liệu</Typography>
-          <Typography variant="body1">{error}</Typography>
+          <h3>Error loading deposits</h3>
+          <p>{error}</p>
         </div>
       </div>
     );
   }
 
-  const statusStats = {
-    total: deposits.length,
-    held: deposits.filter((d) => d.status === "Held").length,
-    refunded: deposits.filter((d) => d.status === "Refunded").length,
-    forfeited: deposits.filter((d) => d.status === "Forfeited").length,
-    pending: deposits.filter((d) => d.status === "Pending").length,
-  };
+  const totalCount = deposits.length;
+  const heldCount = deposits.filter((d) => d.status === "Held").length;
+  const refundedCount = deposits.filter((d) => d.status === "Refunded").length;
+
+  const pageNumbers: number[] = [];
+  let start = Math.max(1, currentPage - 2);
+  let end = Math.min(totalPages, currentPage + 2);
+  if (currentPage <= 2) end = Math.min(totalPages, 5);
+  if (currentPage >= totalPages - 1) start = Math.max(1, totalPages - 4);
+  for (let i = start; i <= end; i += 1) pageNumbers.push(i);
 
   return (
     <div className="adl-container">
       <div className="adl-header">
-        <div className="adl-title-block">
-          <h2>Danh Sách Tiền Cọc</h2>
-          <p className="adl-subtitle">
-            Theo dõi và quản lý danh sách tiền cọc của cư dân
-          </p>
-        </div>
-        <div className="stats-summary">
-          <div className="stat-item">
-            <div className="stat-icon icon-primary">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="6" width="20" height="12" rx="2"/>
-                <path d="M12 12h.01"/>
-              </svg>
-            </div>
-            <div className="stat-text">
-              <span className="stat-value">{statusStats.total}</span>
-              <span className="stat-label">Tổng cọc</span>
+        <div className="adl-header-top">
+          <div className="adl-title-block">
+            <div className="adl-title-row">
+              <div className="adl-title-icon" aria-hidden>
+                <Wallet size={22} strokeWidth={2} />
+              </div>
+              <div className="adl-title-text">
+                <h2>Danh sách tiền cọc</h2>
+                <p className="adl-subtitle">
+Theo dõi và quản lý danh sách tiền cọc của cư dân                </p>
+              </div>
             </div>
           </div>
-          <div className="stat-divider" />
-          <div className="stat-item">
-            <div className="stat-icon icon-accent">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              </svg>
+
+          <div className="adl-header-aside">
+            <div className="adl-stats-summary">
+              <div className="adl-stat-item">
+                <FileText size={16} className="adl-stat-icon icon-primary" />
+                <div className="adl-stat-text">
+                  <span className="adl-stat-value">{totalCount}</span>
+                  <span className="adl-stat-label">Tổng cọc</span>
+                </div>
+              </div>
+              <div className="adl-stat-divider" />
+              <div className="adl-stat-item">
+                <Wallet size={16} className="adl-stat-icon icon-warning" />
+                <div className="adl-stat-text">
+                  <span className="adl-stat-value">{heldCount}</span>
+                  <span className="adl-stat-label">Đang giữ</span>
+                </div>
+              </div>
+              <div className="adl-stat-divider" />
+              <div className="adl-stat-item">
+                <DollarSign size={16} className="adl-stat-icon icon-accent" />
+                <div className="adl-stat-text">
+                  <span className="adl-stat-value">{refundedCount}</span>
+                  <span className="adl-stat-label">Đã hoàn</span>
+                </div>
+              </div>
             </div>
-            <div className="stat-text">
-              <span className="stat-value">{statusStats.held}</span>
-              <span className="stat-label">Đang giữ</span>
-            </div>
-          </div>
-          <div className="stat-divider" />
-          <div className="stat-item">
-            <div className="stat-icon icon-success">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 12l2 2 4-4"/>
-                <circle cx="12" cy="12" r="10"/>
-              </svg>
-            </div>
-            <div className="stat-text">
-              <span className="stat-value">{statusStats.refunded}</span>
-              <span className="stat-label">Đã hoàn</span>
-            </div>
-          </div>
-          <div className="stat-divider" />
-          <div className="stat-item">
-            <div className="stat-icon" style={{ color: "#9333ea", background: "linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%)" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12,6 12,12 16,14"/>
-              </svg>
-            </div>
-            <div className="stat-text">
-              <span className="stat-value">{statusStats.pending}</span>
-              <span className="stat-label">Đang chờ</span>
-            </div>
+
+            <div className="adl-header-actions" />
           </div>
         </div>
       </div>
 
-      <div className="adl-filters">
-        <div className="adl-filter-item">
-          <label>Tên:</label>
-          <input
-            type="text"
-            placeholder="Nhập tên người cọc..."
-            value={filterName}
-            onChange={(e) => setFilterName(e.target.value)}
-          />
-        </div>
-        <div className="adl-filter-item">
-          <label>SĐT/Email:</label>
-          <input
-            type="text"
-            placeholder="Nhập SĐT hoặc Email..."
-            value={filterContact}
-            onChange={(e) => setFilterContact(e.target.value)}
-          />
-        </div>
-        <div className="adl-filter-item">
-          <label>Phòng:</label>
-          <input
-            type="text"
-            placeholder="Nhập số phòng..."
-            value={filterRoom}
-            onChange={(e) => setFilterRoom(e.target.value)}
-          />
-        </div>
-        <div className="adl-filter-item">
-          <label>Trạng thái:</label>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-          >
-            <option value="all">Tất cả</option>
-            <option value="Held">Đang giữ</option>
-            <option value="Refunded">Đã hoàn</option>
-            <option value="Forfeited">Đã phạt</option>
-            <option value="Expired">Đã hết hạn</option>
-            <option value="Pending">Đang chờ</option>
-          </select>
+      <div className="adl-toolbar">
+        <div className="adl-toolbar-left">
+          <div className="adl-search-box">
+            <Search size={18} className="adl-search-icon" />
+            <input
+              type="text"
+              className="adl-search-input"
+              placeholder="Tìm tên người cọc..."
+              value={filterName}
+              onChange={(e) => setFilterName(e.target.value)}
+            />
+          </div>
+
+          <div className="adl-search-box" style={{ minWidth: "180px", maxWidth: "220px" }}>
+            <Search size={18} className="adl-search-icon" />
+            <input
+              type="text"
+              className="adl-search-input"
+              placeholder="SĐT hoặc Email..."
+              value={filterContact}
+              onChange={(e) => setFilterContact(e.target.value)}
+            />
+          </div>
+
+          <div className="adl-search-box" style={{ minWidth: "140px", maxWidth: "160px" }}>
+            <Search size={18} className="adl-search-icon" />
+            <input
+              type="text"
+              className="adl-search-input"
+              placeholder="Tên phòng..."
+              value={filterRoom}
+              onChange={(e) => setFilterRoom(e.target.value)}
+            />
+          </div>
+
+          <div className="adl-control-group">
+            <Filter size={16} className="adl-toolbar-icon" aria-hidden />
+            <select
+              className="adl-custom-select"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="all">Tất cả trạng thái</option>
+              <option value="Held">Đang giữ</option>
+              <option value="Refunded">Đã hoàn</option>
+              <option value="Forfeited">Đã phạt</option>
+              <option value="Expired">Đã hết hạn</option>
+              <option value="Pending">Đang chờ</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <TableContainer
-        component={Paper}
-        elevation={2}
-        sx={{ borderRadius: 2, overflow: "hidden" }}
-      >
-        <Table sx={{ minWidth: 900 }}>
-          <TableHead>
-            <TableRow sx={{ bgcolor: "#f8fafc" }}>
-              <TableCell sx={{ fontWeight: 700, color: "#1e293b", width: 60 }}>
-                STT
-              </TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#1e293b" }}>
-                Tên người cọc
-              </TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#1e293b" }}>
-                SĐT / Email
-              </TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#1e293b", width: 100 }}>
-                Phòng
-              </TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#1e293b" }}>
-                Số tiền cọc
-              </TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#1e293b" }}>
-                Ngày cọc
-              </TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#1e293b" }}>
-                Trạng thái
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {paginatedDeposits.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                  <Typography variant="body1" color="text.secondary">
-                    Không có dữ liệu cọc phòng
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
+      <div className="adl-table-container">
+        <table className="adl-table">
+          <thead>
+            <tr>
+              <th className="adl-cell-stt">STT</th>
+              <th className="adl-cell-name">Tên người cọc</th>
+              <th className="adl-cell-contact">SĐT / Email</th>
+              <th className="adl-cell-room">Phòng</th>
+              <th className="adl-cell-amount">Số tiền cọc</th>
+              <th className="adl-cell-date">Ngày cọc</th>
+              <th className="adl-cell-status">Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedDeposits.length > 0 ? (
               paginatedDeposits.map((deposit, index) => (
-                <TableRow
-                  key={deposit._id}
-                  sx={{
-                    "&:last-child td, &:last-child th": { border: 0 },
-                    "&:hover": { bgcolor: "#f8fafc" },
-                  }}
-                >
-                  <TableCell>
+                <tr key={deposit._id}>
+                  <td className="adl-cell-stt">
                     {(currentPage - 1) * ROWS_PER_PAGE + index + 1}
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 500 }}>
-                    {deposit.name}
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <Typography variant="body2">{deposit.phone}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {deposit.email}
-                      </Typography>
-                    </div>
-                  </TableCell>
-                  <TableCell>{deposit.room?.name || "N/A"}</TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: "#d32f2f" }}>
+                  </td>
+                  <td className="adl-cell-name">
+                    <div className="main-text">{deposit.name}</div>
+                  </td>
+                  <td className="adl-cell-contact">
+                    <div className="main-text">{deposit.phone}</div>
+                    <div className="desc-text">{deposit.email}</div>
+                  </td>
+                  <td className="adl-cell-room">
+                    <span className="adl-status-badge pending" style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                      {deposit.room?.name || "N/A"}
+                    </span>
+                  </td>
+                  <td className="adl-cell-amount">
                     {formatCurrency(deposit.amount)}
-                  </TableCell>
-                  <TableCell>
+                  </td>
+                  <td className="adl-cell-date">
                     {deposit.createdDate
-                      ? format(new Date(deposit.createdDate), "dd/MM/yyyy")
+                      ? format(new Date(deposit.createdDate), "dd/MM/yyyy HH:mm")
                       : deposit.createdAt
-                      ? format(new Date(deposit.createdAt), "dd/MM/yyyy")
-                      : "N/A"}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={getStatusLabel(deposit.status)}
-                      color={getStatusColor(deposit.status) as any}
-                      size="small"
-                      sx={{ fontWeight: 600, fontSize: "0.75rem" }}
-                    />
-                  </TableCell>
-                </TableRow>
+                        ? format(new Date(deposit.createdAt), "dd/MM/yyyy HH:mm")
+                        : "N/A"}
+                  </td>
+                  <td className="adl-cell-status">
+                    <span
+                      className={`adl-status-badge ${deposit.status === "Held"
+                        ? "held"
+                        : deposit.status === "Refunded"
+                          ? "refunded"
+                          : deposit.status === "Forfeited"
+                            ? "forfeited"
+                            : deposit.status === "Expired"
+                              ? "expired"
+                              : "pending"
+                        }`}
+                    >
+                      {getStatusLabel(deposit.status)}
+                    </span>
+                  </td>
+                </tr>
               ))
+            ) : (
+              <tr>
+                <td colSpan={7} className="adl-table-empty-cell">
+                  Không tìm thấy dữ liệu tiền cọc nào.
+                </td>
+              </tr>
             )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          </tbody>
+        </table>
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={filteredDeposits.length}
-        onPageChange={setCurrentPage}
-        displayInfo={
-          <span>
-            Hiển thị{" "}
-            {Math.min(
-              (currentPage - 1) * ROWS_PER_PAGE + 1,
-              filteredDeposits.length
-            )}
-            –
-            {Math.min(
-              currentPage * ROWS_PER_PAGE,
-              filteredDeposits.length
-            )}{" "}
-            / <strong>{filteredDeposits.length}</strong> bản ghi
+        <div className="adl-pagination">
+          <span className="adl-pagination-info">
+            Tổng: <strong>{filteredDeposits.length}</strong> bản ghi
+            &nbsp;|&nbsp; Trang <strong>{currentPage}</strong>/{totalPages}
           </span>
-        }
-      />
+          <div className="adl-pagination-controls">
+            <button
+              className="adl-page-btn adl-page-arrow"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(1)}
+              title="Trang đầu"
+              type="button"
+            >
+              «
+            </button>
+            <button
+              className="adl-page-btn adl-page-arrow"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              title="Trang trước"
+              type="button"
+            >
+              ‹
+            </button>
+
+            {pageNumbers.map((page) => (
+              <button
+                key={page}
+                className={`adl-page-btn${currentPage === page ? " adl-page-active" : ""}`}
+                onClick={() => setCurrentPage(page)}
+                type="button"
+              >
+                {page}
+              </button>
+            ))}
+
+            <button
+              className="adl-page-btn adl-page-arrow"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              title="Trang sau"
+              type="button"
+            >
+              ›
+            </button>
+            <button
+              className="adl-page-btn adl-page-arrow"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(totalPages)}
+              title="Trang cuối"
+              type="button"
+            >
+              »
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

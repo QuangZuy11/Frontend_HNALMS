@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: 10000; /* Must be > 9999 to cover AppModal */
   backdrop-filter: blur(2px);
   animation: lqw-fade-in 0.15s ease;
   padding: 1rem;

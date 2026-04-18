@@ -589,7 +589,7 @@ export default function MoveOutRequestsList() {
                   <th>Phòng</th>
                   <th>Lý do</th>
                   <th>Ngày yêu cầu</th>
-                  <th>Ngày trả dự kiến</th>
+                  <th>Ngày trả phòng</th>
                   <th>Trạng thái</th>
                   <th>Thao tác</th>
                 </tr>
@@ -766,7 +766,7 @@ export default function MoveOutRequestsList() {
                     <span>{formatDate(selectedRequest.requestDate ?? selectedRequest.createdAt)}</span>
                   </div>
                   <div className="detail-row">
-                    <label>Ngày trả dự kiến:</label>
+                    <label>Ngày trả phòng:</label>
                     <span>{formatDate(selectedRequest.expectedMoveOutDate)}</span>
                   </div>
                   <div className="detail-row">
@@ -1024,14 +1024,32 @@ export default function MoveOutRequestsList() {
                     </button>
                   );
                 })()}
-                {selectedRequest.status === 'Paid' && (
-                  <button
-                    className="btn-action-green"
-                    onClick={() => { setSelectedRequest(null); openCompleteModal(selectedRequest); }}
-                  >
-                    <CheckCircle size={14} /> Hoàn tất trả phòng
-                  </button>
-                )}
+                {(() => {
+                  if (selectedRequest.status !== 'Paid') return null;
+                  
+                  const reqExpectedMoveOutDate = selectedRequest.expectedMoveOutDate ? new Date(selectedRequest.expectedMoveOutDate) : null;
+                  if (reqExpectedMoveOutDate) reqExpectedMoveOutDate.setHours(0, 0, 0, 0);
+                  const canComplete = reqExpectedMoveOutDate && todayMs >= reqExpectedMoveOutDate.getTime();
+                  const expectedDateStr = reqExpectedMoveOutDate ? reqExpectedMoveOutDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '?';
+
+                  return (
+                    <button
+                      className={canComplete ? "btn-action-green" : "btn-action-green disabled-look"}
+                      style={!canComplete ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                      onClick={() => { 
+                        if (!canComplete) {
+                          showToast('warning', 'Chưa đến thời điểm hoàn tất', `Chỉ có thể hoàn tất quy trình từ ngày trả phòng (${expectedDateStr}) trở đi. Hôm nay là ${todayStr}.`);
+                          return;
+                        }
+                        setSelectedRequest(null); 
+                        openCompleteModal(selectedRequest); 
+                      }}
+                      title={canComplete ? 'Hoàn tất trả phòng' : `Chỉ được hoàn tất từ ngày ${expectedDateStr}`}
+                    >
+                      <CheckCircle size={14} /> Hoàn tất trả phòng
+                    </button>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -1057,7 +1075,7 @@ export default function MoveOutRequestsList() {
                   <span>{getRoomNumber(releasingRequest)}</span>
                 </div>
                 <div className="detail-row">
-                  <label>Ngày trả dự kiến:</label>
+                  <label>Ngày trả phòng:</label>
                   <span>{formatDate(releasingRequest.expectedMoveOutDate)}</span>
                 </div>
               </div>
@@ -1179,7 +1197,7 @@ export default function MoveOutRequestsList() {
                   <span>{getRoomNumber(completingRequest)}</span>
                 </div>
                 <div className="detail-row">
-                  <label>Ngày trả dự kiến:</label>
+                  <label>Ngày trả phòng:</label>
                   <span>{formatDate(completingRequest.expectedMoveOutDate)}</span>
                 </div>
               </div>

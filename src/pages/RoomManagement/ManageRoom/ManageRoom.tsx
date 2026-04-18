@@ -16,7 +16,7 @@ import {
   Plus, Edit, Trash2, Eye, ChevronDown, ChevronRight, CheckCircle,
   AlertCircle, Banknote, X, Building, Home, Tag, Power, Download,
   FileSpreadsheet, List as ListIcon, Map as MapIcon, User, Users,
-  FileText, Phone, Mail, CreditCard, Zap, Gavel,
+  FileText, Phone, Mail, CreditCard, Zap, Gavel, DoorOpen,
 } from "lucide-react";
 import "./ManageRoom.css";
 import LiquidationWizard from "./LiquidationWizard";
@@ -596,15 +596,31 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   return (
     <div className="room-container">
       <div className="page-header">
-        <div>
-          <h2 className="page-title">
-            {!canModify ? "Danh sách phòng" : "Quản lý danh sách phòng"}
-          </h2>
-          <p className="page-subtitle">
-            {!canModify
-              ? "Xem thông tin phòng theo tầng"
-              : "Nhóm theo tầng - Xem dạng bảng"}
-          </p>
+        <div className="room-title-row" style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+          <div className="room-title-icon" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            width: '48px', 
+            height: '48px', 
+            borderRadius: '12px', 
+            background: 'linear-gradient(135deg, #3579c6 0%, #2a5fa3 100%)',
+            color: '#ffffff',
+            flexShrink: 0,
+            boxShadow: '0 4px 14px rgba(53, 121, 198, 0.3)'
+          }} aria-hidden>
+            <DoorOpen size={22} strokeWidth={2} />
+          </div>
+          <div className="room-title-text">
+            <h2>
+              {!canModify ? "Danh sách phòng" : "Quản lý danh sách phòng"}
+            </h2>
+            <p className="page-subtitle">
+              {!canModify
+                ? "Xem thông tin phòng theo tầng"
+                : "Nhóm theo tầng - Xem dạng bảng"}
+            </p>
+          </div>
         </div>
 
         <div className="stats-summary">

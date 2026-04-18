@@ -2,19 +2,15 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 import {
   Plus, Search, Droplet, Send, FileText, X, Edit3, Wrench,
-  ChevronLeft, ChevronRight, Filter, AlertCircle // [MỚI] Thêm Icon cảnh báo
+  ChevronLeft, ChevronRight, Filter, AlertCircle, ArrowUpDown, ChevronUp, ChevronDown
 } from 'lucide-react';
 
-import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-
-import toastr from 'toastr';
-import 'toastr/build/toastr.min.css';
 import './InvoiceManage.css';
 
-// [MỚI] Import AppModal chuẩn của hệ thống để đồng bộ giao diện
+// [MỚI] Import các thành phần chuẩn của hệ thống
 import { AppModal } from "../../components/common/Modal";
+import { useToast } from "../../components/common/Toast";
+import { Pagination } from "../../components/common/Pagination";
 
 const API_BASE_URL = 'http://localhost:9999/api';
 
@@ -110,8 +106,9 @@ const InvoiceManager = () => {
     return '';
   };
 
+  const { showToast } = useToast();
+
   useEffect(() => {
-    toastr.options = { closeButton: true, positionClass: "toast-top-right", timeOut: 3000 };
     fetchInvoices();
     fetchServices();
   }, []);
@@ -152,7 +149,7 @@ const InvoiceManager = () => {
       setInvoices(combined);
       setSelectedInvoiceIds([]);
     } catch (error) {
-      toastr.error("Lỗi tải danh sách hóa đơn");
+      showToast('error', 'Lỗi tải dữ liệu', 'Không thể tải danh sách hóa đơn.');
     }
     finally { setLoading(false); }
   };
@@ -160,10 +157,10 @@ const InvoiceManager = () => {
   const handleGenerateDrafts = async () => {
     try {
       const res = await axios.post(`${API_BASE_URL}/invoices/periodic/generate-drafts`);
-      toastr.success(res.data.message || "Khởi tạo hóa đơn thành công!");
+      showToast('success', 'Thành công', res.data.message || "Khởi tạo hóa đơn thành công!");
       fetchInvoices();
     } catch (error: any) {
-      toastr.error(error.response?.data?.message || "Lỗi tạo hóa đơn");
+      showToast('error', 'Lỗi hệ thống', error.response?.data?.message || "Lỗi tạo hóa đơn");
     }
   };
 
@@ -228,7 +225,7 @@ const InvoiceManager = () => {
     try {
       const rId = getRoomIdStr(selectedInvoice);
       if (!rId) {
-        toastr.error("Không xác định được phòng để lưu chỉ số.");
+        showToast('error', 'Lỗi dữ liệu', 'Không xác định được phòng để lưu chỉ số.');
         return;
       }
 
@@ -249,7 +246,7 @@ const InvoiceManager = () => {
       }
 
       if (apiCalls.length === 0) {
-        toastr.warning("Không có chỉ số thay đổi nào được nhập!");
+        showToast('warning', 'Chú ý', 'Không có chỉ số thay đổi nào được nhập!');
         setShowReadingModal(false);
         return;
       }
@@ -258,11 +255,11 @@ const InvoiceManager = () => {
         await axios.post(`${API_BASE_URL}/meter-readings`, payload);
       }
 
-      toastr.success("Cập nhật chỉ số điện/nước thành công!");
+      showToast('success', 'Thành công', 'Cập nhật chỉ số điện/nước thành công!');
       setShowReadingModal(false);
       fetchInvoices();
     } catch (error: any) {
-      toastr.error(error.response?.data?.message || "Lỗi lưu chỉ số");
+      showToast('error', 'Lỗi lưu dữ liệu', error.response?.data?.message || "Lỗi lưu chỉ số");
     }
   };
 
@@ -299,7 +296,7 @@ const InvoiceManager = () => {
       );
 
       if (activeRooms.length === 0) {
-        toastr.warning("Không có phòng nào cần ghi điện nước lúc này!");
+        showToast('warning', 'Thông báo', 'Không có phòng nào cần ghi điện nước lúc này!');
         return;
       }
 
@@ -369,7 +366,7 @@ const InvoiceManager = () => {
       setCompletedRooms(newCompletedStatus);
       setShowBulkReadingModal(true);
     } catch (error) {
-      toastr.error("Không thể lấy dữ liệu phòng");
+      showToast('error', 'Lỗi tải dữ liệu', 'Không thể lấy dữ liệu phòng');
     }
   };
 
@@ -396,7 +393,7 @@ const InvoiceManager = () => {
     });
 
     if (apiCalls.length === 0) {
-      toastr.warning("Không có chỉ số thay đổi nào hợp lệ được ghi nhận.");
+      showToast('warning', 'Thông báo', 'Không có chỉ số thay đổi nào hợp lệ được ghi nhận.');
       setShowBulkReadingModal(false);
       return;
     }
@@ -406,11 +403,11 @@ const InvoiceManager = () => {
       for (const payload of apiCalls) {
         await axios.post(`${API_BASE_URL}/meter-readings`, payload);
       }
-      toastr.success(`Đã lưu thành công ${apiCalls.length} bản ghi chỉ số!`);
+      showToast('success', 'Thành công', `Đã lưu thành công ${apiCalls.length} bản ghi chỉ số!`);
       setShowBulkReadingModal(false);
       fetchInvoices();
     } catch (error: any) {
-      toastr.error("Có lỗi xảy ra khi lưu chỉ số hàng loạt.");
+      showToast('error', 'Lỗi', 'Có lỗi xảy ra khi lưu chỉ số hàng loạt.');
     } finally {
       setLoading(false);
     }
@@ -420,9 +417,9 @@ const InvoiceManager = () => {
     try {
       const endpoint = type === 'Periodic' ? 'periodic' : 'incurred';
       await axios.put(`${API_BASE_URL}/invoices/${endpoint}/${id}/release`);
-      toastr.success("Phát hành hóa đơn thành công!");
+      showToast('success', 'Thành công', 'Phát hành hóa đơn thành công!');
       fetchInvoices();
-    } catch (error: any) { toastr.error(error.response?.data?.message || "Lỗi phát hành"); }
+    } catch (error: any) { showToast('error', 'Lỗi phát hành', error.response?.data?.message || "Lỗi phát hành"); }
   };
 
   const handleReleaseBulk = async () => {
@@ -433,7 +430,7 @@ const InvoiceManager = () => {
       }
 
       if (idsToRelease.length === 0) {
-        toastr.warning("Không có hóa đơn Nháp nào để phát hành.");
+        showToast('warning', 'Thông báo', 'Không có hóa đơn Nháp nào để phát hành.');
         return;
       }
 
@@ -444,10 +441,10 @@ const InvoiceManager = () => {
         await axios.put(`${API_BASE_URL}/invoices/${endpoint}/${id}/release`);
       }
 
-      toastr.success(`Đã phát hành thành công ${idsToRelease.length} hóa đơn!`);
+      showToast('success', 'Thành công', `Đã phát hành thành công ${idsToRelease.length} hóa đơn!`);
       fetchInvoices();
     } catch (error: any) {
-      toastr.error("Có lỗi xảy ra trong quá trình phát hành.");
+      showToast('error', 'Lỗi', 'Có lỗi xảy ra trong quá trình phát hành.');
     } finally {
       setLoading(false);
     }
@@ -464,7 +461,7 @@ const InvoiceManager = () => {
       });
     } else {
       if (draftCount === 0) {
-        toastr.warning("Không có hóa đơn Nháp nào để phát hành!");
+        showToast('warning', 'Thông báo', 'Không có hóa đơn Nháp nào để phát hành!');
         return;
       }
       setConfirmModal({
@@ -494,7 +491,7 @@ const InvoiceManager = () => {
       setSelectedInvoice({ ...res.data.data, type: invoice.type });
       setShowDetailModal(true);
     } catch (error) {
-      toastr.error("Không thể lấy chi tiết hóa đơn");
+      showToast('error', 'Lỗi', 'Không thể lấy chi tiết hóa đơn');
     }
   };
 
@@ -636,10 +633,10 @@ const InvoiceManager = () => {
           {label}
           {isSorted ? (
             sortConfig.direction === 'asc'
-              ? <KeyboardArrowUpIcon fontSize="small" style={{ color: '#2563eb' }} />
-              : <KeyboardArrowDownIcon fontSize="small" style={{ color: '#2563eb' }} />
+              ? <ChevronUp size={16} style={{ color: '#2563eb' }} />
+              : <ChevronDown size={16} style={{ color: '#2563eb' }} />
           ) : (
-            <UnfoldMoreIcon fontSize="small" style={{ color: '#cbd5e1' }} />
+            <ArrowUpDown size={14} style={{ color: '#cbd5e1' }} />
           )}
         </div>
       </th>
@@ -873,30 +870,12 @@ const InvoiceManager = () => {
       </div>
 
       {sortedAndFilteredInvoices.length > 0 && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: '#fff', border: '1px solid #e2e8f0', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
-          <div style={{ fontSize: '14px', color: '#64748b' }}>
-            Hiển thị <b>{(currentPage - 1) * ITEMS_PER_PAGE + 1}</b> đến <b>{Math.min(currentPage * ITEMS_PER_PAGE, sortedAndFilteredInvoices.length)}</b> trong tổng số <b>{sortedAndFilteredInvoices.length}</b> hóa đơn
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              style={{ padding: '6px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: currentPage === 1 ? '#f1f5f9' : '#fff', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', color: currentPage === 1 ? '#94a3b8' : '#334155', fontWeight: 500 }}
-            >
-              Trước
-            </button>
-            <span style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', background: '#f1f5f9', padding: '6px 16px', borderRadius: '6px' }}>
-              Trang {currentPage} / {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              style={{ padding: '6px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: currentPage === totalPages ? '#f1f5f9' : '#fff', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', color: currentPage === totalPages ? '#94a3b8' : '#334155', fontWeight: 500 }}
-            >
-              Sau
-            </button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={sortedAndFilteredInvoices.length}
+          onPageChange={setCurrentPage}
+        />
       )}
 
       {/* =======================================================
@@ -1106,47 +1085,41 @@ const InvoiceManager = () => {
       </AppModal>
 
       {/* =======================================================
-          [MỚI] MODAL 3: XÁC NHẬN CHUYÊN NGHIỆP (ĐÃ ĐỒNG BỘ VỚI MANAGEROOM)
+          [MỚI] MODAL 3: XÁC NHẬN CHUYÊN NGHIỆP (ĐÃ ĐỒNG BỘ VỚI APPMODAL)
           ======================================================= */}
-      {confirmModal.isOpen && (
-        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setConfirmModal({ isOpen: false, action: null, message: '', targetId: undefined, targetType: undefined })}>
-          <div className="modal-content" style={{ width: '400px', maxWidth: '90vw', background: '#fff', borderRadius: '12px', padding: '24px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
-              <div style={{ background: "#fef3c7", padding: "12px", borderRadius: "50%" }}>
-                <AlertCircle size={32} color="#d97706" />
-              </div>
-            </div>
-            <h3 style={{ marginTop: 0, color: '#1e293b', fontSize: '18px', fontWeight: 'bold' }}>Xác nhận thao tác</h3>
-            <p style={{ color: '#475569', margin: '16px 0 24px 0', lineHeight: '1.5' }}>
-              {confirmModal.message}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-              <button
-                className="btn btn-outline"
-                onClick={() => setConfirmModal({ isOpen: false, action: null, message: '', targetId: undefined, targetType: undefined })}
-              >
-                Hủy bỏ
-              </button>
-              <button
-                className="btn btn-primary"
-                style={{
-                  padding: "8px 24px",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontWeight: 600,
-                  border: "none",
-                  background: "#3b82f6",
-                  color: "white",
-                }}
-                onClick={executeConfirmAction}
-                disabled={loading}
-              >
-                {loading ? 'Đang xử lý...' : 'Đồng ý'}
-              </button>
-            </div>
-          </div>
+      <AppModal
+        open={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        title="Xác nhận thao tác"
+        icon={<AlertCircle size={20} color="#d97706" />}
+        size="sm"
+        headerClassName="mr-app-modal-header--warning"
+        footer={
+          <>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+            >
+              Hủy bỏ
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={executeConfirmAction}
+              disabled={loading}
+            >
+              {loading ? 'Đang xử lý...' : 'Đồng ý'}
+            </button>
+          </>
+        }
+      >
+        <div style={{ textAlign: 'center', padding: '10px 0' }}>
+          <p style={{ color: '#475569', fontSize: '15px', lineHeight: '1.6', margin: 0 }}>
+            {confirmModal.message}
+          </p>
         </div>
-      )}
+      </AppModal>
 
       {/* =======================================================
           [MỚI] MODAL 4: GHI CHỈ SỐ HÀNG LOẠT (ĐÃ SỬ DỤNG APPMODAL)
@@ -1298,26 +1271,12 @@ const InvoiceManager = () => {
 
           {/* PHÂN TRANG TRONG MODAL */}
           {bulkTotalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-              <span style={{ fontSize: '13px', color: '#64748b' }}>
-                Đang xem <b>{(bulkCurrentPage - 1) * BULK_ITEMS_PER_PAGE + 1}</b> - <b>{Math.min(bulkCurrentPage * BULK_ITEMS_PER_PAGE, filteredBulkRooms.length)}</b> / {filteredBulkRooms.length} phòng
-              </span>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  onClick={() => setBulkCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={bulkCurrentPage === 1}
-                  style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', background: bulkCurrentPage === 1 ? '#f1f5f9' : '#fff', cursor: bulkCurrentPage === 1 ? 'not-allowed' : 'pointer' }}
-                ><ChevronLeft size={16} /></button>
-                <span style={{ fontSize: '13px', fontWeight: 600 }}>Trang {bulkCurrentPage}/{bulkTotalPages}</span>
-                <button
-                  type="button"
-                  onClick={() => setBulkCurrentPage(p => Math.min(bulkTotalPages, p + 1))}
-                  disabled={bulkCurrentPage === bulkTotalPages}
-                  style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', background: bulkCurrentPage === bulkTotalPages ? '#f1f5f9' : '#fff', cursor: bulkCurrentPage === bulkTotalPages ? 'not-allowed' : 'pointer' }}
-                ><ChevronRight size={16} /></button>
-              </div>
-            </div>
+            <Pagination
+              currentPage={bulkCurrentPage}
+              totalPages={bulkTotalPages}
+              totalItems={filteredBulkRooms.length}
+              onPageChange={setBulkCurrentPage}
+            />
           )}
         </div>
       </AppModal>

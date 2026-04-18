@@ -249,17 +249,17 @@ export default function ManagerDashboard() {
       </header>
 
       {/* Summary Cards */}
-      <section className="summary-cards">
+      <section className="summary-cards-container">
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.title} className="summary-card">
-              <div className="card-icon">
+            <div key={stat.title} className="summary-card-box">
+              <div className="summary-card-icon">
                 <Icon />
               </div>
-              <div className="card-info">
-                <span className="card-value">{stat.value}</span>
-                <span className="card-label">{stat.title}</span>
+              <div className="summary-card-info">
+                <span className="summary-card-value">{stat.value}</span>
+                <span className="summary-card-label">{stat.title}</span>
               </div>
             </div>
           );

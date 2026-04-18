@@ -641,3 +641,220 @@
     max-width: none;
   }
 }
+
+/* ============================================================
+   Room-grouped view
+   ============================================================ */
+
+.br-groups-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.br-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 24px;
+  color: var(--br-text-muted);
+  background: var(--br-surface);
+  border-radius: 12px;
+  border: 1px dashed var(--br-border);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* Room group card */
+.br-room-group {
+  background: var(--br-surface);
+  border-radius: 12px;
+  border: 1.5px solid var(--br-border);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: box-shadow 0.2s ease;
+}
+
+.br-room-group--active {
+  border-color: #93c5fd;
+  box-shadow: 0 2px 12px rgba(59, 130, 246, 0.1);
+}
+
+.br-room-group--won {
+  border-color: #86efac;
+  box-shadow: 0 2px 12px rgba(22, 163, 74, 0.1);
+}
+
+/* Room header button */
+.br-room-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: #f8fafc;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.15s ease;
+  gap: 12px;
+}
+
+.br-room-group--active .br-room-header {
+  background: linear-gradient(90deg, #eff6ff 0%, #f8fafc 100%);
+}
+
+.br-room-group--won .br-room-header {
+  background: linear-gradient(90deg, #f0fdf4 0%, #f8fafc 100%);
+}
+
+.br-room-header:hover {
+  background: #f1f5f9;
+}
+
+.br-room-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.br-room-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.br-room-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--br-text-heading);
+  letter-spacing: -0.01em;
+}
+
+.br-room-icon--won { color: #16a34a; }
+.br-room-icon--active { color: #2563eb; }
+.br-room-icon--closed { color: #94a3b8; }
+
+.br-room-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.br-room-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--br-text-muted);
+  font-weight: 500;
+}
+
+.br-room-competed {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #dc2626;
+  font-weight: 500;
+  background: #fee2e2;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #fecaca;
+}
+
+.br-room-won-tag {
+  font-size: 12px;
+  font-weight: 600;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid #86efac;
+}
+
+.br-room-active-tag {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: #dbeafe;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid #93c5fd;
+}
+
+.br-room-toggle {
+  color: var(--br-text-muted);
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.br-room-header:hover .br-room-toggle {
+  color: var(--br-primary);
+}
+
+/* Inner table */
+.br-room-requests {
+  border-top: 1px solid var(--br-border);
+  overflow-x: auto;
+}
+
+.br-room-requests .br-table {
+  min-width: 820px;
+}
+
+/* Winner row */
+.br-row-winner {
+  background: linear-gradient(90deg, #f0fdf4 0%, #ffffff 100%) !important;
+}
+
+.br-row-winner:hover {
+  background: linear-gradient(90deg, #dcfce7 0%, #f0fdf4 100%) !important;
+}
+
+/* Loser row (auto-rejected because room was taken) */
+.br-row-loser {
+  opacity: 0.62;
+  background: #fafafa !important;
+}
+
+.br-row-loser td {
+  color: #94a3b8 !important;
+}
+
+.br-row-loser:hover {
+  opacity: 0.78;
+  background: #f6f7f9 !important;
+}
+
+/* "Room taken" badge */
+.br-status-badge--room-taken {
+  background-color: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+}
+
+/* No action placeholder */
+.br-no-action {
+  display: inline-block;
+  color: #cbd5e1;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+/* Customer name shown */
+.br-customer-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--br-text-heading);
+}
+

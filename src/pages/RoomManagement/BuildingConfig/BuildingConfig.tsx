@@ -3,7 +3,7 @@ import axios from "axios";
 import {
   Plus, Edit, Trash2, Layers, LayoutTemplate, BedDouble,
   X as LucideX, Building, Home, Tag, Upload, Eye,
-  ChevronLeft, ChevronRight, History, AlertTriangle, CheckCircle
+  ChevronLeft, ChevronRight, History, AlertTriangle, CheckCircle, Settings
 } from "lucide-react";
 import "./BuildingConfig.css";
 
@@ -280,9 +280,25 @@ const BuildingConfig = () => {
   return (
     <div className="config-container">
       <div className="page-header">
-        <div className="page-title-group">
-          <h2 className="page-title">Cấu hình Tòa nhà</h2>
-          <p className="page-subtitle">Quản lý sơ đồ tầng và các hạng mục kiến trúc phòng thuê.</p>
+        <div className="page-title-row" style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+          <div className="page-title-icon" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            width: '48px', 
+            height: '48px', 
+            borderRadius: '12px', 
+            background: 'linear-gradient(135deg, #3579c6 0%, #2a5fa3 100%)',
+            color: '#ffffff',
+            flexShrink: 0,
+            boxShadow: '0 4px 14px rgba(53, 121, 198, 0.3)'
+          }} aria-hidden>
+            <Settings size={22} strokeWidth={2} />
+          </div>
+          <div className="page-title-group">
+            <h2 className="page-title">Cấu hình Tòa nhà</h2>
+            <p className="page-subtitle">Quản lý sơ đồ tầng và các hạng mục kiến trúc phòng thuê.</p>
+          </div>
         </div>
 
         <div className="stats-summary">

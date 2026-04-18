@@ -1,51 +1,57 @@
 
 import { createPortal } from "react-dom";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { roomService } from "../../../../services/roomService";
 import "./RoomInfoModal.css";
 
-const ROOM_INFO_DATA = [
-    {
-        type: "Loại 1",
-        price: "2.900.000đ/tháng",
-        desc: "Phòng rộng, ở tối đa 3 người, có 2 cửa sổ hướng thoáng và ban công thoáng mát, đón gió và ánh sáng tự nhiên (áp dụng tầng 2, 3, 4)."
-    },
-    {
-        type: "Loại 2",
-        price: "2.700.000đ/tháng",
-        desc: "Phù hợp 2 người ở, có 1 cửa sổ hướng thoáng và ban công thoáng, không gian sáng, dễ chịu (tầng 2, 3, 4)."
-    },
-    {
-        type: "Loại 3",
-        price: "2.500.000đ/tháng",
-        desc: "Ở 2 người, có 2 cửa sổ và ban công nhưng đều hướng tù, phù hợp khách cần phòng yên tĩnh, giá mềm (tầng 2, 3, 4)."
-    },
-    {
-        type: "Loại 4",
-        price: "2.000.000đ/tháng",
-        desc: "Ở 2 người, có 1 cửa sổ tương đối thoáng, phòng mát mẻ, tiện sinh hoạt (chỉ áp dụng tầng 1)."
-    },
-    {
-        type: "Loại 5",
-        price: "1.800.000đ/tháng",
-        desc: "Ở 2 người, không cửa sổ, không ban công, phù hợp sinh viên hoặc người đi làm cần phòng giá tiết kiệm (tầng 1)."
-    },
-    {
-        type: "Loại 6",
-        price: "2.300.000đ/tháng",
-        desc: "Ở 2 người, có 1 cửa sổ hướng thoáng và 1 ban công thoáng, tuy nhiên mái trần bằng tôn nên giá mềm hơn so với phòng cùng diện tích."
-    },
-    {
-        type: "Loại 7",
-        price: "2.100.000đ/tháng",
-        desc: "Ở 2 người, có 1 cửa sổ hướng tù và 1 ban công hướng tù, mái trần tôn, phù hợp khách ưu tiên chi phí thấp."
-    }
-];
+interface RoomTypeData {
+  _id: string;
+  typeName: string;
+  currentPrice: number;
+  description: string;
+  area: number;
+  personMax: number;
+}
 
 interface RoomInfoModalProps {
     onClose: () => void;
 }
 
 export default function RoomInfoModal({ onClose }: RoomInfoModalProps) {
+    const [roomTypes, setRoomTypes] = useState<RoomTypeData[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchRoomTypes = async () => {
+            try {
+                const response = await roomService.getRoomTypes();
+                // Backend returns { count, data } or array directly
+                const data = response.data || response;
+                setRoomTypes(Array.isArray(data) ? data : []);
+            } catch (error) {
+                console.error("Error fetching room types:", error);
+                setRoomTypes([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRoomTypes();
+    }, []);
+
+    // Format price properly
+    const formatPrice = (priceVal: any): string => {
+        if (priceVal && typeof priceVal === "object" && priceVal.$numberDecimal) {
+            priceVal = parseFloat(priceVal.$numberDecimal);
+        }
+        const numericPrice = Number(priceVal);
+        if (!isNaN(numericPrice) && numericPrice > 0) {
+            return `${numericPrice.toLocaleString("vi-VN")}đ/tháng`;
+        }
+        return "Liên hệ";
+    };
+
     if (typeof document === 'undefined') return null;
 
     return createPortal(
@@ -59,19 +65,32 @@ export default function RoomInfoModal({ onClose }: RoomInfoModalProps) {
                 </div>
 
                 <div className="rim-scroll-body">
-                    <div className="rim-grid">
-                        {ROOM_INFO_DATA.map((item, index) => (
-                            <div key={index} className="rim-card">
-                                <div className="rim-card-header">
-                                    <span className="rim-type-name">{item.type}</span>
-                                    <span className="rim-price">{item.price}</span>
+                    {loading ? (
+                        <div style={{ padding: "2rem", textAlign: "center", color: "#64748b" }}>
+                            Đang tải dữ liệu...
+                        </div>
+                    ) : roomTypes.length > 0 ? (
+                        <div className="rim-grid">
+                            {roomTypes.map((item) => (
+                                <div key={item._id} className="rim-card">
+                                    <div className="rim-card-header">
+                                        <span className="rim-type-name">{item.typeName}</span>
+                                        <span className="rim-price">{formatPrice(item.currentPrice)}</span>
+                                    </div>
+                                    <div className="rim-card-body">
+                                        <p className="rim-desc">{item.description || "Chưa có mô tả"}</p>
+                                        <p className="rim-specs">
+                                            Diện tích: 30m² | Tối đa: {item.personMax} người
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="rim-card-body">
-                                    <p className="rim-desc">{item.desc}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{ padding: "2rem", textAlign: "center", color: "#64748b" }}>
+                            Không có dữ liệu loại phòng
+                        </div>
+                    )}
                 </div>
             </div>
         </div>,
