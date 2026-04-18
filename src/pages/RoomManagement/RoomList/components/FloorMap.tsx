@@ -438,7 +438,7 @@ export default function FloorMap({
                         </span>
                       )}
 
-                    {/* Declined: gom cột + chữ lớn hơn; thứ tự Trống từ → Đến → guest / Từ chối gia hạn */}
+                    {/* Declined: chỉ hiện "Trống từ DD/MM/YY" */}
                     {room.contractRenewalStatus === "declined" && (
                       <div className="room-declined-meta">
                         {!isDeposited &&
@@ -464,15 +464,6 @@ export default function FloorMap({
                               {getExpiryLabel(room.contractEndDate)}
                             </span>
                           )}
-                        {room.nextInactiveContractStart &&
-                          !room.successorLeaseBooked && (
-                            <span
-                              className="room-inactive-label room-inactive-label--deadline"
-                              style={{ background: "rgba(220,38,38,0.9)" }}
-                            >
-                              Đến → {fmtYY(room.nextInactiveContractStart)}
-                            </span>
-                          )}
                         {legendType === "guest" &&
                           !hasFloatingDeposit &&
                           room.successorLeaseBooked && (
@@ -480,12 +471,11 @@ export default function FloorMap({
                               Đã có HĐ kế tiếp
                             </span>
                           )}
-
-                        {/* "Từ chối gia hạn" hiển thị trên modal (ContractList), không lặp trên ô phòng sơ đồ HĐ */}
                       </div>
                     )}
                     {!isDeposited &&
                       room.contractStartDate &&
+                      room.contractRenewalStatus !== "declined" &&
                       getContractDateLabel(
                         room.contractStartDate,
                         room.contractEndDate,
