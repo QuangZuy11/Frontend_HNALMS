@@ -47,7 +47,7 @@ const ROOM_TYPE_COLORS = [
   "#84cc16", // Lime-500    (Loại 8)
 ];
 
-// Format contract expiry: endDate + 1 day => "Trống từ DD/MM"
+// Format contract expiry: endDate + 1 day => "Trống từ DD/MM/YY"
 const getExpiryLabel = (contractEndDate?: string): string | null => {
   if (!contractEndDate) return null;
   const endDate = new Date(contractEndDate);
@@ -56,7 +56,8 @@ const getExpiryLabel = (contractEndDate?: string): string | null => {
   vacantDate.setDate(vacantDate.getDate() + 1);
   const day = vacantDate.getDate().toString().padStart(2, "0");
   const month = (vacantDate.getMonth() + 1).toString().padStart(2, "0");
-  return `Trống từ ${day}/${month}`;
+  const yy = vacantDate.getFullYear().toString().slice(-2);
+  return `Trống từ ${day}/${month}/${yy}`;
 };
 
 // Label for Deposited rooms with a future contract (short format)
@@ -406,7 +407,8 @@ export default function FloorMapLevel5({
                       )}
 
                     {!isDeposited &&
-                      !room.contractStartDate &&
+                      (!room.contractStartDate ||
+                        room.contractRenewalStatus === "declined") &&
                       !showDepositedBadge &&
                       getExpiryLabel(room.contractEndDate) && (
                         <span className="room-expiry-label">
@@ -449,6 +451,7 @@ export default function FloorMapLevel5({
                       )}
                     {!isDeposited &&
                       room.contractStartDate &&
+                      room.contractRenewalStatus !== "declined" &&
                       getContractDateLabel(
                         room.contractStartDate,
                         room.contractEndDate,

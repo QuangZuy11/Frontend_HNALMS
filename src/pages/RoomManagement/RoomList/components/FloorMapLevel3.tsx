@@ -84,7 +84,7 @@ const ROOM_TYPE_COLORS = [
 ];
 
 // Helper to extract number from room type name (e.g., "Loại 1" -> 1)
-// Format contract expiry: endDate + 1 day => "Trống từ DD/MM"
+// Format contract expiry: endDate + 1 day => "Trống từ DD/MM/YY"
 const getExpiryLabel = (contractEndDate?: string): string | null => {
   if (!contractEndDate) return null;
   const endDate = new Date(contractEndDate);
@@ -93,7 +93,8 @@ const getExpiryLabel = (contractEndDate?: string): string | null => {
   vacantDate.setDate(vacantDate.getDate() + 1);
   const day = vacantDate.getDate().toString().padStart(2, "0");
   const month = (vacantDate.getMonth() + 1).toString().padStart(2, "0");
-  return `Trống từ ${day}/${month}`;
+  const yy = vacantDate.getFullYear().toString().slice(-2);
+  return `Trống từ ${day}/${month}/${yy}`;
 };
 
 const extractTypeNumber = (typeName: string): number => {
@@ -105,11 +106,11 @@ const extractTypeNumber = (typeName: string): number => {
 const formatRoomLabel = (name: string): string =>
   name.replace(/^Phòng\s*/i, "P.");
 
-// Format contract date label: DD/MM/YY <br/> DD/MM/YY
+// Format contract date label: DD/MM/YY–DD/MM/YY (single line with en-dash)
 const getContractDateLabel = (
   startDate?: string,
   endDate?: string,
-): React.ReactNode => {
+): string | null => {
   if (!startDate || !endDate) return null;
 
   const startDt = new Date(startDate);
@@ -120,19 +121,10 @@ const getContractDateLabel = (
   const endDd = endDt.getDate().toString().padStart(2, "0");
   const endMm = (endDt.getMonth() + 1).toString().padStart(2, "0");
 
-  const startNoYear = `${startDd}/${startMm}`;
-  const endNoYear = `${endDd}/${endMm}`;
-
   const startYy = startDt.getFullYear().toString().slice(-2);
   const endYy = endDt.getFullYear().toString().slice(-2);
 
-  return (
-    <>
-      {startNoYear}/{startYy}
-      <br />
-      đến {endNoYear}/{endYy}
-    </>
-  );
+  return `${startDd}/${startMm}/${startYy}\u2013${endDd}/${endMm}/${endYy}`;
 };
 
 export default function FloorMapLevel3({
@@ -538,7 +530,8 @@ export default function FloorMapLevel3({
                                 )}
 
                               {!isDeposited &&
-                                !room.contractStartDate &&
+                                (!room.contractStartDate ||
+                                  room.contractRenewalStatus === "declined") &&
                                 !showDepositedBadge &&
                                 getExpiryLabel(room.contractEndDate) && (
                                   <span className="room-expiry-label">
@@ -581,6 +574,7 @@ export default function FloorMapLevel3({
                                 )}
                               {!isDeposited &&
                                 room.contractStartDate &&
+                                room.contractRenewalStatus !== "declined" &&
                                 getContractDateLabel(
                                   room.contractStartDate,
                                   room.contractEndDate,
@@ -778,7 +772,8 @@ export default function FloorMapLevel3({
                         )}
 
                       {!isDeposited &&
-                        !room.contractStartDate &&
+                        (!room.contractStartDate ||
+                          room.contractRenewalStatus === "declined") &&
                         !showDepositedBadge &&
                         getExpiryLabel(room.contractEndDate) && (
                           <span className="room-expiry-label">
@@ -821,6 +816,7 @@ export default function FloorMapLevel3({
                         )}
                       {!isDeposited &&
                         room.contractStartDate &&
+                        room.contractRenewalStatus !== "declined" &&
                         getContractDateLabel(
                           room.contractStartDate,
                           room.contractEndDate,

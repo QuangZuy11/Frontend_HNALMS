@@ -182,7 +182,8 @@ export default function AccountantDepositList() {
               <div className="adl-title-text">
                 <h2>Danh sách tiền cọc</h2>
                 <p className="adl-subtitle">
-Theo dõi và quản lý danh sách tiền cọc của cư dân                </p>
+                  Quản lý tiền cọc phòng tại tòa nhà. Theo dõi các khoản tiền đang giữ, đã hoàn, hoặc tiền phạt.
+                </p>
               </div>
             </div>
           </div>
