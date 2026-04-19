@@ -71,22 +71,25 @@ const AccountantDashboard = () => {
         <div className="summary-card revenue">
           <div className="card-icon"><TrendingUp size={24} /></div>
           <div className="card-info">
-            <span>Tổng Thực Thu</span>
-            <h3>{formatCurrency(data.summary.totalRevenue)}</h3>
+            <span>Tổng Thu Tiền Mặt</span>
+            <h3>{formatCurrency(data.summary.totalInflow)}</h3>
+            <small className="card-desc">Bao gồm doanh thu đã thu & tiền cọc</small>
           </div>
         </div>
         <div className="summary-card expense">
           <div className="card-icon"><TrendingDown size={24} /></div>
           <div className="card-info">
-            <span>Tổng Thực Chi</span>
-            <h3>{formatCurrency(data.summary.totalExpense)}</h3>
+            <span>Tổng Chi Tiền Mặt</span>
+            <h3>{formatCurrency(data.summary.totalOutflow)}</h3>
+            <small className="card-desc">Bao gồm chi phí vận hành & hoàn cọc</small>
           </div>
         </div>
         <div className="summary-card profit">
           <div className="card-icon"><DollarSign size={24} /></div>
           <div className="card-info">
-            <span>Lợi Nhuận Gộp (Net)</span>
-            <h3>{formatCurrency(data.summary.netProfit)}</h3>
+            <span>Dòng Tiền Thuần (Net)</span>
+            <h3>{formatCurrency(data.summary.netCashFlow)}</h3>
+            <small className="card-desc">Chênh lệch thu - chi thực tế</small>
           </div>
         </div>
         <div className="summary-card debt">
@@ -94,6 +97,7 @@ const AccountantDashboard = () => {
           <div className="card-info">
             <span>Công Nợ Chưa Thu</span>
             <h3>{formatCurrency(data.summary.totalDebt)}</h3>
+            <small className="card-desc">Hóa đơn định kỳ & phát sinh còn nợ</small>
           </div>
         </div>
       </div>
