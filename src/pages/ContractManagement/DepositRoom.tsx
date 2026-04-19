@@ -4,7 +4,7 @@ import axios from "axios";
 import { format } from "date-fns";
 import {
   Plus, Search, Filter,
-  FileText, Sparkles, LayoutGrid, DollarSign, Wallet, Edit2, X, Eye
+  FileText, Sparkles, LayoutGrid, DollarSign, Wallet, Edit2, X, Eye, Printer
 } from "lucide-react";
 import toastr from "toastr";
 import "toastr/build/toastr.min.css";
@@ -50,6 +50,37 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+const convertToText = (n: number) => {
+  if (!n || n === 0) return "Không đồng";
+  const units = ["", "nghìn ", "triệu ", "tỷ ", "nghìn tỷ "];
+  const t = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
+  let str = "";
+  let unitIndex = 0;
+  while (n > 0) {
+    let p = n % 1000;
+    n = Math.floor(n / 1000);
+    if (p > 0 || unitIndex === 0) {
+      let c = p % 10;
+      let b = Math.floor((p / 10)) % 10;
+      let a = Math.floor(p / 100);
+      let pStr = "";
+      if (a > 0 || (n > 0 && p > 0)) pStr += t[a] + " trăm ";
+      if (b > 1) pStr += t[b] + " mươi ";
+      else if (b === 1) pStr += "mười ";
+      else if (a > 0 && c > 0) pStr += "lẻ ";
+
+      if (c === 1 && b > 1) pStr += "mốt ";
+      else if (c === 5 && b > 0) pStr += "lăm ";
+      else if (c > 0 || (p === 0 && unitIndex === 0)) pStr += t[c] + " ";
+
+      if (p > 0) str = pStr + units[unitIndex] + str;
+    }
+    unitIndex++;
+  }
+  str = str.replace(/lẻ không /g, "").trim() + " đồng";
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
 const DepositRoom = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -77,6 +108,7 @@ const DepositRoom = () => {
   const [selectedDeposit, setSelectedDeposit] = useState<Deposit | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [printDeposit, setPrintDeposit] = useState<Deposit | null>(null);
   const [editForm, setEditForm] = useState({
     name: "", phone: "", email: "", room: null as any, status: "Held"
   });
@@ -140,6 +172,19 @@ const DepositRoom = () => {
       toastr.error(err.response?.data?.message || "Lỗi khi cập nhật");
     }
   };
+
+  const handlePrint = (deposit: Deposit) => {
+    setPrintDeposit(deposit);
+    setTimeout(() => {
+      window.print();
+    }, 200);
+  };
+
+  useEffect(() => {
+    const afterPrint = () => setPrintDeposit(null);
+    window.addEventListener('afterprint', afterPrint);
+    return () => window.removeEventListener('afterprint', afterPrint);
+  }, []);
 
   useEffect(() => {
     const fetchDeposits = async () => {
@@ -418,6 +463,14 @@ const DepositRoom = () => {
                       >
                         <Edit2 size={16} />
                       </button>
+                      <button
+                        onClick={() => handlePrint(deposit)}
+                        className="dp-btn-icon"
+                        title="In / Tải PDF phiếu thu"
+                        style={{ color: '#059669', borderColor: '#d1fae5', background: '#ecfdf5' }}
+                      >
+                        <Printer size={16} />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -506,7 +559,7 @@ const DepositRoom = () => {
                 <X size={20} />
               </button>
             </div>
-            
+
             {(selectedDeposit?.contractId || selectedDeposit?.activationStatus === true) && (
               <div style={{ padding: "12px", marginBottom: "20px", borderRadius: "8px", background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e40af", fontSize: "0.9rem", lineHeight: "1.5" }}>
                 <strong>Lưu ý:</strong> Cọc này đã được sử dụng để ký hợp đồng {typeof selectedDeposit?.contractId === "object" && (selectedDeposit?.contractId as any)?.contractCode ? `(Mã HĐ: ${(selectedDeposit.contractId as any).contractCode})` : ""}.
@@ -561,15 +614,18 @@ const DepositRoom = () => {
                 <label className="dr-unique-form-label">Phòng</label>
                 <input type="text" className="dr-unique-form-input" value={selectedDeposit?.room?.name || "N/A"} disabled />
               </div>
-              
+
               <div className="dr-unique-form-group">
                 <label className="dr-unique-form-label">Số tiền cọc</label>
                 <input type="text" className="dr-unique-form-input" value={formatCurrency(selectedDeposit?.amount || 0)} disabled />
               </div>
             </div>
 
-            <div className="dr-unique-modal-actions">
-              <button type="button" className="dr-unique-btn-cancel" onClick={() => setIsDetailModalOpen(false)}>
+            <div className="dr-unique-modal-actions" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+              <button type="button" className="dr-unique-btn-cancel" onClick={() => handlePrint(selectedDeposit!)} style={{ background: '#f8fafc', borderColor: '#cbd5e1', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Printer size={16} /> In / Tải PDF
+              </button>
+              <button type="button" className="dr-unique-btn-save" onClick={() => setIsDetailModalOpen(false)} style={{ background: '#3b82f6' }}>
                 Đóng
               </button>
             </div>
@@ -587,7 +643,7 @@ const DepositRoom = () => {
                 <X size={20} />
               </button>
             </div>
-            
+
             {(selectedDeposit?.contractId || selectedDeposit?.activationStatus === true) && (
               <div style={{ padding: "12px", marginBottom: "20px", borderRadius: "8px", background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e40af", fontSize: "0.9rem", lineHeight: "1.5" }}>
                 <strong>Lưu ý:</strong> Cọc này đã được sử dụng để ký hợp đồng {typeof selectedDeposit?.contractId === "object" && (selectedDeposit?.contractId as any)?.contractCode ? `(Mã HĐ: ${(selectedDeposit.contractId as any).contractCode})` : ""}. Vì vậy, bạn **không thể** thay đổi phòng và trạng thái cọc phải tuân theo hợp đồng.
@@ -614,17 +670,17 @@ const DepositRoom = () => {
             <div className="dr-unique-form-grid">
               <div className="dr-unique-form-group">
                 <label className="dr-unique-form-label">Tên người cọc</label>
-                <input type="text" className="dr-unique-form-input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} placeholder="Nhập tên người cọc..." />
+                <input type="text" className="dr-unique-form-input" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} placeholder="Nhập tên người cọc..." />
               </div>
 
               <div className="dr-unique-form-group">
                 <label className="dr-unique-form-label">Số điện thoại</label>
-                <input type="text" className="dr-unique-form-input" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} placeholder="Nhập số điện thoại..." />
+                <input type="text" className="dr-unique-form-input" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} placeholder="Nhập số điện thoại..." />
               </div>
 
               <div className="dr-unique-form-group">
                 <label className="dr-unique-form-label">Email</label>
-                <input type="email" className="dr-unique-form-input" value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} placeholder="Nhập địa chỉ email..." />
+                <input type="email" className="dr-unique-form-input" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} placeholder="Nhập địa chỉ email..." />
               </div>
 
               <div className="dr-unique-form-group">
@@ -672,6 +728,59 @@ const DepositRoom = () => {
           </div>
         </div>
       )}
+
+      {/* PRINT CONTAINER */}
+      <div className="dp-print-container">
+        {printDeposit && (
+          <div style={{ padding: '20px', fontFamily: '"Times New Roman", Times, serif', color: '#000', lineHeight: 1.5, fontSize: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #000', paddingBottom: '15px', marginBottom: '30px' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '20px', textTransform: 'uppercase', fontWeight: 'bold' }}>TÒA NHÀ HOÀNG NAM</h2>
+                <p style={{ margin: 0 }}>Địa chỉ: Số nhà 56, Cụm 3, Thôn 3, Xã Hòa Lạc, Hà Nội</p>
+                <p style={{ margin: 0 }}>Điện thoại: 0869048066</p>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ margin: 0, fontWeight: 'bold' }}>Mẫu số: 01-TT</p>
+                <p style={{ margin: 0, fontStyle: 'italic', fontSize: '14px' }}>(Ban hành theo thông tư số ...)</p>
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+              <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 'bold' }}>PHIẾU THU TIỀN CỌC</h1>
+              <p style={{ margin: '5px 0 0 0', fontStyle: 'italic', fontSize: '15px' }}>
+                {(() => {
+                  const d = printDeposit.createdDate ? new Date(printDeposit.createdDate) : printDeposit.createdAt ? new Date(printDeposit.createdAt) : new Date();
+                  return `Ngày ${d.getDate().toString().padStart(2, '0')} tháng ${(d.getMonth() + 1).toString().padStart(2, '0')} năm ${d.getFullYear()}`;
+                })()}
+              </p>
+            </div>
+
+            <div style={{ lineHeight: '2' }}>
+              <p style={{ margin: 0 }}><strong>Họ và tên người nộp tiền:</strong> <span style={{ textTransform: 'uppercase' }}>{printDeposit.name}</span></p>
+              <p style={{ margin: 0 }}><strong>Số điện thoại:</strong> {printDeposit.phone}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>Email:</strong> {printDeposit.email}</p>
+              <p style={{ margin: 0 }}><strong>Lý do nộp:</strong> Tiền cọc giữ phòng <strong style={{ textTransform: 'uppercase' }}>{printDeposit.room?.name || 'N/A'}</strong></p>
+              <p style={{ margin: 0 }}><strong>Số tiền:</strong> <span style={{ fontWeight: 'bold', fontSize: '20px' }}>{formatCurrency(printDeposit.amount)}</span></p>
+              <p style={{ margin: 0 }}><strong>Bằng chữ:</strong> <em>{convertToText(printDeposit.amount)}</em></p>
+              <p style={{ margin: 0 }}><strong>Trạng thái:</strong> {printDeposit.status === 'Held' ? 'Đã thu (Đang giữ)' : printDeposit.status === 'Refunded' ? 'Đã hoàn' : printDeposit.status === 'Forfeited' ? 'Đã phạt' : printDeposit.status === 'Expired' ? 'Đã hết hạn' : 'Đang chờ'}</p>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '60px', textAlign: 'center' }}>
+              <div style={{ width: '40%' }}>
+                <p style={{ margin: 0, fontWeight: 'bold', fontSize: '18px' }}>Người nộp tiền</p>
+                <p style={{ margin: 0, fontStyle: 'italic', fontSize: '15px' }}>(Ký, ghi rõ họ tên)</p>
+                <div style={{ height: '100px' }}></div>
+                <p style={{ margin: 0, fontWeight: 'bold' }}>{printDeposit.name}</p>
+              </div>
+              <div style={{ width: '40%' }}>
+                <p style={{ margin: 0, fontWeight: 'bold', fontSize: '18px' }}>Người lập phiếu / Ban quản lý</p>
+                <p style={{ margin: 0, fontStyle: 'italic', fontSize: '15px' }}>(Ký, ghi rõ họ tên)</p>
+                <div style={{ height: '100px' }}></div>
+                <p style={{ margin: 0, fontWeight: 'bold' }}>..........................................</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -781,3 +781,40 @@
   from { opacity: 0; transform: translateY(10px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* ── Print Styles ── */
+@media screen {
+  .dp-print-container {
+    display: none !important;
+  }
+}
+
+@media print {
+  body {
+    background: white !important;
+  }
+  .deposit-header, 
+  .deposit-toolbar, 
+  .deposit-table-container, 
+  .dp-pagination,
+  .dr-unique-modal-backdrop,
+  .deposit-container1 > *:not(.dp-print-container) {
+    display: none !important;
+  }
+
+  .dp-print-container {
+    display: block !important;
+    padding: 15mm !important;
+  }
+
+  .deposit-container1 {
+    min-height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+
+  @page {
+    margin: 0;
+  }
+}
