@@ -4,8 +4,10 @@ import axios from "axios";
 import { format } from "date-fns";
 import {
   Plus, Search, Filter,
-  FileText, Sparkles, LayoutGrid, DollarSign, Wallet
+  FileText, Sparkles, LayoutGrid, DollarSign, Wallet, Edit2, X, Eye
 } from "lucide-react";
+import toastr from "toastr";
+import "toastr/build/toastr.min.css";
 import "./DepositRoom.css";
 
 interface Room {
@@ -70,6 +72,74 @@ const DepositRoom = () => {
   // Pagination
   const ROWS_PER_PAGE = 8; // aligned with ManagementDevice mostly
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Edit Modal State
+  const [selectedDeposit, setSelectedDeposit] = useState<Deposit | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "", phone: "", email: "", room: null as any, status: "Held"
+  });
+
+  useEffect(() => {
+    const draft = sessionStorage.getItem("depositEditDraft");
+    if (draft) {
+      const parsed = JSON.parse(draft);
+      setSelectedDeposit(parsed.deposit);
+      setEditForm(parsed.form);
+      setIsEditModalOpen(true);
+      sessionStorage.removeItem("depositEditDraft");
+    }
+  }, []);
+
+  const openEditModal = (deposit: Deposit) => {
+    setSelectedDeposit(deposit);
+    setEditForm({
+      name: deposit.name,
+      phone: deposit.phone,
+      email: deposit.email,
+      room: deposit.room,
+      status: deposit.status || "Held"
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const openDetailModal = (deposit: Deposit) => {
+    setSelectedDeposit(deposit);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleSelectRoomForEdit = () => {
+    sessionStorage.setItem("depositEditDraft", JSON.stringify({
+      deposit: selectedDeposit,
+      form: editForm
+    }));
+    navigate(`${basePath}/deposits/floor-map?selectForEdit=true`);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedDeposit) return;
+    try {
+      const response = await axios.put(`http://localhost:9999/api/deposits/${selectedDeposit._id}`, {
+        name: editForm.name,
+        phone: editForm.phone,
+        email: editForm.email,
+        room: editForm.room._id,
+        status: editForm.status
+      }, { withCredentials: true });
+      if (response.data.success) {
+        toastr.success("Cập nhật thành công");
+        setIsEditModalOpen(false);
+        // Refresh deposits
+        const fetchResponse = await axios.get("http://localhost:9999/api/deposits", { withCredentials: true });
+        if (fetchResponse.data.success) {
+          setDeposits(fetchResponse.data.data);
+        }
+      }
+    } catch (err: any) {
+      toastr.error(err.response?.data?.message || "Lỗi khi cập nhật");
+    }
+  };
 
   useEffect(() => {
     const fetchDeposits = async () => {
@@ -276,6 +346,7 @@ const DepositRoom = () => {
               <th className="dp-cell-amount">Số tiền cọc</th>
               <th className="dp-cell-date">Ngày cọc</th>
               <th className="dp-cell-status">Trạng thái</th>
+              <th className="dp-cell-action" style={{ textAlign: "center" }}>Hành động</th>
             </tr>
           </thead>
           <tbody>
@@ -330,6 +401,24 @@ const DepositRoom = () => {
                               ? "Đã hết hạn"
                               : "Đang chờ"}
                     </span>
+                  </td>
+                  <td className="dp-cell-action" style={{ textAlign: "center" }}>
+                    <div className="dp-action-group">
+                      <button
+                        onClick={() => openDetailModal(deposit)}
+                        className="dp-btn-icon view"
+                        title="Xem chi tiết"
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        onClick={() => openEditModal(deposit)}
+                        className="dp-btn-icon edit"
+                        title="Chỉnh sửa cọc"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -406,6 +495,183 @@ const DepositRoom = () => {
           </div>
         </div>
       </div>
+
+      {/* DETAIL MODAL */}
+      {isDetailModalOpen && (
+        <div className="dr-unique-modal-backdrop">
+          <div className="dr-unique-modal-container">
+            <div className="dr-unique-modal-header">
+              <h3 className="dr-unique-modal-title">Chi tiết tiền cọc</h3>
+              <button onClick={() => setIsDetailModalOpen(false)} className="dr-unique-modal-close" title="Đóng">
+                <X size={20} />
+              </button>
+            </div>
+            
+            {(selectedDeposit?.contractId || selectedDeposit?.activationStatus === true) && (
+              <div style={{ padding: "12px", marginBottom: "20px", borderRadius: "8px", background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e40af", fontSize: "0.9rem", lineHeight: "1.5" }}>
+                <strong>Lưu ý:</strong> Cọc này đã được sử dụng để ký hợp đồng {typeof selectedDeposit?.contractId === "object" && (selectedDeposit?.contractId as any)?.contractCode ? `(Mã HĐ: ${(selectedDeposit.contractId as any).contractCode})` : ""}.
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: "20px", marginBottom: "20px", padding: "12px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: "600", textTransform: "uppercase", marginBottom: "4px" }}>Ngày thu cọc</div>
+                <div style={{ fontSize: "0.95rem", color: "#0f172a", fontWeight: "500" }}>
+                  {selectedDeposit?.createdDate ? format(new Date(selectedDeposit.createdDate), "dd/MM/yyyy HH:mm") : selectedDeposit?.createdAt ? format(new Date(selectedDeposit.createdAt), "dd/MM/yyyy HH:mm") : "N/A"}
+                </div>
+              </div>
+              {selectedDeposit?.status === "Refunded" && selectedDeposit?.refundDate && (
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "0.8rem", color: "#166534", fontWeight: "600", textTransform: "uppercase", marginBottom: "4px" }}>Ngày hoàn cọc</div>
+                  <div style={{ fontSize: "0.95rem", color: "#0f172a", fontWeight: "500" }}>
+                    {format(new Date(selectedDeposit.refundDate), "dd/MM/yyyy HH:mm")}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="dr-unique-form-grid">
+              <div className="dr-unique-form-group">
+                <label className="dr-unique-form-label">Tên người cọc</label>
+                <input type="text" className="dr-unique-form-input" value={selectedDeposit?.name || ""} disabled />
+              </div>
+
+              <div className="dr-unique-form-group">
+                <label className="dr-unique-form-label">Số điện thoại</label>
+                <input type="text" className="dr-unique-form-input" value={selectedDeposit?.phone || ""} disabled />
+              </div>
+
+              <div className="dr-unique-form-group">
+                <label className="dr-unique-form-label">Email</label>
+                <input type="email" className="dr-unique-form-input" value={selectedDeposit?.email || ""} disabled />
+              </div>
+
+              <div className="dr-unique-form-group">
+                <label className="dr-unique-form-label">Trạng thái</label>
+                <select className="dr-unique-form-select" value={selectedDeposit?.status || "Held"} disabled>
+                  <option value="Held">Đã thu (Đang giữ)</option>
+                  <option value="Pending">Đang chờ (Pending)</option>
+                  <option value="Refunded">Đã hoàn (Refunded)</option>
+                  <option value="Forfeited">Đã phạt (Forfeited)</option>
+                  <option value="Expired">Đã hết hạn (Expired)</option>
+                </select>
+              </div>
+
+              <div className="dr-unique-form-group">
+                <label className="dr-unique-form-label">Phòng</label>
+                <input type="text" className="dr-unique-form-input" value={selectedDeposit?.room?.name || "N/A"} disabled />
+              </div>
+              
+              <div className="dr-unique-form-group">
+                <label className="dr-unique-form-label">Số tiền cọc</label>
+                <input type="text" className="dr-unique-form-input" value={formatCurrency(selectedDeposit?.amount || 0)} disabled />
+              </div>
+            </div>
+
+            <div className="dr-unique-modal-actions">
+              <button type="button" className="dr-unique-btn-cancel" onClick={() => setIsDetailModalOpen(false)}>
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT MODAL */}
+      {isEditModalOpen && (
+        <div className="dr-unique-modal-backdrop">
+          <div className="dr-unique-modal-container">
+            <div className="dr-unique-modal-header">
+              <h3 className="dr-unique-modal-title">Chỉnh sửa thông tin cọc</h3>
+              <button onClick={() => setIsEditModalOpen(false)} className="dr-unique-modal-close" title="Đóng">
+                <X size={20} />
+              </button>
+            </div>
+            
+            {(selectedDeposit?.contractId || selectedDeposit?.activationStatus === true) && (
+              <div style={{ padding: "12px", marginBottom: "20px", borderRadius: "8px", background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e40af", fontSize: "0.9rem", lineHeight: "1.5" }}>
+                <strong>Lưu ý:</strong> Cọc này đã được sử dụng để ký hợp đồng {typeof selectedDeposit?.contractId === "object" && (selectedDeposit?.contractId as any)?.contractCode ? `(Mã HĐ: ${(selectedDeposit.contractId as any).contractCode})` : ""}. Vì vậy, bạn **không thể** thay đổi phòng và trạng thái cọc phải tuân theo hợp đồng.
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: "20px", marginBottom: "20px", padding: "12px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: "600", textTransform: "uppercase", marginBottom: "4px" }}>Ngày thu cọc</div>
+                <div style={{ fontSize: "0.95rem", color: "#0f172a", fontWeight: "500" }}>
+                  {selectedDeposit?.createdDate ? format(new Date(selectedDeposit.createdDate), "dd/MM/yyyy HH:mm") : selectedDeposit?.createdAt ? format(new Date(selectedDeposit.createdAt), "dd/MM/yyyy HH:mm") : "N/A"}
+                </div>
+              </div>
+              {selectedDeposit?.status === "Refunded" && selectedDeposit?.refundDate && (
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "0.8rem", color: "#166534", fontWeight: "600", textTransform: "uppercase", marginBottom: "4px" }}>Ngày hoàn cọc</div>
+                  <div style={{ fontSize: "0.95rem", color: "#0f172a", fontWeight: "500" }}>
+                    {format(new Date(selectedDeposit.refundDate), "dd/MM/yyyy HH:mm")}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="dr-unique-form-grid">
+              <div className="dr-unique-form-group">
+                <label className="dr-unique-form-label">Tên người cọc</label>
+                <input type="text" className="dr-unique-form-input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} placeholder="Nhập tên người cọc..." />
+              </div>
+
+              <div className="dr-unique-form-group">
+                <label className="dr-unique-form-label">Số điện thoại</label>
+                <input type="text" className="dr-unique-form-input" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} placeholder="Nhập số điện thoại..." />
+              </div>
+
+              <div className="dr-unique-form-group">
+                <label className="dr-unique-form-label">Email</label>
+                <input type="email" className="dr-unique-form-input" value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} placeholder="Nhập địa chỉ email..." />
+              </div>
+
+              <div className="dr-unique-form-group">
+                <label className="dr-unique-form-label">Trạng thái</label>
+                <select className="dr-unique-form-select" value={editForm.status} disabled>
+                  <option value="Held">Đã thu (Đang giữ)</option>
+                  <option value="Pending">Đang chờ (Pending)</option>
+                  <option value="Refunded">Đã hoàn (Refunded)</option>
+                  <option value="Forfeited">Đã phạt (Forfeited)</option>
+                  <option value="Expired">Đã hết hạn (Expired)</option>
+                </select>
+              </div>
+
+              <div className="dr-unique-form-group dr-unique-col-span-2">
+                <label className="dr-unique-form-label">Phòng</label>
+                <div className="dr-unique-room-select-wrapper">
+                  <div className="dr-unique-room-display">
+                    {selectedDeposit?.room?._id !== editForm.room?._id ? (
+                      <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ color: "#64748b", textDecoration: "line-through", fontSize: "0.9rem" }}>Phòng cũ: {selectedDeposit?.room?.name}</span>
+                        <span style={{ color: "#334155", fontSize: "0.85rem" }}>➔</span>
+                        <span style={{ color: "#059669", fontWeight: "700" }}>Phòng mới: {editForm.room?.name}</span>
+                      </span>
+                    ) : (
+                      editForm.room?.name || "N/A"
+                    )}
+                  </div>
+                  {(!selectedDeposit?.contractId && selectedDeposit?.activationStatus !== true && (selectedDeposit?.status === "Held" || selectedDeposit?.status === "Pending")) && (
+                    <button type="button" className="dr-unique-btn-select-room" onClick={handleSelectRoomForEdit}>
+                      Chọn phòng
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="dr-unique-modal-actions">
+              <button type="button" className="dr-unique-btn-cancel" onClick={() => setIsEditModalOpen(false)}>
+                Hủy
+              </button>
+              <button type="button" className="dr-unique-btn-save" onClick={handleSaveEdit}>
+                Lưu thay đổi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
