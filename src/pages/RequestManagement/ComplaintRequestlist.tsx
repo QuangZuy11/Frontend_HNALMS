@@ -502,8 +502,8 @@ export default function ComplaintRequestList() {
                   </td>
                   <td className="cell-category">{c.category}</td>
                   <td className="cell-priority">
-                    <span className={`priority-badge priority-${c.priority.toLowerCase()}`}>
-                      {getPriorityIcon(c.priority)}
+                    <span className={`priority-badge priority-${(c.priority || 'Low').toLowerCase()}`}>
+                      {getPriorityIcon(c.priority || 'Low')}
                       {c.priority === 'High' ? 'Cao' : c.priority === 'Medium' ? 'Trung bình' : 'Thấp'}
                     </span>
                   </td>
@@ -600,8 +600,8 @@ export default function ComplaintRequestList() {
                     <div className="rr-row">
                       <span className="rr-label">Mức độ</span>
                       <span className="rr-value">
-                        <span className={`priority-badge priority-${selectedComplaint.priority.toLowerCase()}`}>
-                          {getPriorityIcon(selectedComplaint.priority)}
+                        <span className={`priority-badge priority-${(selectedComplaint.priority || 'Low').toLowerCase()}`}>
+                          {getPriorityIcon(selectedComplaint.priority || 'Low')}
                           {selectedComplaint.priority === 'High' ? 'Cao' : selectedComplaint.priority === 'Medium' ? 'Trung bình' : 'Thấp'}
                         </span>
                       </span>

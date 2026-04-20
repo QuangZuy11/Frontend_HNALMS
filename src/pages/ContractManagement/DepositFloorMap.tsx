@@ -126,6 +126,39 @@ const DepositFloorMap = () => {
 
   // Handle room selection - navigate to create deposit page
   const handleRoomSelect = (room: Room) => {
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get("selectForEdit") === "true") {
+      const selectForEdit = () => {
+        const draftStr = sessionStorage.getItem("depositEditDraft");
+        if (draftStr) {
+          const draft = JSON.parse(draftStr);
+          draft.form.room = room;
+          sessionStorage.setItem("depositEditDraft", JSON.stringify(draft));
+          navigate(`${basePath}/deposits`);
+        }
+      };
+
+      if (room.status === "Available" || room.status === "Trống") {
+        selectForEdit();
+        return;
+      } else if (room.status === "Occupied" && room.contractRenewalStatus === "declined" && !room.hasFloatingDeposit) {
+        selectForEdit();
+        return;
+      }
+      
+      const draftStr = sessionStorage.getItem("depositEditDraft");
+      if (draftStr) {
+        const draft = JSON.parse(draftStr);
+        if (draft.deposit.room?._id === room._id) {
+            selectForEdit();
+            return;
+        }
+      }
+      
+      toastr.error("Phòng này không thể chọn để đổi cọc.");
+      return;
+    }
+
     // Only allow selecting available or deposited rooms for creating deposit
     if (room.status === "Available" || room.status === "Trống") {
       navigate(`${basePath}/deposits/create/${room._id}`);
