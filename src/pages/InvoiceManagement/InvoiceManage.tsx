@@ -37,6 +37,7 @@ interface Invoice {
   items?: InvoiceItem[];
   deviceName?: string;
   repairDescription?: string;
+  incurredCategoryLabel?: string;
   createdAt?: string;
 }
 
@@ -614,11 +615,12 @@ const InvoiceManager = () => {
     );
   };
 
-  const renderTypeBadge = (type: string) => {
+  const renderTypeBadge = (type: string, incurredCategoryLabel?: string) => {
     if (type === 'Periodic') {
       return <span style={{ color: '#0284c7', fontSize: '13px', fontWeight: 600, background: '#e0f2fe', padding: '2px 8px', borderRadius: '4px' }}>Định kỳ</span>;
     }
-    return <span style={{ color: '#d97706', fontSize: '13px', fontWeight: 600, background: '#fef3c7', padding: '2px 8px', borderRadius: '4px' }}>Phát sinh</span>;
+    const label = incurredCategoryLabel || 'Sửa chữa';
+    return <span style={{ color: '#d97706', fontSize: '13px', fontWeight: 600, background: '#fef3c7', padding: '2px 8px', borderRadius: '4px' }}>{label}</span>;
   };
 
   const renderSortableHeader = (label: string, key: string) => {
@@ -819,7 +821,7 @@ const InvoiceManager = () => {
                   </td>
                   <td className="text-code">{inv.invoiceCode}</td>
                   <td style={{ fontWeight: 600 }}>{getRoomName(inv)}</td>
-                  <td>{renderTypeBadge(inv.type)}</td>
+                  <td>{renderTypeBadge(inv.type, inv.incurredCategoryLabel)}</td>
                   <td>{inv.title}</td>
                   <td className="text-price">{formatCurrency(inv.totalAmount)}</td>
                   <td>{formatDate(inv.dueDate)}</td>
@@ -1060,11 +1062,12 @@ const InvoiceManager = () => {
               </div>
             )}
 
-            {selectedInvoice.type === 'Incurred' && (
+            {selectedInvoice.type === 'Incurred' &&
+              selectedInvoice.incurredCategoryLabel === 'Sửa chữa' && (
               <div style={{ marginTop: '8px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', background: '#f8fafc' }}>
                 <div className="rd-section-title" style={{ marginTop: 0, paddingBottom: '12px', marginBottom: '12px' }}>
                   <Wrench size={16} />
-                  <span>Nguồn gốc phát sinh (Sửa chữa)</span>
+                  <span>Danh mục sửa chữa</span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '8px', fontSize: '14px' }}>
                   <span style={{ color: '#64748b' }}>Thiết bị lỗi:</span>
