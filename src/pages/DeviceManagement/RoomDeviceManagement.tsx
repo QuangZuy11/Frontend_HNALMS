@@ -1,15 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
-  Plus,
-  Edit,
-  Trash2,
-  X,
-  Cpu,
-  PackageSearch,
-  ChevronDown,
+  Plus, Edit, Trash2, Cpu, PackageSearch,
+  Search, Filter, ArrowUpDown, AlertTriangle, X,
+  CheckCircle, FileText, LayoutGrid, Sparkles,
 } from "lucide-react";
-import toastr from "toastr";
-import "toastr/build/toastr.min.css";
+import { AppModal } from "../../components/common/Modal";
+import { Pagination } from "../../components/common/Pagination";
+import { useToast } from "../../components/common/Toast";
 import { roomDeviceService } from "../../services/roomDeviceService";
 import type { RoomDevice, Device, RoomType } from "../../services/roomDeviceService";
 import "./RoomDeviceManagement.css";
@@ -51,6 +48,8 @@ interface EditFormData {
 }
 
 const RoomDeviceManagement: React.FC = () => {
+  const { showToast } = useToast();
+
   // ── Core state ──────────────────────────────────────────────
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
@@ -59,10 +58,19 @@ const RoomDeviceManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [loadingRefs, setLoadingRefs] = useState(true);
 
-  // ── Modal state ──────────────────────────────────────────────
+  // ── Filter & Sort state ─────────────────────────────────────
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCondition, setFilterCondition] = useState("ALL");
+  const [sortOption, setSortOption] = useState("default");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
+  // ── Modal state ─────────────────────────────────────────────
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [editingRecord, setEditingRecord] = useState<RoomDevice | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<RoomDevice | null>(null);
 
   const [addForm, setAddForm] = useState<AddFormData>({
     deviceId: "",
@@ -75,14 +83,8 @@ const RoomDeviceManagement: React.FC = () => {
     condition: "Good",
   });
 
-  // ── Initialise toastr & reference data ──────────────────────
+  // ── Initialise reference data ────────────────────────────────
   useEffect(() => {
-    toastr.options = {
-      closeButton: true,
-      progressBar: true,
-      positionClass: "toast-top-right",
-      timeOut: 3000,
-    };
     fetchReferenceData();
   }, []);
 
@@ -101,7 +103,7 @@ const RoomDeviceManagement: React.FC = () => {
         setSelectedRoomTypeId(rtList[0]._id);
       }
     } catch {
-      toastr.error("Không thể tải dữ liệu tham chiếu");
+      showToast("error", "Lỗi kết nối", "Không thể tải dữ liệu tham chiếu!");
     } finally {
       setLoadingRefs(false);
     }
@@ -114,6 +116,7 @@ const RoomDeviceManagement: React.FC = () => {
     } else {
       setRoomDevices([]);
     }
+    setCurrentPage(1);
   }, [selectedRoomTypeId]);
 
   const fetchRoomDevices = async (roomTypeId: string) => {
@@ -121,13 +124,17 @@ const RoomDeviceManagement: React.FC = () => {
     try {
       const res = await roomDeviceService.getByRoomType(roomTypeId);
       setRoomDevices(res.data || []);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Không thể tải danh sách thiết bị loại phòng";
-      toastr.error(msg);
+    } catch {
+      showToast("error", "Lỗi kết nối", "Không thể tải danh sách thiết bị loại phòng!");
     } finally {
       setLoading(false);
     }
   };
+
+  // ── Reset page on filter change ──────────────────────────────
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterCondition, sortOption]);
 
   // ── Already-added device IDs (prevent duplicate select) ──────
   const addedDeviceIds = useMemo(
@@ -140,16 +147,75 @@ const RoomDeviceManagement: React.FC = () => {
     [devices, addedDeviceIds]
   );
 
+  // ── Processed list (filter + sort) ──────────────────────────
+  const processedRoomDevices = useMemo(() => {
+    let result = [...roomDevices];
+
+    // 1. Search
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter((rd) => {
+        const name = rd.deviceId?.name?.toLowerCase() || "";
+        const brand = rd.deviceId?.brand?.toLowerCase() || "";
+        const model = rd.deviceId?.model?.toLowerCase() || "";
+        const category = rd.deviceId?.category?.toLowerCase() || "";
+        return name.includes(term) || brand.includes(term) || model.includes(term) || category.includes(term);
+      });
+    }
+
+    // 2. Filter condition
+    if (filterCondition !== "ALL") {
+      result = result.filter((rd) => rd.condition === filterCondition);
+    }
+
+    // 3. Sort
+    switch (sortOption) {
+      case "name-asc":
+        result.sort((a, b) => (a.deviceId?.name || "").localeCompare(b.deviceId?.name || ""));
+        break;
+      case "name-desc":
+        result.sort((a, b) => (b.deviceId?.name || "").localeCompare(a.deviceId?.name || ""));
+        break;
+      case "qty-asc":
+        result.sort((a, b) => a.quantity - b.quantity);
+        break;
+      case "qty-desc":
+        result.sort((a, b) => b.quantity - a.quantity);
+        break;
+      default:
+        break;
+    }
+
+    return result;
+  }, [roomDevices, searchTerm, filterCondition, sortOption]);
+
+  const totalPages = Math.ceil(processedRoomDevices.length / itemsPerPage);
+  const currentItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return processedRoomDevices.slice(start, start + itemsPerPage);
+  }, [processedRoomDevices, currentPage]);
+
   // ── Selected room type label ─────────────────────────────────
   const selectedRoomTypeName = useMemo(() => {
     const rt = roomTypes.find((r) => r._id === selectedRoomTypeId);
     return rt?.typeName ?? "";
   }, [roomTypes, selectedRoomTypeId]);
 
+  // ── Stats ────────────────────────────────────────────────────
+  const totalQuantity = useMemo(
+    () => roomDevices.reduce((sum, rd) => sum + rd.quantity, 0),
+    [roomDevices]
+  );
+  const deviceTypeCount = roomDevices.length;
+  const goodCount = useMemo(
+    () => roomDevices.filter((rd) => rd.condition === "Good" || rd.condition === "New").length,
+    [roomDevices]
+  );
+
   // ── ADD ──────────────────────────────────────────────────────
   const handleOpenAdd = () => {
     if (!selectedRoomTypeId) {
-      toastr.warning("Vui lòng chọn loại phòng trước");
+      showToast("warning", "Chú ý", "Vui lòng chọn loại phòng trước!");
       return;
     }
     setAddForm({ deviceId: availableDevices[0]?._id ?? "", quantity: 1, condition: "Good" });
@@ -159,7 +225,7 @@ const RoomDeviceManagement: React.FC = () => {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!addForm.deviceId) {
-      toastr.warning("Vui lòng chọn thiết bị");
+      showToast("warning", "Chú ý", "Vui lòng chọn thiết bị!");
       return;
     }
     try {
@@ -169,12 +235,12 @@ const RoomDeviceManagement: React.FC = () => {
         quantity: addForm.quantity,
         condition: addForm.condition,
       });
-      toastr.success("Thêm thiết bị vào loại phòng thành công!");
+      showToast("success", "Thành công", "Thêm thiết bị vào loại phòng thành công!");
       setShowAddModal(false);
       fetchRoomDevices(selectedRoomTypeId);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Có lỗi xảy ra khi thêm thiết bị";
-      toastr.error(msg);
+      showToast("error", "Lỗi hệ thống", msg);
     }
   };
 
@@ -189,7 +255,7 @@ const RoomDeviceManagement: React.FC = () => {
     e.preventDefault();
     if (!editingRecord) return;
     if (editForm.quantity < 1) {
-      toastr.warning("Số lượng phải >= 1");
+      showToast("warning", "Chú ý", "Số lượng phải >= 1!");
       return;
     }
     try {
@@ -197,45 +263,42 @@ const RoomDeviceManagement: React.FC = () => {
         quantity: editForm.quantity,
         condition: editForm.condition,
       });
-      toastr.success("Cập nhật thiết bị thành công!");
+      showToast("success", "Thành công", "Cập nhật thiết bị thành công!");
       setShowEditModal(false);
       setEditingRecord(null);
       fetchRoomDevices(selectedRoomTypeId);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Có lỗi xảy ra khi cập nhật";
-      toastr.error(msg);
+      showToast("error", "Lỗi hệ thống", msg);
     }
   };
 
   // ── DELETE ───────────────────────────────────────────────────
-  const handleDelete = async (record: RoomDevice) => {
-    const deviceName = record.deviceId?.name ?? "thiết bị";
-    if (!window.confirm(`Bạn có chắc muốn xoá "${deviceName}" khỏi loại phòng này?`)) return;
+  const handleDeleteClick = (record: RoomDevice) => {
+    setItemToDelete(record);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
     try {
-      await roomDeviceService.remove(record._id);
-      toastr.success("Xoá thiết bị khỏi loại phòng thành công!");
+      await roomDeviceService.remove(itemToDelete._id);
+      showToast("success", "Thành công", "Xóa thiết bị khỏi loại phòng thành công!");
+
+      if (currentItems.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
+
       fetchRoomDevices(selectedRoomTypeId);
+      setShowDeleteModal(false);
+      setItemToDelete(null);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Lỗi khi xoá thiết bị";
-      toastr.error(msg);
+      const msg = err instanceof Error ? err.message : "Có lỗi xảy ra khi xóa thiết bị";
+      showToast("error", "Lỗi", msg);
     }
   };
 
-  // ── Stats ────────────────────────────────────────────────────
-  const totalQuantity = useMemo(
-    () => roomDevices.reduce((sum, rd) => sum + rd.quantity, 0),
-    [roomDevices]
-  );
-
-  const goodCount = useMemo(
-    () =>
-      roomDevices.filter(
-        (rd) => rd.condition === "Good" || rd.condition === "New"
-      ).length,
-    [roomDevices]
-  );
-
-  // ── Render ───────────────────────────────────────────────────
+  // ── Loading screen ────────────────────────────────────────────
   if (loadingRefs) {
     return (
       <div className="rdm-container">
@@ -249,20 +312,120 @@ const RoomDeviceManagement: React.FC = () => {
 
   return (
     <div className="rdm-container">
-      {/* Header */}
-      <div className="rdm-header">
-        <h2>Quản lý Thiết bị theo Loại phòng</h2>
-        <p>
-          Cấu hình tiêu chuẩn thiết bị cho từng loại phòng trong toà nhà
-        </p>
+      {/* ── PAGE HEADER ── */}
+      <div className="rdm-page-header">
+        <div className="rdm-header-top">
+          <div className="rdm-title-block">
+            <div className="rdm-title-row">
+              <div className="rdm-title-icon" aria-hidden>
+                <Cpu size={22} strokeWidth={2} />
+              </div>
+              <div className="rdm-title-text">
+                <h2>Quản lý Thiết bị theo Loại phòng</h2>
+                <p className="rdm-subtitle">
+                  Cấu hình tiêu chuẩn thiết bị cho từng loại phòng trong toà nhà.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rdm-header-aside">
+            {selectedRoomTypeId && !loading && roomDevices.length > 0 && (
+              <div className="rdm-stats-summary">
+                <div className="rdm-stat-item">
+                  <FileText size={16} className="rdm-stat-icon rdm-icon-accent" />
+                  <div className="rdm-stat-text">
+                    <span className="rdm-stat-value">{deviceTypeCount}</span>
+                    <span className="rdm-stat-label">Loại thiết bị</span>
+                  </div>
+                </div>
+                <div className="rdm-stat-divider" />
+                <div className="rdm-stat-item">
+                  <LayoutGrid size={16} className="rdm-stat-icon rdm-icon-primary" />
+                  <div className="rdm-stat-text">
+                    <span className="rdm-stat-value">{totalQuantity}</span>
+                    <span className="rdm-stat-label">Tổng số lượng</span>
+                  </div>
+                </div>
+                <div className="rdm-stat-divider" />
+                <div className="rdm-stat-item">
+                  <Sparkles size={16} className="rdm-stat-icon rdm-icon-warning" />
+                  <div className="rdm-stat-text">
+                    <span className="rdm-stat-value">{goodCount}</span>
+                    <span className="rdm-stat-label">Tình trạng tốt</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="rdm-btn-primary-cta"
+              onClick={handleOpenAdd}
+              disabled={!selectedRoomTypeId || availableDevices.length === 0}
+            >
+              <Plus size={18} />
+              Thêm thiết bị
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Toolbar */}
+      {/* ── TOOLBAR ── */}
       <div className="rdm-toolbar">
-        <label htmlFor="roomtype-select">Loại phòng:</label>
+        <div className="rdm-toolbar-left">
+          <div className="rdm-search-box">
+            <Search size={18} className="rdm-search-icon" />
+            <input
+              type="text"
+              className="rdm-search-input"
+              placeholder="Tìm tên, hãng, model..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="rdm-control-group">
+            <Filter size={16} className="rdm-toolbar-icon" aria-hidden />
+            <select
+              className="rdm-custom-select"
+              value={filterCondition}
+              onChange={(e) => setFilterCondition(e.target.value)}
+            >
+              <option value="ALL">Tất cả tình trạng</option>
+              {CONDITION_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>
+                  {conditionLabel[opt]}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="rdm-toolbar-right">
+          <ArrowUpDown size={16} className="rdm-toolbar-icon" aria-hidden />
+          <select
+            className="rdm-custom-select"
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+          >
+            <option value="default">Mặc định</option>
+            <option value="name-asc">Tên: A - Z</option>
+            <option value="name-desc">Tên: Z - A</option>
+            <option value="qty-asc">Số lượng: Thấp - Cao</option>
+            <option value="qty-desc">Số lượng: Cao - Thấp</option>
+          </select>
+        </div>
+      </div>
+
+      {/* ── ROOM TYPE SELECTOR ── */}
+      <div className="rdm-roomtype-bar">
+        <label htmlFor="roomtype-select" className="rdm-roomtype-label">
+          Loại phòng:
+        </label>
         <select
           id="roomtype-select"
-          className="rdm-select"
+          className="rdm-roomtype-select"
           value={selectedRoomTypeId}
           onChange={(e) => setSelectedRoomTypeId(e.target.value)}
         >
@@ -275,38 +438,13 @@ const RoomDeviceManagement: React.FC = () => {
             </option>
           ))}
         </select>
-
-        <div className="rdm-toolbar-right">
-          <button
-            className="rdm-btn rdm-btn-primary"
-            onClick={handleOpenAdd}
-            disabled={!selectedRoomTypeId || availableDevices.length === 0}
-          >
-            <Plus size={18} />
-            Thêm thiết bị
-          </button>
-        </div>
       </div>
 
-      {/* Stats row */}
-      {selectedRoomTypeId && !loading && roomDevices.length > 0 && (
-        <div className="rdm-stats-row">
-          <div className="rdm-stat-card">
-            <div className="rdm-stat-label">Loại thiết bị</div>
-            <div className="rdm-stat-value">{roomDevices.length}</div>
-          </div>
-          <div className="rdm-stat-card">
-            <div className="rdm-stat-label">Tổng số lượng</div>
-            <div className="rdm-stat-value">{totalQuantity}</div>
-          </div>
-        </div>
-      )}
-
-      {/* Table */}
-      <div className="rdm-table-wrap">
+      {/* ── TABLE ── */}
+      <div className="rdm-table-container">
         {!selectedRoomTypeId ? (
           <div className="rdm-empty">
-            <ChevronDown size={48} />
+            <PackageSearch size={48} />
             <p>Vui lòng chọn loại phòng để xem danh sách thiết bị</p>
           </div>
         ) : loading ? (
@@ -314,266 +452,296 @@ const RoomDeviceManagement: React.FC = () => {
             <Cpu size={48} />
             <p>Đang tải danh sách thiết bị...</p>
           </div>
-        ) : roomDevices.length === 0 ? (
+        ) : processedRoomDevices.length === 0 ? (
           <div className="rdm-empty">
             <PackageSearch size={48} />
             <p>
-              Loại phòng <strong>{selectedRoomTypeName}</strong> chưa có thiết
-              bị nào.
+              {searchTerm || filterCondition !== "ALL"
+                ? "Không tìm thấy thiết bị phù hợp."
+                : `Loại phòng "${selectedRoomTypeName}" chưa có thiết bị nào.`}
             </p>
           </div>
         ) : (
-          <table className="rdm-table">
-            <thead>
-              <tr>
-                <th style={{ width: "5%" }}>#</th>
-                <th style={{ width: "30%" }}>Tên thiết bị</th>
-                <th style={{ width: "18%" }}>Model / Hãng</th>
-                <th style={{ width: "13%" }}>Danh mục</th>
-                <th style={{ width: "10%", textAlign: "center" }}>Số lượng</th>
-                <th style={{ width: "12%", textAlign: "center" }}>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {roomDevices.map((rd, idx) => (
-                <tr key={rd._id}>
-                  <td style={{ color: "#94a3b8", fontSize: 13 }}>{idx + 1}</td>
-                  <td>
-                    <div style={{ fontWeight: 600 }}>{rd.deviceId?.name}</div>
-                    <div className="rdm-text-secondary">
-                      {rd.deviceId?.unit ?? ""}
-                    </div>
-                  </td>
-                  <td>
-                    <div>{rd.deviceId?.model || "—"}</div>
-                    <div className="rdm-text-secondary">
-                      {rd.deviceId?.brand}
-                    </div>
-                  </td>
-                  <td>
-                    <span
-                      style={{
-                        background: "#e0f2fe",
-                        color: "#0284c7",
-                        padding: "3px 8px",
-                        borderRadius: 4,
-                        fontSize: 12,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {rd.deviceId?.category || "Chung"}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: "center", fontWeight: 600 }}>
-                    {rd.quantity}
-                  </td>
-                  <td>
-                    <div className="rdm-actions" style={{ justifyContent: "center" }}>
-                      <button
-                        className="rdm-icon-btn"
-                        title="Chỉnh sửa"
-                        onClick={() => handleOpenEdit(rd)}
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        className="rdm-icon-btn delete"
-                        title="Xoá"
-                        onClick={() => handleDelete(rd)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
+          <>
+            <table className="rdm-table">
+              <thead>
+                <tr>
+                  <th className="rdm-th-stt">STT</th>
+                  <th className="rdm-th-name">Thiết bị & Mô tả</th>
+                  <th className="rdm-th-info">Model / Hãng</th>
+                  <th className="rdm-th-category">Danh mục</th>
+                  <th className="rdm-th-qty">Số lượng</th>
+                  <th className="rdm-th-condition">Tình trạng</th>
+                  <th className="rdm-th-actions">Thao tác</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {currentItems.map((rd, idx) => (
+                  <tr key={rd._id}>
+                    <td className="rdm-td-stt">
+                      {(currentPage - 1) * itemsPerPage + idx + 1}
+                    </td>
+                    <td className="rdm-td-name">
+                      <div className="rdm-main-text">{rd.deviceId?.name}</div>
+                      <div className="rdm-desc-text">
+                        {rd.deviceId?.description || rd.deviceId?.unit || "Chưa có mô tả"}
+                      </div>
+                    </td>
+                    <td className="rdm-td-info">
+                      <div className="rdm-main-text">{rd.deviceId?.model || "—"}</div>
+                      <div className="rdm-brand-text">{rd.deviceId?.brand}</div>
+                    </td>
+                    <td className="rdm-td-category">
+                      <span className="rdm-category-badge">
+                        {rd.deviceId?.category || "Chung"}
+                      </span>
+                    </td>
+                    <td className="rdm-td-qty">{rd.quantity}</td>
+                    <td className="rdm-td-condition">
+                      <span className={getConditionBadge(rd.condition)}>
+                        {conditionLabel[rd.condition] ?? rd.condition}
+                      </span>
+                    </td>
+                    <td className="rdm-td-actions">
+                      <div className="rdm-table-actions">
+                        <button
+                          className="rdm-btn-icon rdm-btn-edit"
+                          title="Chỉnh sửa"
+                          onClick={() => handleOpenEdit(rd)}
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          className="rdm-btn-icon rdm-btn-delete"
+                          title="Xóa"
+                          onClick={() => handleDeleteClick(rd)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={processedRoomDevices.length}
+              onPageChange={setCurrentPage}
+            />
+          </>
         )}
       </div>
 
-      {/* ── ADD MODAL ── */}
-      {showAddModal && (
-        <div className="rdm-modal-overlay">
-          <div className="rdm-modal">
-            <div className="rdm-modal-header">
-              <h3>Thêm thiết bị vào loại phòng</h3>
-              <button
-                className="rdm-modal-close"
-                onClick={() => setShowAddModal(false)}
-              >
-                <X size={18} />
-              </button>
-            </div>
+      {/* ── MODALS ── */}
 
-            <form onSubmit={handleAdd}>
-              <div className="rdm-modal-body">
-                {/* Type info (readonly) */}
-                <div className="rdm-form-group">
-                  <label>Loại phòng</label>
-                  <input
-                    className="rdm-form-input"
-                    value={selectedRoomTypeName}
-                    readOnly
-                    style={{ background: "#f8fafc", color: "#64748b" }}
-                  />
-                </div>
-
-                {/* Device selector */}
-                <div className="rdm-form-group">
-                  <label>
-                    Thiết bị <span>*</span>
-                  </label>
-                  {availableDevices.length === 0 ? (
-                    <p style={{ color: "#ef4444", fontSize: 13, margin: 0 }}>
-                      Tất cả thiết bị đã được thêm vào loại phòng này.
-                    </p>
-                  ) : (
-                    <select
-                      className="rdm-form-select"
-                      required
-                      value={addForm.deviceId}
-                      onChange={(e) =>
-                        setAddForm({ ...addForm, deviceId: e.target.value })
-                      }
-                    >
-                      <option value="">-- Chọn thiết bị --</option>
-                      {availableDevices.map((d) => (
-                        <option key={d._id} value={d._id}>
-                          {d.name}
-                          {d.brand ? ` — ${d.brand}` : ""}
-                          {d.model ? ` (${d.model})` : ""}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-
-                {/* Quantity */}
-                <div className="rdm-form-group">
-                  <label>
-                    Số lượng <span>*</span>
-                  </label>
-                  <input
-                    className="rdm-form-input"
-                    type="number"
-                    min={1}
-                    required
-                    value={addForm.quantity}
-                    onChange={(e) =>
-                      setAddForm({
-                        ...addForm,
-                        quantity: Number(e.target.value),
-                      })
-                    }
-                  />
-                  <span className="rdm-form-hint">
-                    Số lượng thiết bị tiêu chuẩn cho mỗi phòng thuộc loại này
-                  </span>
-                </div>
-
-              </div>
-
-              <div className="rdm-modal-footer">
-                <button
-                  type="button"
-                  className="rdm-btn rdm-btn-outline"
-                  onClick={() => setShowAddModal(false)}
-                >
-                  Huỷ
-                </button>
-                <button
-                  type="submit"
-                  className="rdm-btn rdm-btn-primary"
-                  disabled={availableDevices.length === 0}
-                >
-                  <Plus size={16} />
-                  Thêm thiết bị
-                </button>
-              </div>
-            </form>
+      {/* 1. ADD MODAL */}
+      <AppModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Thêm thiết bị vào loại phòng"
+        icon={<Plus size={18} />}
+        color="blue"
+        size="md"
+        footer={
+          <>
+            <button type="button" className="ms-btn ms-btn--ghost" onClick={() => setShowAddModal(false)}>
+              Hủy bỏ
+            </button>
+            <button
+              type="submit"
+              form="rdm-add-form"
+              className="ms-btn ms-btn--primary"
+              disabled={availableDevices.length === 0}
+            >
+              <Plus size={16} />
+              Thêm thiết bị
+            </button>
+          </>
+        }
+      >
+        <form id="rdm-add-form" onSubmit={handleAdd}>
+          {/* Loại phòng (readonly) */}
+          <div className="ms-field">
+            <label className="ms-label">Loại phòng</label>
+            <input
+              type="text"
+              className="ms-input"
+              value={selectedRoomTypeName}
+              readOnly
+              style={{ background: "#f8fafc", color: "#64748b" }}
+            />
           </div>
-        </div>
-      )}
 
-      {/* ── EDIT MODAL ── */}
-      {showEditModal && editingRecord && (
-        <div className="rdm-modal-overlay">
-          <div className="rdm-modal">
-            <div className="rdm-modal-header">
-              <h3>Cập nhật thiết bị</h3>
-              <button
-                className="rdm-modal-close"
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditingRecord(null);
-                }}
+          {/* Thiết bị */}
+          <div className="ms-field" style={{ marginTop: "16px" }}>
+            <label className="ms-label">
+              Thiết bị <span className="ms-label-required">*</span>
+            </label>
+            {availableDevices.length === 0 ? (
+              <p style={{ color: "#ef4444", fontSize: 13, margin: 0 }}>
+                Tất cả thiết bị đã được thêm vào loại phòng này.
+              </p>
+            ) : (
+              <select
+                className="ms-input"
+                required
+                value={addForm.deviceId}
+                onChange={(e) => setAddForm({ ...addForm, deviceId: e.target.value })}
+                style={{ appearance: "auto" }}
               >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleEdit}>
-              <div className="rdm-modal-body">
-                {/* Device info (readonly) */}
-                <div className="rdm-form-group">
-                  <label>Thiết bị</label>
-                  <input
-                    className="rdm-form-input"
-                    value={`${editingRecord.deviceId?.name ?? ""}${editingRecord.deviceId?.brand
-                        ? ` — ${editingRecord.deviceId.brand}`
-                        : ""
-                      }${editingRecord.deviceId?.model
-                        ? ` (${editingRecord.deviceId.model})`
-                        : ""
-                      }`}
-                    readOnly
-                    style={{ background: "#f8fafc", color: "#64748b" }}
-                  />
-                </div>
-
-                {/* Quantity */}
-                <div className="rdm-form-group">
-                  <label>
-                    Số lượng <span>*</span>
-                  </label>
-                  <input
-                    className="rdm-form-input"
-                    type="number"
-                    min={1}
-                    required
-                    value={editForm.quantity}
-                    onChange={(e) =>
-                      setEditForm({
-                        ...editForm,
-                        quantity: Number(e.target.value),
-                      })
-                    }
-                  />
-                </div>
-
-              </div>
-
-              <div className="rdm-modal-footer">
-                <button
-                  type="button"
-                  className="rdm-btn rdm-btn-outline"
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setEditingRecord(null);
-                  }}
-                >
-                  Huỷ
-                </button>
-                <button type="submit" className="rdm-btn rdm-btn-primary">
-                  <Edit size={16} />
-                  Lưu thay đổi
-                </button>
-              </div>
-            </form>
+                <option value="">-- Chọn thiết bị --</option>
+                {availableDevices.map((d) => (
+                  <option key={d._id} value={d._id}>
+                    {d.name}
+                    {d.brand ? ` — ${d.brand}` : ""}
+                    {d.model ? ` (${d.model})` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
+
+          {/* Số lượng + Tình trạng */}
+          <div className="ms-field-row" style={{ marginTop: "16px" }}>
+            <div className="ms-field">
+              <label className="ms-label">
+                Số lượng <span className="ms-label-required">*</span>
+              </label>
+              <input
+                type="number"
+                className="ms-input"
+                min={1}
+                required
+                value={addForm.quantity}
+                onChange={(e) => setAddForm({ ...addForm, quantity: Number(e.target.value) })}
+              />
+            </div>
+            <div className="ms-field">
+              <label className="ms-label">Tình trạng</label>
+              <select
+                className="ms-input"
+                value={addForm.condition}
+                onChange={(e) => setAddForm({ ...addForm, condition: e.target.value })}
+                style={{ appearance: "auto" }}
+              >
+                {CONDITION_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {conditionLabel[opt]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </form>
+      </AppModal>
+
+      {/* 2. EDIT MODAL */}
+      <AppModal
+        open={showEditModal}
+        onClose={() => { setShowEditModal(false); setEditingRecord(null); }}
+        title="Cập nhật thiết bị"
+        icon={<Edit size={18} />}
+        color="blue"
+        size="md"
+        footer={
+          <>
+            <button
+              type="button"
+              className="ms-btn ms-btn--ghost"
+              onClick={() => { setShowEditModal(false); setEditingRecord(null); }}
+            >
+              Hủy bỏ
+            </button>
+            <button type="submit" form="rdm-edit-form" className="ms-btn ms-btn--primary">
+              <CheckCircle size={16} />
+              Cập nhật
+            </button>
+          </>
+        }
+      >
+        <form id="rdm-edit-form" onSubmit={handleEdit}>
+          {/* Thiết bị (readonly) */}
+          <div className="ms-field">
+            <label className="ms-label">Thiết bị</label>
+            <input
+              type="text"
+              className="ms-input"
+              value={
+                `${editingRecord?.deviceId?.name ?? ""}${
+                  editingRecord?.deviceId?.brand ? ` — ${editingRecord.deviceId.brand}` : ""
+                }${editingRecord?.deviceId?.model ? ` (${editingRecord.deviceId.model})` : ""}`
+              }
+              readOnly
+              style={{ background: "#f8fafc", color: "#64748b" }}
+            />
+          </div>
+
+          {/* Số lượng + Tình trạng */}
+          <div className="ms-field-row" style={{ marginTop: "16px" }}>
+            <div className="ms-field">
+              <label className="ms-label">
+                Số lượng <span className="ms-label-required">*</span>
+              </label>
+              <input
+                type="number"
+                className="ms-input"
+                min={1}
+                required
+                value={editForm.quantity}
+                onChange={(e) => setEditForm({ ...editForm, quantity: Number(e.target.value) })}
+              />
+            </div>
+            <div className="ms-field">
+              <label className="ms-label">Tình trạng</label>
+              <select
+                className="ms-input"
+                value={editForm.condition}
+                onChange={(e) => setEditForm({ ...editForm, condition: e.target.value })}
+                style={{ appearance: "auto" }}
+              >
+                {CONDITION_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {conditionLabel[opt]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </form>
+      </AppModal>
+
+      {/* 3. DELETE MODAL */}
+      <AppModal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Xác nhận xóa"
+        icon={<AlertTriangle size={18} />}
+        color="red"
+        size="sm"
+        footer={
+          <>
+            <button type="button" className="ms-btn ms-btn--ghost" onClick={() => setShowDeleteModal(false)}>
+              Hủy bỏ
+            </button>
+            <button type="button" className="ms-btn ms-btn--danger" onClick={handleConfirmDelete}>
+              <Trash2 size={16} /> Đồng ý xóa
+            </button>
+          </>
+        }
+      >
+        <div className="ms-delete-notice">
+          <div className="ms-delete-notice-icon">
+            <AlertTriangle size={28} color="#f59e0b" />
+          </div>
+          <p className="ms-delete-notice-text">
+            Bạn có chắc muốn xóa thiết bị <b>{itemToDelete?.deviceId?.name}</b> khỏi loại phòng này?
+            Toàn bộ dữ liệu này sẽ không thể phục hồi.
+          </p>
         </div>
-      )}
+      </AppModal>
     </div>
   );
 };
