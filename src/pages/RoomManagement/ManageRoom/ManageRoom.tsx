@@ -97,6 +97,8 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const [selectedDepositId, setSelectedDepositId] = useState<string | null>(null);
   const [availableContracts, setAvailableContracts] = useState<any[]>([]);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  // State riêng cho liquidation - luôn giữ hợp đồng active để hiện nút thanh lý
+  const [activeContractIdForLiquidation, setActiveContractIdForLiquidation] = useState<string | null>(null);
 
   // State cho dropdown chọn hiển thị (hợp đồng/cọc)
   const [displayMode, setDisplayMode] = useState<"active" | "inactive" | "deposit">("active");
@@ -470,10 +472,14 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       setRoomBookServices([]);
       setPrepaidInvoice(null);
     } else if (value) {
-      // Chọn hợp đồng
+      // Chọn hợp đồng - nếu là active thì cập nhật liquidation state
       const contractId = value;
+      const selectedContract = allRoomContracts.find((c: any) => c._id === contractId);
       setSelectedContractId(contractId);
       setSelectedDepositId(null);
+      if (selectedContract?.status === "active") {
+        setActiveContractIdForLiquidation(contractId);
+      }
       fetchContractDetails(contractId);
     } else {
       // Chưa chọn gì
@@ -519,17 +525,22 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       setAvailableContracts(roomContracts);
       setSelectedContractId(defaultContract._id);
       setSelectedDepositId(null);
+      // Lưu hợp đồng active đầu tiên để nút thanh lý luôn hiện khi có active
+      // Hoặc fallback sang inactive nếu không có active (phòng trống đến...)
+      setActiveContractIdForLiquidation(activeContracts.length > 0 ? activeContracts[0]._id : (inactiveContracts.length > 0 ? inactiveContracts[0]._id : null));
       await fetchContractDetails(defaultContract._id);
     } else if (hasDepositOnly) {
       // Không có hợp đồng, chỉ có cọc lẻ - hiện cọc đầu tiên
       setAvailableContracts([]);
       setSelectedContractId(null);
       setSelectedDepositId(roomDeposits[0]._id);
+      setActiveContractIdForLiquidation(null);
     } else {
       // Không có gì
       setAvailableContracts([]);
       setSelectedContractId(null);
       setSelectedDepositId(null);
+      setActiveContractIdForLiquidation(null);
     }
   };
 
@@ -1269,6 +1280,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                       setDisplayMode("active");
                       setAllRoomContracts([]);
                       setRoomDeposits([]);
+                      setActiveContractIdForLiquidation(null);
                     }}
                   >
                     Đóng
@@ -1287,12 +1299,16 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                     </button>
                   )}
 
-                  {/* Nút Thanh lý — hiện cho cả manager và owner khi hợp đồng đang active */}
-                  {canLiquidate && selectedContractId && (() => {
+                  {/* Nút Thanh lý — hiện cho cả manager và owner khi có hợp đồng active hoặc inactive (phòng trống đến...) */}
+                  {canLiquidate && (() => {
+                    // Ưu tiên dùng active contract đã lưu, fallback sang selectedContractId
+                    const liquidationId = activeContractIdForLiquidation || selectedContractId;
+                    if (!liquidationId) return null;
                     const selContract = availableContracts.find(
-                      (c: any) => c._id === selectedContractId
+                      (c: any) => c._id === liquidationId
                     );
-                    if (selContract?.status === "active") {
+                    // Hiện nút khi hợp đồng đang active HOẶC là inactive (phòng trống đến...)
+                    if (selContract?.status === "active" || selContract?.status === "inactive") {
                       return (
                         <button
                           type="button"
@@ -1808,9 +1824,11 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         })()}
 
       {/* ── Liquidation Wizard ── */}
-      {showLiquidationWizard && selectedContractId && (() => {
+      {showLiquidationWizard && (() => {
+        const liquidationId = activeContractIdForLiquidation || selectedContractId;
+        if (!liquidationId) return null;
         const selContract = availableContracts.find(
-          (c: any) => c._id === selectedContractId
+          (c: any) => c._id === liquidationId
         );
         if (!selContract) return null;
 
@@ -1846,6 +1864,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
               setShowDetailModal(false);
               setAllRoomContracts([]);
               setRoomDeposits([]);
+              setActiveContractIdForLiquidation(null);
               toastr.success("Thanh lý hợp đồng thành công! Phòng đã được giải phóng.");
               fetchData();
             }}
