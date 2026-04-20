@@ -14,6 +14,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { cashFlowService } from "../../../services/cashFlowService";
+import { useToast } from "../../../components/common/Toast";
 import "./OwnerPaymentsList.css";
 
 interface OwnerPaymentTicket {
@@ -32,6 +33,8 @@ interface OwnerPaymentTicket {
 type UiPaymentStatus = "pending" | "approved" | "paid" | "rejected";
 
 export default function OwnerPaymentsList() {
+  const { showToast } = useToast();
+
   const [tickets, setTickets] = useState<OwnerPaymentTicket[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +84,7 @@ export default function OwnerPaymentsList() {
         msg = (err as { response?: { data?: { message?: string } } }).response!.data!
           .message as string;
       }
-      setError(msg);
+      showToast("error", "Lỗi kết nối", msg);
     } finally {
       setLoading(false);
     }
@@ -177,10 +180,17 @@ export default function OwnerPaymentsList() {
               }
             : prev,
         );
+        if (uiStatus === "approved") {
+          showToast("success", "Thành công", "Phiếu chi đã được duyệt thành công!");
+        } else if (uiStatus === "rejected") {
+          showToast("success", "Thành công", "Phiếu chi đã bị từ chối!");
+        } else if (uiStatus === "paid") {
+          showToast("success", "Thành công", "Xác nhận đã chi tiền thành công!");
+        }
       }
     } catch (err) {
       console.error("Lỗi khi cập nhật trạng thái phiếu chi:", err);
-      setError("Không thể cập nhật trạng thái phiếu chi");
+      showToast("error", "Lỗi", "Không thể cập nhật trạng thái phiếu chi!");
       fetchTickets();
     }
   };

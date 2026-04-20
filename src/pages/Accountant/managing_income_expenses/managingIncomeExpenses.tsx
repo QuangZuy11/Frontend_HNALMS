@@ -15,6 +15,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { cashFlowService } from "../../../services/cashFlowService";
+import { useToast } from "../../../components/common/Toast";
 import "./managingIncomeExpenses.css";
 
 interface Room {
@@ -41,6 +42,8 @@ interface FinancialTicket {
 type UiPaymentStatus = "pending" | "approved" | "paid" | "rejected";
 
 export default function ManagingIncomeExpenses() {
+  const { showToast } = useToast();
+
   const [tickets, setTickets] = useState<FinancialTicket[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -112,7 +115,7 @@ export default function ManagingIncomeExpenses() {
         msg = (err as { response?: { data?: { message?: string } } }).response!.data!
           .message as string;
       }
-      setError(msg);
+      showToast("error", "Lỗi kết nối", msg);
     } finally {
       setLoading(false);
     }
@@ -189,10 +192,11 @@ export default function ManagingIncomeExpenses() {
         setTickets((prev) => [response.data, ...prev]);
         setCurrentPage(1);
         closeCreateModal();
+        showToast("success", "Thành công", "Tạo phiếu chi thành công!");
       }
     } catch (err) {
       console.error("Lỗi khi tạo phiếu chi:", err);
-      setError("Không thể tạo phiếu chi");
+      showToast("error", "Lỗi", "Không thể tạo phiếu chi. Vui lòng thử lại!");
     } finally {
       setCreating(false);
     }
@@ -209,10 +213,11 @@ export default function ManagingIncomeExpenses() {
       if (res?.success && res?.data?._id) {
         setTickets((prev) => prev.map((t) => (t._id === res.data._id ? res.data : t)));
         setSelectedTicket((prev) => (prev?._id === res.data._id ? res.data : prev));
+        showToast("success", "Thành công", "Xác nhận đã chi tiền thành công!");
       }
     } catch (err) {
       console.error("Lỗi khi xác nhận đã thanh toán:", err);
-      setError("Không thể cập nhật trạng thái phiếu chi");
+      showToast("error", "Lỗi", "Không thể cập nhật trạng thái phiếu chi!");
     } finally {
       setCreating(false);
     }
