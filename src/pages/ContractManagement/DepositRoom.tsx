@@ -2,12 +2,17 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { format } from "date-fns";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { vi } from "date-fns/locale/vi";
 import {
   Plus, Search, Filter,
-  FileText, Sparkles, LayoutGrid, DollarSign, Wallet, Edit2, X, Eye, Printer
+  FileText, DollarSign, Wallet, Edit2, X, Eye, Printer, FileSpreadsheet
 } from "lucide-react";
 import toastr from "toastr";
 import "toastr/build/toastr.min.css";
+import * as XLSX from "xlsx-js-style";
 import "./DepositRoom.css";
 
 interface Room {
@@ -112,6 +117,107 @@ const DepositRoom = () => {
   const [editForm, setEditForm] = useState({
     name: "", phone: "", email: "", room: null as any, status: "Held"
   });
+
+  // Excel Export Modal State
+  const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
+  const [excelFromDate, setExcelFromDate] = useState<Date | null>(null);
+  const [excelToDate, setExcelToDate] = useState<Date | null>(new Date());
+
+  // Chuyển dd/mm/yyyy → chuỗi YYYYMMDD cho tên file
+  const dateToFileLabel = (d: Date | null) => d ? format(d, "ddMMyyyy") : "all";
+
+  const handleExportExcel = () => {
+    // Đặt giờ phút: from 00:00:00, to 23:59:59
+    const from = excelFromDate ? new Date(excelFromDate.getFullYear(), excelFromDate.getMonth(), excelFromDate.getDate(), 0, 0, 0) : null;
+    const to = excelToDate ? new Date(excelToDate.getFullYear(), excelToDate.getMonth(), excelToDate.getDate(), 23, 59, 59) : null;
+
+    const rows = deposits.filter(d => {
+      const rawDate = d.createdDate || d.createdAt;
+      if (!rawDate) return false;
+      const date = new Date(rawDate);
+      if (from && date < from) return false;
+      if (to && date > to) return false;
+      return true;
+    });
+
+    if (rows.length === 0) {
+      toastr.warning("Không có dữ liệu trong khoảng thời gian đã chọn.");
+      return;
+    }
+
+    const statusLabel = (s: string) => {
+      if (s === "Held") return "Đang giữ";
+      if (s === "Refunded") return "Đã hoàn";
+      if (s === "Forfeited") return "Đã phạt";
+      if (s === "Expired") return "Đã hết hạn";
+      return "Đang chờ";
+    };
+
+    const headers = ["STT", "Tên người cọc", "Số điện thoại", "Email", "Phòng", "Số tiền cọc (VND)", "Ngày cọc", "Trạng thái", "Ngày hoàn cọc"];
+
+    const data = rows.map((d, i) => {
+      const rawDate = d.createdDate || d.createdAt;
+      return [
+        i + 1,
+        d.name,
+        d.phone,
+        d.email,
+        d.room?.name || "N/A",
+        d.amount,
+        rawDate ? format(new Date(rawDate), "dd/MM/yyyy HH:mm") : "N/A",
+        statusLabel(d.status),
+        d.refundDate ? format(new Date(d.refundDate), "dd/MM/yyyy HH:mm") : ""
+      ];
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+
+    // Style header row
+    headers.forEach((_, ci) => {
+      const cellRef = XLSX.utils.encode_cell({ r: 0, c: ci });
+      ws[cellRef].s = {
+        font: { bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "1D4ED8" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: {
+          top: { style: "thin", color: { rgb: "BFDBFE" } },
+          bottom: { style: "thin", color: { rgb: "BFDBFE" } },
+          left: { style: "thin", color: { rgb: "BFDBFE" } },
+          right: { style: "thin", color: { rgb: "BFDBFE" } }
+        }
+      };
+    });
+
+    // Style data rows
+    data.forEach((row, ri) => {
+      row.forEach((_, ci) => {
+        const cellRef = XLSX.utils.encode_cell({ r: ri + 1, c: ci });
+        if (!ws[cellRef]) return;
+        ws[cellRef].s = {
+          fill: { fgColor: { rgb: ri % 2 === 0 ? "EFF6FF" : "FFFFFF" } },
+          alignment: { vertical: "center", horizontal: ci === 5 ? "right" : "left" },
+          border: {
+            top: { style: "thin", color: { rgb: "DBEAFE" } },
+            bottom: { style: "thin", color: { rgb: "DBEAFE" } },
+            left: { style: "thin", color: { rgb: "DBEAFE" } },
+            right: { style: "thin", color: { rgb: "DBEAFE" } }
+          }
+        };
+      });
+    });
+
+    ws["!cols"] = [8, 24, 16, 28, 10, 20, 18, 14, 18].map(w => ({ wch: w }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Danh sách tiền cọc");
+
+    const fromLabel = dateToFileLabel(excelFromDate);
+    const toLabel = dateToFileLabel(excelToDate);
+    XLSX.writeFile(wb, `TienCoc_${fromLabel}_${toLabel}.xlsx`);
+
+    toastr.success(`Xuất thành công ${rows.length} bản ghi!`);
+    setIsExcelModalOpen(false);
+  };
 
   useEffect(() => {
     const draft = sessionStorage.getItem("depositEditDraft");
@@ -315,6 +421,12 @@ const DepositRoom = () => {
             </div>
 
             <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+              <button
+                className="deposit-btn-excel"
+                onClick={() => setIsExcelModalOpen(true)}
+              >
+                <FileSpreadsheet size={18} /> Kết xuất Excel
+              </button>
               <button
                 className="deposit-btn-primary"
                 onClick={() => navigate(`${basePath}/deposits/floor-map`)}
@@ -723,6 +835,124 @@ const DepositRoom = () => {
               </button>
               <button type="button" className="dr-unique-btn-save" onClick={handleSaveEdit}>
                 Lưu thay đổi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EXCEL EXPORT MODAL */}
+      {isExcelModalOpen && (
+        <div className="dr-unique-modal-backdrop">
+          <div className="dr-unique-modal-container" style={{ maxWidth: "520px" }}>
+            <div className="dr-unique-modal-header">
+              <h3 className="dr-unique-modal-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <FileSpreadsheet size={20} style={{ color: "#16a34a" }} />
+                Kết xuất Excel
+              </h3>
+              <button onClick={() => setIsExcelModalOpen(false)} className="dr-unique-modal-close" title="Đóng">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ padding: "8px 0 4px" }}>
+              <p style={{ margin: "0 0 20px", color: "#64748b", fontSize: "0.9rem", lineHeight: "1.6" }}>
+                Chọn khoảng thời gian để lọc dữ liệu tiền cọc theo <strong>ngày tạo</strong> trước khi xuất ra file Excel.
+              </p>
+
+              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", overflow: "hidden" }}>
+                  <div style={{ minWidth: 0 }}>
+                    <label className="dr-unique-form-label">Từ ngày</label>
+                    <DatePicker
+                      value={excelFromDate}
+                      onChange={(val) => setExcelFromDate(val)}
+                      format="dd/MM/yyyy"
+                      maxDate={excelToDate ?? undefined}
+                      slotProps={{
+                        textField: {
+                          variant: "outlined",
+                          size: "small",
+                          placeholder: "DD/MM/YYYY",
+                          sx: {
+                            width: "100%",
+                            "& .MuiOutlinedInput-root": {
+                              fontFamily: "'Inter', sans-serif",
+                              fontSize: "0.9rem",
+                              borderRadius: "8px",
+                              background: "#fff",
+                              "& fieldset": { borderColor: "#cbd5e1" },
+                              "&:hover fieldset": { borderColor: "#3579c6" },
+                              "&.Mui-focused fieldset": { borderColor: "#3579c6", borderWidth: "1.5px" },
+                            },
+                            "& .MuiInputBase-input": { padding: "9px 12px" },
+                          },
+                        },
+                        popper: {
+                          disablePortal: false,
+                          modifiers: [{ name: "flip", enabled: false }],
+                          style: { zIndex: 9999 },
+                        },
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ minWidth: 0 }}>
+                    <label className="dr-unique-form-label">Đến ngày</label>
+                    <DatePicker
+                      value={excelToDate}
+                      onChange={(val) => setExcelToDate(val)}
+                      format="dd/MM/yyyy"
+                      minDate={excelFromDate ?? undefined}
+                      maxDate={new Date()}
+                      slotProps={{
+                        textField: {
+                          variant: "outlined",
+                          size: "small",
+                          placeholder: "DD/MM/YYYY",
+                          sx: {
+                            width: "100%",
+                            "& .MuiOutlinedInput-root": {
+                              fontFamily: "'Inter', sans-serif",
+                              fontSize: "0.9rem",
+                              borderRadius: "8px",
+                              background: "#fff",
+                              "& fieldset": { borderColor: "#cbd5e1" },
+                              "&:hover fieldset": { borderColor: "#3579c6" },
+                              "&.Mui-focused fieldset": { borderColor: "#3579c6", borderWidth: "1.5px" },
+                            },
+                            "& .MuiInputBase-input": { padding: "9px 12px" },
+                          },
+                        },
+                        popper: {
+                          disablePortal: false,
+                          modifiers: [{ name: "flip", enabled: false }],
+                          style: { zIndex: 9999 },
+                        },
+                      }}
+                    />
+                  </div>
+                </div>
+              </LocalizationProvider>
+
+              {!excelFromDate && (
+                <p style={{ margin: "12px 0 0", color: "#f59e0b", fontSize: "0.82rem", display: "flex", alignItems: "center", gap: "6px" }}>
+                  Nếu không chọn "Từ ngày", sẽ xuất toàn bộ dữ liệu đến ngày kết thúc.
+                </p>
+              )}
+            </div>
+
+            <div className="dr-unique-modal-actions">
+              <button type="button" className="dr-unique-btn-cancel" onClick={() => setIsExcelModalOpen(false)}>
+                Hủy
+              </button>
+              <button
+                type="button"
+                className="dr-unique-btn-save"
+                onClick={handleExportExcel}
+                style={{ background: "linear-gradient(135deg, #16a34a, #15803d)", display: "flex", alignItems: "center", gap: "8px" }}
+              >
+                <FileSpreadsheet size={16} /> Xuất Excel
               </button>
             </div>
           </div>

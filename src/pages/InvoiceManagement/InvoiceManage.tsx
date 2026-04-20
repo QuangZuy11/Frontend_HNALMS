@@ -1,8 +1,14 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
+import { format } from "date-fns";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { vi } from "date-fns/locale/vi";
+import * as XLSX from "xlsx-js-style";
 import {
   Plus, Search, Droplet, Send, FileText, X, Edit3, Wrench,
-  ChevronLeft, ChevronRight, Filter, AlertCircle, ArrowUpDown, ChevronUp, ChevronDown
+  ChevronLeft, ChevronRight, Filter, AlertCircle, ArrowUpDown, ChevronUp, ChevronDown, FileSpreadsheet
 } from 'lucide-react';
 
 import './InvoiceManage.css';
@@ -73,6 +79,12 @@ const InvoiceManager = () => {
   const [bulkFilterStatus, setBulkFilterStatus] = useState('ALL');
   const [bulkFilterFloor, setBulkFilterFloor] = useState('ALL');
   const [bulkCurrentPage, setBulkCurrentPage] = useState(1);
+
+  // Excel Export Modal State
+  const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
+  const [excelFromDate, setExcelFromDate] = useState<Date | null>(null);
+  const [excelToDate, setExcelToDate] = useState<Date | null>(new Date());
+  const [excelFilterType, setExcelFilterType] = useState<string>('All');
 
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -496,6 +508,102 @@ const InvoiceManager = () => {
     }
   };
 
+  // Chuyển dd/mm/yyyy → chuỗi YYYYMMDD cho tên file
+  const dateToFileLabel = (d: Date | null) => d ? format(d, "ddMMyyyy") : "all";
+
+  const handleExportExcel = () => {
+    const from = excelFromDate ? new Date(excelFromDate.getFullYear(), excelFromDate.getMonth(), excelFromDate.getDate(), 0, 0, 0) : null;
+    const to = excelToDate ? new Date(excelToDate.getFullYear(), excelToDate.getMonth(), excelToDate.getDate(), 23, 59, 59) : null;
+
+    const rows = invoices.filter(inv => {
+      const rawDate = inv.createdAt || inv.dueDate;
+      if (!rawDate) return false;
+      const date = new Date(rawDate);
+      if (from && date < from) return false;
+      if (to && date > to) return false;
+      if (excelFilterType !== 'All' && inv.type !== excelFilterType) return false;
+      return true;
+    });
+
+    if (rows.length === 0) {
+      showToast('warning', 'Thông báo', 'Không có dữ liệu trong khoảng thời gian và loại hóa đơn đã chọn.');
+      return;
+    }
+
+    const statusLabel = (s: string) => {
+      if (s === 'Draft') return 'Bản Nháp';
+      if (s === 'Unpaid') return 'Chưa thu';
+      if (s === 'Paid') return 'Đã thu';
+      return s;
+    };
+
+    const typeLabel = (t: string) => t === 'Periodic' ? 'Định kỳ' : 'Phát sinh';
+
+    const headers = ["STT", "Mã HĐ", "Phòng", "Loại", "Tiêu đề", "Tổng tiền (VND)", "Hạn chót", "Trạng thái", "Ngày tạo"];
+
+    const data = rows.map((inv, i) => {
+      const rawDate = inv.createdAt || inv.dueDate;
+      return [
+        i + 1,
+        inv.invoiceCode,
+        getRoomName(inv),
+        typeLabel(inv.type),
+        inv.title,
+        inv.totalAmount,
+        formatDate(inv.dueDate),
+        statusLabel(inv.status),
+        rawDate ? format(new Date(rawDate), "dd/MM/yyyy HH:mm") : "N/A"
+      ];
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+
+    headers.forEach((_, ci) => {
+      const cellRef = XLSX.utils.encode_cell({ r: 0, c: ci });
+      ws[cellRef].s = {
+        font: { bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "1D4ED8" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: {
+          top: { style: "thin", color: { rgb: "BFDBFE" } },
+          bottom: { style: "thin", color: { rgb: "BFDBFE" } },
+          left: { style: "thin", color: { rgb: "BFDBFE" } },
+          right: { style: "thin", color: { rgb: "BFDBFE" } }
+        }
+      };
+    });
+
+    data.forEach((row, ri) => {
+      row.forEach((_, ci) => {
+        const cellRef = XLSX.utils.encode_cell({ r: ri + 1, c: ci });
+        if (!ws[cellRef]) return;
+        ws[cellRef].s = {
+          fill: { fgColor: { rgb: ri % 2 === 0 ? "EFF6FF" : "FFFFFF" } },
+          alignment: { vertical: "center", horizontal: ci === 5 ? "right" : "left" },
+          border: {
+            top: { style: "thin", color: { rgb: "DBEAFE" } },
+            bottom: { style: "thin", color: { rgb: "DBEAFE" } },
+            left: { style: "thin", color: { rgb: "DBEAFE" } },
+            right: { style: "thin", color: { rgb: "DBEAFE" } }
+          }
+        };
+      });
+    });
+
+    ws["!cols"] = [6, 18, 12, 12, 24, 20, 14, 14, 18].map(w => ({ wch: w }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Danh sách hóa đơn");
+
+    const typeLabelFile = excelFilterType === 'All' ? 'all' : (excelFilterType === 'Periodic' ? 'DinhKy' : 'PhatSinh');
+    const fromLabel = dateToFileLabel(excelFromDate);
+    const toLabel = dateToFileLabel(excelToDate);
+    XLSX.writeFile(wb, `HoaDon_${typeLabelFile}_${fromLabel}_${toLabel}.xlsx`);
+
+    showToast('success', 'Thành công', `Xuất thành công ${rows.length} bản ghi!`);
+    setIsExcelModalOpen(false);
+  };
+
   const formatCurrency = (val: number) => {
     if (isNaN(val) || val === null || val === undefined) return '0 ₫';
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
@@ -716,6 +824,13 @@ const InvoiceManager = () => {
 
           <div className="invoice-header-aside">
             <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                className="btn btn-outline"
+                onClick={() => setIsExcelModalOpen(true)}
+              >
+                <FileSpreadsheet size={18} /> Kết xuất Excel
+              </button>
+
               <button
                 className="btn btn-outline"
                 onClick={handleOpenBulkReading}
@@ -1283,6 +1398,139 @@ const InvoiceManager = () => {
           )}
         </div>
       </AppModal>
+
+      {/* EXCEL EXPORT MODAL */}
+      {isExcelModalOpen && (
+        <div className="invoice-excel-modal-backdrop">
+          <div className="invoice-excel-modal-container">
+            <div className="invoice-excel-modal-header">
+              <div className="invoice-excel-modal-title-row">
+                <div className="invoice-excel-modal-icon">
+                  <FileSpreadsheet size={20} />
+                </div>
+                <h3 className="invoice-excel-modal-title">Kết xuất Excel</h3>
+              </div>
+              <p className="invoice-excel-modal-subtitle">Lọc hóa đơn theo ngày &amp; loại</p>
+              <button onClick={() => setIsExcelModalOpen(false)} className="invoice-excel-modal-close" title="Đóng">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="invoice-excel-modal-body">
+              <p className="invoice-excel-modal-desc">
+                Chọn khoảng thời gian và loại hóa đơn để lọc dữ liệu trước khi xuất ra file Excel.
+              </p>
+
+              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
+                <div className="invoice-excel-date-grid">
+                  <div className="invoice-excel-date-cell">
+                    <label className="invoice-excel-form-label">Từ ngày</label>
+                    <DatePicker
+                      value={excelFromDate}
+                      onChange={(val) => setExcelFromDate(val)}
+                      format="dd/MM/yyyy"
+                      maxDate={excelToDate ?? undefined}
+                      slotProps={{
+                        textField: {
+                          variant: "outlined",
+                          size: "small",
+                          placeholder: "DD/MM/YYYY",
+                          sx: {
+                            width: "100%",
+                            "& .MuiOutlinedInput-root": {
+                              fontFamily: "'Inter', sans-serif",
+                              fontSize: "0.875rem",
+                              borderRadius: "8px",
+                              background: "#fff",
+                              "& fieldset": { borderColor: "#cbd5e1" },
+                              "&:hover fieldset": { borderColor: "#3579c6" },
+                              "&.Mui-focused fieldset": { borderColor: "#3579c6", borderWidth: "1.5px" },
+                            },
+                            "& .MuiInputBase-input": { padding: "9px 12px" },
+                          },
+                        },
+                        popper: {
+                          modifiers: [{ name: "flip", enabled: false }],
+                          style: { zIndex: 9999 },
+                        },
+                      }}
+                    />
+                  </div>
+
+                  <div className="invoice-excel-date-cell">
+                    <label className="invoice-excel-form-label">Đến ngày</label>
+                    <DatePicker
+                      value={excelToDate}
+                      onChange={(val) => setExcelToDate(val)}
+                      format="dd/MM/yyyy"
+                      minDate={excelFromDate ?? undefined}
+                      maxDate={new Date()}
+                      slotProps={{
+                        textField: {
+                          variant: "outlined",
+                          size: "small",
+                          placeholder: "DD/MM/YYYY",
+                          sx: {
+                            width: "100%",
+                            "& .MuiOutlinedInput-root": {
+                              fontFamily: "'Inter', sans-serif",
+                              fontSize: "0.875rem",
+                              borderRadius: "8px",
+                              background: "#fff",
+                              "& fieldset": { borderColor: "#cbd5e1" },
+                              "&:hover fieldset": { borderColor: "#3579c6" },
+                              "&.Mui-focused fieldset": { borderColor: "#3579c6", borderWidth: "1.5px" },
+                            },
+                            "& .MuiInputBase-input": { padding: "9px 12px" },
+                          },
+                        },
+                        popper: {
+                          modifiers: [{ name: "flip", enabled: false }],
+                          style: { zIndex: 9999 },
+                        },
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="invoice-excel-type-row">
+                  <label className="invoice-excel-form-label">Loại hóa đơn</label>
+                  <select
+                    className="invoice-excel-select"
+                    value={excelFilterType}
+                    onChange={(e) => setExcelFilterType(e.target.value)}
+                  >
+                    <option value="All">Tất cả loại hóa đơn</option>
+                    <option value="Periodic">Định kỳ (Hàng tháng)</option>
+                    <option value="Incurred">Phát sinh (Sửa chữa)</option>
+                  </select>
+                </div>
+              </LocalizationProvider>
+
+              {!excelFromDate && (
+                <p className="invoice-excel-hint">
+                  Nếu không chọn "Từ ngày", sẽ xuất toàn bộ dữ liệu đến ngày kết thúc.
+                </p>
+              )}
+
+              <div className="invoice-excel-modal-footer">
+                <button
+                  className="invoice-excel-btn-cancel"
+                  onClick={() => setIsExcelModalOpen(false)}
+                >
+                  Hủy
+                </button>
+                <button
+                  className="invoice-excel-btn-export"
+                  onClick={handleExportExcel}
+                >
+                  <FileSpreadsheet size={16} /> Xuất Excel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
