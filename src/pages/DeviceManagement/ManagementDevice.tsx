@@ -3,7 +3,7 @@ import axios from 'axios';
 import {
   Plus, Search, Edit, Trash2,
   FileSpreadsheet, Download,
-  Laptop, AlertTriangle, HardDrive, Cpu,
+  AlertTriangle, Cpu,
   Filter, ArrowUpDown,
   LayoutGrid, FileText, Sparkles, X, Upload, CheckCircle
 } from 'lucide-react';
