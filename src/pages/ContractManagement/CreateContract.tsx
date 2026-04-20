@@ -1312,6 +1312,7 @@ const CreateContract = () => {
                                   }
                                 }}
                                 format="dd/MM/yyyy"
+                                maxDate={new Date()}
                                 slotProps={{
                                   textField: {
                                     variant: "standard",

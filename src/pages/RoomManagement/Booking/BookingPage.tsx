@@ -597,6 +597,7 @@ export default function BookingPage() {
                                                         value={dob ? new Date(dob) : null}
                                                         onChange={(newValue) => setDob(newValue ? toLocalDateString(newValue) : "")}
                                                         format="dd/MM/yyyy"
+                                                        maxDate={new Date()}
                                                         slotProps={{
                                                             textField: {
                                                                 variant: "standard",
