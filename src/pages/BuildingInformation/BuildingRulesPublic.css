@@ -499,6 +499,111 @@
   box-shadow: 0 0 0 3px rgba(53, 121, 198, 0.1);
 }
 
+/* ===== Icon Preview (selected) ===== */
+.hnalms-icon-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.625rem 1rem;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1.5px solid #93c5fd;
+  border-radius: 0.5rem;
+}
+
+.hnalms-icon-preview-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  background-color: #3579c6;
+  border-radius: 0.5rem;
+  flex-shrink: 0;
+  color: #ffffff;
+}
+
+.hnalms-icon-preview-box svg {
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  fill: none !important;
+  stroke: #ffffff !important;
+}
+
+.hnalms-icon-preview-label {
+  font-size: 0.875rem;
+  color: #1e40af;
+}
+
+/* ===== Icon Grid ===== */
+.hnalms-icon-grid {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.hnalms-icon-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 4.5rem;
+  height: 4.5rem;
+  border: 1.5px solid #d1d5db;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  cursor: pointer;
+  color: #6b7280;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s,
+    color 0.2s,
+    box-shadow 0.2s;
+  outline: none;
+  padding: 0.375rem;
+}
+
+.hnalms-icon-option:hover {
+  border-color: #3579c6;
+  background-color: #eff6ff;
+  color: #3579c6;
+}
+
+.hnalms-icon-option--active {
+  border-color: #3579c6;
+  background-color: #3579c6;
+  color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(53, 121, 198, 0.25);
+}
+
+.hnalms-icon-option--active:hover {
+  border-color: #2b6cb0;
+  background-color: #2b6cb0;
+  color: #ffffff;
+}
+
+/* Force lucide icon stroke to use currentColor (inherits from button color) */
+.hnalms-icon-option svg {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  flex-shrink: 0;
+}
+
+/* Icon name label */
+.hnalms-icon-name {
+  font-size: 0.625rem;
+  font-weight: 500;
+  line-height: 1;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
 .modal-textarea {
   width: 100%;
   padding: 0.5rem 0.75rem;
@@ -602,4 +707,116 @@
 
 .add-rule-button:hover {
   background-color: #2b6bb0;
+}
+
+/* ========== Delete Confirm Popup ========== */
+.brp-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 1rem;
+  animation: brp-fade-in 0.2s ease;
+}
+
+@keyframes brp-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.brp-confirm-modal {
+  background-color: white;
+  border-radius: 16px;
+  padding: 32px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  animation: brp-modal-slide 0.25s ease;
+}
+
+@keyframes brp-modal-slide {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.brp-confirm-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.brp-confirm-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 12px 0;
+}
+
+.brp-confirm-message {
+  color: #64748b;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin: 0 0 28px 0;
+}
+
+.brp-confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.brp-confirm-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background-color: white;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.brp-confirm-cancel:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.brp-confirm-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.brp-confirm-delete:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  transform: translateY(-1px);
 }

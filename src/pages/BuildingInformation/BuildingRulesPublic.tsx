@@ -12,6 +12,7 @@ import {
   Trash2,
   Save,
   X,
+  CheckCircle,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import {
@@ -21,8 +22,7 @@ import {
   deleteBuildingRules,
 } from "../../services/buildingService";
 import "./BuildingRulesPublic.css";
-import toastr from "toastr";
-import "toastr/build/toastr.min.css";
+import { useToast } from "../../components/common/Toast";
 
 // Mapping icon từ tên string sang component
 const iconMap = {
@@ -48,6 +48,7 @@ const iconOptions = [
 const BuildingRulesPublic = () => {
   // Kiểm tra quyền admin/manager
   const { user } = useAuth();
+  const { showToast } = useToast();
   const isAdminOrManager = user && user.role === "owner";
 
   // State quản lý dữ liệu nội quy
@@ -62,6 +63,14 @@ const BuildingRulesPublic = () => {
   const [modalType, setModalType] = useState(""); // 'category', 'guideline'
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingGuideline, setEditingGuideline] = useState(null);
+
+  // State popup xác nhận xóa
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    type: "category" | "guideline" | null;
+    index: number | null;
+    title: string;
+  }>({ isOpen: false, type: null, index: null, title: "" });
 
   useEffect(() => {
     fetchRules();
@@ -94,10 +103,10 @@ const BuildingRulesPublic = () => {
       }
       setIsEditing(false);
       fetchRules();
-      toastr.success("Lưu nội quy thành công!");
+      showToast("success", "Lưu nội quy thành công!");
     } catch (err) {
       console.error("Error saving rules:", err);
-      toastr.error("Không thể lưu nội quy. Vui lòng thử lại.");
+      showToast("error", "Không thể lưu nội quy. Vui lòng thử lại.");
     }
   };
 
@@ -115,24 +124,54 @@ const BuildingRulesPublic = () => {
   };
 
   const handleDeleteCategory = async (index) => {
-    if (window.confirm("Bạn có chắc muốn xóa danh mục này?")) {
-      try {
-        const newCategories = rulesData.categories.filter(
-          (_, i) => i !== index,
-        );
-        const updatedData = { ...rulesData, categories: newCategories };
+    const categoryName = rulesData.categories[index]?.title || "danh mục này";
+    setDeleteConfirm({
+      isOpen: true,
+      type: "category",
+      index,
+      title: `Bạn có chắc muốn xóa danh mục "${categoryName}" không?`,
+    });
+  };
 
-        // Lưu vào database ngay
+  const handleDeleteGuideline = async (index) => {
+    const guidelineTitle = rulesData.guidelines[index]?.title || "hướng dẫn này";
+    setDeleteConfirm({
+      isOpen: true,
+      type: "guideline",
+      index,
+      title: `Bạn có chắc muốn xóa hướng dẫn "${guidelineTitle}" không?`,
+    });
+  };
+
+  const executeDelete = async () => {
+    const { type, index } = deleteConfirm;
+    if (type === null || index === null) return;
+
+    try {
+      if (type === "category") {
+        const newCategories = rulesData.categories.filter((_, i) => i !== index);
+        const updatedData = { ...rulesData, categories: newCategories };
         if (rulesData._id) {
           await updateBuildingRules(rulesData._id, updatedData);
         }
-
         setRulesData(updatedData);
-        await fetchRules(); // Reload data từ server
-      } catch (err) {
-      console.error("Error deleting category:", err);
-      toastr.error("Không thể xóa danh mục. Vui lòng thử lại.");
+        await fetchRules();
+        showToast("success", "Xóa danh mục thành công!");
+      } else if (type === "guideline") {
+        const newGuidelines = rulesData.guidelines.filter((_, i) => i !== index);
+        const updatedData = { ...rulesData, guidelines: newGuidelines };
+        if (rulesData._id) {
+          await updateBuildingRules(rulesData._id, updatedData);
+        }
+        setRulesData(updatedData);
+        await fetchRules();
+        showToast("success", "Xóa hướng dẫn thành công!");
       }
+    } catch (err) {
+      console.error("Error deleting:", err);
+      showToast("error", "Không thể xóa. Vui lòng thử lại.");
+    } finally {
+      setDeleteConfirm({ isOpen: false, type: null, index: null, title: "" });
     }
   };
 
@@ -165,9 +204,13 @@ const BuildingRulesPublic = () => {
       setShowModal(false);
       setEditingCategory(null);
       await fetchRules(); // Reload data từ server
+
+      // Thông báo thành công
+      const isNewCategory = editingCategory.index === undefined;
+      showToast("success", isNewCategory ? "Thêm danh mục mới thành công!" : "Cập nhật danh mục thành công!");
     } catch (err) {
       console.error("Error saving category:", err);
-      toastr.error("Không thể lưu danh mục. Vui lòng thử lại.");
+      showToast("error", "Không thể lưu danh mục. Vui lòng thử lại.");
     }
   };
 
@@ -182,28 +225,6 @@ const BuildingRulesPublic = () => {
     setEditingGuideline({ ...rulesData.guidelines[index], index });
     setModalType("guideline");
     setShowModal(true);
-  };
-
-  const handleDeleteGuideline = async (index) => {
-    if (window.confirm("Bạn có chắc muốn xóa hướng dẫn này?")) {
-      try {
-        const newGuidelines = rulesData.guidelines.filter(
-          (_, i) => i !== index,
-        );
-        const updatedData = { ...rulesData, guidelines: newGuidelines };
-
-        // Lưu vào database ngay
-        if (rulesData._id) {
-          await updateBuildingRules(rulesData._id, updatedData);
-        }
-
-        setRulesData(updatedData);
-        await fetchRules(); // Reload data từ server
-      } catch (err) {
-      console.error("Error deleting guideline:", err);
-      toastr.error("Không thể xóa hướng dẫn. Vui lòng thử lại.");
-      }
-    }
   };
 
   const handleSaveGuideline = async () => {
@@ -233,9 +254,13 @@ const BuildingRulesPublic = () => {
       setShowModal(false);
       setEditingGuideline(null);
       await fetchRules(); // Reload data từ server
+
+      // Thông báo thành công
+      const isNewGuideline = editingGuideline.index === undefined;
+      showToast("success", isNewGuideline ? "Thêm hướng dẫn mới thành công!" : "Cập nhật hướng dẫn thành công!");
     } catch (err) {
       console.error("Error saving guideline:", err);
-      toastr.error("Không thể lưu hướng dẫn. Vui lòng thử lại.");
+      showToast("error", "Không thể lưu hướng dẫn. Vui lòng thử lại.");
     }
   };
 
@@ -690,22 +715,34 @@ const BuildingRulesPublic = () => {
 
               <div className="modal-field">
                 <label className="modal-label">Icon</label>
-                <select
-                  value={editingCategory.icon}
-                  onChange={(e) =>
-                    setEditingCategory({
-                      ...editingCategory,
-                      icon: e.target.value,
-                    })
-                  }
-                  className="modal-select"
-                >
-                  {iconOptions.map((icon) => (
-                    <option key={icon} value={icon}>
-                      {icon}
-                    </option>
-                  ))}
-                </select>
+
+                {/* Preview icon đang được chọn */}
+                
+
+                {/* Grid chọn icon */}
+                <div className="hnalms-icon-grid">
+                  {iconOptions.map((iconName) => {
+                    const IconComponent = iconMap[iconName];
+                    const isSelected = editingCategory.icon === iconName;
+                    return (
+                      <button
+                        key={iconName}
+                        type="button"
+                        title={iconName}
+                        onClick={() =>
+                          setEditingCategory({
+                            ...editingCategory,
+                            icon: iconName,
+                          })
+                        }
+                        className={`hnalms-icon-option${isSelected ? " hnalms-icon-option--active" : ""}`}
+                      >
+                        <IconComponent size={20} />
+                        <span className="hnalms-icon-name">{iconName}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="modal-field">
@@ -817,6 +854,30 @@ const BuildingRulesPublic = () => {
                   Hủy
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup Xác Nhận Xóa */}
+      {deleteConfirm.isOpen && (
+        <div className="brp-confirm-overlay">
+          <div className="brp-confirm-modal">
+            <div className="brp-confirm-icon">
+              <AlertCircle size={36} color="#ef4444" />
+            </div>
+            <h3 className="brp-confirm-title">Xác nhận xóa</h3>
+            <p className="brp-confirm-message">{deleteConfirm.title}</p>
+            <div className="brp-confirm-actions">
+              <button
+                className="brp-confirm-cancel"
+                onClick={() => setDeleteConfirm({ isOpen: false, type: null, index: null, title: "" })}
+              >
+                <X size={16} /> Hủy bỏ
+              </button>
+              <button className="brp-confirm-delete" onClick={executeDelete}>
+                <Trash2 size={16} /> Xóa
+              </button>
             </div>
           </div>
         </div>
