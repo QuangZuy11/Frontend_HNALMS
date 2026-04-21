@@ -632,3 +632,33 @@
     margin: 0;
     font-weight: 500;
 }
+
+/* =============================================================
+   LAYOUT SELECTOR BADGES
+   ============================================================= */
+
+.layout-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.layout-badge--type1 {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.layout-badge--type2 {
+    background: #fce7f3;
+    color: #be185d;
+}
+
+.layout-badge--type3 {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+/* Layout selector styles are in ./layout-preview.css */

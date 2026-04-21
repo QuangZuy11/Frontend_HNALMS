@@ -8,9 +8,6 @@ import "toastr/build/toastr.min.css";
 // Floor Maps
 import FloorMap from "../RoomList/components/FloorMap";
 import FloorMapLevel2 from "../RoomList/components/FloorMapLevel2";
-import FloorMapLevel3 from "../RoomList/components/FloorMapLevel3";
-import FloorMapLevel4 from "../RoomList/components/FloorMapLevel4";
-import FloorMapLevel5 from "../RoomList/components/FloorMapLevel5";
 import "../RoomList/components/FloorMap.css";
 import {
   Plus, Edit, Trash2, Eye, ChevronDown, ChevronRight, CheckCircle,
@@ -29,6 +26,7 @@ const API_BASE_URL = "http://localhost:9999/api";
 interface Floor {
   _id: string;
   name: string;
+  layoutType?: "type1" | "type2" | "type3";
 }
 
 interface RoomType {
@@ -950,49 +948,14 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                 return fId === floor._id;
               });
 
-              const floorNameLower = floor.name.toLowerCase();
+              const layoutType = (floor as any).layoutType || "type1";
 
-              if (floorNameLower.includes("2")) {
+              if (layoutType === "type2") {
                 return (
                   <FloorMapLevel2
                     key={floor._id}
                     rooms={floorRooms}
-                    onRoomSelect={(room) =>
-                      readOnly
-                        ? handleViewDetail(room as any)
-                        : handleOpenEdit(room as any)
-                    }
-                  />
-                );
-              } else if (floorNameLower.includes("3")) {
-                return (
-                  <FloorMapLevel3
-                    key={floor._id}
-                    rooms={floorRooms}
-                    onRoomSelect={(room) =>
-                      readOnly
-                        ? handleViewDetail(room as any)
-                        : handleOpenEdit(room as any)
-                    }
-                  />
-                );
-              } else if (floorNameLower.includes("4")) {
-                return (
-                  <FloorMapLevel4
-                    key={floor._id}
-                    rooms={floorRooms}
-                    onRoomSelect={(room) =>
-                      readOnly
-                        ? handleViewDetail(room as any)
-                        : handleOpenEdit(room as any)
-                    }
-                  />
-                );
-              } else if (floorNameLower.includes("5")) {
-                return (
-                  <FloorMapLevel5
-                    key={floor._id}
-                    rooms={floorRooms}
+                    floorName={floor.name}
                     onRoomSelect={(room) =>
                       readOnly
                         ? handleViewDetail(room as any)
@@ -1007,6 +970,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                   key={floor._id}
                   floorName={floor.name}
                   rooms={floorRooms}
+                  sidebarType={layoutType === "type3" ? "drying" : "parking"}
                   onRoomSelect={(room) =>
                     readOnly
                       ? handleViewDetail(room as any)

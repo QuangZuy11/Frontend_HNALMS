@@ -6,6 +6,7 @@ import {
   ChevronLeft, ChevronRight, History, AlertTriangle, CheckCircle, Settings
 } from "lucide-react";
 import "./BuildingConfig.css";
+import "./layout-preview.css";
 
 import { AppModal } from '../../../components/common/Modal';
 import { useToast } from '../../../components/common/Toast';
@@ -22,6 +23,7 @@ interface Floor {
   name: string;
   description?: string;
   roomCount?: number;
+  layoutType?: "type1" | "type2" | "type3";
 }
 
 interface PriceHistory {
@@ -67,7 +69,7 @@ const BuildingConfig = () => {
   const [viewingType, setViewingType] = useState<RoomType | null>(null);
 
   // Forms
-  const [floorForm, setFloorForm] = useState({ name: "", description: "" });
+  const [floorForm, setFloorForm] = useState({ name: "", description: "", layoutType: "type1" as "type1" | "type2" | "type3" });
   const [typeForm, setTypeForm] = useState({
     typeName: "",
     currentPrice: 0,
@@ -132,16 +134,20 @@ const BuildingConfig = () => {
   const handleOpenFloorModal = (floor?: Floor) => {
     if (floor) {
       setEditingFloor(floor);
-      setFloorForm({ name: floor.name, description: floor.description || "" });
+      setFloorForm({ name: floor.name, description: floor.description || "", layoutType: floor.layoutType || "type1" });
     } else {
       setEditingFloor(null);
-      setFloorForm({ name: "", description: "" });
+      setFloorForm({ name: "", description: "", layoutType: "type1" });
     }
     setShowFloorModal(true);
   };
 
   const handleSaveFloor = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!floorForm.name.trim()) {
+      showToast('warning', "Thiếu thông tin", "Vui lòng nhập tên tầng.");
+      return;
+    }
     try {
       if (editingFloor) {
         await axios.put(`${API_BASE_URL}/floors/${editingFloor._id}`, floorForm);
@@ -153,7 +159,9 @@ const BuildingConfig = () => {
       setShowFloorModal(false);
       fetchData();
     } catch (error: any) {
-      showToast('error', "Lỗi", error.response?.data?.message || "Không thể lưu thông tin tầng.");
+      const backendMsg = error.response?.data?.error?.message || error.response?.data?.message || null;
+      const msg = backendMsg || "Không thể lưu thông tin tầng.";
+      showToast('error', "Lỗi", msg);
     }
   };
 
@@ -348,6 +356,7 @@ const BuildingConfig = () => {
               <thead>
                 <tr>
                   <th>Tên tầng</th>
+                  <th>Kiểu sơ đồ</th>
                   <th>Số lượng phòng</th>
                   <th>Ghi chú / Mô tả</th>
                   {canModify && <th style={{ textAlign: 'center' }}>Thao tác</th>}
@@ -361,6 +370,13 @@ const BuildingConfig = () => {
                         <Layers size={16} style={{ color: '#3579c6' }} />
                         {floor.name}
                       </div>
+                    </td>
+                    <td>
+                      <span className={`layout-badge layout-badge--${floor.layoutType || 'type1'}`}>
+                        {floor.layoutType === 'type1' ? 'Loại 1 — Giống Tầng 1' :
+                         floor.layoutType === 'type3' ? 'Loại 3 — Giống Tầng 5' :
+                         'Loại 2 — Giống Tầng 2/3/4'}
+                      </span>
                     </td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -466,6 +482,7 @@ const BuildingConfig = () => {
         title={editingFloor ? "Cập nhật Tầng" : "Thêm Tầng Mới"}
         icon={<Layers size={18} />}
         color="blue"
+        size="lg"
         footer={
           <>
             <button className="ms-btn ms-btn--ghost" onClick={() => setShowFloorModal(false)}>Hủy</button>
@@ -482,6 +499,138 @@ const BuildingConfig = () => {
             className="ms-input" placeholder="Ví dụ: Tầng 1, Tầng G..."
             value={floorForm.name} onChange={e => setFloorForm({ ...floorForm, name: e.target.value })}
           />
+        </div>
+        <div className="ms-field" style={{ marginTop: '16px' }}>
+          <label className="ms-label">Kiểu sơ đồ tầng <span className="ms-label-required">*</span></label>
+          <div className="layout-selector layout-selector--3col">
+
+            {/* ── Option 1: Giống Tầng 1 ── */}
+            <label
+              className={`layout-option ${floorForm.layoutType === 'type1' ? 'selected' : ''}`}
+              onClick={() => setFloorForm({ ...floorForm, layoutType: 'type1' })}
+            >
+              <input
+                type="radio"
+                name="layoutType"
+                value="type1"
+                checked={floorForm.layoutType === 'type1'}
+                onChange={() => setFloorForm({ ...floorForm, layoutType: 'type1' })}
+              />
+              <div className="layout-option-preview layout-preview-type1">
+                <div className="preview-grid-area">
+                  <div className="preview-row">
+                    {Array.from({ length: 8 }).map((_, i) => <div key={i} className="preview-room" />)}
+                  </div>
+                  <div className="preview-corridor" />
+                  <div className="preview-row">
+                    {Array.from({ length: 8 }).map((_, i) => <div key={i} className="preview-room" />)}
+                  </div>
+                  <div className="preview-corridor" />
+                  <div className="preview-row">
+                    {Array.from({ length: 8 }).map((_, i) => <div key={i} className="preview-room" />)}
+                  </div>
+                  <div className="preview-corridor" />
+                  <div className="preview-row">
+                    {Array.from({ length: 8 }).map((_, i) => <div key={i} className="preview-room" />)}
+                  </div>
+                </div>
+                <div className="preview-sidebar preview-sidebar--parking">Nhà Xe</div>
+              </div>
+              <div className="layout-option-info">
+                <span className="layout-option-title">Loại 1 — Giống Tầng 1</span>
+                <span className="layout-option-desc">32 phòng, lưới đều, có Nhà Xe</span>
+              </div>
+            </label>
+
+            {/* ── Option 2: Giống Tầng 2/3/4 ── */}
+            <label
+              className={`layout-option ${floorForm.layoutType === 'type2' ? 'selected' : ''}`}
+              onClick={() => setFloorForm({ ...floorForm, layoutType: 'type2' })}
+            >
+              <input
+                type="radio"
+                name="layoutType"
+                value="type2"
+                checked={floorForm.layoutType === 'type2'}
+                onChange={() => setFloorForm({ ...floorForm, layoutType: 'type2' })}
+              />
+              <div className="layout-option-preview layout-preview-type2">
+                <div className="preview-grid-area">
+                  {/* Row 1: GAP (KT) */}
+                  <div className="preview-row">
+                    {Array.from({ length: 8 }).map((_, i) => <div key={`l1-${i}`} className="preview-room" />)}
+                    <div className="preview-sep-inline preview-sep-inline--gap"><span>KT</span></div>
+                    {Array.from({ length: 5 }).map((_, i) => <div key={`r1-${i}`} className="preview-room" />)}
+                  </div>
+                  <div className="preview-corridor" />
+                  {/* Row 2: ELEVATOR (TM) — 8 trái, TM, 6 phải */}
+                  <div className="preview-row">
+                    {Array.from({ length: 8 }).map((_, i) => <div key={`l2-${i}`} className="preview-room" />)}
+                    <div className="preview-sep-inline preview-sep-inline--elevator"><span>TM</span></div>
+                    {Array.from({ length: 6 }).map((_, i) => <div key={`r2-${i}`} className="preview-room" />)}
+                  </div>
+                  <div className="preview-corridor" />
+                  {/* Row 3: ELEVATOR (TM) — 8 trái, TM, 6 phải */}
+                  <div className="preview-row">
+                    {Array.from({ length: 8 }).map((_, i) => <div key={`l3-${i}`} className="preview-room" />)}
+                    <div className="preview-sep-inline preview-sep-inline--elevator"><span>TM</span></div>
+                    {Array.from({ length: 6 }).map((_, i) => <div key={`r3-${i}`} className="preview-room" />)}
+                  </div>
+                  <div className="preview-corridor" />
+                  {/* Row 4: GAP (KT) */}
+                  <div className="preview-row">
+                    {Array.from({ length: 8 }).map((_, i) => <div key={`l4-${i}`} className="preview-room" />)}
+                    <div className="preview-sep-inline preview-sep-inline--gap"><span>KT</span></div>
+                    {Array.from({ length: 6 }).map((_, i) => <div key={`r4-${i}`} className="preview-room" />)}
+                  </div>
+                </div>
+                <div className="preview-sidebar preview-sidebar--parking">Xe</div>
+              </div>
+              <div className="layout-option-info">
+                <span className="layout-option-title">Loại 2 — Giống Tầng 2/3/4</span>
+                <span className="layout-option-desc">26–27 phòng, lệch 2 bên, có thang máy</span>
+              </div>
+            </label>
+
+            {/* ── Option 3: Giống Tầng 5 ── */}
+            <label
+              className={`layout-option ${floorForm.layoutType === 'type3' ? 'selected' : ''}`}
+              onClick={() => setFloorForm({ ...floorForm, layoutType: 'type3' })}
+            >
+              <input
+                type="radio"
+                name="layoutType"
+                value="type3"
+                checked={floorForm.layoutType === 'type3'}
+                onChange={() => setFloorForm({ ...floorForm, layoutType: 'type3' })}
+              />
+              <div className="layout-option-preview layout-preview-type1">
+                <div className="preview-grid-area">
+                  <div className="preview-row">
+                    {Array.from({ length: 8 }).map((_, i) => <div key={i} className="preview-room" />)}
+                  </div>
+                  <div className="preview-corridor" />
+                  <div className="preview-row">
+                    {Array.from({ length: 8 }).map((_, i) => <div key={i} className="preview-room" />)}
+                  </div>
+                  <div className="preview-corridor" />
+                  <div className="preview-row">
+                    {Array.from({ length: 8 }).map((_, i) => <div key={i} className="preview-room" />)}
+                  </div>
+                  <div className="preview-corridor" />
+                  <div className="preview-row">
+                    {Array.from({ length: 8 }).map((_, i) => <div key={i} className="preview-room" />)}
+                  </div>
+                </div>
+                <div className="preview-sidebar preview-sidebar--drying">Sân Phơi</div>
+              </div>
+              <div className="layout-option-info">
+                <span className="layout-option-title">Loại 3 — Giống Tầng 5</span>
+                <span className="layout-option-desc">32 phòng, lưới đều, có Sân Phơi</span>
+              </div>
+            </label>
+
+          </div>
         </div>
         <div className="ms-field" style={{ marginTop: '16px' }}>
           <label className="ms-label">Mô tả thêm</label>

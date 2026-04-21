@@ -1,0 +1,175 @@
+/* =============================================================
+   LAYOUT SELECTOR PREVIEW — Kiểu sơ đồ tầng
+   ============================================================= */
+
+/* ── 3-column grid selector ── */
+.layout-selector--3col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+}
+
+/* ── Each layout option card ── */
+.layout-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #f8fafc;
+}
+
+.layout-option:hover {
+    border-color: #93c5fd;
+    background: #eff6ff;
+}
+
+.layout-option.selected {
+    border-color: #3579c6;
+    background: #f0f7ff;
+    box-shadow: 0 0 0 3px rgba(53, 121, 198, 0.15);
+}
+
+.layout-option input[type="radio"] {
+    display: none;
+}
+
+/* ── Info below preview ── */
+.layout-option-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-align: center;
+}
+
+.layout-option-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.layout-option-desc {
+    font-size: 11px;
+    color: #64748b;
+}
+
+/* ── Layout Preview Container ── */
+.layout-option-preview {
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+}
+
+/* ── Type 1 & 3: horizontal layout = [4 rows | sidebar on right] ── */
+.layout-preview-type1 {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    padding: 6px 6px 6px 8px;
+    gap: 3px;
+    min-height: 70px;
+}
+
+/* ── Type 2: same horizontal layout as Type 1 ── */
+.layout-preview-type2 {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    padding: 6px 6px 6px 8px;
+    gap: 3px;
+    min-height: 70px;
+}
+
+/* ── Grid area for all types ── */
+.preview-grid-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* ── Rows (all types) ── */
+.preview-row {
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+}
+
+/* ── Corridor spacer ── */
+.preview-corridor {
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+}
+
+/* ── Preview room cell ── */
+.preview-room {
+    flex: 1;
+    height: 8px;
+    background: #93c5fb;
+    border-radius: 2px;
+}
+
+/* ── Inline separator inside a row (Type 2) ── */
+.preview-sep-inline {
+    width: 12px;
+    flex-shrink: 0;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-sep-inline--gap {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+}
+
+.preview-sep-inline--elevator {
+    background: #ede9fe;
+    border: 1px solid #c4b5fd;
+}
+
+.preview-sep-inline span {
+    font-size: 6px;
+    font-weight: 800;
+    color: #475569;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    letter-spacing: 0.05em;
+}
+
+/* ── Sidebar on right side (Type 1 & 3) — vertical text ── */
+.preview-sidebar {
+    width: 14px;
+    flex-shrink: 0;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.preview-sidebar--parking {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+}
+
+.preview-sidebar--drying {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}

@@ -5,9 +5,6 @@ import { Building } from "lucide-react";
 import { roomService } from "../../services/roomService";
 import FloorMap from "../RoomManagement/RoomList/components/FloorMap";
 import FloorMapLevel2 from "../RoomManagement/RoomList/components/FloorMapLevel2";
-import FloorMapLevel3 from "../RoomManagement/RoomList/components/FloorMapLevel3";
-import FloorMapLevel4 from "../RoomManagement/RoomList/components/FloorMapLevel4";
-import FloorMapLevel5 from "../RoomManagement/RoomList/components/FloorMapLevel5";
 import "./ContractFloorMap.css";
 import toastr from "toastr";
 import "toastr/build/toastr.min.css";
@@ -38,6 +35,7 @@ interface Floor {
   _id: string;
   name: string;
   floorNumber?: number;
+  layoutType?: "type1" | "type2" | "type3";
 }
 
 const DepositFloorMap = () => {
@@ -292,37 +290,8 @@ const DepositFloorMap = () => {
       {/* Floor Map */}
       <div className="contract-floor-map">
         {currentFloorRooms.length > 0 ? (
-          // Render floor-specific map based on floor name
-          getFloorNumber(currentFloor?.name || "") === "1" ? (
-            <FloorMap
-              rooms={currentFloorRooms}
-              floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
-              onRoomSelect={handleRoomSelect}
-              legendType="deposit"
-            />
-          ) : getFloorNumber(currentFloor?.name || "") === "2" ? (
+          currentFloor?.layoutType === "type2" ? (
             <FloorMapLevel2
-              rooms={currentFloorRooms}
-              floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
-              onRoomSelect={handleRoomSelect}
-              legendType="deposit"
-            />
-          ) : getFloorNumber(currentFloor?.name || "") === "3" ? (
-            <FloorMapLevel3
-              rooms={currentFloorRooms}
-              floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
-              onRoomSelect={handleRoomSelect}
-              legendType="deposit"
-            />
-          ) : getFloorNumber(currentFloor?.name || "") === "4" ? (
-            <FloorMapLevel4
-              rooms={currentFloorRooms}
-              floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
-              onRoomSelect={handleRoomSelect}
-              legendType="deposit"
-            />
-          ) : getFloorNumber(currentFloor?.name || "") === "5" ? (
-            <FloorMapLevel5
               rooms={currentFloorRooms}
               floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
               onRoomSelect={handleRoomSelect}
@@ -334,6 +303,7 @@ const DepositFloorMap = () => {
               floorName={`TẦNG ${getFloorNumber(currentFloor?.name || "")}`}
               onRoomSelect={handleRoomSelect}
               legendType="deposit"
+              sidebarType={currentFloor?.layoutType === "type3" ? "drying" : "parking"}
             />
           )
         ) : (

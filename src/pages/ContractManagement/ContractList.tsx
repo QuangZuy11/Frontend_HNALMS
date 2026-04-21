@@ -20,9 +20,6 @@ import {
 // Floor Maps
 import FloorMap from "../RoomManagement/RoomList/components/FloorMap";
 import FloorMapLevel2 from "../RoomManagement/RoomList/components/FloorMapLevel2";
-import FloorMapLevel3 from "../RoomManagement/RoomList/components/FloorMapLevel3";
-import FloorMapLevel4 from "../RoomManagement/RoomList/components/FloorMapLevel4";
-import FloorMapLevel5 from "../RoomManagement/RoomList/components/FloorMapLevel5";
 import "./ContractFloorMap.css";
 import "../RoomManagement/ManageRoom/ManageRoom.css";
 import {
@@ -1099,51 +1096,25 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
                 return fId === floor._id;
               });
 
-              const floorNameLower = floor.name.toLowerCase();
+              const layoutType = (floor as any).layoutType || "type1";
 
               // Pass event to handleRoomSelect for popup positioning
               const onRoomSelect = (room: any, e?: React.MouseEvent) =>
                 handleRoomSelect(room, e);
 
-              if (floorNameLower.includes("2")) {
+              if (layoutType === "type2") {
                 return (
                   <FloorMapLevel2
                     key={floor._id}
                     rooms={floorRooms}
-                    onRoomSelect={onRoomSelect}
-                    legendType="contract"
-                  />
-                );
-              } else if (floorNameLower.includes("3")) {
-                return (
-                  <FloorMapLevel3
-                    key={floor._id}
-                    rooms={floorRooms}
-                    onRoomSelect={onRoomSelect}
-                    legendType="contract"
-                  />
-                );
-              } else if (floorNameLower.includes("4")) {
-                return (
-                  <FloorMapLevel4
-                    key={floor._id}
-                    rooms={floorRooms}
-                    onRoomSelect={onRoomSelect}
-                    legendType="contract"
-                  />
-                );
-              } else if (floorNameLower.includes("5")) {
-                return (
-                  <FloorMapLevel5
-                    key={floor._id}
-                    rooms={floorRooms}
+                    floorName={floor.name}
                     onRoomSelect={onRoomSelect}
                     legendType="contract"
                   />
                 );
               }
 
-              // Use default generic component for Level 1 and any newly added unknown floors
+              // Use default generic component for Type 1 and Type 3
               return (
                 <FloorMap
                   key={floor._id}
@@ -1151,6 +1122,7 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
                   floorName={floor.name}
                   onRoomSelect={onRoomSelect}
                   legendType="contract"
+                  sidebarType={layoutType === "type3" ? "drying" : "parking"}
                 />
               );
             })}

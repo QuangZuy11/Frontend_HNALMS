@@ -2,9 +2,6 @@ import { useState, useEffect } from "react";
 import { roomService } from "../../services/roomService";
 import FloorMap from "./RoomList/components/FloorMap";
 import FloorMapLevel2 from "./RoomList/components/FloorMapLevel2";
-import FloorMapLevel3 from "./RoomList/components/FloorMapLevel3";
-import FloorMapLevel4 from "./RoomList/components/FloorMapLevel4";
-import FloorMapLevel5 from "./RoomList/components/FloorMapLevel5";
 import RoomFilters from "./RoomList/components/Room-filters";
 import RoomCard from "./RoomList/components/Room-card";
 import RoomTypeDetail from "./RoomList/components/RoomTypeDetail";
@@ -59,7 +56,7 @@ export default function RoomList() {
 
   const [defaultFloorId, setDefaultFloorId] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [floorsData, setFloorsData] = useState<{ _id: string; name: string }[]>(
+  const [floorsData, setFloorsData] = useState<{ _id: string; name: string; layoutType?: "type1" | "type2" | "type3" }[]>(
     [],
   );
 
@@ -356,105 +353,46 @@ export default function RoomList() {
                       alignItems: "start",
                     }}
                   >
-                    {currentFloorLabel.includes("2") ? (
-                      <FloorMapLevel2
-                        rooms={
-                          floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms
-                        }
-                        highlightedRooms={rooms}
-                        floorName={currentFloorLabel || `Tầng`}
-                        legendType="guest"
-                      />
-                    ) : currentFloorLabel.includes("3") ? (
-                      <FloorMapLevel3
-                        rooms={
-                          floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms
-                        }
-                        highlightedRooms={rooms}
-                        floorName={currentFloorLabel || `Tầng`}
-                        legendType="guest"
-                      />
-                    ) : currentFloorLabel.includes("4") ? (
-                      <FloorMapLevel4
-                        rooms={
-                          floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms
-                        }
-                        highlightedRooms={rooms}
-                        floorName={currentFloorLabel || `Tầng`}
-                        legendType="guest"
-                      />
-                    ) : currentFloorLabel.includes("5") ? (
-                      <FloorMapLevel5
-                        rooms={
-                          floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms
-                        }
-                        highlightedRooms={rooms}
-                        floorName={currentFloorLabel || `Tầng`}
-                        legendType="guest"
-                        showDateYear={filters.selectedRoomTypes.length === 0 || sidebarCollapsed}
-                      />
-                    ) : (
-                      <FloorMap
-                        rooms={
-                          floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms
-                        }
-                        highlightedRooms={rooms}
-                        floorName={currentFloorLabel || `Tầng`}
-                        legendType="guest"
-                        showDateYear={filters.selectedRoomTypes.length === 0 || sidebarCollapsed}
-                      />
-                    )}
+                    {(() => {
+                      const selectedFloor = floorsData.find(
+                        (f) => f._id === filters.selectedFloors[0],
+                      );
+                      const layoutType = selectedFloor?.layoutType || "type1";
+                      const mapRooms = floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms;
+                      const props = {
+                        rooms: mapRooms,
+                        highlightedRooms: rooms,
+                        floorName: currentFloorLabel || "Tầng",
+                        legendType: "guest" as const,
+                        showDateYear: filters.selectedRoomTypes.length === 0 || sidebarCollapsed,
+                        sidebarType: layoutType === "type3" ? "drying" : "parking",
+                      };
+                      if (layoutType === "type2") {
+                        return <FloorMapLevel2 {...props} />;
+                      }
+                      return <FloorMap {...props} />;
+                    })()}
                     <RoomTypeDetail room={rooms[0]} />
                   </div>
                 ) : showFloorMap ? (
-                  currentFloorLabel.includes("2") ? (
-                    <FloorMapLevel2
-                      rooms={
-                        floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms
-                      }
-                      highlightedRooms={rooms}
-                      floorName={currentFloorLabel || `Tầng`}
-                      legendType="guest"
-                    />
-                  ) : currentFloorLabel.includes("3") ? (
-                    <FloorMapLevel3
-                      rooms={
-                        floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms
-                      }
-                      highlightedRooms={rooms}
-                      floorName={currentFloorLabel || `Tầng`}
-                      legendType="guest"
-                    />
-                  ) : currentFloorLabel.includes("4") ? (
-                    <FloorMapLevel4
-                      rooms={
-                        floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms
-                      }
-                      highlightedRooms={rooms}
-                      floorName={currentFloorLabel || `Tầng`}
-                      legendType="guest"
-                    />
-                  ) : currentFloorLabel.includes("5") ? (
-                    <FloorMapLevel5
-                      rooms={
-                        floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms
-                      }
-                      highlightedRooms={rooms}
-                      floorName={currentFloorLabel || `Tầng`}
-                      legendType="guest"
-                      showDateYear={filters.selectedRoomTypes.length === 0 || sidebarCollapsed}
-                    />
-                  ) : (
-                    <FloorMap
-                      rooms={
-                        floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms
-                      }
-                      highlightedRooms={rooms}
-                      floorName={currentFloorLabel || `Tầng`}
-                      legendType="guest"
-                      showDateYear={filters.selectedRoomTypes.length === 0 || sidebarCollapsed}
-                    />
-                  )
+                  (() => {
+                    const selectedFloor = floorsData.find(
+                      (f) => f._id === filters.selectedFloors[0],
+                    );
+                    const layoutType = selectedFloor?.layoutType || "type1";
+                    const mapRooms = floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms;
+                    const props = {
+                      rooms: mapRooms,
+                      highlightedRooms: rooms,
+                      floorName: currentFloorLabel || "Tầng",
+                      legendType: "guest" as const,
+                      sidebarType: layoutType === "type3" ? "drying" : "parking",
+                    };
+                    if (layoutType === "type2") {
+                      return <FloorMapLevel2 {...props} />;
+                    }
+                    return <FloorMap {...props} />;
+                  })()
                 ) : (
                   <div className="room-grid">
                     {rooms.map((room) => (

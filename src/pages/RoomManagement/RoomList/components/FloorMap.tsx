@@ -37,6 +37,8 @@ interface FloorMapProps {
   onRoomSelect?: (room: Room, event?: React.MouseEvent) => void;
   legendType?: "default" | "deposit" | "guest" | "none" | "contract";
   showDateYear?: boolean;
+  /** 'parking' = Nhà Xe (Tầng 1), 'drying' = Sân Phơi (Tầng 5) */
+  sidebarType?: "parking" | "drying";
 }
 
 // Vibrant mid-tone palette — Tailwind ~400–500, easy to distinguish
@@ -134,6 +136,7 @@ export default function FloorMap({
   onRoomSelect,
   legendType = "default",
   showDateYear = true,
+  sidebarType = "parking",
 }: FloorMapProps) {
   const navigate = useNavigate();
 
@@ -539,7 +542,7 @@ export default function FloorMap({
 
         <div className="map-sidebar-area">
           <div className="area-label">
-            {floorName?.includes("5") ? "Sân Phơi" : "Nhà Xe"}
+            {sidebarType === "drying" ? "Sân Phơi" : "Nhà Xe"}
           </div>
         </div>
       </div>
