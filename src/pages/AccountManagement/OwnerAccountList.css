@@ -5,7 +5,12 @@
    Font: Inter | Primary: #3579c6 / #2a5fa3 | Slate text
    ============================================================ */
 
-.oadm-container {
+/*
+  QUAN TRỌNG: Đặt biến ở :root thay vì .oadm-container
+  để modal dùng position:fixed (nằm ngoài DOM flow của .oadm-container)
+  vẫn truy cập được biến CSS — tránh tình trạng nút bị "chìm" mất màu.
+*/
+:root {
   --oadm-primary: #3579c6;
   --oadm-primary-dark: #2a5fa3;
   --oadm-primary-soft: #f0f7ff;
@@ -16,7 +21,9 @@
   --oadm-border: rgba(226, 232, 240, 0.85);
   --oadm-surface: #ffffff;
   --oadm-page-bg: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+}
 
+.oadm-container {
   padding: 12px 14px 20px;
   background: var(--oadm-page-bg);
   min-height: 100vh;
@@ -990,6 +997,8 @@
   transition: all 0.15s ease;
   border: none;
   white-space: nowrap;
+  line-height: 1;
+  min-height: 40px;
 }
 
 .oadm-btn--ghost {
@@ -1004,15 +1013,20 @@
   border-color: #cbd5e1;
 }
 
+/* Dùng màu cứng (hardcoded) làm fallback ngoài .oadm-container */
 .oadm-btn--primary {
-  background: linear-gradient(135deg, var(--oadm-primary) 0%, var(--oadm-primary-dark) 100%);
-  color: #ffffff;
-  box-shadow: 0 2px 8px var(--oadm-primary-shadow);
+  background: linear-gradient(135deg, #3579c6 0%, #2a5fa3 100%);
+  background: linear-gradient(135deg, var(--oadm-primary, #3579c6) 0%, var(--oadm-primary-dark, #2a5fa3) 100%);
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(53, 121, 198, 0.28);
+  box-shadow: 0 2px 8px var(--oadm-primary-shadow, rgba(53, 121, 198, 0.28));
+  border: none;
 }
 
-.oadm-btn--primary:hover {
+.oadm-btn--primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(53, 121, 198, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(53, 121, 198, 0.45) !important;
+  background: linear-gradient(135deg, #2a6fd6 0%, #2254a0 100%);
 }
 
 .oadm-btn--primary:disabled {
@@ -1023,13 +1037,15 @@
 
 .oadm-btn--danger {
   background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  color: #ffffff;
+  color: #ffffff !important;
   box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+  border: none;
 }
 
-.oadm-btn--danger:hover {
+.oadm-btn--danger:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4) !important;
+  background: linear-gradient(135deg, #c82323 0%, #a61919 100%);
 }
 
 .oadm-btn--danger:disabled {
