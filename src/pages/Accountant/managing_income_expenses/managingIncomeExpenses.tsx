@@ -67,11 +67,11 @@ export default function ManagingIncomeExpenses() {
   });
   const [formError, setFormError] = useState<string>("");
 
-  // Khoá scroll
+  // Cho phép scroll dọc để xem toàn bộ dữ liệu
   useEffect(() => {
     const main = document.querySelector(".dashboard-layout-main") as HTMLElement;
-    if (main) main.style.overflowY = "hidden";
-    document.body.style.overflow = "hidden";
+    if (main) main.style.overflowY = "auto";
+    document.body.style.overflow = "auto";
     return () => {
       if (main) main.style.overflowY = "";
       document.body.style.overflow = "";
