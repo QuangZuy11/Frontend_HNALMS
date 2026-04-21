@@ -23,6 +23,7 @@ import {
   type AccountItem,
   type AccountDetail,
 } from '../constants';
+import { useToast } from '../../../components/common/Toast';
 import '../OwnerAccountList.css';
 
 interface CreateFormData {
@@ -36,6 +37,7 @@ export default function OwnerAccountList() {
   const [accounts, setAccounts] = useState<AccountItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -60,6 +62,14 @@ export default function OwnerAccountList() {
   const [createSaving, setCreateSaving] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
+
+  // Confirm modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    type: 'disable' | 'enable' | null;
+    accountId: string | null;
+    accountName: string;
+  }>({ isOpen: false, type: null, accountId: null, accountName: '' });
 
   const fetchAccounts = useCallback(async () => {
     try {
@@ -155,35 +165,39 @@ export default function OwnerAccountList() {
     }
   };
 
-  const handleDisable = async (accountId: string) => {
-    if (!window.confirm('Bạn có chắc muốn đóng tài khoản Chủ nhà này?')) return;
-    try {
-      setDisablingId(accountId);
-      const response = await accountService.disable('owners', accountId);
-      const updated = response.data;
-      if (updated?._id) {
-        setAccounts((prev) =>
-          prev.map((acc) => (acc._id === updated._id ? { ...acc, status: updated.status } : acc)),
-        );
-        if (detailAccount?._id === accountId) {
-          setDetailAccount((prev) =>
-            prev ? { ...prev, status: updated?.status || prev.status } : prev,
-          );
-        }
-      }
-    } catch (err) {
-      const errObj = err as { response?: { data?: { message?: string } } };
-      alert(errObj?.response?.data?.message || 'Không thể đóng tài khoản');
-    } finally {
-      setDisablingId(null);
-    }
+  const openConfirmDisable = (accountId: string) => {
+    const acc = accounts.find((a) => a._id === accountId) || detailAccount;
+    setConfirmModal({
+      isOpen: true,
+      type: 'disable',
+      accountId,
+      accountName: acc?.username || 'tài khoản này',
+    });
   };
 
-  const handleEnable = async (accountId: string) => {
-    if (!window.confirm('Bạn có chắc muốn mở lại tài khoản này?')) return;
+  const openConfirmEnable = (accountId: string) => {
+    const acc = accounts.find((a) => a._id === accountId) || detailAccount;
+    setConfirmModal({
+      isOpen: true,
+      type: 'enable',
+      accountId,
+      accountName: acc?.username || 'tài khoản này',
+    });
+  };
+
+  const closeConfirmModal = () =>
+    setConfirmModal({ isOpen: false, type: null, accountId: null, accountName: '' });
+
+  const executeConfirmAction = async () => {
+    const { type, accountId } = confirmModal;
+    if (!accountId || !type) return;
+    closeConfirmModal();
     try {
       setDisablingId(accountId);
-      const response = await accountService.enable('owners', accountId);
+      const response =
+        type === 'disable'
+          ? await accountService.disable('owners', accountId)
+          : await accountService.enable('owners', accountId);
       const updated = response.data;
       if (updated?._id) {
         setAccounts((prev) =>
@@ -195,9 +209,21 @@ export default function OwnerAccountList() {
           );
         }
       }
+      showToast(
+        'success',
+        type === 'disable' ? 'Đã khóa tài khoản' : 'Đã mở tài khoản',
+        type === 'disable'
+          ? `Tài khoản @${confirmModal.accountName} đã bị khóa thành công.`
+          : `Tài khoản @${confirmModal.accountName} đã được mở lại.`,
+      );
     } catch (err) {
       const errObj = err as { response?: { data?: { message?: string } } };
-      alert(errObj?.response?.data?.message || 'Không thể mở lại tài khoản');
+      showToast(
+        'error',
+        'Thao tác thất bại',
+        errObj?.response?.data?.message ||
+          (type === 'disable' ? 'Không thể khóa tài khoản.' : 'Không thể mở lại tài khoản.'),
+      );
     } finally {
       setDisablingId(null);
     }
@@ -689,7 +715,7 @@ export default function OwnerAccountList() {
                   <button
                     type="button"
                     className="oadm-btn oadm-btn--danger"
-                    onClick={() => handleDisable(detailAccount._id)}
+                    onClick={() => openConfirmDisable(detailAccount._id)}
                     disabled={disablingId === detailAccount._id}
                   >
                     <Lock size={16} />
@@ -699,7 +725,7 @@ export default function OwnerAccountList() {
                   <button
                     type="button"
                     className="oadm-btn oadm-btn--primary"
-                    onClick={() => handleEnable(detailAccount._id)}
+                    onClick={() => openConfirmEnable(detailAccount._id)}
                     disabled={disablingId === detailAccount._id}
                   >
                     <LockOpen size={16} />
@@ -828,6 +854,56 @@ export default function OwnerAccountList() {
               >
                 <UserPlus size={16} />
                 {createSaving ? 'Đang tạo...' : 'Tạo tài khoản'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── CONFIRM MODAL (Khóa / Mở tài khoản) ─── */}
+      {confirmModal.isOpen && (
+        <div
+          className="oadm-modal-overlay"
+          style={{ zIndex: 99999 }}
+          onClick={closeConfirmModal}
+        >
+          <div
+            className="oadm-confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Icon */}
+            <div className={`oadm-confirm-icon-wrap ${confirmModal.type === 'disable' ? 'danger' : 'primary'}`}>
+              {confirmModal.type === 'disable' ? <Lock size={28} /> : <LockOpen size={28} />}
+            </div>
+
+            {/* Title */}
+            <p className="oadm-confirm-title">
+              {confirmModal.type === 'disable' ? 'Đóng tài khoản' : 'Mở lại tài khoản'}
+            </p>
+
+            {/* Message */}
+            <p className="oadm-confirm-message">
+              {confirmModal.type === 'disable'
+                ? <>Bạn có chắc muốn <strong>khóa</strong> tài khoản Chủ nhà <strong>@{confirmModal.accountName}</strong>? Tài khoản sẽ không thể đăng nhập.</>
+                : <>Bạn có chắc muốn <strong>mở lại</strong> tài khoản <strong>@{confirmModal.accountName}</strong>?</>}
+            </p>
+
+            {/* Buttons */}
+            <div className="oadm-confirm-actions">
+              <button
+                type="button"
+                className="oadm-btn oadm-btn--ghost"
+                onClick={closeConfirmModal}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                className={`oadm-btn ${confirmModal.type === 'disable' ? 'oadm-btn--danger' : 'oadm-btn--primary'}`}
+                onClick={executeConfirmAction}
+              >
+                {confirmModal.type === 'disable' ? <Lock size={15} /> : <LockOpen size={15} />}
+                {confirmModal.type === 'disable' ? 'Xác nhận khóa' : 'Xác nhận mở'}
               </button>
             </div>
           </div>
