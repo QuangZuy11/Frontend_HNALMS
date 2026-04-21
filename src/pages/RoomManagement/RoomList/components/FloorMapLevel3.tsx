@@ -6,6 +6,7 @@ interface Room {
   _id: string;
   name: string;
   status: string;
+  isActive?: boolean; // false = Vô hiệu hóa
   floorLabel?: string;
   roomTypeId?: {
     _id: string;
@@ -274,56 +275,80 @@ export default function FloorMapLevel3({
               {legendType === "default" && " → Click để xem chi tiết"}
               {legendType === "guest" && " (Không khả dụng)"}
             </span>
-            {legendType !== "default" && (
-              <span
-                style={{
-                  fontSize: "0.8rem",
-                  color: "#374151",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "0.35rem",
-                }}
-              >
-                <span
-                  style={{
-                    position: "relative",
-                    display: "inline-block",
-                    width: "16px",
-                    height: "16px",
-                    borderRadius: "3px",
-                    background:
-                      "linear-gradient(145deg, #f59e0b 0%, #d97706 100%)",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
-                  }}
-                >
+              {legendType !== "default" && (
+                <>
                   <span
                     style={{
-                      position: "absolute",
-                      top: "-4px",
-                      right: "-4px",
-                      width: "12px",
-                      height: "12px",
-                      borderRadius: "50%",
-                      background:
-                        "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
-                      color: "#1e293b",
-                      fontSize: "8px",
-                      fontWeight: 800,
-                      display: "flex",
+                      fontSize: "0.8rem",
+                      color: "#374151",
+                      display: "inline-flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      lineHeight: 1,
-                      border: "1.5px solid white",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                      gap: "0.35rem",
                     }}
                   >
-                    !
+                    <span
+                      style={{
+                        position: "relative",
+                        display: "inline-block",
+                        width: "16px",
+                        height: "16px",
+                        borderRadius: "3px",
+                        background:
+                          "linear-gradient(145deg, #f59e0b 0%, #d97706 100%)",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                      }}
+                    >
+                      <span
+                        style={{
+                          position: "absolute",
+                          top: "-4px",
+                          right: "-4px",
+                          width: "12px",
+                          height: "12px",
+                          borderRadius: "50%",
+                          background:
+                            "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
+                          color: "#1e293b",
+                          fontSize: "8px",
+                          fontWeight: 800,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          lineHeight: 1,
+                          border: "1.5px solid white",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                        }}
+                      >
+                        !
+                      </span>
+                    </span>
+                    Đã cọc
+                    {legendType === "guest" && " (Không khả dụng)"}
                   </span>
-                </span>
-                Đã cọc
-                {legendType === "guest" && " (Không khả dụng)"}
-              </span>
-            )}
+                  <span
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "#374151",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.35rem",
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: "16px",
+                        height: "16px",
+                        borderRadius: "3px",
+                        background:
+                          "#f1f5f9",
+                        border: "2px dotted #cbd5e1",
+                      }}
+                    />
+                    Vô hiệu hóa
+                  </span>
+                </>
+              )}
           </div>
 
           {/* Room Type Legend (Dynamic) */}
@@ -427,23 +452,26 @@ export default function FloorMapLevel3({
                           const isGhosted =
                             highlightedRooms &&
                             !highlightedRooms.some((r) => r._id === room._id);
-                          const statusClass = showAsAvailable
-                            ? "status-available"
-                            : isDeposited
-                              ? "status-deposited"
-                              : "status-occupied";
+                          const isRoomInactive = room.isActive === false;
+                          const statusClass = isRoomInactive
+                            ? "status-inactive"
+                            : showAsAvailable
+                              ? "status-available"
+                              : isDeposited
+                                ? "status-deposited"
+                                : "status-occupied";
 
                           return (
                             <div
                               key={room._id}
                               className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""} ${hasMultiOptions ? "has-multi-options" : ""}`}
-                              onClick={(e) => handleRoomClick(room._id, e)}
+                              onClick={isRoomInactive ? undefined : (e) => handleRoomClick(room._id, e)}
                               data-color={typeColor}
-                              style={{
+                              style={isRoomInactive ? { flex: 1 } : {
                                 flex: 1,
                                 background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
                               }}
-                              title={room.name}
+                              title={isRoomInactive ? `${room.name} - VÔ HIỆU HÓA` : room.name}
                             >
                               <span
                                 className="room-node-name"
@@ -454,6 +482,9 @@ export default function FloorMapLevel3({
                               >
                                 {formatRoomLabel(room.name)}
                               </span>
+                              {isRoomInactive && (
+                                <span className="room-inactive-badge">Vô hiệu hóa</span>
+                              )}
                               {hasMultiOptions &&
                                 (room.futureContractStartDate ||
                                   room.contractStartDate) && (
@@ -673,22 +704,25 @@ export default function FloorMapLevel3({
                   const isGhosted =
                     highlightedRooms &&
                     !highlightedRooms.some((r) => r._id === room._id);
-                  const statusClass = showAsAvailable
-                    ? "status-available"
-                    : isDeposited
-                      ? "status-deposited"
-                      : "status-occupied";
+                  const isRoomInactive = room.isActive === false;
+                  const statusClass = isRoomInactive
+                    ? "status-inactive"
+                    : showAsAvailable
+                      ? "status-available"
+                      : isDeposited
+                        ? "status-deposited"
+                        : "status-occupied";
 
                   return (
                     <div
                       key={room._id}
                       className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""} ${hasMultiOptions ? "has-multi-options" : ""}`}
-                      onClick={(e) => handleRoomClick(room._id, e)}
+                      onClick={isRoomInactive ? undefined : (e) => handleRoomClick(room._id, e)}
                       data-color={typeColor}
-                      style={{
+                      style={isRoomInactive ? undefined : {
                         background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
                       }}
-                      title={room.name}
+                      title={isRoomInactive ? `${room.name} - VÔ HIỆU HÓA` : room.name}
                     >
                       <span
                         className="room-node-name"
@@ -696,6 +730,9 @@ export default function FloorMapLevel3({
                       >
                         {formatRoomLabel(room.name)}
                       </span>
+                      {isRoomInactive && (
+                        <span className="room-inactive-badge">Vô hiệu hóa</span>
+                      )}
                       {hasMultiOptions &&
                         (room.futureContractStartDate ||
                           room.contractStartDate) && (

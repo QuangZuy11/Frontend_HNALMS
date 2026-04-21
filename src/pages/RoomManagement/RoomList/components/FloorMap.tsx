@@ -6,6 +6,7 @@ interface Room {
   _id: string;
   name: string;
   status: string;
+  isActive?: boolean; // false = Vô hiệu hóa
   floorLabel?: string;
   roomTypeId?: {
     _id: string;
@@ -243,58 +244,81 @@ export default function FloorMap({
                 {legendType === "guest" && " (Không khả dụng)"}
               </span>
               {legendType !== "default" && (
-                <span
-                  style={{
-                    fontSize: "0.8rem",
-                    color: "#374151",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "0.35rem",
-                  }}
-                >
+                <>
                   <span
                     style={{
-                      position: "relative",
-                      display: "inline-block",
-                      width: "16px",
-                      height: "16px",
-                      borderRadius: "3px",
-                      background:
-                        "linear-gradient(145deg, #f59e0b 0%, #d97706 100%)",
-                      boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                      fontSize: "0.8rem",
+                      color: "#374151",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.35rem",
                     }}
                   >
                     <span
                       style={{
-                        position: "absolute",
-                        top: "-4px",
-                        right: "-4px",
-                        width: "12px",
-                        height: "12px",
-                        borderRadius: "50%",
+                        position: "relative",
+                        display: "inline-block",
+                        width: "16px",
+                        height: "16px",
+                        borderRadius: "3px",
                         background:
-                          "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
-                        color: "#1e293b",
-                        fontSize: "8px",
-                        fontWeight: 800,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        lineHeight: 1,
-                        border: "1.5px solid white",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                          "linear-gradient(145deg, #f59e0b 0%, #d97706 100%)",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
                       }}
                     >
-                      !
+                      <span
+                        style={{
+                          position: "absolute",
+                          top: "-4px",
+                          right: "-4px",
+                          width: "12px",
+                          height: "12px",
+                          borderRadius: "50%",
+                          background:
+                            "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
+                          color: "#1e293b",
+                          fontSize: "8px",
+                          fontWeight: 800,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          lineHeight: 1,
+                          border: "1.5px solid white",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                        }}
+                      >
+                        !
+                      </span>
                     </span>
+                    Đã cọc
+                    {legendType === "guest" && " (Không khả dụng)"}
                   </span>
-                  Đã cọc
-                  {legendType === "guest" && " (Không khả dụng)"}
-                </span>
+                  <span
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "#374151",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.35rem",
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: "16px",
+                        height: "16px",
+                        borderRadius: "3px",
+                        background:
+                          "#f1f5f9",
+                        border: "2px dotted #cbd5e1",
+                      }}
+                    />
+                    Vô hiệu hóa
+                  </span>
+                </>
               )}
             </div>
           )}
-
           {/* Room Type Legend (Dynamic) */}
           {uniqueRoomTypes.length > 0 && (
             <div className="map-legend type-legend">
@@ -365,16 +389,21 @@ export default function FloorMap({
                 (hasFutureInactiveContract && hasFloatingDeposit) ||
                 (hasFutureInactiveContract && room.successorLeaseBooked);
 
+              // Room bị Vô hiệu hóa (isActive === false)
+              const isRoomInactive = room.isActive === false;
+
               // Check if highlighted
               const isGhosted =
                 highlightedRooms &&
                 !highlightedRooms.some((r) => r._id === room._id);
 
-              const statusClass = showAsAvailable
-                ? "status-available"
-                : isDeposited
-                  ? "status-deposited"
-                  : "status-occupied";
+              const statusClass = isRoomInactive
+                ? "status-inactive"
+                : showAsAvailable
+                  ? "status-available"
+                  : isDeposited
+                    ? "status-deposited"
+                    : "status-occupied";
 
               // logic for inserting corridors
               return (
@@ -382,16 +411,20 @@ export default function FloorMap({
                   {/* Render the room node */}
                   <div
                     className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""} ${hasMultiOptions ? "has-multi-options" : ""}`}
-                    onClick={(e) => handleRoomClick(room._id, e)}
-                    title={`${room.name} - ${room.roomTypeId?.typeName || room.roomTypeId?.name || ""}${hasFutureInactiveContract ? " (Có HĐ inactive, đặt cọc được)" : hasMultiOptions ? " (Có 2 lựa chọn)" : isShortTermAvailable && !hasFloatingDeposit ? " (Có thể thuê ngắn hạn)" : ""}`}
+                    onClick={isRoomInactive ? undefined : (e) => handleRoomClick(room._id, e)}
+                    title={isRoomInactive ? `${room.name} - VÔ HIỆU HÓA` : `${room.name} - ${room.roomTypeId?.typeName || room.roomTypeId?.name || ""}${hasFutureInactiveContract ? " (Có HĐ inactive, đặt cọc được)" : hasMultiOptions ? " (Có 2 lựa chọn)" : isShortTermAvailable && !hasFloatingDeposit ? " (Có thể thuê ngắn hạn)" : ""}`}
                     data-color={typeColor}
-                    style={{
+                    style={isRoomInactive ? undefined : {
                       background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
                     }}
                   >
                     <span className="room-node-name">
                       {formatRoomLabel(room.name)}
                     </span>
+                    {/* Vô hiệu hóa badge */}
+                    {isRoomInactive && (
+                      <span className="room-inactive-badge">Vô hiệu hóa</span>
+                    )}
                     {/* 2 lựa chọn: chỉ một dòng ngày (tránh trùng inactive + deposited) */}
                     {hasMultiOptions &&
                       (room.futureContractStartDate ||
