@@ -489,17 +489,11 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   };
 
   const handleViewDetail = async (room: Room) => {
-    setViewingRoom(room);
-    setShowDetailModal(true);
-    setRoomBookServices([]);
-    setPrepaidInvoice(null);
-    setSelectedContractId(null);
-    setSelectedDepositId(null);
-
-    // Lấy TẤT CẢ hợp đồng của phòng (active + inactive + pending)
+    // Lấy TẤT CẢ hợp đồng của phòng (active + inactive + pending, KHÔNG tính terminated)
     const roomContracts = contracts.filter(
       (c: any) =>
-        (c.roomId?._id === room._id || c.roomId === room._id),
+        (c.roomId?._id === room._id || c.roomId === room._id) &&
+        c.status !== "terminated",
     );
 
     // Lấy TẤT CẢ cọc của phòng (cọc đang giữ + cọc lẻ chưa gắn HĐ)
@@ -507,6 +501,18 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       (d: any) =>
         d.status === "Held" && (d.room?._id === room._id || d.room === room._id),
     );
+
+    // Nếu phòng không còn HĐ nào (sau khi thanh lý) và không có cọc lẻ → không hiện modal
+    if (roomContracts.length === 0 && roomDeposits.length === 0) {
+      return;
+    }
+
+    setViewingRoom(room);
+    setShowDetailModal(true);
+    setRoomBookServices([]);
+    setPrepaidInvoice(null);
+    setSelectedContractId(null);
+    setSelectedDepositId(null);
 
     setAllRoomContracts(roomContracts);
     setRoomDeposits(roomDeposits);
@@ -523,8 +529,6 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       setAvailableContracts(roomContracts);
       setSelectedContractId(defaultContract._id);
       setSelectedDepositId(null);
-      // Lưu hợp đồng active đầu tiên để nút thanh lý luôn hiện khi có active
-      // Hoặc fallback sang inactive nếu không có active (phòng trống đến...)
       setActiveContractIdForLiquidation(activeContracts.length > 0 ? activeContracts[0]._id : (inactiveContracts.length > 0 ? inactiveContracts[0]._id : null));
       await fetchContractDetails(defaultContract._id);
     } else if (hasDepositOnly) {

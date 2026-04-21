@@ -24,13 +24,8 @@ const MENU_ITEMS = [
         icon: <Users size={20} />,
         path: "/admin/accounts",
         subItems: []
-    },
-    {
-        title: "Cài đặt hệ thống",
-        icon: <Settings size={20} />,
-        path: "/admin/settings",
-        subItems: []
-    },
+    }
+   
 ];
 
 const AdminSidebar = () => {

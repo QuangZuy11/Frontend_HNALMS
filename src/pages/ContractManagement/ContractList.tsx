@@ -245,8 +245,9 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
       return !contractIds.includes(cid);
     });
 
-    // Nếu có hợp đồng hoặc cọc lẻ → hiện popup
-    if (roomContracts.length > 0 || roomDeposits.length > 0) {
+    // Nếu có hợp đồng (không tính terminated) hoặc cọc lẻ → hiện popup
+    const activeContracts = roomContracts.filter(c => c.status !== "terminated");
+    if (activeContracts.length > 0 || roomDeposits.length > 0) {
       const { x, anchorTop, anchorBottom, placement } =
         computePopupAnchor(event);
 
@@ -255,7 +256,7 @@ const ContractList = ({ readOnly = false }: { readOnly?: boolean }) => {
         room,
         position: { x, anchorTop, anchorBottom },
         placement,
-        contracts: roomContracts,
+        contracts: activeContracts,
         deposits: roomDeposits,
       });
       return;
