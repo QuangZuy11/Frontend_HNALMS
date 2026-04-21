@@ -83,9 +83,7 @@ const HeaderDashboard = () => {
                             <button className="dropdown-item" onClick={handleProfileClick}>
                                 <User size={16} /> Thông tin cá nhân
                             </button>
-                            <button className="dropdown-item">
-                                <Settings size={16} /> Cài đặt
-                            </button>
+                           
                             <div className="dropdown-divider"></div>
                             <button className="dropdown-item text-danger" onClick={handleLogout}>
                                 <LogOut size={16} /> Đăng xuất
