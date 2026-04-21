@@ -941,6 +941,24 @@
   border-color: #fecaca !important;
 }
 
+/* Nút Power bị disabled: phòng đang thuê hoặc có cọc */
+.btn-icon-sm.power:disabled {
+  background-color: #f1f5f9 !important;
+  color: #cbd5e1 !important;
+  border-color: #e2e8f0 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+  opacity: 0.6;
+}
+
+.btn-icon-sm.power:disabled:hover {
+  background-color: #f1f5f9 !important;
+  color: #cbd5e1 !important;
+  border-color: #e2e8f0 !important;
+  transform: none !important;
+}
+
 /* Modal Styles */
 .modal-overlay {
   position: fixed;

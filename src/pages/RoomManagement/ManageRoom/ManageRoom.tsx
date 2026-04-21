@@ -604,6 +604,14 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   };
 
   const handleToggleActive = (room: Room) => {
+    // Không cho vô hiệu hóa phòng đang thuê hoặc đang có cọc
+    if (room.isActive && (room.status === "Occupied" || room.status === "Deposited")) {
+      toastr.warning(
+        `Phòng ${room.name} đang ${room.status === "Occupied" ? "có người thuê" : "có tiền cọc"}. Không thể vô hiệu hóa khi phòng đang thuê hoặc có cọc.`,
+      );
+      return;
+    }
+
     const action = room.isActive ? "vô hiệu hóa" : "kích hoạt";
     setConfirmModal({
       isOpen: true,
@@ -935,10 +943,15 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                                       <button
                                         className={`btn-icon-sm power ${room.isActive ? "active" : "inactive"}`}
                                         onClick={() => handleToggleActive(room)}
+                                        disabled={room.isActive && (room.status === "Occupied" || room.status === "Deposited")}
                                         title={
-                                          room.isActive
-                                            ? "Vô hiệu hóa"
-                                            : "Kích hoạt lại"
+                                          !room.isActive
+                                            ? "Kích hoạt lại"
+                                            : room.status === "Occupied"
+                                              ? "Phòng đang có người thuê"
+                                              : room.status === "Deposited"
+                                                ? "Phòng đang có tiền cọc"
+                                                : "Vô hiệu hóa"
                                         }
                                       >
                                         <Power size={16} />
