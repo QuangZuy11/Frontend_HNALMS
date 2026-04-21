@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Check, X } from 'lucide-react';
+import {
+  Eye, Check, X, ArrowLeftRight,
+  Clock, CheckCircle2, XCircle,
+  Search, Filter, ArrowUpDown, FileText,
+} from 'lucide-react';
+import { AppModal } from '../../components/common/Modal';
+import { Pagination } from '../../components/common/Pagination';
+import { useToast } from '../../components/common/Toast';
 import { transferRequestService } from '../../services/requestService';
 import api from '../../services/api';
 import './TransferRequestsList.css';
@@ -86,29 +93,30 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_BADGE_CLASS: Record<string, string> = {
-  Pending: 'status-pending',
-  Approved: 'status-approved',
-  InvoiceReleased: 'status-pending', // can style later
-  Paid: 'status-approved',
-  Rejected: 'status-rejected',
-  Completed: 'status-completed',
-  Cancelled: 'status-cancelled',
+  Pending: 'trns-status-pending',
+  Approved: 'trns-status-approved',
+  InvoiceReleased: 'trns-status-pending',
+  Paid: 'trns-status-approved',
+  Rejected: 'trns-status-rejected',
+  Completed: 'trns-status-completed',
+  Cancelled: 'trns-status-cancelled',
 };
 
 export default function TransferRequestsList() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [requests, setRequests] = useState<TransferRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Filters
+  // Filters & sort
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [sortOption, setSortOption] = useState('newest');
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
@@ -146,7 +154,6 @@ export default function TransferRequestsList() {
   const fetchRequests = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
       const res = await transferRequestService.getAllTransferRequests({
         status: statusFilter === 'ALL' ? undefined : statusFilter,
         search: search || undefined,
@@ -164,43 +171,19 @@ export default function TransferRequestsList() {
       }
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { message?: string } } };
-      setError(anyErr?.response?.data?.message || 'Không thể tải danh sách yêu cầu chuyển phòng');
+      showToast('error', 'Lỗi tải dữ liệu', anyErr?.response?.data?.message || 'Không thể tải danh sách yêu cầu chuyển phòng');
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, search, currentPage, itemsPerPage]);
+  }, [statusFilter, search, currentPage, itemsPerPage, showToast]);
 
-  useEffect(() => {
-    fetchRequests();
-  }, [fetchRequests]);
+  useEffect(() => { fetchRequests(); }, [fetchRequests]);
+  useEffect(() => { setCurrentPage(1); }, [statusFilter, search]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [statusFilter, search]);
-
-  // ─── Control body overflow when modal opens ───────────────────────────────
-  useEffect(() => {
-    // Check if any modal states are active
-    if (window.innerWidth < 768) {
-      // Mobile: always allow scrolling
-      document.body.style.overflow = '';
-    } else {
-      // Desktop: disable overflow when modal is open
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, []);
-
-  const handleSearch = () => {
-    setSearch(searchInput);
-  };
-
+  const handleSearch = () => setSearch(searchInput);
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') handleSearch();
   };
-
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -209,9 +192,7 @@ export default function TransferRequestsList() {
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '-';
     return new Date(dateStr).toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
+      day: '2-digit', month: '2-digit', year: 'numeric',
     });
   };
 
@@ -220,12 +201,28 @@ export default function TransferRequestsList() {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
 
-  const getRoomDisplay = (room?: Room | null) => {
-    if (!room) return '-';
-    return room.name;
+  const getRoomDisplay = (room?: Room | null) => room ? room.name : '-';
+
+  const hasFilters = search || statusFilter !== 'ALL';
+  const clearFilters = () => {
+    setSearch('');
+    setSearchInput('');
+    setStatusFilter('ALL');
   };
 
-  // ---- Approve ----
+  // ─── Stats ────────────────────────────────────────────────────────────────
+  const totalCount = requests.length;
+  const pendingCount = requests.filter(r => r.status === 'Pending').length;
+  const completedCount = requests.filter(r => r.status === 'Completed').length;
+
+  // ─── Sorted display ───────────────────────────────────────────────────────
+  const displayedRequests = [...requests].sort((a, b) => {
+    if (sortOption === 'name-asc') return (a.tenantId?.fullname || '').localeCompare(b.tenantId?.fullname || '');
+    if (sortOption === 'name-desc') return (b.tenantId?.fullname || '').localeCompare(a.tenantId?.fullname || '');
+    return 0;
+  });
+
+  // ─── Approve ──────────────────────────────────────────────────────────────
   const openApproveModal = (req: TransferRequest) => {
     setApprovingRequest(req);
     setManagerNote('');
@@ -241,15 +238,16 @@ export default function TransferRequestsList() {
       setApprovingRequest(null);
       fetchRequests();
       if (selectedRequest?._id === approvingRequest._id) setSelectedRequest(null);
+      showToast('success', 'Thành công', 'Đã duyệt yêu cầu chuyển phòng.');
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { message?: string } } };
-      alert(anyErr?.response?.data?.message || 'Duyệt yêu cầu thất bại');
+      showToast('error', 'Lỗi', anyErr?.response?.data?.message || 'Duyệt yêu cầu thất bại');
     } finally {
       setApproveLoading(false);
     }
   };
 
-  // ---- Reject ----
+  // ─── Reject ───────────────────────────────────────────────────────────────
   const openRejectModal = (req: TransferRequest) => {
     setRejectingRequest(req);
     setRejectReason('');
@@ -259,10 +257,7 @@ export default function TransferRequestsList() {
 
   const handleReject = async () => {
     if (!rejectingRequest) return;
-    if (!rejectReason.trim()) {
-      setRejectReasonError('Vui lòng nhập lý do từ chối');
-      return;
-    }
+    if (!rejectReason.trim()) { setRejectReasonError('Vui lòng nhập lý do từ chối'); return; }
     try {
       setRejectLoading(true);
       await transferRequestService.rejectTransferRequest(rejectingRequest._id, rejectReason);
@@ -270,15 +265,16 @@ export default function TransferRequestsList() {
       setRejectingRequest(null);
       fetchRequests();
       if (selectedRequest?._id === rejectingRequest._id) setSelectedRequest(null);
+      showToast('success', 'Thành công', 'Đã từ chối yêu cầu chuyển phòng.');
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { message?: string } } };
-      alert(anyErr?.response?.data?.message || 'Từ chối yêu cầu thất bại');
+      showToast('error', 'Lỗi', anyErr?.response?.data?.message || 'Từ chối yêu cầu thất bại');
     } finally {
       setRejectLoading(false);
     }
   };
 
-  // ---- Release Invoice ----
+  // ─── Release Invoice ──────────────────────────────────────────────────────
   const openReleaseInvoiceModal = (req: TransferRequest) => {
     setReleasingInvoiceRequest(req);
     setElectricIndex('');
@@ -300,15 +296,16 @@ export default function TransferRequestsList() {
       setReleasingInvoiceRequest(null);
       fetchRequests();
       if (selectedRequest?._id === releasingInvoiceRequest._id) setSelectedRequest(null);
+      showToast('success', 'Thành công', 'Đã phát hành hóa đơn chuyển phòng.');
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { message?: string } } };
-      alert(anyErr?.response?.data?.message || 'Phát hành hóa đơn thất bại');
+      showToast('error', 'Lỗi', anyErr?.response?.data?.message || 'Phát hành hóa đơn thất bại');
     } finally {
       setReleaseInvoiceLoading(false);
     }
   };
 
-  // ---- Complete ----
+  // ─── Complete ─────────────────────────────────────────────────────────────
   const openCompleteModal = (req: TransferRequest) => {
     setCompletingRequest(req);
     setShowCompleteModal(true);
@@ -319,7 +316,6 @@ export default function TransferRequestsList() {
     try {
       setCompleteLoading(true);
 
-      // Tìm hợp đồng cũ (đang active) TRƯỚC khi gọi complete
       let oldDepositId: string | undefined;
       let oldContract: Contract | undefined;
       try {
@@ -330,18 +326,13 @@ export default function TransferRequestsList() {
           oldContract = (contractsRes.data.data as Contract[]).find((c: Contract) => {
             const cTenantId = typeof c.tenantId === 'object' ? c.tenantId?._id : c.tenantId;
             const cRoomId = typeof c.roomId === 'object' ? c.roomId?._id : c.roomId;
-            return (
-              c.status === 'active' &&
-              (cTenantId === tenantId) &&
-              (cRoomId === currentRoomId)
-            );
+            return c.status === 'active' && cTenantId === tenantId && cRoomId === currentRoomId;
           });
         }
       } catch (fetchErr) {
         console.error('Không thể lấy dữ liệu hợp đồng cũ:', fetchErr);
       }
 
-      // Gọi complete sau khi đã lấy dữ liệu hợp đồng cũ
       await transferRequestService.completeTransferRequest(completingRequest._id, {
         transferDate: completingRequest.transferDate ?? undefined,
       });
@@ -349,7 +340,6 @@ export default function TransferRequestsList() {
       setCompletingRequest(null);
       if (selectedRequest?._id === completingRequest._id) setSelectedRequest(null);
 
-      // Lưu dữ liệu hợp đồng cũ vào sessionStorage để pre-fill form hợp đồng mới
       if (oldContract) {
         oldDepositId = typeof oldContract.depositId === 'object'
           ? oldContract.depositId?._id
@@ -393,7 +383,7 @@ export default function TransferRequestsList() {
         sessionStorage.setItem('contractFormDraft', JSON.stringify(draft));
       }
 
-      // Chuyển đến trang tạo hợp đồng mới với phòng mới và tiền cọc được chuyển sang
+      showToast('success', 'Thành công', 'Hoàn tất chuyển phòng. Đang chuyển đến tạo hợp đồng mới...');
       navigate('/manager/contracts/create', {
         state: {
           roomId: completingRequest.targetRoomId?._id,
@@ -403,77 +393,100 @@ export default function TransferRequestsList() {
       });
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { message?: string } } };
-      alert(anyErr?.response?.data?.message || 'Hoàn tất chuyển phòng thất bại');
+      showToast('error', 'Lỗi', anyErr?.response?.data?.message || 'Hoàn tất chuyển phòng thất bại');
     } finally {
       setCompleteLoading(false);
     }
   };
 
-  // ---- Pagination ----
-  const renderPagination = () => {
-    if (totalPages <= 1) return null;
-    const pages: (number | 'ellipsis')[] = [];
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-      if (currentPage > 3) pages.push('ellipsis');
-      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
-      if (currentPage < totalPages - 2) pages.push('ellipsis');
-      pages.push(totalPages);
-    }
-    return (
-      <div className="tr-pagination">
-        <div className="tr-pagination-info">
-          <span>Tổng <strong>{totalItems}</strong> yêu cầu</span>
-          <div className="tr-pagination-items-per-page">
-            <label>Hiển thị:</label>
-            <select
-              className="tr-pagination-select"
-              value={itemsPerPage}
-              onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-            >
-              {[10, 20, 50].map((v) => <option key={v} value={v}>{v}</option>)}
-            </select>
-          </div>
-        </div>
-        <div className="tr-pagination-controls">
-          <button className="pagination-arrow-btn" disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)}>‹</button>
-          {pages.map((p, i) =>
-            p === 'ellipsis'
-              ? <span key={`e-${i}`} className="tr-pagination-ellipsis">…</span>
-              : <button key={p} className={`tr-pagination-number${currentPage === p ? ' active' : ''}`} onClick={() => handlePageChange(p as number)}>{p}</button>
-          )}
-          <button className="pagination-arrow-btn" disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)}>›</button>
-        </div>
-      </div>
-    );
+  // ─── Status icon ──────────────────────────────────────────────────────────
+  const getStatusIcon = (status: string) => {
+    if (status === 'Pending') return <Clock size={13} />;
+    if (status === 'Approved') return <CheckCircle2 size={13} />;
+    if (status === 'Rejected' || status === 'Cancelled') return <XCircle size={13} />;
+    if (status === 'Completed') return <CheckCircle2 size={13} />;
+    return null;
   };
 
   return (
-    <div className="tr-page">
-      <div className="tr-card">
-        {/* Header */}
-        <div className="tr-header">
-          <div>
-            <h1>Yêu cầu chuyển phòng</h1>
-            <p className="subtitle">Quản lý các yêu cầu chuyển phòng của cư dân</p>
+    <div className="trns-container">
+      {/* ── HEADER ─────────────────────────────────────────────────────── */}
+      <div className="trns-header">
+        <div className="trns-header-top">
+          <div className="trns-title-block">
+            <div className="trns-title-row">
+              <div className="trns-title-icon" aria-hidden>
+                <ArrowLeftRight size={22} strokeWidth={2} />
+              </div>
+              <div className="trns-title-text">
+                <h2>Quản lý Yêu cầu Chuyển phòng</h2>
+                <p className="trns-subtitle">
+                  Các yêu cầu chuyển phòng của cư dân tòa nhà Hoàng Nam.
+                </p>
+              </div>
+            </div>
           </div>
-          <button className="btn-refresh" onClick={fetchRequests} disabled={loading}>
-            {loading ? 'Đang tải...' : 'Làm mới'}
-          </button>
-        </div>
 
-        {/* Filters */}
-        <div className="tr-filters">
-          <div className="tr-filter-group">
-            <label className="tr-filter-label">Trạng thái:</label>
+          <div className="trns-header-aside">
+            <div className="trns-stats-summary">
+              <div className="trns-stat-item">
+                <div className="trns-stat-icon icon-primary">
+                  <ArrowLeftRight size={16} strokeWidth={2} />
+                </div>
+                <div className="trns-stat-text">
+                  <span className="trns-stat-value">{totalCount}</span>
+                  <span className="trns-stat-label">Tổng số</span>
+                </div>
+              </div>
+              <div className="trns-stat-divider" />
+              <div className="trns-stat-item">
+                <div className="trns-stat-icon icon-warning">
+                  <Clock size={16} strokeWidth={2} />
+                </div>
+                <div className="trns-stat-text">
+                  <span className="trns-stat-value">{pendingCount}</span>
+                  <span className="trns-stat-label">Chờ duyệt</span>
+                </div>
+              </div>
+              <div className="trns-stat-divider" />
+              <div className="trns-stat-item">
+                <div className="trns-stat-icon icon-accent">
+                  <CheckCircle2 size={16} strokeWidth={2} />
+                </div>
+                <div className="trns-stat-text">
+                  <span className="trns-stat-value">{completedCount}</span>
+                  <span className="trns-stat-label">Đã hoàn tất</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── TOOLBAR ────────────────────────────────────────────────────── */}
+      <div className="trns-toolbar">
+        <div className="trns-toolbar-left">
+          <div className="trns-search-box">
+            <Search size={18} className="trns-search-icon" />
+            <input
+              type="text"
+              className="trns-search-input"
+              placeholder="Tìm theo tên cư dân..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={handleSearch}
+            />
+          </div>
+
+          <div className="trns-control-group">
+            <Filter size={16} className="trns-toolbar-icon" />
             <select
-              className="tr-filter-select"
+              className="trns-custom-select"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
             >
-              <option value="ALL">Tất cả</option>
+              <option value="ALL">Tất cả trạng thái</option>
               <option value="Pending">Chờ duyệt</option>
               <option value="Approved">Đã duyệt</option>
               <option value="InvoiceReleased">Chờ thanh toán</option>
@@ -483,415 +496,536 @@ export default function TransferRequestsList() {
               <option value="Cancelled">Đã hủy</option>
             </select>
           </div>
-          <div className="tr-search-group">
-            <input
-              type="text"
-              className="tr-search-input"
-              placeholder="Tìm kiếm theo tên, email, số điện thoại..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            <button className="btn-search" onClick={handleSearch}>Tìm kiếm</button>
-          </div>
-        </div>
 
-        {/* Error */}
-        {error && <div className="tr-error">{error}</div>}
-
-        {/* Table */}
-        <div className="tr-table-wrap" ref={tableRef}>
-          {loading ? (
-            <div className="tr-loading">Đang tải dữ liệu...</div>
-          ) : requests.length === 0 ? (
-            <div className="tr-empty">Không có yêu cầu chuyển phòng nào phù hợp.</div>
-          ) : (
-            <table className="tr-table">
-              <thead>
-                <tr>
-                  <th>STT</th>
-                  <th>Cư dân</th>
-                  <th>Phòng hiện tại</th>
-                  <th>Giá phòng cũ</th>
-                  <th>Phòng muốn chuyển</th>
-                  <th>Giá phòng mới</th>
-                  <th>Ngày tạo</th>
-                  <th>Ngày chuyển</th>
-                  <th>Trạng thái</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {requests.map((req, idx) => (
-                  <tr key={req._id}>
-                    <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                    <td>
-                      <span className="cell-title">{req.tenantId?.fullname ?? '-'}</span>
-                    </td>
-                    <td>{getRoomDisplay(req.currentRoomId)}</td>
-                    <td>{formatCurrency(req.currentRoomId?.roomTypeId?.currentPrice)}</td>
-                    <td>{getRoomDisplay(req.targetRoomId)}</td>
-                    <td>{formatCurrency(req.targetRoomId?.roomTypeId?.currentPrice)}</td>
-                    <td>{formatDate(req.createdAt)}</td>
-                    <td>{req.transferDate ? formatDate(req.transferDate) : '-'}</td>
-                    <td>
-                      <span className={`status-badge ${STATUS_BADGE_CLASS[req.status] ?? ''}`}>
-                        {STATUS_LABELS[req.status] ?? req.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="action-buttons">
-                        <button
-                          className="btn-view-detail"
-                          title="Xem chi tiết"
-                          onClick={() => setSelectedRequest(req)}
-                        >
-                          <Eye size={16} />
-                        </button>
-                        {req.status === 'Pending' && (
-                          <>
-                            <button
-                              className="btn-approve"
-                              title="Duyệt"
-                              onClick={() => openApproveModal(req)}
-                            >
-                              <Check size={15} />
-                            </button>
-                            <button
-                              className="btn-reject"
-                              title="Từ chối"
-                              onClick={() => openRejectModal(req)}
-                            >
-                              <X size={15} />
-                            </button>
-                          </>
-                        )}
-                        {req.status === 'Approved' && (
-                          <button
-                            className="btn-complete"
-                            title="Phát hành hóa đơn"
-                            style={{ backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1' }}
-                            onClick={() => openReleaseInvoiceModal(req)}
-                          >
-                            📄
-                          </button>
-                        )}
-                        {req.status === 'Paid' && (
-                          <button
-                            className="btn-complete"
-                            title="Hoàn tất chuyển phòng"
-                            onClick={() => openCompleteModal(req)}
-                          >
-                            ✓
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {hasFilters && (
+            <button type="button" className="trns-btn-clear-filter" onClick={clearFilters}>
+              Xóa lọc
+            </button>
           )}
         </div>
 
-        {/* Pagination */}
-        {renderPagination()}
+        <div className="trns-toolbar-right">
+          <ArrowUpDown size={16} className="trns-toolbar-icon" />
+          <select
+            className="trns-custom-select"
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+          >
+            <option value="newest">Mới nhất</option>
+            <option value="name-asc">Tên: A - Z</option>
+            <option value="name-desc">Tên: Z - A</option>
+          </select>
+        </div>
       </div>
 
-      {/* ---- Detail Modal ---- */}
-      {selectedRequest && (
-        <div className="tr-modal-overlay" onClick={() => setSelectedRequest(null)}>
-          <div className="tr-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="tr-modal-header">
-              <h2>Chi tiết yêu cầu chuyển phòng</h2>
-              <button className="modal-close-btn" onClick={() => setSelectedRequest(null)}>×</button>
-            </div>
-            <div className="tr-modal-body">
-              <div className="detail-row">
-                <span className="detail-label">Cư dân:</span>
-                <span className="detail-value">{selectedRequest.tenantId?.fullname ?? '-'}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Email:</span>
-                <span className="detail-value">{selectedRequest.tenantId?.email ?? '-'}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Số điện thoại:</span>
-                <span className="detail-value">{selectedRequest.tenantId?.phoneNumber ?? '-'}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Phòng hiện tại:</span>
-                <span className="detail-value">{getRoomDisplay(selectedRequest.currentRoomId)}</span>
-              </div>
-              {selectedRequest.currentRoomId?.roomTypeId && (
-                <div className="detail-row">
-                  <span className="detail-label">Giá phòng cũ:</span>
-                  <span className="detail-value">
-                    {selectedRequest.currentRoomId.roomTypeId.typeName} — {formatCurrency(selectedRequest.currentRoomId.roomTypeId.currentPrice)}
-                  </span>
-                </div>
-              )}
-              <div className="detail-row">
-                <span className="detail-label">Phòng muốn chuyển:</span>
-                <span className="detail-value">{getRoomDisplay(selectedRequest.targetRoomId)}</span>
-              </div>
-              {selectedRequest.targetRoomId?.roomTypeId && (
-                <div className="detail-row">
-                  <span className="detail-label">Loại phòng mới:</span>
-                  <span className="detail-value">
-                    {selectedRequest.targetRoomId.roomTypeId.typeName} — {formatCurrency(selectedRequest.targetRoomId.roomTypeId.currentPrice)}
-                  </span>
-                </div>
-              )}
-              <div className="detail-row">
-                <span className="detail-label">Lý do:</span>
-                <span className="detail-value">{selectedRequest.reason || '-'}</span>
-              </div>
-              {selectedRequest.note && (
-                <div className="detail-row">
-                  <span className="detail-label">Ghi chú:</span>
-                  <span className="detail-value">{selectedRequest.note}</span>
-                </div>
-              )}
-              <div className="detail-row">
-                <span className="detail-label">Ngày gửi:</span>
-                <span className="detail-value">{formatDate(selectedRequest.createdAt)}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Ngày chuyển:</span>
-                <span className="detail-value">{selectedRequest.transferDate ? formatDate(selectedRequest.transferDate) : '-'}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Trạng thái:</span>
-                <span className={`status-badge ${STATUS_BADGE_CLASS[selectedRequest.status] ?? ''}`}>
-                  {STATUS_LABELS[selectedRequest.status] ?? selectedRequest.status}
-                </span>
-              </div>
-              {selectedRequest.managerNote && (
-                <div className="detail-row">
-                  <span className="detail-label">Ghi chú duyệt:</span>
-                  <span className="detail-value">{selectedRequest.managerNote}</span>
-                </div>
-              )}
-              {selectedRequest.rejectReason && (
-                <div className="detail-row">
-                  <span className="detail-label">Lý do từ chối:</span>
-                  <span className="detail-value" style={{ color: '#b91c1c' }}>{selectedRequest.rejectReason}</span>
-                </div>
-              )}
-              {selectedRequest.status === 'Pending' && (
-                <div className="detail-actions">
-                  <button
-                    className="btn-approve-full"
-                    onClick={() => { setSelectedRequest(null); openApproveModal(selectedRequest); }}
-                  >
-                    <Check size={15} /> Duyệt yêu cầu
-                  </button>
-                  <button
-                    className="btn-reject-full"
-                    onClick={() => { setSelectedRequest(null); openRejectModal(selectedRequest); }}
-                  >
-                    <X size={15} /> Từ chối
-                  </button>
-                </div>
-              )}
-              {selectedRequest.status === 'Approved' && (
-                <div className="detail-actions">
-                  <button
-                    className="btn-complete-full"
-                    style={{ backgroundColor: '#475569' }}
-                    onClick={() => { setSelectedRequest(null); openReleaseInvoiceModal(selectedRequest); }}
-                  >
-                    📄 Phát hành hóa đơn chuyển phòng
-                  </button>
-                </div>
-              )}
-              {selectedRequest.status === 'Paid' && (
-                <div className="detail-actions">
-                  <button
-                    className="btn-complete-full"
-                    onClick={() => { setSelectedRequest(null); openCompleteModal(selectedRequest); }}
-                  >
-                    ✓ Hoàn tất chuyển phòng
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ── TABLE ──────────────────────────────────────────────────────── */}
+      <div className="trns-table-container" ref={tableRef}>
+        <table className="trns-table">
+          <thead>
+            <tr>
+              <th className="trns-cell-stt">STT</th>
+              <th className="trns-cell-tenant">Cư dân</th>
+              <th className="trns-cell-room">Phòng hiện tại</th>
+              <th className="trns-cell-price">Giá phòng cũ</th>
+              <th className="trns-cell-room">Phòng chuyển</th>
+              <th className="trns-cell-price">Giá phòng mới</th>
+              <th className="trns-cell-date">Ngày tạo</th>
+              <th className="trns-cell-date">Ngày chuyển</th>
+              <th className="trns-cell-status">Trạng thái</th>
+              <th className="trns-cell-actions">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayedRequests.length > 0 ? (
+              displayedRequests.map((req, idx) => (
+                <tr key={req._id}>
+                  <td className="trns-cell-stt">
+                    {(currentPage - 1) * itemsPerPage + idx + 1}
+                  </td>
+                  <td className="trns-cell-tenant">
+                    {req.tenantId?.fullname ?? req.tenantId?.username ?? '-'}
+                  </td>
+                  <td className="trns-cell-room">
+                    <span className="trns-room-badge">{getRoomDisplay(req.currentRoomId)}</span>
+                  </td>
+                  <td className="trns-cell-price">
+                    {formatCurrency(req.currentRoomId?.roomTypeId?.currentPrice)}
+                  </td>
+                  <td className="trns-cell-room">
+                    <span className="trns-room-badge trns-room-badge--target">{getRoomDisplay(req.targetRoomId)}</span>
+                  </td>
+                  <td className="trns-cell-price">
+                    {formatCurrency(req.targetRoomId?.roomTypeId?.currentPrice)}
+                  </td>
+                  <td className="trns-cell-date">{formatDate(req.createdAt)}</td>
+                  <td className="trns-cell-date">
+                    {req.transferDate ? formatDate(req.transferDate) : '-'}
+                  </td>
+                  <td className="trns-cell-status">
+                    <span className={`trns-status-badge ${STATUS_BADGE_CLASS[req.status] ?? ''}`}>
+                      {getStatusIcon(req.status)}
+                      {STATUS_LABELS[req.status] ?? req.status}
+                    </span>
+                  </td>
+                  <td className="trns-cell-actions">
+                    <div className="trns-table-actions">
+                      <button
+                        className="trns-btn-icon trns-btn-view"
+                        title="Xem chi tiết"
+                        onClick={() => setSelectedRequest(req)}
+                      >
+                        <Eye size={16} />
+                      </button>
+                      {req.status === 'Pending' && (
+                        <>
+                          <button
+                            className="trns-btn-icon trns-btn-approve"
+                            title="Duyệt"
+                            onClick={() => openApproveModal(req)}
+                          >
+                            <Check size={15} />
+                          </button>
+                          <button
+                            className="trns-btn-icon trns-btn-reject"
+                            title="Từ chối"
+                            onClick={() => openRejectModal(req)}
+                          >
+                            <X size={15} />
+                          </button>
+                        </>
+                      )}
+                      {req.status === 'Approved' && (
+                        <button
+                          className="trns-btn-icon trns-btn-invoice"
+                          title="Phát hành hóa đơn"
+                          onClick={() => openReleaseInvoiceModal(req)}
+                        >
+                          <FileText size={15} />
+                        </button>
+                      )}
+                      {req.status === 'Paid' && (
+                        <button
+                          className="trns-btn-icon trns-btn-complete"
+                          title="Hoàn tất chuyển phòng"
+                          onClick={() => openCompleteModal(req)}
+                        >
+                          <CheckCircle2 size={15} />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={10} className="trns-table-empty-cell">
+                  {loading ? 'Đang tải dữ liệu...' : 'Không tìm thấy yêu cầu chuyển phòng nào phù hợp.'}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
 
-      {/* ---- Approve Modal ---- */}
-      {showApproveModal && approvingRequest && (
-        <div className="tr-modal-overlay" onClick={() => setShowApproveModal(false)}>
-          <div className="tr-modal tr-modal--sm" onClick={(e) => e.stopPropagation()}>
-            <div className="tr-modal-header">
-              <h2>Duyệt yêu cầu chuyển phòng</h2>
-              <button className="modal-close-btn" onClick={() => setShowApproveModal(false)}>×</button>
-            </div>
-            <div className="tr-modal-body">
-              <p style={{ marginBottom: 12, color: '#374151' }}>
-                Duyệt yêu cầu chuyển từ phòng <strong>{getRoomDisplay(approvingRequest.currentRoomId)}</strong> sang phòng{' '}
-                <strong>{getRoomDisplay(approvingRequest.targetRoomId)}</strong> của cư dân{' '}
-                <strong>{approvingRequest.tenantId?.fullname}</strong>?
-              </p>
-              <div className="complete-form-group">
-                <label>Ghi chú (tùy chọn)</label>
-                <textarea
-                  value={managerNote}
-                  onChange={(e) => setManagerNote(e.target.value)}
-                  placeholder="Nhập ghi chú cho cư dân..."
-                  rows={3}
-                />
-              </div>
-              <div className="complete-form-actions">
-                <button className="btn-cancel" onClick={() => setShowApproveModal(false)} disabled={approveLoading}>
-                  Hủy
-                </button>
-                <button className="btn-submit btn-approve-submit" onClick={handleApprove} disabled={approveLoading}>
-                  {approveLoading ? 'Đang xử lý...' : 'Xác nhận duyệt'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          onPageChange={handlePageChange}
+        />
+      </div>
 
-      {/* ---- Reject Modal ---- */}
-      {showRejectModal && rejectingRequest && (
-        <div className="tr-modal-overlay" onClick={() => setShowRejectModal(false)}>
-          <div className="tr-modal tr-modal--sm" onClick={(e) => e.stopPropagation()}>
-            <div className="tr-modal-header">
-              <h2>Từ chối yêu cầu chuyển phòng</h2>
-              <button className="modal-close-btn" onClick={() => setShowRejectModal(false)}>×</button>
-            </div>
-            <div className="tr-modal-body">
-              <p style={{ marginBottom: 12, color: '#374151' }}>
-                Từ chối yêu cầu của cư dân <strong>{rejectingRequest.tenantId?.fullname}</strong>?
-              </p>
-              <div className="complete-form-group">
-                <label>Lý do từ chối <span style={{ color: '#ef4444' }}>*</span></label>
-                <textarea
-                  className={rejectReasonError ? 'input-error' : ''}
-                  value={rejectReason}
-                  onChange={(e) => { setRejectReason(e.target.value); setRejectReasonError(''); }}
-                  placeholder="Nhập lý do từ chối..."
-                  rows={3}
-                />
-                {rejectReasonError && <span className="error-message">{rejectReasonError}</span>}
-              </div>
-              <div className="complete-form-actions">
-                <button className="btn-cancel" onClick={() => setShowRejectModal(false)} disabled={rejectLoading}>
-                  Hủy
-                </button>
-                <button className="btn-submit btn-reject-submit" onClick={handleReject} disabled={rejectLoading}>
-                  {rejectLoading ? 'Đang xử lý...' : 'Xác nhận từ chối'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ================================================================
+          MODALS
+          ================================================================ */}
 
-      {/* ---- Release Invoice Modal ---- */}
-      {showReleaseInvoiceModal && releasingInvoiceRequest && (
-        <div className="tr-modal-overlay" onClick={() => setShowReleaseInvoiceModal(false)}>
-          <div className="tr-modal tr-modal--sm" onClick={(e) => e.stopPropagation()}>
-            <div className="tr-modal-header">
-              <h2>Phát hành hóa đơn chuyển phòng</h2>
-              <button className="modal-close-btn" onClick={() => setShowReleaseInvoiceModal(false)}>×</button>
-            </div>
-            <div className="tr-modal-body">
-              <p style={{ marginBottom: 16, color: '#374151', fontSize: '14px' }}>
-                Nhập chỉ số điện, nước phòng <strong>{getRoomDisplay(releasingInvoiceRequest.currentRoomId)}</strong> để chốt hóa đơn phòng cũ tới ngày chuyển phòng (<strong>{releasingInvoiceRequest.transferDate ? formatDate(releasingInvoiceRequest.transferDate) : '-'}</strong>).
-              </p>
-              
-              <div className="complete-form-group">
-                <label>Chỉ số điện cuối cùng (Phòng cũ)</label>
-                <input
-                  type="number"
-                  placeholder="Để trống nếu không thay đổi/tự tự động dùng chỉ số gần nhất..."
-                  value={electricIndex}
-                  onChange={(e) => setElectricIndex(e.target.value)}
-                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px', marginBottom: '12px' }}
-                />
-              </div>
-
-              <div className="complete-form-group">
-                <label>Chỉ số nước cuối cùng (Phòng cũ)</label>
-                <input
-                  type="number"
-                  placeholder="Để trống nếu không thay đổi/tự tự động dùng chỉ số gần nhất..."
-                  value={waterIndex}
-                  onChange={(e) => setWaterIndex(e.target.value)}
-                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px', marginBottom: '12px' }}
-                />
-              </div>
-
-              <div className="complete-form-group">
-                <label>Ghi chú hóa đơn</label>
-                <textarea
-                  value={managerInvoiceNotes}
-                  onChange={(e) => setManagerInvoiceNotes(e.target.value)}
-                  placeholder="Ghi chú thêm về việc phát hành hóa đơn..."
-                  rows={2}
-                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px', resize: 'vertical' }}
-                />
-              </div>
-
-              <div className="complete-form-actions" style={{ marginTop: '20px' }}>
-                <button className="btn-cancel" onClick={() => setShowReleaseInvoiceModal(false)} disabled={releaseInvoiceLoading}>
-                  Hủy
-                </button>
-                <button 
-                  className="btn-submit btn-complete-submit" 
-                  onClick={handleReleaseInvoice} 
-                  disabled={releaseInvoiceLoading}
-                  style={{ backgroundColor: '#2563eb' }}
+      {/* 1. Modal Chi tiết */}
+      <AppModal
+        open={!!selectedRequest}
+        onClose={() => setSelectedRequest(null)}
+        title="Chi tiết yêu cầu chuyển phòng"
+        icon={<ArrowLeftRight size={18} />}
+        color="blue"
+        size="md"
+        footer={
+          <>
+            <button
+              type="button"
+              className="ms-btn ms-btn--ghost"
+              onClick={() => setSelectedRequest(null)}
+            >
+              Đóng
+            </button>
+            {selectedRequest?.status === 'Pending' && (
+              <>
+                <button
+                  type="button"
+                  className="ms-btn ms-btn--danger"
+                  onClick={() => { setSelectedRequest(null); openRejectModal(selectedRequest!); }}
                 >
-                  {releaseInvoiceLoading ? 'Đang phát hành...' : 'Phát hành Hóa Đơn'}
+                  <X size={15} /> Từ chối
                 </button>
+                <button
+                  type="button"
+                  className="ms-btn ms-btn--primary"
+                  onClick={() => { setSelectedRequest(null); openApproveModal(selectedRequest!); }}
+                >
+                  <Check size={15} /> Duyệt yêu cầu
+                </button>
+              </>
+            )}
+            {selectedRequest?.status === 'Approved' && (
+              <button
+                type="button"
+                className="ms-btn ms-btn--primary"
+                onClick={() => { setSelectedRequest(null); openReleaseInvoiceModal(selectedRequest!); }}
+              >
+                <FileText size={15} /> Phát hành hóa đơn
+              </button>
+            )}
+            {selectedRequest?.status === 'Paid' && (
+              <button
+                type="button"
+                className="ms-btn ms-btn--primary"
+                onClick={() => { setSelectedRequest(null); openCompleteModal(selectedRequest!); }}
+              >
+                <CheckCircle2 size={15} /> Hoàn tất chuyển phòng
+              </button>
+            )}
+          </>
+        }
+      >
+        {selectedRequest && (
+          <div className="trns-detail-body">
+            {/* Profile strip */}
+            <div className="trns-profile-strip">
+              <div className="trns-avatar">
+                {(selectedRequest.tenantId?.fullname || selectedRequest.tenantId?.username || '?').charAt(0).toUpperCase()}
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ---- Complete Modal ---- */}
-      {showCompleteModal && completingRequest && (
-        <div className="tr-modal-overlay" onClick={() => setShowCompleteModal(false)}>
-          <div className="tr-modal tr-modal--sm" onClick={(e) => e.stopPropagation()}>
-            <div className="tr-modal-header">
-              <h2>Hoàn tất chuyển phòng</h2>
-              <button className="modal-close-btn" onClick={() => setShowCompleteModal(false)}>×</button>
-            </div>
-            <div className="tr-modal-body">
-              <p style={{ marginBottom: 12, color: '#374151' }}>
-                Xác nhận hoàn tất chuyển phòng cho cư dân <strong>{completingRequest.tenantId?.fullname}</strong> từ phòng{' '}
-                <strong>{getRoomDisplay(completingRequest.currentRoomId)}</strong> sang phòng{' '}
-                <strong>{getRoomDisplay(completingRequest.targetRoomId)}</strong>?
-              </p>
-              <div style={{ backgroundColor: '#f3f4f6', padding: '12px', borderRadius: '6px', marginBottom: '12px' }}>
-                <p style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: '500' }}>Xử lý sau khi hoàn tất:</p>
-                <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: '1.6' }}>
-                  <div>Ngày chuyển phòng: {completingRequest.transferDate ? formatDate(completingRequest.transferDate) : '-'}</div>
-                  <div>Hợp đồng hiện tại: cập nhật trạng thái thành "Đã thanh lý" và set endDate theo ngày chuyển phòng</div>
-                  <div>Hợp đồng mới: tạo mới từ dữ liệu hợp đồng cũ</div>
-                  <div>Tiền cọc: chuyển sang hợp đồng mới</div>
+              <div className="trns-profile-info">
+                <div className="trns-profile-name">
+                  {selectedRequest.tenantId?.fullname ?? selectedRequest.tenantId?.username ?? '-'}
+                </div>
+                <div className="trns-profile-meta">
+                  <span className="trns-meta-tag">
+                    {getRoomDisplay(selectedRequest.currentRoomId)} → {getRoomDisplay(selectedRequest.targetRoomId)}
+                  </span>
+                  <span className={`trns-status-tag ${STATUS_BADGE_CLASS[selectedRequest.status] ?? ''}`}>
+                    {getStatusIcon(selectedRequest.status)}
+                    {STATUS_LABELS[selectedRequest.status] ?? selectedRequest.status}
+                  </span>
                 </div>
               </div>
-              <div className="complete-form-actions">
-                <button className="btn-cancel" onClick={() => setShowCompleteModal(false)} disabled={completeLoading}>
-                  Hủy
-                </button>
-                <button className="btn-submit btn-complete-submit" onClick={handleComplete} disabled={completeLoading}>
-                  {completeLoading ? 'Đang xử lý...' : 'Xác nhận hoàn tất'}
-                </button>
+            </div>
+
+            <div className="trns-two-col">
+              {/* Left */}
+              <div className="trns-col">
+                <div className="trns-section">
+                  <div className="trns-section-title">
+                    <ArrowLeftRight size={14} /> Thông tin phòng
+                  </div>
+                  <div className="trns-rows">
+                    <div className="trns-row">
+                      <span className="trns-label">Phòng hiện tại</span>
+                      <span className="trns-value">{getRoomDisplay(selectedRequest.currentRoomId)}</span>
+                    </div>
+                    {selectedRequest.currentRoomId?.roomTypeId && (
+                      <div className="trns-row">
+                        <span className="trns-label">Loại phòng cũ</span>
+                        <span className="trns-value">
+                          {selectedRequest.currentRoomId.roomTypeId.typeName} — {formatCurrency(selectedRequest.currentRoomId.roomTypeId.currentPrice)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="trns-row">
+                      <span className="trns-label">Phòng muốn chuyển</span>
+                      <span className="trns-value">{getRoomDisplay(selectedRequest.targetRoomId)}</span>
+                    </div>
+                    {selectedRequest.targetRoomId?.roomTypeId && (
+                      <div className="trns-row">
+                        <span className="trns-label">Loại phòng mới</span>
+                        <span className="trns-value">
+                          {selectedRequest.targetRoomId.roomTypeId.typeName} — {formatCurrency(selectedRequest.targetRoomId.roomTypeId.currentPrice)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right */}
+              <div className="trns-col">
+                <div className="trns-section">
+                  <div className="trns-section-title">
+                    <Clock size={14} /> Thông tin yêu cầu
+                  </div>
+                  <div className="trns-rows">
+                    <div className="trns-row">
+                      <span className="trns-label">Email</span>
+                      <span className="trns-value">{selectedRequest.tenantId?.email ?? '-'}</span>
+                    </div>
+                    <div className="trns-row">
+                      <span className="trns-label">SĐT</span>
+                      <span className="trns-value">{selectedRequest.tenantId?.phoneNumber ?? '-'}</span>
+                    </div>
+                    <div className="trns-row">
+                      <span className="trns-label">Ngày gửi</span>
+                      <span className="trns-value">{formatDate(selectedRequest.createdAt)}</span>
+                    </div>
+                    <div className="trns-row">
+                      <span className="trns-label">Ngày chuyển</span>
+                      <span className="trns-value">
+                        {selectedRequest.transferDate ? formatDate(selectedRequest.transferDate) : '-'}
+                      </span>
+                    </div>
+                    <div className="trns-row">
+                      <span className="trns-label">Lý do</span>
+                      <span className="trns-value">{selectedRequest.reason || '-'}</span>
+                    </div>
+                    {selectedRequest.note && (
+                      <div className="trns-row">
+                        <span className="trns-label">Ghi chú</span>
+                        <span className="trns-value">{selectedRequest.note}</span>
+                      </div>
+                    )}
+                    {selectedRequest.managerNote && (
+                      <div className="trns-row">
+                        <span className="trns-label">Ghi chú duyệt</span>
+                        <span className="trns-value">{selectedRequest.managerNote}</span>
+                      </div>
+                    )}
+                    {selectedRequest.rejectReason && (
+                      <div className="trns-row">
+                        <span className="trns-label">Lý do từ chối</span>
+                        <span className="trns-value trns-value--danger">{selectedRequest.rejectReason}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </AppModal>
+
+      {/* 2. Modal Duyệt */}
+      <AppModal
+        open={showApproveModal && !!approvingRequest}
+        onClose={() => setShowApproveModal(false)}
+        title="Duyệt yêu cầu chuyển phòng"
+        icon={<Check size={18} />}
+        color="blue"
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              className="ms-btn ms-btn--ghost"
+              onClick={() => setShowApproveModal(false)}
+              disabled={approveLoading}
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              className="ms-btn ms-btn--primary"
+              onClick={handleApprove}
+              disabled={approveLoading}
+            >
+              {approveLoading ? 'Đang xử lý...' : 'Xác nhận duyệt'}
+            </button>
+          </>
+        }
+      >
+        {approvingRequest && (
+          <div className="trns-form-body">
+            <p className="trns-form-desc">
+              Duyệt yêu cầu chuyển từ phòng <strong>{getRoomDisplay(approvingRequest.currentRoomId)}</strong> sang phòng{' '}
+              <strong>{getRoomDisplay(approvingRequest.targetRoomId)}</strong> của cư dân{' '}
+              <strong>{approvingRequest.tenantId?.fullname}</strong>?
+            </p>
+            <div className="trns-form-group">
+              <label className="trns-form-label">Ghi chú (tùy chọn)</label>
+              <textarea
+                className="trns-form-textarea"
+                value={managerNote}
+                onChange={(e) => setManagerNote(e.target.value)}
+                placeholder="Nhập ghi chú cho cư dân..."
+                rows={3}
+              />
+            </div>
+          </div>
+        )}
+      </AppModal>
+
+      {/* 3. Modal Từ chối */}
+      <AppModal
+        open={showRejectModal && !!rejectingRequest}
+        onClose={() => setShowRejectModal(false)}
+        title="Từ chối yêu cầu chuyển phòng"
+        icon={<X size={18} />}
+        color="red"
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              className="ms-btn ms-btn--ghost"
+              onClick={() => setShowRejectModal(false)}
+              disabled={rejectLoading}
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              className="ms-btn ms-btn--danger"
+              onClick={handleReject}
+              disabled={rejectLoading}
+            >
+              {rejectLoading ? 'Đang xử lý...' : 'Xác nhận từ chối'}
+            </button>
+          </>
+        }
+      >
+        {rejectingRequest && (
+          <div className="trns-form-body">
+            <p className="trns-form-desc">
+              Từ chối yêu cầu của cư dân <strong>{rejectingRequest.tenantId?.fullname}</strong>?
+            </p>
+            <div className="trns-form-group">
+              <label className="trns-form-label">
+                Lý do từ chối <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <textarea
+                className={`trns-form-textarea${rejectReasonError ? ' trns-input-error' : ''}`}
+                value={rejectReason}
+                onChange={(e) => { setRejectReason(e.target.value); setRejectReasonError(''); }}
+                placeholder="Nhập lý do từ chối..."
+                rows={3}
+              />
+              {rejectReasonError && <span className="trns-error-msg">{rejectReasonError}</span>}
+            </div>
+          </div>
+        )}
+      </AppModal>
+
+      {/* 4. Modal Phát hành hóa đơn */}
+      <AppModal
+        open={showReleaseInvoiceModal && !!releasingInvoiceRequest}
+        onClose={() => setShowReleaseInvoiceModal(false)}
+        title="Phát hành hóa đơn chuyển phòng"
+        icon={<FileText size={18} />}
+        color="blue"
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              className="ms-btn ms-btn--ghost"
+              onClick={() => setShowReleaseInvoiceModal(false)}
+              disabled={releaseInvoiceLoading}
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              className="ms-btn ms-btn--primary"
+              onClick={handleReleaseInvoice}
+              disabled={releaseInvoiceLoading}
+            >
+              {releaseInvoiceLoading ? 'Đang phát hành...' : 'Phát hành hóa đơn'}
+            </button>
+          </>
+        }
+      >
+        {releasingInvoiceRequest && (
+          <div className="trns-form-body">
+            <p className="trns-form-desc">
+              Chốt hóa đơn phòng <strong>{getRoomDisplay(releasingInvoiceRequest.currentRoomId)}</strong> đến ngày chuyển{' '}
+              (<strong>{releasingInvoiceRequest.transferDate ? formatDate(releasingInvoiceRequest.transferDate) : '-'}</strong>).
+            </p>
+            <div className="trns-form-group">
+              <label className="trns-form-label">Chỉ số điện cuối cùng (Phòng cũ)</label>
+              <input
+                type="number"
+                className="trns-form-input"
+                placeholder="Để trống nếu dùng chỉ số gần nhất..."
+                value={electricIndex}
+                onChange={(e) => setElectricIndex(e.target.value)}
+              />
+            </div>
+            <div className="trns-form-group">
+              <label className="trns-form-label">Chỉ số nước cuối cùng (Phòng cũ)</label>
+              <input
+                type="number"
+                className="trns-form-input"
+                placeholder="Để trống nếu dùng chỉ số gần nhất..."
+                value={waterIndex}
+                onChange={(e) => setWaterIndex(e.target.value)}
+              />
+            </div>
+            <div className="trns-form-group">
+              <label className="trns-form-label">Ghi chú hóa đơn</label>
+              <textarea
+                className="trns-form-textarea"
+                value={managerInvoiceNotes}
+                onChange={(e) => setManagerInvoiceNotes(e.target.value)}
+                placeholder="Ghi chú thêm về việc phát hành hóa đơn..."
+                rows={2}
+              />
+            </div>
+          </div>
+        )}
+      </AppModal>
+
+      {/* 5. Modal Hoàn tất chuyển phòng */}
+      <AppModal
+        open={showCompleteModal && !!completingRequest}
+        onClose={() => setShowCompleteModal(false)}
+        title="Hoàn tất chuyển phòng"
+        icon={<CheckCircle2 size={18} />}
+        color="blue"
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              className="ms-btn ms-btn--ghost"
+              onClick={() => setShowCompleteModal(false)}
+              disabled={completeLoading}
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              className="ms-btn ms-btn--primary"
+              onClick={handleComplete}
+              disabled={completeLoading}
+            >
+              {completeLoading ? 'Đang xử lý...' : 'Xác nhận hoàn tất'}
+            </button>
+          </>
+        }
+      >
+        {completingRequest && (
+          <div className="trns-form-body">
+            <p className="trns-form-desc">
+              Xác nhận hoàn tất chuyển phòng cho cư dân <strong>{completingRequest.tenantId?.fullname}</strong> từ phòng{' '}
+              <strong>{getRoomDisplay(completingRequest.currentRoomId)}</strong> sang phòng{' '}
+              <strong>{getRoomDisplay(completingRequest.targetRoomId)}</strong>?
+            </p>
+            <div className="trns-info-box">
+              <p className="trns-info-box-title">Xử lý sau khi hoàn tất:</p>
+              <ul className="trns-info-box-list">
+                <li>Ngày chuyển: {completingRequest.transferDate ? formatDate(completingRequest.transferDate) : '-'}</li>
+                <li>Hợp đồng hiện tại → trạng thái "Đã thanh lý"</li>
+                <li>Hợp đồng mới → tạo từ dữ liệu hợp đồng cũ</li>
+                <li>Tiền cọc → chuyển sang hợp đồng mới</li>
+              </ul>
+            </div>
+          </div>
+        )}
+      </AppModal>
     </div>
   );
 }

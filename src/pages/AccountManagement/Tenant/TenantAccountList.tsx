@@ -15,11 +15,17 @@ import {
   CheckCircle2,
   XCircle,
   Home,
+  FileSpreadsheet,
 } from "lucide-react";
+import { format } from "date-fns";
+import * as XLSX from "xlsx-js-style";
+import toastr from "toastr";
+import "toastr/build/toastr.min.css";
 import { AppModal } from "../../../components/common/Modal";
 import { Pagination } from "../../../components/common/Pagination";
 import { useToast } from "../../../components/common/Toast";
 import { accountService } from "../../../services/accountService";
+import { roomService } from "../../../services/roomService";
 import {
   STATUS_LABELS,
   formatAccountDate,
@@ -51,6 +57,16 @@ export default function TenantAccountList() {
 
   const [disablingId, setDisablingId] = useState<string | null>(null);
 
+  // Floor filter
+  const [floors, setFloors] = useState<{ _id: string; name: string }[]>([]);
+  const [filterFloor, setFilterFloor] = useState<string>("all");
+
+  // Excel export modal
+  const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
+  const [excelFloor, setExcelFloor] = useState<string>("all");
+  const [coResidentsMap, setCoResidentsMap] = useState<Record<string, any[]>>({});
+  const [loadingCoResidents, setLoadingCoResidents] = useState(false);
+
   const fetchAccounts = useCallback(async () => {
     try {
       setLoading(true);
@@ -75,6 +91,43 @@ export default function TenantAccountList() {
     fetchAccounts();
   }, [fetchAccounts]);
 
+  const fetchFloors = useCallback(async () => {
+    try {
+      const response = await roomService.getFloors();
+      if (response.data) {
+        setFloors(response.data);
+      }
+    } catch {
+      // Silently fail for floors
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFloors();
+  }, [fetchFloors]);
+
+  // Helper: extract floor number from room name like "P.101" or "101"
+  const getFloorFromRoomName = (roomName: string): number | null => {
+    const match = roomName.match(/(\d+)/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      return num;
+    }
+    return null;
+  };
+
+  // Helper: check if a resident's roomName belongs to a specific floor number
+  const matchesFloor = (roomName: string | null | undefined, floorValue: string): boolean => {
+    if (!floorValue || floorValue === "all") return true;
+    if (!roomName) return false;
+    const floorNum = parseInt(floorValue, 10);
+    const rooms = roomName.split(",").map((r) => r.trim()).filter(Boolean);
+    return rooms.some((r) => {
+      const f = getFloorFromRoomName(r);
+      return f === floorNum;
+    });
+  };
+
   const filteredAccounts = useMemo(() => {
     let result = [...accounts];
 
@@ -89,8 +142,9 @@ export default function TenantAccountList() {
         email.includes(searchContact.toLowerCase()) ||
         phone.includes(searchContact.toLowerCase());
       const matchStatus = filterStatus === "all" || acc.status === filterStatus;
+      const matchFloor = matchesFloor(acc.roomName, filterFloor);
 
-      return matchName && matchContact && matchStatus;
+      return matchName && matchContact && matchStatus && matchFloor;
     });
 
     switch (sortOption) {
@@ -106,7 +160,7 @@ export default function TenantAccountList() {
     }
 
     return result;
-  }, [accounts, searchName, searchContact, filterStatus, sortOption]);
+  }, [accounts, searchName, searchContact, filterStatus, filterFloor, sortOption]);
 
   const totalPages = Math.max(1, Math.ceil(filteredAccounts.length / ROWS_PER_PAGE));
   const paginatedAccounts = filteredAccounts.slice(
@@ -116,7 +170,7 @@ export default function TenantAccountList() {
 
   useEffect(() => {
     setPage(1);
-  }, [searchName, searchContact, filterStatus, sortOption]);
+  }, [searchName, searchContact, filterStatus, filterFloor, sortOption]);
 
   const handleViewDetail = async (accountId: string) => {
     try {
@@ -188,6 +242,139 @@ export default function TenantAccountList() {
     }
   };
 
+  // Lấy danh sách phòng để map roomId -> coResidents
+  const fetchCoResidentsForExport = async (rows: AccountItem[]) => {
+    const map: Record<string, any[]> = {};
+    const roomIds = [...new Set(rows.map((acc) => acc.roomName).filter(Boolean))];
+
+    if (roomIds.length === 0) return map;
+
+    setLoadingCoResidents(true);
+    try {
+      const roomResponses = await Promise.all(
+        roomIds.map((roomName) => {
+          const roomId = roomName?.replace(/\D/g, "") || "";
+          return roomService.getRoomWithContract(roomId).catch(() => null);
+        })
+      );
+
+      roomIds.forEach((roomName, idx) => {
+        const roomData = roomResponses[idx];
+        if (roomData?.contract?.coResidents) {
+          map[roomName] = roomData.contract.coResidents;
+        } else {
+          map[roomName] = [];
+        }
+      });
+    } catch {
+      // fallback: map rỗng
+    } finally {
+      setLoadingCoResidents(false);
+    }
+    return map;
+  };
+
+  const handleExportExcel = async () => {
+    const rows = filteredAccounts.filter((acc) => matchesFloor(acc.roomName, excelFloor));
+
+    if (rows.length === 0) {
+      toastr.warning("Không có cư dân nào để xuất.");
+      return;
+    }
+
+    // Fetch co-residents
+    const coResMap = await fetchCoResidentsForExport(rows);
+
+    const statusLabel = (s: string) => {
+      return STATUS_LABELS[s] || s;
+    };
+
+    // Header với người ở cùng
+    const headers = [
+      "STT", "Họ và tên", "Phòng", "Số điện thoại", "Email",
+      "Trạng thái", "Ngày tạo", "Người ở cùng", "CCCD người ở cùng"
+    ];
+
+    const data: (string | number)[][] = [];
+    let stt = 1;
+
+    for (const acc of rows) {
+      const coResidents = coResMap[acc.roomName || ""] || [];
+      if (coResidents.length === 0) {
+        data.push([
+          stt++,
+          acc.fullname || "-",
+          acc.roomName || "-",
+          acc.phoneNumber || "-",
+          acc.email || "-",
+          statusLabel(acc.status),
+          acc.createdAt ? format(new Date(acc.createdAt), "dd/MM/yyyy") : "-",
+          "-",
+          "-",
+        ]);
+      } else {
+        coResidents.forEach((cr) => {
+          data.push([
+            stt++,
+            acc.fullname || "-",
+            acc.roomName || "-",
+            acc.phoneNumber || "-",
+            acc.email || "-",
+            statusLabel(acc.status),
+            acc.createdAt ? format(new Date(acc.createdAt), "dd/MM/yyyy") : "-",
+            cr.fullName || "-",
+            cr.cccd || "-",
+          ]);
+        });
+      }
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+
+    headers.forEach((_, ci) => {
+      const cellRef = XLSX.utils.encode_cell({ r: 0, c: ci });
+      ws[cellRef].s = {
+        font: { bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "1D4ED8" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: {
+          top: { style: "thin", color: { rgb: "BFDBFE" } },
+          bottom: { style: "thin", color: { rgb: "BFDBFE" } },
+          left: { style: "thin", color: { rgb: "BFDBFE" } },
+          right: { style: "thin", color: { rgb: "BFDBFE" } },
+        },
+      };
+    });
+
+    data.forEach((row, ri) => {
+      row.forEach((_, ci) => {
+        const cellRef = XLSX.utils.encode_cell({ r: ri + 1, c: ci });
+        if (!ws[cellRef]) return;
+        ws[cellRef].s = {
+          fill: { fgColor: { rgb: ri % 2 === 0 ? "EFF6FF" : "FFFFFF" } },
+          alignment: { vertical: "center", horizontal: "left" },
+          border: {
+            top: { style: "thin", color: { rgb: "DBEAFE" } },
+            bottom: { style: "thin", color: { rgb: "DBEAFE" } },
+            left: { style: "thin", color: { rgb: "DBEAFE" } },
+            right: { style: "thin", color: { rgb: "DBEAFE" } },
+          },
+        };
+      });
+    });
+
+    ws["!cols"] = [8, 24, 14, 16, 28, 16, 14, 22, 20].map((w) => ({ wch: w }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Danh sách cư dân");
+
+    const floorLabel = excelFloor !== "all" ? `Tang${excelFloor}` : "TatCaTang";
+    XLSX.writeFile(wb, `CuDan_${floorLabel}.xlsx`);
+
+    toastr.success(`Xuất thành công ${data.length} bản ghi!`);
+    setIsExcelModalOpen(false);
+  };
+
   const totalCount = accounts.length;
   const activeCount = accounts.filter((a) => a.status === "active").length;
   const inactiveCount = accounts.filter((a) => a.status === "inactive").length;
@@ -196,9 +383,10 @@ export default function TenantAccountList() {
     setSearchName("");
     setSearchContact("");
     setFilterStatus("all");
+    setFilterFloor("all");
   };
 
-  const hasFilters = searchName || searchContact || filterStatus !== "all";
+  const hasFilters = searchName || searchContact || filterStatus !== "all" || filterFloor !== "all";
 
   return (
     <div className="tenant-account-list-page">
@@ -220,37 +408,49 @@ export default function TenantAccountList() {
           </div>
 
           <div className="tenant-account-list-header-aside">
-            <div className="tenant-account-list-stats-summary">
-              <div className="tenant-account-list-stat-item">
-                <div className="tenant-account-list-stat-icon icon-accent">
-                  <Users size={16} strokeWidth={2} />
+            {/* Stats + nút Excel xếp cùng 1 hàng */}
+            <div className="tenant-account-list-aside-row">
+              <div className="tenant-account-list-stats-summary">
+                <div className="tenant-account-list-stat-item">
+                  <div className="tenant-account-list-stat-icon icon-accent">
+                    <Users size={16} strokeWidth={2} />
+                  </div>
+                  <div className="tenant-account-list-stat-text">
+                    <span className="tenant-account-list-stat-value">{totalCount}</span>
+                    <span className="tenant-account-list-stat-label">Tổng số</span>
+                  </div>
                 </div>
-                <div className="tenant-account-list-stat-text">
-                  <span className="tenant-account-list-stat-value">{totalCount}</span>
-                  <span className="tenant-account-list-stat-label">Tổng số</span>
+                <div className="tenant-account-list-stat-divider" />
+                <div className="tenant-account-list-stat-item">
+                  <div className="tenant-account-list-stat-icon icon-primary">
+                    <CheckCircle2 size={16} strokeWidth={2} />
+                  </div>
+                  <div className="tenant-account-list-stat-text">
+                    <span className="tenant-account-list-stat-value">{activeCount}</span>
+                    <span className="tenant-account-list-stat-label">Hoạt động</span>
+                  </div>
                 </div>
-              </div>
-              <div className="tenant-account-list-stat-divider" />
-              <div className="tenant-account-list-stat-item">
-                <div className="tenant-account-list-stat-icon icon-primary">
-                  <CheckCircle2 size={16} strokeWidth={2} />
-                </div>
-                <div className="tenant-account-list-stat-text">
-                  <span className="tenant-account-list-stat-value">{activeCount}</span>
-                  <span className="tenant-account-list-stat-label">Hoạt động</span>
-                </div>
-              </div>
-              <div className="tenant-account-list-stat-divider" />
-              <div className="tenant-account-list-stat-item">
-                <div className="tenant-account-list-stat-icon icon-warning">
-                  <AlertTriangle size={16} strokeWidth={2} />
-                </div>
-                <div className="tenant-account-list-stat-text">
-                  <span className="tenant-account-list-stat-value">{inactiveCount}</span>
-                  <span className="tenant-account-list-stat-label">Không hoạt động</span>
+                <div className="tenant-account-list-stat-divider" />
+                <div className="tenant-account-list-stat-item">
+                  <div className="tenant-account-list-stat-icon icon-warning">
+                    <AlertTriangle size={16} strokeWidth={2} />
+                  </div>
+                  <div className="tenant-account-list-stat-text">
+                    <span className="tenant-account-list-stat-value">{inactiveCount}</span>
+                    <span className="tenant-account-list-stat-label">Không hoạt động</span>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Nút Kết xuất Excel ngay bên dưới stats */}
+            <button
+              className="tenant-account-list-btn-excel"
+              onClick={() => setIsExcelModalOpen(true)}
+            >
+              <FileSpreadsheet size={16} />
+              Kết xuất Excel
+            </button>
           </div>
         </div>
       </div>
@@ -290,6 +490,22 @@ export default function TenantAccountList() {
               <option value="all">Tất cả trạng thái</option>
               <option value="active">Hoạt động</option>
               <option value="inactive">Không hoạt động</option>
+            </select>
+          </div>
+
+          <div className="tenant-account-list-control-group">
+            <Home size={16} className="tenant-account-list-toolbar-icon" aria-hidden />
+            <select
+              className="tenant-account-list-custom-select"
+              value={filterFloor}
+              onChange={(e) => setFilterFloor(e.target.value)}
+            >
+              <option value="all">Tất cả tầng</option>
+              {floors.map((f) => (
+                <option key={f._id} value={f.name}>
+                  {f.name}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -607,6 +823,67 @@ export default function TenantAccountList() {
             </div>
           </>
         ) : null}
+      </AppModal>
+
+      {/* Modal Kết xuất Excel */}
+      <AppModal
+        open={isExcelModalOpen}
+        onClose={() => setIsExcelModalOpen(false)}
+        title="Kết xuất Excel danh sách cư dân"
+        icon={<FileSpreadsheet size={18} />}
+        color="green"
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              className="ms-btn ms-btn--ghost"
+              onClick={() => setIsExcelModalOpen(false)}
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              className="ms-btn ms-btn--primary"
+              onClick={handleExportExcel}
+            >
+              <FileSpreadsheet size={16} />
+              Xuất Excel
+            </button>
+          </>
+        }
+      >
+        <div className="tenant-excel-modal-body">
+          <p className="tenant-excel-modal-desc">
+            Chọn tầng để lọc dữ liệu trước khi xuất file Excel.
+          </p>
+
+          <div className="tenant-excel-modal-field">
+            <label className="tenant-excel-modal-label">Tầng</label>
+            <div className="tenant-excel-modal-select-wrapper">
+              <Home size={16} className="tenant-excel-modal-select-icon" />
+              <select
+                className="tenant-excel-modal-select"
+                value={excelFloor}
+                onChange={(e) => setExcelFloor(e.target.value)}
+              >
+                <option value="all">Tất cả tầng</option>
+                {floors.map((f) => (
+                  <option key={f._id} value={f.name}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="tenant-excel-modal-preview">
+            <span className="tenant-excel-modal-preview-label">Số cư dân sẽ xuất:</span>
+            <span className="tenant-excel-modal-preview-value">
+              {filteredAccounts.filter((acc) => matchesFloor(acc.roomName, excelFloor)).length}
+            </span>
+          </div>
+        </div>
       </AppModal>
     </div>
   );

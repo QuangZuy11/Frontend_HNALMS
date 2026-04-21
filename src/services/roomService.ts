@@ -11,6 +11,11 @@ export const roomService = {
     return response.data;
   },
 
+  getRoomWithContract: async (id: string) => {
+    const response = await api.get(`/rooms/${id}/contract`);
+    return response.data;
+  },
+
   getFloors: async () => {
     const response = await api.get("/floors");
     return response.data;
