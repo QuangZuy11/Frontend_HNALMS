@@ -2,8 +2,8 @@
 @import url("./FloorMap.css");
 
 .floor-map-container.level-5 {
-    /* Inherits everything from .floor-map-container */
-    /* Add specific overrides if needed */
+  /* Inherits everything from .floor-map-container */
+  /* Add specific overrides if needed */
 }
 
 /* Ensure sidebar label specific to Level 5 if needed, 
