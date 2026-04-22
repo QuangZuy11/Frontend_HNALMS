@@ -67,12 +67,20 @@ const getReqPhone = (req: BookingRequest): string =>
 const getReqEmail = (req: BookingRequest): string =>
   req.email || (req.userInfoId ? req.userInfoId.email : "") || "";
 
+interface LeaseTerm {
+  termKey: string;          // "YYYY-MM" of the earliest startDate in this term, or "no-date"
+  termLabel: string;        // "Kỳ thuê DD/MM/YYYY" or "Kỳ thuê không rõ ngày"
+  requests: BookingRequest[];
+  hasActive: boolean;       // has Pending or Awaiting Payment
+  hasWinner: boolean;       // has Processed
+}
+
 interface RoomGroup {
   roomId: string;
   roomName: string;
-  requests: BookingRequest[];
-  hasActive: boolean;   // has Pending or Awaiting Payment
-  hasWinner: boolean;   // has Processed
+  leaseTerms: LeaseTerm[];  // ordered list of lease terms for this room
+  hasActive: boolean;       // any term has active requests
+  hasWinner: boolean;       // any term has Processed
 }
 
 const POLL_INTERVAL_MS = 5000;
@@ -173,27 +181,8 @@ const BookingRequestList = () => {
     return matchName && matchRoom && matchStatus;
   });
 
-  // Group by room
+  // Group by room, then sub-group each room by lease term (startDate month+year)
   const roomGroups: RoomGroup[] = (() => {
-    const map = new Map<string, RoomGroup>();
-    filteredRequests.forEach((req) => {
-      const rId = req.roomId?._id || "unknown";
-      if (!map.has(rId)) {
-        map.set(rId, {
-          roomId: rId,
-          roomName: req.roomId?.name || "N/A",
-          requests: [],
-          hasActive: false,
-          hasWinner: false,
-        });
-      }
-      const group = map.get(rId)!;
-      group.requests.push(req);
-      if (["Pending", "Awaiting Payment"].includes(req.status)) group.hasActive = true;
-      if (req.status === "Processed") group.hasWinner = true;
-    });
-
-    // Sort requests within group: active first, then by createdAt desc
     const statusOrder: Record<string, number> = {
       "Awaiting Payment": 0,
       "Pending": 1,
@@ -201,20 +190,82 @@ const BookingRequestList = () => {
       "Expired": 3,
       "Rejected": 4,
     };
-    map.forEach((group) => {
-      group.requests.sort((a, b) => {
-        const so = (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9);
-        if (so !== 0) return so;
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+
+    // Step 1: group requests by roomId
+    const roomMap = new Map<string, { roomName: string; reqs: BookingRequest[] }>();
+    filteredRequests.forEach((req) => {
+      const rId = req.roomId?._id || "unknown";
+      if (!roomMap.has(rId)) {
+        roomMap.set(rId, { roomName: req.roomId?.name || "N/A", reqs: [] });
+      }
+      roomMap.get(rId)!.reqs.push(req);
+    });
+
+    // Step 2: for each room, sub-group by lease term (YYYY-MM of startDate)
+    const groups: RoomGroup[] = [];
+    roomMap.forEach(({ roomName, reqs }, roomId) => {
+      const termMap = new Map<string, BookingRequest[]>();
+      reqs.forEach((req) => {
+        let termKey = "no-date";
+        if (req.startDate) {
+          const d = new Date(req.startDate);
+          if (!isNaN(d.getTime())) {
+            termKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+          }
+        }
+        if (!termMap.has(termKey)) termMap.set(termKey, []);
+        termMap.get(termKey)!.push(req);
+      });
+
+      // Build LeaseTerm objects, sort requests within each term
+      const leaseTerms: LeaseTerm[] = [];
+      termMap.forEach((termReqs, termKey) => {
+        termReqs.sort((a, b) => {
+          const so = (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9);
+          if (so !== 0) return so;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+
+        const hasActive = termReqs.some((r) => ["Pending", "Awaiting Payment"].includes(r.status));
+        const hasWinner = termReqs.some((r) => r.status === "Processed");
+
+        // Build a human-readable label
+        let termLabel = "Kỳ thuê không rõ ngày";
+        if (termKey !== "no-date") {
+          const [yr, mo] = termKey.split("-");
+          termLabel = `Kỳ thuê từ tháng ${mo}/${yr}`;
+        }
+
+        leaseTerms.push({ termKey, termLabel, requests: termReqs, hasActive, hasWinner });
+      });
+
+      // Sort lease terms chronologically (earliest first)
+      leaseTerms.sort((a, b) => {
+        if (a.termKey === "no-date") return 1;
+        if (b.termKey === "no-date") return -1;
+        return a.termKey.localeCompare(b.termKey);
+      });
+
+      const groupHasActive = leaseTerms.some((t) => t.hasActive);
+      const groupHasWinner = leaseTerms.some((t) => t.hasWinner);
+
+      groups.push({
+        roomId,
+        roomName,
+        leaseTerms,
+        hasActive: groupHasActive,
+        hasWinner: groupHasWinner,
       });
     });
 
-    // Sort groups: active rooms first
-    return Array.from(map.values()).sort((a, b) => {
+    // Sort groups: rooms with active requests first
+    groups.sort((a, b) => {
       if (a.hasActive && !b.hasActive) return -1;
       if (!a.hasActive && b.hasActive) return 1;
       return 0;
     });
+
+    return groups;
   })();
 
   const toggleRoom = (roomId: string) => {
@@ -437,14 +488,24 @@ const BookingRequestList = () => {
         ) : (
           roomGroups.map((group) => {
             const isExpanded = expandedRooms.has(group.roomId);
-            const competitorCount = group.requests.filter(
-              (r) => r.rejectionReason === "room_taken",
-            ).length;
+            const totalReqs = group.leaseTerms.reduce((s, t) => s + t.requests.length, 0);
+            const totalCompeted = group.leaseTerms.reduce(
+              (s, t) => s + t.requests.filter((r) => r.rejectionReason === "room_taken").length,
+              0,
+            );
+            const multiTerm = group.leaseTerms.length > 1;
 
             return (
               <div
                 key={group.roomId}
-                className={`br-room-group ${group.hasWinner ? "br-room-group--won" : ""} ${group.hasActive && !group.hasWinner ? "br-room-group--active" : ""}`}
+                className={`br-room-group ${group.hasActive && !group.hasWinner
+                    ? "br-room-group--active"
+                    : group.hasWinner && !group.hasActive
+                      ? "br-room-group--won"
+                      : group.hasWinner && group.hasActive
+                        ? "br-room-group--multi"
+                        : ""
+                  }`}
               >
                 {/* Room group header */}
                 <button
@@ -453,10 +514,10 @@ const BookingRequestList = () => {
                 >
                   <div className="br-room-header-left">
                     <div className="br-room-badge">
-                      {group.hasWinner ? (
-                        <CheckCircle2 size={16} className="br-room-icon--won" />
-                      ) : group.hasActive ? (
+                      {group.hasActive ? (
                         <Clock size={16} className="br-room-icon--active" />
+                      ) : group.hasWinner ? (
+                        <CheckCircle2 size={16} className="br-room-icon--won" />
                       ) : (
                         <XCircle size={16} className="br-room-icon--closed" />
                       )}
@@ -466,19 +527,24 @@ const BookingRequestList = () => {
                     <div className="br-room-meta">
                       <span className="br-room-count">
                         <Users size={13} />
-                        {group.requests.length} yêu cầu
+                        {group.leaseTerms.length} kỳ thuê · {totalReqs} yêu cầu
                       </span>
-                      {competitorCount > 0 && (
+                      {totalCompeted > 0 && (
                         <span className="br-room-competed">
                           <Ban size={13} />
-                          {competitorCount} yêu cầu đã bị hủy
+                          {totalCompeted} bị hủy
                         </span>
                       )}
-                      {group.hasWinner && (
-                        <span className="br-room-won-tag">✓ Đã chốt hợp đồng</span>
+                      {multiTerm && (
+                        <span className="br-room-multi-term-tag">
+                          ● Nhiều kỳ thuê
+                        </span>
                       )}
-                      {group.hasActive && !group.hasWinner && (
+                      {group.hasActive && (
                         <span className="br-room-active-tag">● Đang chờ duyệt</span>
+                      )}
+                      {group.hasWinner && !group.hasActive && (
+                        <span className="br-room-won-tag">✓ Đã chốt HĐ</span>
                       )}
                     </div>
                   </div>
@@ -488,97 +554,134 @@ const BookingRequestList = () => {
                   </div>
                 </button>
 
-                {/* Requests table */}
+                {/* Lease term sub-sections */}
                 {isExpanded && (
                   <div className="br-room-requests">
-                    <table className="br-table">
-                      <thead>
-                        <tr>
-                          <th className="br-cell-stt">#</th>
-                          <th className="br-cell-customer">Khách hàng</th>
-                          <th className="br-cell-phone">SĐT</th>
-                          <th className="br-cell-date">Ngày vào</th>
-                          <th style={{ width: "8%" }}>Thời hạn</th>
-                          <th className="br-cell-transaction">Mã CK / Số tiền</th>
-                          <th className="br-cell-status">Trạng thái</th>
-                          <th className="br-cell-actions">Thao tác</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {group.requests.map((req, index) => {
-                          const isLoser = req.rejectionReason === "room_taken";
-                          const isWinner = req.status === "Processed";
-                          return (
-                            <tr
-                              key={req._id}
-                              className={`
-                                ${req.status === "Awaiting Payment" ? "br-row-awaiting" : ""}
-                                ${isLoser ? "br-row-loser" : ""}
-                                ${isWinner ? "br-row-winner" : ""}
-                              `.trim()}
-                            >
-                              <td className="br-cell-stt">{index + 1}</td>
-                              <td className="br-cell-customer">
-                                <span className="br-customer-name">{getReqName(req) || <em style={{ color: "#94a3b8" }}>Chưa có tên</em>}</span>
-                                {getReqEmail(req) && (
-                                  <span className="br-customer-email">{getReqEmail(req)}</span>
-                                )}
-                                {req.userInfoId && (
-                                  <span style={{ fontSize: "10px", color: "#6366f1", fontWeight: 600, marginTop: "2px", display: "block" }}>● Tài khoản cũ</span>
-                                )}
-                              </td>
-                              <td className="br-cell-phone">{getReqPhone(req)}</td>
-                              <td className="br-cell-date">
-                                {req.startDate
-                                  ? format(new Date(req.startDate), "dd/MM/yyyy")
-                                  : "N/A"}
-                              </td>
-                              <td style={{ textAlign: "center" }}>
-                                {req.duration} tháng
-                              </td>
-                              <td className="br-cell-transaction">
-                                {req.transactionCode ? (
-                                  <div>
-                                    <span className="br-transaction-code">
-                                      {req.transactionCode}
-                                    </span>
-                                    {req.totalAmount && (
-                                      <span className="br-transaction-amount">
-                                        {req.totalAmount.toLocaleString("vi-VN")} VNĐ
-                                      </span>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <span style={{ color: "#94a3b8" }}>—</span>
-                                )}
-                              </td>
-                              <td className="br-cell-status">
-                                {getStatusBadge(req)}
-                              </td>
-                              <td className="br-cell-actions">
-                                {isLoser || req.status === "Expired" || req.status === "Rejected" ? (
-                                  <span className="br-no-action">—</span>
-                                ) : req.status === "Processed" ? (
-                                  <span className="br-status-badge br-status-badge--processed" style={{ fontSize: "11px" }}>
-                                    <CheckCircle2 size={12} /> Hoàn tất
-                                  </span>
-                                ) : (
-                                  <button
-                                    className="br-btn br-btn--primary"
-                                    onClick={() => handleReview(req._id)}
-                                  >
-                                    <Eye size={15} />
-                                    {req.status === "Awaiting Payment"
-                                      ? "Chờ TT..."
-                                      : "Xem & Chốt HĐ"}
-                                  </button>
-                                )}
-                              </td>
+                    {group.leaseTerms.map((term, termIdx) => (
+                      <div key={term.termKey} className={`br-lease-term ${termIdx > 0 ? "br-lease-term--separated" : ""
+                        }`}>
+                        {/* Term header — only show when multiple terms exist */}
+                        {group.leaseTerms.length > 1 && (
+                          <div className={`br-lease-term-header ${term.hasWinner && !term.hasActive
+                              ? "br-lease-term-header--won"
+                              : term.hasActive
+                                ? "br-lease-term-header--active"
+                                : "br-lease-term-header--closed"
+                            }`}>
+                            <span className="br-lease-term-label">
+                              {term.hasWinner && !term.hasActive ? (
+                                <CheckCircle2 size={13} />
+                              ) : term.hasActive ? (
+                                <Clock size={13} />
+                              ) : (
+                                <XCircle size={13} />
+                              )}
+                              {term.termLabel}
+                            </span>
+                            <span className="br-lease-term-count">
+                              {term.requests.length} yêu cầu
+                            </span>
+                            {term.hasWinner && !term.hasActive && (
+                              <span className="br-room-won-tag" style={{ fontSize: "11px" }}>✓ Đã chốt HĐ kỳ này</span>
+                            )}
+                            {term.hasActive && (
+                              <span className="br-room-active-tag" style={{ fontSize: "11px" }}>● Đang chờ duyệt</span>
+                            )}
+                          </div>
+                        )}
+
+                        <table className="br-table">
+                          <thead>
+                            <tr>
+                              <th className="br-cell-stt">#</th>
+                              <th className="br-cell-customer">Khách hàng</th>
+                              <th className="br-cell-phone">SĐT</th>
+                              <th className="br-cell-date">Ngày vào</th>
+                              <th style={{ width: "8%" }}>Thời hạn</th>
+                              <th className="br-cell-transaction">Mã CK / Số tiền</th>
+                              <th className="br-cell-status">Trạng thái</th>
+                              <th className="br-cell-actions">Thao tác</th>
                             </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                          </thead>
+                          <tbody>
+                            {term.requests.map((req, index) => {
+                              const isLoser = req.rejectionReason === "room_taken";
+                              const isWinner = req.status === "Processed";
+                              return (
+                                <tr
+                                  key={req._id}
+                                  className={`
+                                    ${req.status === "Awaiting Payment" ? "br-row-awaiting" : ""}
+                                    ${isLoser ? "br-row-loser" : ""}
+                                    ${isWinner ? "br-row-winner" : ""}
+                                  `.trim()}
+                                >
+                                  <td className="br-cell-stt">{index + 1}</td>
+                                  <td className="br-cell-customer">
+                                    <span className="br-customer-name">
+                                      {getReqName(req) || <em style={{ color: "#94a3b8" }}>Chưa có tên</em>}
+                                    </span>
+                                    {getReqEmail(req) && (
+                                      <span className="br-customer-email">{getReqEmail(req)}</span>
+                                    )}
+                                    {req.userInfoId && (
+                                      <span style={{ fontSize: "10px", color: "#6366f1", fontWeight: 600, marginTop: "2px", display: "block" }}>● Tài khoản cũ</span>
+                                    )}
+                                  </td>
+                                  <td className="br-cell-phone">{getReqPhone(req)}</td>
+                                  <td className="br-cell-date">
+                                    {req.startDate
+                                      ? format(new Date(req.startDate), "dd/MM/yyyy")
+                                      : "N/A"}
+                                  </td>
+                                  <td style={{ textAlign: "center" }}>
+                                    {req.duration} tháng
+                                  </td>
+                                  <td className="br-cell-transaction">
+                                    {req.transactionCode ? (
+                                      <div>
+                                        <span className="br-transaction-code">
+                                          {req.transactionCode}
+                                        </span>
+                                        {req.totalAmount && (
+                                          <span className="br-transaction-amount">
+                                            {req.totalAmount.toLocaleString("vi-VN")} VNĐ
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span style={{ color: "#94a3b8" }}>—</span>
+                                    )}
+                                  </td>
+                                  <td className="br-cell-status">
+                                    {getStatusBadge(req)}
+                                  </td>
+                                  <td className="br-cell-actions">
+                                    {isLoser || req.status === "Expired" || req.status === "Rejected" ? (
+                                      <span className="br-no-action">—</span>
+                                    ) : req.status === "Processed" ? (
+                                      <span className="br-status-badge br-status-badge--processed" style={{ fontSize: "11px" }}>
+                                        <CheckCircle2 size={12} /> Hoàn tất
+                                      </span>
+                                    ) : (
+                                      <button
+                                        className="br-btn br-btn--primary"
+                                        onClick={() => handleReview(req._id)}
+                                      >
+                                        <Eye size={15} />
+                                        {req.status === "Awaiting Payment"
+                                          ? "Chờ TT..."
+                                          : "Xem & Chốt HĐ"}
+                                      </button>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
