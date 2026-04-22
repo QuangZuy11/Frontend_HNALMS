@@ -82,7 +82,7 @@ const MENU_ITEMS = [
     path: "/manager/requests",
     subItems: [
       { title: "Sửa Chữa", path: "/manager/requests/repairs", icon: <Wrench size={16} /> },
-      { title: "Bảo Trì", path: "/manager/requests/maintenance", icon: <RefreshCcwDot size={16} /> },
+      //{ title: "Bảo Trì", path: "/manager/requests/maintenance", icon: <RefreshCcwDot size={16} /> },
       { title: "Khiếu Nại", path: "/manager/requests/complaints", icon: <Frown size={16} /> },
       { title: "Chuyển Phòng", path: "/manager/requests/transfers", icon: <ArrowRightLeft size={16} /> },
       { title: "Trả Phòng", path: "/manager/requests/move-outs", icon: <LogOut size={16} /> },
