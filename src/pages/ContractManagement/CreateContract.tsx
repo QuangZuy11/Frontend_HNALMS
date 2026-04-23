@@ -1312,6 +1312,11 @@ const CreateContract = () => {
                                 }
                                 onChange={(date) => {
                                   if (date && !isNaN(date.getTime())) {
+                                    const today = new Date();
+                                    today.setHours(23, 59, 59, 999);
+                                    if (date > today) {
+                                      return;
+                                    }
                                     field.onChange(
                                       formatDate(date, "yyyy-MM-dd"),
                                     );
@@ -1320,6 +1325,7 @@ const CreateContract = () => {
                                   }
                                 }}
                                 format="dd/MM/yyyy"
+                                shouldDisableFutureDates
                                 maxDate={new Date()}
                                 slotProps={{
                                   textField: {

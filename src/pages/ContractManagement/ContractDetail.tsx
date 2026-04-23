@@ -742,7 +742,6 @@ const ContractDetail = () => {
                       "Tên thiết bị",
                       "Số lượng",
                       "Đơn vị",
-                      "Tình trạng",
                     ].map((h) => (
                       <Box
                         component="th"
@@ -815,20 +814,6 @@ const ContractDetail = () => {
                         }}
                       >
                         {asset.deviceId?.unit || "cái"}
-                      </Box>
-                      <Box
-                        component="td"
-                        sx={{
-                          border: "1px solid #333",
-                          py: 0.5,
-                          px: 1.5,
-                          textAlign: "center",
-                          fontFamily: serifFont,
-                        }}
-                      >
-                        {asset.condition === "Good"
-                          ? "Tốt"
-                          : asset.condition || "Tốt"}
                       </Box>
                     </Box>
                   ))}
