@@ -717,20 +717,28 @@ const CreateContract = () => {
     }
   }, [selectedRoom, watchStartDate, setValue, getValues]);
 
-  // Auto-adjust prepayMonths default when contract type changes (normal vs gap-fill)
+  // Auto-adjust prepayMonths when duration or contract type changes
   useEffect(() => {
+    const dur = getValues("duration");
     const current = getValues("prepayMonths");
+    let newPrepay = current;
+
     if (isSecondContract) {
       // Gap-fill contract: default to 1, adjust if current value is invalid
-      const dur = getValues("duration");
-      if (current < 1) setValue("prepayMonths", 1, { shouldValidate: true });
-      if (current > dur)
-        setValue("prepayMonths", Math.min(1, dur), { shouldValidate: true });
+      if (current < 1 || current > dur) {
+        newPrepay = Math.min(1, dur);
+      }
     } else {
-      // Normal contract: ensure min 2
-      if (current < 2) setValue("prepayMonths", 2, { shouldValidate: true });
+      // Normal contract: ensure min 2, max = duration
+      if (current < 2 || current > dur) {
+        newPrepay = Math.min(Math.max(2, current), dur);
+      }
     }
-  }, [isSecondContract, setValue, getValues]);
+
+    if (newPrepay !== current) {
+      setValue("prepayMonths", newPrepay, { shouldValidate: true });
+    }
+  }, [isSecondContract, watch("duration"), setValue, getValues]);
 
   // Xóa lỗi trùng dữ liệu khi user thay đổi trường CCCD/Phone/Email
   useEffect(() => {
@@ -1878,6 +1886,23 @@ const CreateContract = () => {
                                   const selectedDate = new Date(value);
                                   selectedDate.setHours(0, 0, 0, 0);
 
+                                  // Nếu phòng đã có HĐ đang hoạt động, ngày bắt đầu
+                                  // phải trước ít nhất 1 tháng so với ngày bắt đầu HĐ cũ
+                                  if (selectedRoom?.activeContractStartDate) {
+                                    const activeStart = new Date(
+                                      selectedRoom.activeContractStartDate,
+                                    );
+                                    activeStart.setDate(
+                                      activeStart.getDate() - 1,
+                                    );
+                                    activeStart.setMonth(
+                                      activeStart.getMonth() - 1,
+                                    );
+                                    if (selectedDate >= activeStart) {
+                                      return `Ngày bắt đầu phải trước ít nhất 1 tháng so với ngày bắt đầu HĐ hiện tại (${activeStart.toLocaleDateString("vi-VN")}).`;
+                                    }
+                                  }
+
                                   const declineMin =
                                     getMinStartDateAfterDeclinedRenewal(
                                       selectedRoom,
@@ -1931,6 +1956,21 @@ const CreateContract = () => {
                                 getMinStartDateAfterDeclinedRenewal(
                                   selectedRoom,
                                 );
+                              // Nếu phòng đã có hợp đồng đang hoạt động, ngày bắt đầu HĐ mới
+                              // phải trước ít nhất 1 tháng so với ngày bắt đầu HĐ cũ
+                              let activeMinStart: Date | undefined;
+                              if (selectedRoom?.activeContractStartDate) {
+                                activeMinStart = new Date(
+                                  selectedRoom.activeContractStartDate,
+                                );
+                                activeMinStart.setDate(
+                                  activeMinStart.getDate() - 1,
+                                );
+                                activeMinStart.setMonth(
+                                  activeMinStart.getMonth() - 1,
+                                );
+                              }
+
                               let minDate = selectedDeposit?.createdAt
                                 ? new Date(selectedDeposit.createdAt)
                                 : undefined;
@@ -1951,13 +1991,41 @@ const CreateContract = () => {
                                   if (dm > m) minDate = declineMinStart;
                                 }
                               }
-                              const maxDate = selectedDeposit?.createdAt
-                                ? (() => {
-                                    const d = new Date(selectedDeposit.createdAt);
-                                    d.setMonth(d.getMonth() + 6);
-                                    return d;
-                                  })()
-                                : undefined;
+                              if (activeMinStart) {
+                                if (!minDate) {
+                                  minDate = activeMinStart;
+                                } else {
+                                  const am = new Date(
+                                    activeMinStart.getFullYear(),
+                                    activeMinStart.getMonth(),
+                                    activeMinStart.getDate(),
+                                  ).getTime();
+                                  const m = new Date(
+                                    minDate.getFullYear(),
+                                    minDate.getMonth(),
+                                    minDate.getDate(),
+                                  ).getTime();
+                                  if (am > m) minDate = activeMinStart;
+                                }
+                              }
+                              const maxDate = (() => {
+                                // Ưu tiên: nếu có futureContractStartDate, disable tháng chứa ngày đó
+                                if (selectedRoom?.futureContractStartDate) {
+                                  const futureDate = new Date(
+                                    selectedRoom.futureContractStartDate,
+                                  );
+                                  // maxDate = ngày trước futureContractStartDate
+                                  futureDate.setDate(futureDate.getDate() - 1);
+                                  return futureDate;
+                                }
+                                // Nếu có deposit, giới hạn 6 tháng sau ngày cọc
+                                if (selectedDeposit?.createdAt) {
+                                  const d = new Date(selectedDeposit.createdAt);
+                                  d.setMonth(d.getMonth() + 6);
+                                  return d;
+                                }
+                                return undefined;
+                              })();
 
                               return (
                                 <DatePicker
@@ -1979,6 +2047,22 @@ const CreateContract = () => {
                                   shouldDisableDate={(date) => {
                                     if (!date) return false;
 
+                                    // Nếu phòng đã có HĐ đang hoạt động, block ngày từ
+                                    // activeContractStartDate trở đi
+                                    if (selectedRoom?.activeContractStartDate) {
+                                      const activeStart = new Date(
+                                        selectedRoom.activeContractStartDate,
+                                      );
+                                      activeStart.setHours(0, 0, 0, 0);
+                                      const dayOnly = new Date(
+                                        date.getFullYear(),
+                                        date.getMonth(),
+                                        date.getDate(),
+                                      );
+                                      if (dayOnly.getTime() >= activeStart.getTime())
+                                        return true;
+                                    }
+
                                     const declineMinStart =
                                       getMinStartDateAfterDeclinedRenewal(
                                         selectedRoom,
@@ -1996,24 +2080,23 @@ const CreateContract = () => {
                                       ).getTime();
                                       if (d < dm) return true;
 
-                                      if (selectedRoom?.futureContractStartDate) {
-                                        const futureDate = new Date(
-                                          selectedRoom.futureContractStartDate,
-                                        );
-                                        futureDate.setHours(0, 0, 0, 0);
-                                        const dayOnly = new Date(
-                                          date.getFullYear(),
-                                          date.getMonth(),
-                                          date.getDate(),
-                                        );
-                                        if (dayOnly.getTime() >= futureDate.getTime())
-                                          return true;
-                                      }
-
-                                      // Từ chối gia hạn: chỉ cần sau endDate HĐ cũ (và trước mốc HĐ tiếp theo nếu có).
-                                      // Không áp dụng rule "tháng sau chỉ mùng 1" — rule đó + refDate = hôm nay
-                                      // khiến cả tháng bắt đầu HĐ mới chỉ còn 1 ngày chọn được.
                                       return false;
+                                    }
+
+                                    // Disable các ngày >= futureContractStartDate
+                                    // (LUÔN luôn kiểm tra, không chỉ khi có declineMinStart)
+                                    if (selectedRoom?.futureContractStartDate) {
+                                      const futureDate = new Date(
+                                        selectedRoom.futureContractStartDate,
+                                      );
+                                      futureDate.setHours(0, 0, 0, 0);
+                                      const dayOnly = new Date(
+                                        date.getFullYear(),
+                                        date.getMonth(),
+                                        date.getDate(),
+                                      );
+                                      if (dayOnly.getTime() >= futureDate.getTime())
+                                        return true;
                                     }
 
                                     const refDate = selectedDeposit?.createdAt
