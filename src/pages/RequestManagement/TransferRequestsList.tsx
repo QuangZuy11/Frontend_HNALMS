@@ -339,58 +339,9 @@ export default function TransferRequestsList() {
       setShowCompleteModal(false);
       setCompletingRequest(null);
       if (selectedRequest?._id === completingRequest._id) setSelectedRequest(null);
+      fetchRequests();
 
-      if (oldContract) {
-        oldDepositId = typeof oldContract.depositId === 'object'
-          ? oldContract.depositId?._id
-          : oldContract.depositId;
-
-        const tenantIdObj = typeof oldContract.tenantId === 'object' ? oldContract.tenantId : undefined;
-        const tenantInfoObj = (oldContract.tenantInfo as Record<string, unknown>) || {};
-        const draft = {
-          formValues: {
-            roomId: completingRequest.targetRoomId?._id || '',
-            startDate: new Date().toISOString().split('T')[0],
-            duration: oldContract.duration || 12,
-            prepayMonths: 2,
-            tenantInfo: {
-              fullName: tenantInfoObj.fullName || tenantInfoObj.fullname || '',
-              phone: tenantInfoObj.phone || tenantIdObj?.phoneNumber || '',
-              email: tenantInfoObj.email || tenantIdObj?.email || '',
-              address: tenantInfoObj.address || '',
-              dob: tenantInfoObj.dob || '',
-              cccd: tenantInfoObj.cccd || '',
-              gender: tenantInfoObj.gender || 'Male',
-              contactRef: tenantInfoObj.contactRef || '',
-            },
-            coResidents: oldContract.coResidents || [],
-            roomSharer: (oldContract.coResidents?.length || 0) > 0,
-          },
-          selectedServices: (oldContract.bookServices || []).map((s: BookService) => {
-            const serviceIdObj = typeof s.serviceId === 'object' ? s.serviceId : undefined;
-            return {
-              serviceId: serviceIdObj?._id || s.serviceId || '',
-              name: serviceIdObj?.name || s.name || '',
-              price: serviceIdObj?.currentPrice || s.currentPrice || 0,
-              type: serviceIdObj?.type || s.type || '',
-              category: s.category || 'fixed_monthly',
-              quantity: s.quantity || 1,
-            };
-          }),
-          vehicleQuantities: {},
-          contractImages: [],
-        };
-        sessionStorage.setItem('contractFormDraft', JSON.stringify(draft));
-      }
-
-      showToast('success', 'Thành công', 'Hoàn tất chuyển phòng. Đang chuyển đến tạo hợp đồng mới...');
-      navigate('/manager/contracts/create', {
-        state: {
-          roomId: completingRequest.targetRoomId?._id,
-          depositId: oldDepositId,
-          fromTransfer: true,
-        },
-      });
+      showToast('success', 'Thành công', 'Hoàn tất chuyển phòng thành công. Hợp đồng mới đã được tự động tạo.');
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { message?: string } } };
       showToast('error', 'Lỗi', anyErr?.response?.data?.message || 'Hoàn tất chuyển phòng thất bại');
