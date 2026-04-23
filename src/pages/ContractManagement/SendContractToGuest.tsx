@@ -642,10 +642,7 @@ const SendContractToGuest = () => {
         );
         return;
       }
-      // renewalStatus = "declined" → allow, show info
-      alert(
-        "Phòng này có người thuê hiện tại đã từ chối gia hạn. Bạn có thể đặt cọc và ký hợp đồng mới.",
-      );
+      // renewalStatus = "declined" → allow, no alert needed
     }
 
     try {

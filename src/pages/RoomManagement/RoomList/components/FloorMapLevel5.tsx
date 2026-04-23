@@ -292,8 +292,7 @@ export default function FloorMapLevel5({
                       width: "16px",
                       height: "16px",
                       borderRadius: "3px",
-                      background:
-                        "#f1f5f9",
+                      background: "#f1f5f9",
                       border: "2px dotted #cbd5e1",
                     }}
                   />
@@ -384,12 +383,24 @@ export default function FloorMapLevel5({
                   {/* Render the room node */}
                   <div
                     className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""} ${hasMultiOptions ? "has-multi-options" : ""}`}
-                    onClick={isRoomInactive ? undefined : (e) => handleRoomClick(room._id, e)}
-                    title={isRoomInactive ? `${room.name} - VÔ HIỆU HÓA` : `${room.name} - ${room.roomTypeId?.typeName || room.roomTypeId?.name || ""}`}
+                    onClick={
+                      isRoomInactive
+                        ? undefined
+                        : (e) => handleRoomClick(room._id, e)
+                    }
+                    title={
+                      isRoomInactive
+                        ? `${room.name} - VÔ HIỆU HÓA`
+                        : `${room.name} - ${room.roomTypeId?.typeName || room.roomTypeId?.name || ""}`
+                    }
                     data-color={typeColor}
-                    style={isRoomInactive ? undefined : {
-                      background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
-                    }}
+                    style={
+                      isRoomInactive
+                        ? undefined
+                        : {
+                            background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
+                          }
+                    }
                   >
                     <span className="room-node-name">
                       {formatRoomLabel(room.name)}
