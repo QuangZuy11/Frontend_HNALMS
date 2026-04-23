@@ -27,6 +27,8 @@ interface Room {
   successorLeaseBooked?: boolean;
   /** Ngày bắt đầu HĐ chưa kích hoạt kế tiếp (vd HĐ 464) — giới hạn thời gian thuê mới */
   nextInactiveContractStart?: string | null;
+  /** Ngày kết thúc HĐ declined — để FE hiện nhãn "Trống từ DD/MM/YY" thay vì date range */
+  declinedContractEndDate?: string | null;
   [key: string]: any;
 }
 

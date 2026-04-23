@@ -315,7 +315,7 @@ export default function BookingPage() {
         newErrors.startDate = "Không được chọn ngày vào ở quá 6 tháng";
       } else {
         // Tính cutoff: nếu có hợp đồng inactive → cutoff = ngày 1 của (nextInactiveContractStart - 1 tháng)
-        // Ngược lại → cutoff = hôm nay (hoặc ngày sau khi HĐ hiện tại kết thúc nếu declined)
+        // Ngược lại → cutoff = null
         const inactiveStart = room?.nextInactiveContractStart
           ? new Date(room.nextInactiveContractStart)
           : null;
@@ -326,20 +326,22 @@ export default function BookingPage() {
               d.setMonth(d.getMonth() - 1);
               return d;
             })()
-          : new Date(minStartDateStr);
+          : null;
 
-        // Nếu startDate > cutoff → báo lỗi rule 1 tháng
-        if (sd > cutoffDate) {
+        // Nếu có cutoffDate và startDate > cutoffDate → báo lỗi
+        if (cutoffDate && sd > cutoffDate) {
           newErrors.startDate =
             `Ngày vào ở phải ≤ ${cutoffDate.toLocaleDateString("vi-VN")} (tối thiểu 1 tháng trước kỳ thuê kế tiếp).`;
-        } else if (room?.contractRenewalStatus !== "declined") {
-          // Từ tháng của cutoff trở đi: chỉ cho phép ngày 1
-          const cutoffMonth =
-            cutoffDate.getFullYear() * 12 + cutoffDate.getMonth();
+        } else {
+          // Rule chung: Các tháng SAU tháng của minStartDateStr chỉ được phép chọn ngày 1
+          const minDateObj = new Date(minStartDateStr);
+          const baseMonth =
+            minDateObj.getFullYear() * 12 + minDateObj.getMonth();
           const sdMonth = sd.getFullYear() * 12 + sd.getMonth();
-          if (sdMonth >= cutoffMonth && sd.getDate() !== 1) {
+
+          if (sdMonth > baseMonth && sd.getDate() !== 1) {
             newErrors.startDate =
-              "Từ tháng trước kỳ thuê kế tiếp trở đi chỉ được phép chọn ngày 1 đầu tháng";
+              "Từ các tháng tiếp theo chỉ được phép chọn ngày 1 đầu tháng";
           }
         }
       }
@@ -859,17 +861,15 @@ export default function BookingPage() {
                             maxDate={maxStartDateForPicker}
                             shouldDisableDate={(date) => {
                               if (!date) return false;
-                              if (room?.contractRenewalStatus === "declined") {
-                                return false;
-                              }
-                              // Tháng hiện tại: chọn ngày nào cũng được
-                              // Từ tháng sau trở đi: chỉ được chọn ngày 1 đầu tháng
-                              // (maxDate đã giới hạn cutoff cho trường hợp có nextInactiveContractStart)
-                              const isFutureMonth =
-                                date.getFullYear() > today.getFullYear() ||
-                                (date.getFullYear() === today.getFullYear() &&
-                                  date.getMonth() > today.getMonth());
-                              if (isFutureMonth) {
+                              
+                              const minDateObj = new Date(minStartDateStr);
+                              const baseMonth =
+                                minDateObj.getFullYear() * 12 +
+                                minDateObj.getMonth();
+                              const dMonth =
+                                date.getFullYear() * 12 + date.getMonth();
+
+                              if (dMonth > baseMonth) {
                                 return date.getDate() !== 1;
                               }
                               return false;
