@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Plus, Edit, Trash2, Cpu, PackageSearch,
-  Search, Filter, ArrowUpDown, AlertTriangle, X,
-  CheckCircle, FileText, LayoutGrid, Sparkles,
+  Search, ArrowUpDown, AlertTriangle, X,
+  CheckCircle, FileText, LayoutGrid,
 } from "lucide-react";
 import { AppModal } from "../../components/common/Modal";
 import { Pagination } from "../../components/common/Pagination";
@@ -10,42 +10,6 @@ import { useToast } from "../../components/common/Toast";
 import { roomDeviceService } from "../../services/roomDeviceService";
 import type { RoomDevice, Device, RoomType } from "../../services/roomDeviceService";
 import "./RoomDeviceManagement.css";
-
-const CONDITION_OPTIONS = ["Good", "Fair", "Poor", "Damaged", "New"];
-
-const getConditionBadge = (condition: string) => {
-  switch (condition) {
-    case "Good":
-    case "New":
-      return "rdm-badge rdm-badge-good";
-    case "Fair":
-      return "rdm-badge rdm-badge-fair";
-    case "Poor":
-    case "Damaged":
-      return "rdm-badge rdm-badge-poor";
-    default:
-      return "rdm-badge rdm-badge-default";
-  }
-};
-
-const conditionLabel: Record<string, string> = {
-  Good: "Tốt",
-  New: "Mới",
-  Fair: "Khá",
-  Poor: "Kém",
-  Damaged: "Hỏng",
-};
-
-interface AddFormData {
-  deviceId: string;
-  quantity: number;
-  condition: string;
-}
-
-interface EditFormData {
-  quantity: number;
-  condition: string;
-}
 
 const RoomDeviceManagement: React.FC = () => {
   const { showToast } = useToast();
@@ -60,7 +24,6 @@ const RoomDeviceManagement: React.FC = () => {
 
   // ── Filter & Sort state ─────────────────────────────────────
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterCondition, setFilterCondition] = useState("ALL");
   const [sortOption, setSortOption] = useState("default");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
@@ -72,16 +35,8 @@ const RoomDeviceManagement: React.FC = () => {
   const [editingRecord, setEditingRecord] = useState<RoomDevice | null>(null);
   const [itemToDelete, setItemToDelete] = useState<RoomDevice | null>(null);
 
-  const [addForm, setAddForm] = useState<AddFormData>({
-    deviceId: "",
-    quantity: 1,
-    condition: "Good",
-  });
-
-  const [editForm, setEditForm] = useState<EditFormData>({
-    quantity: 1,
-    condition: "Good",
-  });
+  const [addForm, setAddForm] = useState({ deviceId: "", quantity: 1 });
+  const [editForm, setEditForm] = useState({ quantity: 1 });
 
   // ── Initialise reference data ────────────────────────────────
   useEffect(() => {
@@ -134,7 +89,7 @@ const RoomDeviceManagement: React.FC = () => {
   // ── Reset page on filter change ──────────────────────────────
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterCondition, sortOption]);
+  }, [searchTerm, sortOption]);
 
   // ── Already-added device IDs (prevent duplicate select) ──────
   const addedDeviceIds = useMemo(
@@ -163,12 +118,7 @@ const RoomDeviceManagement: React.FC = () => {
       });
     }
 
-    // 2. Filter condition
-    if (filterCondition !== "ALL") {
-      result = result.filter((rd) => rd.condition === filterCondition);
-    }
-
-    // 3. Sort
+    // 2. Sort
     switch (sortOption) {
       case "name-asc":
         result.sort((a, b) => (a.deviceId?.name || "").localeCompare(b.deviceId?.name || ""));
@@ -187,7 +137,7 @@ const RoomDeviceManagement: React.FC = () => {
     }
 
     return result;
-  }, [roomDevices, searchTerm, filterCondition, sortOption]);
+  }, [roomDevices, searchTerm, sortOption]);
 
   const totalPages = Math.ceil(processedRoomDevices.length / itemsPerPage);
   const currentItems = useMemo(() => {
@@ -207,10 +157,6 @@ const RoomDeviceManagement: React.FC = () => {
     [roomDevices]
   );
   const deviceTypeCount = roomDevices.length;
-  const goodCount = useMemo(
-    () => roomDevices.filter((rd) => rd.condition === "Good" || rd.condition === "New").length,
-    [roomDevices]
-  );
 
   // ── ADD ──────────────────────────────────────────────────────
   const handleOpenAdd = () => {
@@ -218,7 +164,7 @@ const RoomDeviceManagement: React.FC = () => {
       showToast("warning", "Chú ý", "Vui lòng chọn loại phòng trước!");
       return;
     }
-    setAddForm({ deviceId: availableDevices[0]?._id ?? "", quantity: 1, condition: "Good" });
+    setAddForm({ deviceId: availableDevices[0]?._id ?? "", quantity: 1 });
     setShowAddModal(true);
   };
 
@@ -233,7 +179,6 @@ const RoomDeviceManagement: React.FC = () => {
         roomTypeId: selectedRoomTypeId,
         deviceId: addForm.deviceId,
         quantity: addForm.quantity,
-        condition: addForm.condition,
       });
       showToast("success", "Thành công", "Thêm thiết bị vào loại phòng thành công!");
       setShowAddModal(false);
@@ -247,7 +192,7 @@ const RoomDeviceManagement: React.FC = () => {
   // ── EDIT ─────────────────────────────────────────────────────
   const handleOpenEdit = (record: RoomDevice) => {
     setEditingRecord(record);
-    setEditForm({ quantity: record.quantity, condition: record.condition });
+    setEditForm({ quantity: record.quantity });
     setShowEditModal(true);
   };
 
@@ -261,7 +206,6 @@ const RoomDeviceManagement: React.FC = () => {
     try {
       await roomDeviceService.update(editingRecord._id, {
         quantity: editForm.quantity,
-        condition: editForm.condition,
       });
       showToast("success", "Thành công", "Cập nhật thiết bị thành công!");
       setShowEditModal(false);
@@ -347,14 +291,6 @@ const RoomDeviceManagement: React.FC = () => {
                     <span className="rdm-stat-label">Tổng số lượng</span>
                   </div>
                 </div>
-                <div className="rdm-stat-divider" />
-                <div className="rdm-stat-item">
-                  <Sparkles size={16} className="rdm-stat-icon rdm-icon-warning" />
-                  <div className="rdm-stat-text">
-                    <span className="rdm-stat-value">{goodCount}</span>
-                    <span className="rdm-stat-label">Tình trạng tốt</span>
-                  </div>
-                </div>
               </div>
             )}
 
@@ -385,21 +321,6 @@ const RoomDeviceManagement: React.FC = () => {
             />
           </div>
 
-          <div className="rdm-control-group">
-            <Filter size={16} className="rdm-toolbar-icon" aria-hidden />
-            <select
-              className="rdm-custom-select"
-              value={filterCondition}
-              onChange={(e) => setFilterCondition(e.target.value)}
-            >
-              <option value="ALL">Tất cả tình trạng</option>
-              {CONDITION_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {conditionLabel[opt]}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
 
         <div className="rdm-toolbar-right">
@@ -456,7 +377,7 @@ const RoomDeviceManagement: React.FC = () => {
           <div className="rdm-empty">
             <PackageSearch size={48} />
             <p>
-              {searchTerm || filterCondition !== "ALL"
+              {searchTerm
                 ? "Không tìm thấy thiết bị phù hợp."
                 : `Loại phòng "${selectedRoomTypeName}" chưa có thiết bị nào.`}
             </p>
@@ -471,7 +392,6 @@ const RoomDeviceManagement: React.FC = () => {
                   <th className="rdm-th-info">Model / Hãng</th>
                   <th className="rdm-th-category">Danh mục</th>
                   <th className="rdm-th-qty">Số lượng</th>
-                  <th className="rdm-th-condition">Tình trạng</th>
                   <th className="rdm-th-actions">Thao tác</th>
                 </tr>
               </thead>
@@ -497,11 +417,6 @@ const RoomDeviceManagement: React.FC = () => {
                       </span>
                     </td>
                     <td className="rdm-td-qty">{rd.quantity}</td>
-                    <td className="rdm-td-condition">
-                      <span className={getConditionBadge(rd.condition)}>
-                        {conditionLabel[rd.condition] ?? rd.condition}
-                      </span>
-                    </td>
                     <td className="rdm-td-actions">
                       <div className="rdm-table-actions">
                         <button
@@ -604,7 +519,7 @@ const RoomDeviceManagement: React.FC = () => {
             )}
           </div>
 
-          {/* Số lượng + Tình trạng */}
+          {/* Số lượng */}
           <div className="ms-field-row" style={{ marginTop: "16px" }}>
             <div className="ms-field">
               <label className="ms-label">
@@ -616,23 +531,8 @@ const RoomDeviceManagement: React.FC = () => {
                 min={1}
                 required
                 value={addForm.quantity}
-                onChange={(e) => setAddForm({ ...addForm, quantity: Number(e.target.value) })}
+                onChange={(e) => setAddForm((prev) => ({ ...prev, quantity: Number(e.target.value) }))}
               />
-            </div>
-            <div className="ms-field">
-              <label className="ms-label">Tình trạng</label>
-              <select
-                className="ms-input"
-                value={addForm.condition}
-                onChange={(e) => setAddForm({ ...addForm, condition: e.target.value })}
-                style={{ appearance: "auto" }}
-              >
-                {CONDITION_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {conditionLabel[opt]}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
         </form>
@@ -679,7 +579,7 @@ const RoomDeviceManagement: React.FC = () => {
             />
           </div>
 
-          {/* Số lượng + Tình trạng */}
+          {/* Số lượng */}
           <div className="ms-field-row" style={{ marginTop: "16px" }}>
             <div className="ms-field">
               <label className="ms-label">
@@ -691,23 +591,8 @@ const RoomDeviceManagement: React.FC = () => {
                 min={1}
                 required
                 value={editForm.quantity}
-                onChange={(e) => setEditForm({ ...editForm, quantity: Number(e.target.value) })}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, quantity: Number(e.target.value) }))}
               />
-            </div>
-            <div className="ms-field">
-              <label className="ms-label">Tình trạng</label>
-              <select
-                className="ms-input"
-                value={editForm.condition}
-                onChange={(e) => setEditForm({ ...editForm, condition: e.target.value })}
-                style={{ appearance: "auto" }}
-              >
-                {CONDITION_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {conditionLabel[opt]}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
         </form>

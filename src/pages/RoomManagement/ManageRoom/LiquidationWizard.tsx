@@ -73,6 +73,8 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
   const [waterOldIndex, setWaterOldIndex] = useState(0);
   const [electricNewIndex, setElectricNewIndex] = useState("");
   const [waterNewIndex, setWaterNewIndex] = useState("");
+  const [electricOverride, setElectricOverride] = useState(false);
+  const [waterOverride, setWaterOverride] = useState(false);
   const [preflightData, setPreflightData] = useState<any>(null);
 
   const [error, setError] = useState("");
@@ -203,14 +205,12 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
         (liqDate.getTime() - startOfMonth.getTime()) / msPerDay
       ) + 1;
 
-    const elecUsage = Math.max(
-      0,
-      Number(electricNewIndex || 0) - electricOldIndex
-    );
-    const waterUsage = Math.max(
-      0,
-      Number(waterNewIndex || 0) - waterOldIndex
-    );
+    const elecUsage = electricOverride
+      ? Math.max(0, (99999 - electricOldIndex) + Number(electricNewIndex || 0))
+      : Math.max(0, Number(electricNewIndex || 0) - electricOldIndex);
+    const waterUsage = waterOverride
+      ? Math.max(0, (99999 - waterOldIndex) + Number(waterNewIndex || 0))
+      : Math.max(0, Number(waterNewIndex || 0) - waterOldIndex);
 
     const elecPrice = electricService
       ? Number(electricService.currentPrice)
@@ -357,21 +357,23 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
       setError("Không tìm thấy dịch vụ điện/nước trong hệ thống.");
       return false;
     }
-    if (
-      electricNewIndex === "" ||
-      Number(electricNewIndex) < electricOldIndex
-    ) {
+    if (electricNewIndex === "" || Number(electricNewIndex) > 99999) {
+      setError("Chỉ số điện mới phải từ 0–99999.");
+      return false;
+    }
+    if (!electricOverride && Number(electricNewIndex) < electricOldIndex) {
       setError(
-        `Chỉ số điện mới (${electricNewIndex}) không được nhỏ hơn chỉ số cũ (${electricOldIndex}).`
+        `Chỉ số điện mới (${electricNewIndex}) không được nhỏ hơn chỉ số cũ (${electricOldIndex}). Nếu đồng hồ quay vòng (99999→0), bấm nút ✓ bên cạnh để xác nhận.`
       );
       return false;
     }
-    if (
-      waterNewIndex === "" ||
-      Number(waterNewIndex) < waterOldIndex
-    ) {
+    if (waterNewIndex === "" || Number(waterNewIndex) > 99999) {
+      setError("Chỉ số nước mới phải từ 0–99999.");
+      return false;
+    }
+    if (!waterOverride && Number(waterNewIndex) < waterOldIndex) {
       setError(
-        `Chỉ số nước mới (${waterNewIndex}) không được nhỏ hơn chỉ số cũ (${waterOldIndex}).`
+        `Chỉ số nước mới (${waterNewIndex}) không được nhỏ hơn chỉ số cũ (${waterOldIndex}). Nếu đồng hồ quay vòng (99999→0), bấm nút ✓ bên cạnh để xác nhận.`
       );
       return false;
     }
@@ -662,6 +664,8 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                 onClick={() => {
                   setError("");
                   setStep(0);
+                  setElectricOverride(false);
+                  setWaterOverride(false);
                 }}
               >
                 <ChevronLeft size={14} /> Quay lại
@@ -711,14 +715,37 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                       <label className="lqw-label">
                         Chỉ số mới <span>*</span>
                       </label>
-                      <input
-                        type="number"
-                        className="lqw-input"
-                        min={electricOldIndex}
-                        placeholder={`≥ ${electricOldIndex}`}
-                        value={electricNewIndex}
-                        onChange={(e) => setElectricNewIndex(e.target.value)}
-                      />
+                      <div className="lqw-meter-input-row">
+                        <input
+                          type="number"
+                          className="lqw-input"
+                          min={electricOverride ? 0 : electricOldIndex}
+                          max={99999}
+                          placeholder={`≥ ${electricOldIndex}`}
+                          value={electricNewIndex}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            const num = Number(raw);
+                            if (raw === "") {
+                              setElectricNewIndex("");
+                              return;
+                            }
+                            if (!isNaN(num) && num >= 0 && num <= 99999) {
+                              setElectricNewIndex(raw);
+                            } else if (num > 99999) {
+                              setElectricNewIndex("99999");
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className={`lqw-override-btn ${electricOverride ? "active" : ""}`}
+                          onClick={() => setElectricOverride((v) => !v)}
+                          title="Cho phép nhập số nhỏ hơn chỉ số cũ (khi đồng hồ quay vòng 99999→0)"
+                        >
+                          ✓
+                        </button>
+                      </div>
                     </div>
                     {electricNewIndex !== "" && (
                       <div
@@ -726,11 +753,15 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                         style={{ color: "#f59e0b" }}
                       >
                         Sử dụng:{" "}
-                        {Math.max(
-                          0,
-                          Number(electricNewIndex) - electricOldIndex
-                        )}{" "}
+                        {electricOverride
+                          ? Math.max(0, (99999 - electricOldIndex) + Number(electricNewIndex))
+                          : Math.max(0, Number(electricNewIndex) - electricOldIndex)}{" "}
                         kWh
+                        {electricOverride && (
+                          <span style={{ color: "#16a34a", fontWeight: 600 }}>
+                            {" "}✓ Quay vòng
+                          </span>
+                        )}
                         {electricService &&
                           ` × ${formatCurrency(
                             typeof (
@@ -766,23 +797,50 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                       <label className="lqw-label">
                         Chỉ số mới <span>*</span>
                       </label>
-                      <input
-                        type="number"
-                        className="lqw-input"
-                        min={waterOldIndex}
-                        placeholder={`≥ ${waterOldIndex}`}
-                        value={waterNewIndex}
-                        onChange={(e) => setWaterNewIndex(e.target.value)}
-                      />
+                      <div className="lqw-meter-input-row">
+                        <input
+                          type="number"
+                          className="lqw-input"
+                          min={waterOverride ? 0 : waterOldIndex}
+                          max={99999}
+                          placeholder={`≥ ${waterOldIndex}`}
+                          value={waterNewIndex}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            const num = Number(raw);
+                            if (raw === "") {
+                              setWaterNewIndex("");
+                              return;
+                            }
+                            if (!isNaN(num) && num >= 0 && num <= 99999) {
+                              setWaterNewIndex(raw);
+                            } else if (num > 99999) {
+                              setWaterNewIndex("99999");
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className={`lqw-override-btn ${waterOverride ? "active" : ""}`}
+                          onClick={() => setWaterOverride((v) => !v)}
+                          title="Cho phép nhập số nhỏ hơn chỉ số cũ (khi đồng hồ quay vòng 99999→0)"
+                        >
+                          ✓
+                        </button>
+                      </div>
                     </div>
                     {waterNewIndex !== "" && (
                       <div className="lqw-hint" style={{ color: "#3b82f6" }}>
                         Sử dụng:{" "}
-                        {Math.max(
-                          0,
-                          Number(waterNewIndex) - waterOldIndex
-                        )}{" "}
+                        {waterOverride
+                          ? Math.max(0, (99999 - waterOldIndex) + Number(waterNewIndex))
+                          : Math.max(0, Number(waterNewIndex) - waterOldIndex)}{" "}
                         m³
+                        {waterOverride && (
+                          <span style={{ color: "#16a34a", fontWeight: 600 }}>
+                            {" "}✓ Quay vòng
+                          </span>
+                        )}
                         {waterService &&
                           ` × ${formatCurrency(
                             typeof (
@@ -1050,11 +1108,14 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                         <div className="lqw-financial-item">
                           <span className="lqw-financial-item-label">
                             ❌ Trừ tiền {electricService?.name || "điện"} (
-                            {Math.max(
-                              0,
-                              Number(electricNewIndex) - electricOldIndex
-                            )}{" "}
-                            kWh)
+                            {electricOverride
+                              ? Math.max(0, (99999 - electricOldIndex) + Number(electricNewIndex))
+                              : Math.max(0, Number(electricNewIndex) - electricOldIndex)}{" "}
+                            kWh
+                            {electricOverride && (
+                              <span style={{ color: "#16a34a", fontSize: "0.7rem" }}> (quay vòng)</span>
+                            )}
+                            )
                           </span>
                           <span className="lqw-financial-item-value negative">
                             − {formatCurrency(financial.electricCost)}
@@ -1063,11 +1124,14 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                         <div className="lqw-financial-item">
                           <span className="lqw-financial-item-label">
                             ❌ Trừ tiền {waterService?.name || "nước"} (
-                            {Math.max(
-                              0,
-                              Number(waterNewIndex) - waterOldIndex
-                            )}{" "}
-                            m³)
+                            {waterOverride
+                              ? Math.max(0, (99999 - waterOldIndex) + Number(waterNewIndex))
+                              : Math.max(0, Number(waterNewIndex) - waterOldIndex)}{" "}
+                            m³
+                            {waterOverride && (
+                              <span style={{ color: "#16a34a", fontSize: "0.7rem" }}> (quay vòng)</span>
+                            )}
+                            )
                           </span>
                           <span className="lqw-financial-item-value negative">
                             − {formatCurrency(financial.waterCost)}
@@ -1090,11 +1154,14 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                         <div className="lqw-financial-item">
                           <span className="lqw-financial-item-label">
                             ⚡ Tiền {electricService?.name || "điện"} (
-                            {Math.max(
-                              0,
-                              Number(electricNewIndex) - electricOldIndex
-                            )}{" "}
-                            kWh)
+                            {electricOverride
+                              ? Math.max(0, (99999 - electricOldIndex) + Number(electricNewIndex))
+                              : Math.max(0, Number(electricNewIndex) - electricOldIndex)}{" "}
+                            kWh
+                            {electricOverride && (
+                              <span style={{ color: "#16a34a", fontSize: "0.7rem" }}> (quay vòng)</span>
+                            )}
+                            )
                           </span>
                           <span className="lqw-financial-item-value negative">
                             + {formatCurrency(financial.electricCost)}
@@ -1103,11 +1170,14 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                         <div className="lqw-financial-item">
                           <span className="lqw-financial-item-label">
                             💧 Tiền {waterService?.name || "nước"} (
-                            {Math.max(
-                              0,
-                              Number(waterNewIndex) - waterOldIndex
-                            )}{" "}
-                            m³)
+                            {waterOverride
+                              ? Math.max(0, (99999 - waterOldIndex) + Number(waterNewIndex))
+                              : Math.max(0, Number(waterNewIndex) - waterOldIndex)}{" "}
+                            m³
+                            {waterOverride && (
+                              <span style={{ color: "#16a34a", fontSize: "0.7rem" }}> (quay vòng)</span>
+                            )}
+                            )
                           </span>
                           <span className="lqw-financial-item-value negative">
                             + {formatCurrency(financial.waterCost)}

@@ -417,6 +417,62 @@
   color: #334155;
 }
 
+/* ── Meter input row (input + override button) ── */
+.lqw-meter-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lqw-meter-input-row .lqw-input {
+  flex: 1;
+}
+
+/* Hide number input spinners */
+.lqw-meter-input-row .lqw-input[type="number"]::-webkit-outer-spin-button,
+.lqw-meter-input-row .lqw-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.lqw-meter-input-row .lqw-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.lqw-override-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  color: #94a3b8;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.lqw-override-btn:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #3b82f6;
+}
+
+.lqw-override-btn.active {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #16a34a;
+}
+
+.lqw-override-btn.active:hover {
+  background: #bbf7d0;
+  border-color: #15803d;
+  color: #15803d;
+}
+
 /* ── Financial Preview ── */
 .lqw-financial-preview {
   background: #f0fdf4;
