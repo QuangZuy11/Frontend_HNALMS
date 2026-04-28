@@ -1275,34 +1275,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
               </div>
             </div>
 
-            {isEditing && (
-              <div className="room-form-field room-form-field--full">
-                <div className="room-form-toggle">
-                  <div className="room-form-toggle-info">
-                    <span className="room-form-toggle-title">
-                      Trạng thái hoạt động
-                    </span>
-                    <span className="room-form-toggle-desc">
-                      Phòng sẽ{" "}
-                      {formData.isActive
-                        ? "hiển thị và có thể sử dụng"
-                        : "bị vô hiệu hóa"}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={formData.isActive}
-                    className={`room-form-toggle-switch ${formData.isActive ? "active" : ""}`}
-                    onClick={() =>
-                      setFormData({ ...formData, isActive: !formData.isActive })
-                    }
-                  >
-                    <span className="room-form-toggle-thumb" />
-                  </button>
-                </div>
-              </div>
-            )}
+
 
             <div className="room-form-field room-form-field--full">
               <label className="room-form-label">
@@ -1579,9 +1552,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                       <span className="text-price">
                         {getRoomTypeDetail(viewingRoom.roomTypeId)
                           ? formatCurrency(
-                              getRoomTypeDetail(viewingRoom.roomTypeId)!
-                                .currentPrice,
-                            )
+                            getRoomTypeDetail(viewingRoom.roomTypeId)!
+                              .currentPrice,
+                          )
                           : "---"}
                       </span>
                     </div>
@@ -1604,8 +1577,8 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                         typeof roomContract.depositId === "object"
                           ? roomContract.depositId
                           : roomDeposits.find(
-                              (d: any) => d._id === roomContract.depositId,
-                            );
+                            (d: any) => d._id === roomContract.depositId,
+                          );
                     } else if (selectedContractId) {
                       // Có hợp đồng nhưng không có cọc cụ thể - thử lấy cọc mặc định
                       roomDeposit = getDepositForRoom(viewingRoom._id);
@@ -1979,8 +1952,8 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
               typeof selContract.depositId === "object"
                 ? selContract.depositId
                 : roomDeposits.find(
-                    (d: any) => d._id === selContract.depositId,
-                  );
+                  (d: any) => d._id === selContract.depositId,
+                );
             depositAmt = dep?.amount ? Number(dep.amount) : 0;
           }
 
