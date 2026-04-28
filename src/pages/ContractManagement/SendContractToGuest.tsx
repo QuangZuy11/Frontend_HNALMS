@@ -27,8 +27,9 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { vi } from "date-fns/locale/vi";
 import { format as formatDate } from "date-fns";
 import CloseIcon from "@mui/icons-material/Close";
-import toastr from "toastr";
-import "toastr/build/toastr.min.css";
+import { XCircle } from "lucide-react";
+import { useToast } from "../../components/common/Toast";
+import "../RequestManagement/BookingRequestList.css";
 
 // Mock API URL - Replace with actual
 const API_URL = "http://localhost:9999/api";
@@ -376,6 +377,12 @@ const SendContractToGuest = () => {
   const [selectedDeposit, setSelectedDeposit] = useState<any>(null);
   const [isSecondContract, setIsSecondContract] = useState(false);
 
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [isRejecting, setIsRejecting] = useState(false);
+
+  const { showToast } = useToast();
+
   const {
     control,
     handleSubmit,
@@ -414,6 +421,25 @@ const SendContractToGuest = () => {
     control,
     name: "coResidents",
   });
+
+  const handleReject = async () => {
+    if (!preFilledBookingRequestId) return;
+    setIsRejecting(true);
+    try {
+      await api.patch(`/booking-requests/${preFilledBookingRequestId}/status`, {
+        status: "Rejected",
+        reason: rejectReason.trim() || undefined,
+      });
+      setShowRejectModal(false);
+      setRejectReason("");
+      showToast("success", "Từ chối thành công", "Đã từ chối yêu cầu và gửi email thông báo.");
+      navigate("/manager/requests/bookings");
+    } catch (err: any) {
+      showToast("error", "Từ chối thất bại", err?.response?.data?.message || "Vui lòng thử lại.");
+    } finally {
+      setIsRejecting(false);
+    }
+  };
 
   // Clear saved draft after restoring
   useEffect(() => {
@@ -954,18 +980,13 @@ const SendContractToGuest = () => {
             setValue("tenantInfo.dob", formattedDob, { shouldValidate: true });
           }
         }
-        toastr.success("Đã nhận diện và điền tự động dữ liệu CCCD thành công!");
+        showToast("success", "Thành công", "Đã nhận diện và điền tự động dữ liệu CCCD thành công!");
       } else {
-        toastr.warning(
-          "Không thể nhận diện CCCD. Vui lòng thử lại với ảnh rõ nét hơn.",
-        );
+        showToast("warning", "Cảnh báo", "Không thể nhận diện CCCD. Vui lòng thử lại với ảnh rõ nét hơn.");
       }
     } catch (err: any) {
       console.error("OCR Error:", err);
-      toastr.error(
-        "Lỗi khi kết nối tới FPT.AI: " +
-        (err.response?.data?.errorMessage || err.message),
-      );
+      showToast("error", "Lỗi OCR", "Lỗi khi kết nối tới FPT.AI: " + (err.response?.data?.errorMessage || err.message));
     } finally {
       setOcrLoading(false);
       if (ocrFileInputRef.current) ocrFileInputRef.current.value = "";
@@ -1031,7 +1052,7 @@ const SendContractToGuest = () => {
         const res = await api.post(`/booking-requests/${selectedDeposit._id}/send-payment`, sendPaymentPayload);
         if (res.data.success) {
           sessionStorage.removeItem("contractFormDraft");
-          toastr.success("Đã chốt thông tin và gửi yêu cầu thanh toán (kèm QR) cho khách thành công!");
+          showToast("success", "Thành công", "Đã chốt thông tin và gửi yêu cầu thanh toán (kèm QR) cho khách thành công!");
           navigate("/manager/requests/bookings");
         }
       } else {
@@ -1040,14 +1061,12 @@ const SendContractToGuest = () => {
         const res = await api.post(`/contracts/create`, payload);
         if (res.data.success) {
           sessionStorage.removeItem("contractFormDraft");
-          toastr.success("Hợp đồng đã được tạo thành công!");
+          showToast("success", "Thành công", "Hợp đồng đã được tạo thành công!");
           navigate("/manager/contracts");
         }
       }
     } catch (err: any) {
-      toastr.error(
-        "Lỗi xử lý hợp đồng: " + (err.response?.data?.message || err.message),
-      );
+      showToast("error", "Lỗi xử lý", "Lỗi xử lý hợp đồng: " + (err.response?.data?.message || err.message));
     } finally {
       setSubmitting(false);
     }
@@ -1581,20 +1600,12 @@ const SendContractToGuest = () => {
                                                 data.id,
                                                 { shouldValidate: true },
                                               );
-                                            toastr.success(
-                                              "Đã nhận diện và điền tự động dữ liệu CCCD thành công!",
-                                            );
+                                            showToast("success", "Thành công", "Đã nhận diện và điền tự động dữ liệu CCCD thành công!");
                                           } else {
-                                            toastr.warning(
-                                              "Không thể nhận diện CCCD. Vui lòng thử lại với ảnh rõ nét hơn.",
-                                            );
+                                            showToast("warning", "Cảnh báo", "Không thể nhận diện CCCD. Vui lòng thử lại với ảnh rõ nét hơn.");
                                           }
                                         } catch (err: any) {
-                                          toastr.error(
-                                            "Lỗi khi kết nối tới FPT.AI: " +
-                                            (err.response?.data?.errorMessage ||
-                                              err.message),
-                                          );
+                                          showToast("error", "Lỗi OCR", "Lỗi khi kết nối tới FPT.AI: " + (err.response?.data?.errorMessage || err.message));
                                         }
                                         // Reset file input
                                         const fileInput = document.getElementById(
@@ -2731,22 +2742,34 @@ const SendContractToGuest = () => {
               >
                 {isBookingRequest ? "Quay lại" : "Hủy bỏ"}
               </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                size="large"
-                disabled={!selectedRoom || (!selectedDeposit?.isBookingRequest && selectedRoom.status !== "Deposited" && selectedRoom.contractRenewalStatus !== "declined") || submitting}
-              >
-                {submitting ? (
-                  <>
-                    <CircularProgress size={20} sx={{ color: "#fff", mr: 1 }} />
-                    Đang gửi cho khách...
-                  </>
-                ) : (
-                  "Gửi cho Khách hàng"
-                )}
-              </Button>
+              {isBookingRequest && selectedDeposit?.status === "Pending" && (
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={() => setShowRejectModal(true)}
+                  disabled={submitting || isRejecting}
+                >
+                  Từ chối
+                </Button>
+              )}
+              {(!isBookingRequest || selectedDeposit?.status === "Pending") && (
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  disabled={!selectedRoom || (!selectedDeposit?.isBookingRequest && selectedRoom.status !== "Deposited" && selectedRoom.contractRenewalStatus !== "declined") || submitting}
+                >
+                  {submitting ? (
+                    <>
+                      <CircularProgress size={20} sx={{ color: "#fff", mr: 1 }} />
+                      Đang gửi cho khách...
+                    </>
+                  ) : (
+                    "Gửi cho Khách hàng"
+                  )}
+                </Button>
+              )}
             </Box>
           </Container>
         </fieldset>
@@ -2760,6 +2783,50 @@ const SendContractToGuest = () => {
         roomId={selectedRoom?._id}
         serifFont={'"Times New Roman", Times, serif'}
       />
+
+      {/* Reject Modal using br-modal styles */}
+      {showRejectModal && (
+        <div className="br-modal-overlay" onClick={() => !isRejecting && setShowRejectModal(false)} style={{ zIndex: 1300 }}>
+          <div className="br-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="br-modal-header">
+              <XCircle size={20} className="br-modal-icon--reject" />
+              <h3>Từ Chối Yêu Cầu</h3>
+            </div>
+            <div className="br-modal-body">
+              <p className="br-modal-desc">
+                Bạn đang từ chối yêu cầu của <strong>{selectedDeposit?.name || "khách hàng"}</strong>.
+                Khách hàng sẽ được thông báo qua email.
+              </p>
+              <label className="br-modal-label">Lý do từ chối (không bắt buộc)</label>
+              <textarea
+                className="br-modal-textarea"
+                rows={3}
+                placeholder="VD: Phòng đã được xét duyệt cho khách khác, thông tin không hợp lệ..."
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                disabled={isRejecting}
+              />
+            </div>
+            <div className="br-modal-footer">
+              <button
+                className="br-btn br-btn--outline"
+                onClick={() => setShowRejectModal(false)}
+                disabled={isRejecting}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                className="br-btn br-btn--reject"
+                onClick={handleReject}
+                disabled={isRejecting}
+              >
+                <XCircle size={15} />
+                {isRejecting ? "Đang xử lý..." : "Xác nhận từ chối"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </LocalizationProvider>
   );
 };

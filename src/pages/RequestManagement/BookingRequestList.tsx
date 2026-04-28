@@ -2,7 +2,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { bookingRequestService } from "../../services/bookingRequestService";
 import { format } from "date-fns";
+import { vi } from "date-fns/locale/vi";
 import api from "../../services/api";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import {
   Search,
   RefreshCw,
@@ -18,6 +22,7 @@ import {
   Users,
   Ban,
 } from "lucide-react";
+import { useToast } from "../../components/common/Toast";
 import "./BookingRequestList.css";
 
 interface Room {
@@ -91,9 +96,21 @@ const BookingRequestList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // --- Reject modal ---
+  const [rejectModal, setRejectModal] = useState<{ open: boolean; reqId: string; reqName: string }>({
+    open: false, reqId: "", reqName: "",
+  });
+  const [rejectReason, setRejectReason] = useState("");
+  const [isRejecting, setIsRejecting] = useState(false);
+
+  const { showToast } = useToast();
+
   const [filterName, setFilterName] = useState("");
   const [filterRoom, setFilterRoom] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterTimeRange, setFilterTimeRange] = useState("1_month");
+  const [customStartDate, setCustomStartDate] = useState<Date | null>(null);
+  const [customEndDate, setCustomEndDate] = useState<Date | null>(null);
 
   // Which room groups are expanded
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set());
@@ -178,7 +195,24 @@ const BookingRequestList = () => {
       req.roomId?.name?.toLowerCase().includes(filterRoom.toLowerCase());
     const matchStatus =
       filterStatus === "all" || req.status === filterStatus;
-    return matchName && matchRoom && matchStatus;
+      
+    // Filter by time range
+    let matchDate = true;
+    if (filterTimeRange === "custom" && req.createdAt) {
+      const reqDate = new Date(req.createdAt).setHours(0, 0, 0, 0);
+      const start = customStartDate ? new Date(customStartDate).setHours(0, 0, 0, 0) : null;
+      const end = customEndDate ? new Date(customEndDate).setHours(23, 59, 59, 999) : null;
+      
+      if (start && reqDate < start) matchDate = false;
+      if (end && reqDate > end) matchDate = false;
+    } else if (filterTimeRange !== "all" && req.createdAt) {
+      const months = parseInt(filterTimeRange.split("_")[0], 10);
+      const cutoffDate = new Date();
+      cutoffDate.setMonth(cutoffDate.getMonth() - months);
+      matchDate = new Date(req.createdAt) >= cutoffDate;
+    }
+
+    return matchName && matchRoom && matchStatus && matchDate;
   });
 
   // Group by room, then sub-group each room by lease term (startDate month+year)
@@ -281,6 +315,30 @@ const BookingRequestList = () => {
     navigate("/manager/booking-contracts/send", {
       state: { bookingRequestId },
     });
+  };
+
+  const openRejectModal = (req: BookingRequest) => {
+    setRejectModal({ open: true, reqId: req._id, reqName: getReqName(req) });
+    setRejectReason("");
+  };
+
+  const handleReject = async () => {
+    if (!rejectModal.reqId) return;
+    setIsRejecting(true);
+    try {
+      await api.patch(`/booking-requests/${rejectModal.reqId}/status`, {
+        status: "Rejected",
+        reason: rejectReason.trim() || undefined,
+      });
+      setRejectModal({ open: false, reqId: "", reqName: "" });
+      setRejectReason("");
+      showToast("success", "Từ chối thành công", "Đã từ chối yêu cầu và gửi email thông báo.");
+      fetchRequests(true);
+    } catch (err: any) {
+      showToast("error", "Từ chối thất bại", err?.response?.data?.message || "Vui lòng thử lại.");
+    } finally {
+      setIsRejecting(false);
+    }
   };
 
   const pendingCount = requests.filter((r) => r.status === "Pending").length;
@@ -455,6 +513,74 @@ const BookingRequestList = () => {
             <option value="Rejected">Từ chối / Bị hủy</option>
             <option value="Expired">Hết hạn</option>
           </select>
+
+          <select
+            className="br-custom-select"
+            value={filterTimeRange}
+            onChange={(e) => setFilterTimeRange(e.target.value)}
+            title="Lọc theo thời gian gửi yêu cầu"
+          >
+            <option value="1_month">1 tháng qua</option>
+            <option value="3_months">3 tháng qua</option>
+            <option value="6_months">6 tháng qua</option>
+            <option value="12_months">1 năm qua</option>
+            <option value="custom">Tùy chọn khoảng thời gian</option>
+            <option value="all">Tất cả thời gian</option>
+          </select>
+
+          {filterTimeRange === "custom" && (
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
+                <DatePicker
+                  value={customStartDate}
+                  onChange={(val) => setCustomStartDate(val)}
+                  format="dd/MM/yyyy"
+                  slotProps={{
+                    textField: {
+                      variant: "standard",
+                      placeholder: "Từ ngày",
+                      sx: {
+                        width: 120,
+                        "& .MuiInputBase-root": {
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: "14px",
+                          color: "#1a1a1a",
+                          marginTop: 0,
+                          "&:before": { borderBottom: "1.5px solid #e0e0e0" },
+                          "&:hover:not(.Mui-disabled):before": { borderBottom: "1.5px solid #3579C6" },
+                          "&:after": { borderBottom: "2px solid #3579C6" },
+                        },
+                      }
+                    }
+                  }}
+                />
+                <span style={{ color: "var(--br-text-muted)" }}>-</span>
+                <DatePicker
+                  value={customEndDate}
+                  onChange={(val) => setCustomEndDate(val)}
+                  format="dd/MM/yyyy"
+                  slotProps={{
+                    textField: {
+                      variant: "standard",
+                      placeholder: "Đến ngày",
+                      sx: {
+                        width: 120,
+                        "& .MuiInputBase-root": {
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: "14px",
+                          color: "#1a1a1a",
+                          marginTop: 0,
+                          "&:before": { borderBottom: "1.5px solid #e0e0e0" },
+                          "&:hover:not(.Mui-disabled):before": { borderBottom: "1.5px solid #3579C6" },
+                          "&:after": { borderBottom: "2px solid #3579C6" },
+                        },
+                      }
+                    }
+                  }}
+                />
+              </LocalizationProvider>
+            </div>
+          )}
         </div>
 
         <div className="br-toolbar-right">
@@ -660,19 +786,38 @@ const BookingRequestList = () => {
                                     {isLoser || req.status === "Expired" || req.status === "Rejected" ? (
                                       <span className="br-no-action">—</span>
                                     ) : req.status === "Processed" ? (
-                                      <span className="br-status-badge br-status-badge--processed" style={{ fontSize: "11px" }}>
-                                        <CheckCircle2 size={12} /> Hoàn tất
-                                      </span>
+                                      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                                        <button
+                                          className="br-btn br-btn--primary"
+                                          onClick={() => req.contractId ? navigate(`/manager/contracts/${req.contractId}`) : showToast("warning", "Cảnh báo", "Dữ liệu hợp đồng cũ, vui lòng tìm thủ công bên danh sách hợp đồng.")}
+                                          title="Xem chi tiết hợp đồng đã tạo"
+                                        >
+                                          <Eye size={15} />
+                                          Xem Hợp Đồng
+                                        </button>
+                                      </div>
                                     ) : (
-                                      <button
-                                        className="br-btn br-btn--primary"
-                                        onClick={() => handleReview(req._id)}
-                                      >
-                                        <Eye size={15} />
-                                        {req.status === "Awaiting Payment"
-                                          ? "Chờ TT..."
-                                          : "Xem & Chốt HĐ"}
-                                      </button>
+                                      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                                        <button
+                                          className="br-btn br-btn--primary"
+                                          onClick={() => handleReview(req._id)}
+                                        >
+                                          <Eye size={15} />
+                                          {req.status === "Awaiting Payment"
+                                            ? "Chờ TT..."
+                                            : "Xem & Chốt HĐ"}
+                                        </button>
+                                        {req.status === "Pending" && (
+                                          <button
+                                            className="br-btn br-btn--reject"
+                                            onClick={() => openRejectModal(req)}
+                                            title="Từ chối yêu cầu này"
+                                          >
+                                            <XCircle size={15} />
+                                            Từ chối
+                                          </button>
+                                        )}
+                                      </div>
                                     )}
                                   </td>
                                 </tr>
@@ -689,6 +834,50 @@ const BookingRequestList = () => {
           })
         )}
       </div>
+
+      {/* ===== REJECT MODAL ===== */}
+      {rejectModal.open && (
+        <div className="br-modal-overlay" onClick={() => !isRejecting && setRejectModal({ open: false, reqId: "", reqName: "" })}>
+          <div className="br-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="br-modal-header">
+              <XCircle size={20} className="br-modal-icon--reject" />
+              <h3>Từ Chối Yêu Cầu</h3>
+            </div>
+            <div className="br-modal-body">
+              <p className="br-modal-desc">
+                Bạn đang từ chối yêu cầu của <strong>{rejectModal.reqName}</strong>.
+                Khách hàng sẽ được thông báo qua email.
+              </p>
+              <label className="br-modal-label">Lý do từ chối (không bắt buộc)</label>
+              <textarea
+                className="br-modal-textarea"
+                rows={3}
+                placeholder="VD: Phòng đã được xét duyệt cho khách khác, thông tin không hợp lệ..."
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                disabled={isRejecting}
+              />
+            </div>
+            <div className="br-modal-footer">
+              <button
+                className="br-btn br-btn--outline"
+                onClick={() => setRejectModal({ open: false, reqId: "", reqName: "" })}
+                disabled={isRejecting}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                className="br-btn br-btn--reject"
+                onClick={handleReject}
+                disabled={isRejecting}
+              >
+                <XCircle size={15} />
+                {isRejecting ? "Đang xử lý..." : "Xác nhận từ chối"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
