@@ -380,9 +380,7 @@ const BookingRequestList = () => {
               <div className="br-title-text">
                 <h2>Khách Đặt Phòng Online</h2>
                 <p className="br-subtitle">
-                  Quản lý các yêu cầu đặt phòng. Mỗi phòng có thể có nhiều yêu
-                  cầu — khi 1 yêu cầu được chốt, các yêu cầu khác cùng phòng
-                  sẽ tự động bị hủy.
+                  Quản lý các yêu cầu ký hợp đồng từ khách hàng.
                 </p>
               </div>
             </div>
@@ -499,12 +497,12 @@ const BookingRequestList = () => {
               <div
                 key={group.roomId}
                 className={`br-room-group ${group.hasActive && !group.hasWinner
-                    ? "br-room-group--active"
-                    : group.hasWinner && !group.hasActive
-                      ? "br-room-group--won"
-                      : group.hasWinner && group.hasActive
-                        ? "br-room-group--multi"
-                        : ""
+                  ? "br-room-group--active"
+                  : group.hasWinner && !group.hasActive
+                    ? "br-room-group--won"
+                    : group.hasWinner && group.hasActive
+                      ? "br-room-group--multi"
+                      : ""
                   }`}
               >
                 {/* Room group header */}
@@ -563,10 +561,10 @@ const BookingRequestList = () => {
                         {/* Term header — only show when multiple terms exist */}
                         {group.leaseTerms.length > 1 && (
                           <div className={`br-lease-term-header ${term.hasWinner && !term.hasActive
-                              ? "br-lease-term-header--won"
-                              : term.hasActive
-                                ? "br-lease-term-header--active"
-                                : "br-lease-term-header--closed"
+                            ? "br-lease-term-header--won"
+                            : term.hasActive
+                              ? "br-lease-term-header--active"
+                              : "br-lease-term-header--closed"
                             }`}>
                             <span className="br-lease-term-label">
                               {term.hasWinner && !term.hasActive ? (
@@ -670,7 +668,7 @@ const BookingRequestList = () => {
                                       >
                                         <Eye size={15} />
                                         {req.status === "Awaiting Payment"
-                                          ? "Chờ TT..."
+                                          ? "Chờ Thanh Toán"
                                           : "Xem & Chốt HĐ"}
                                       </button>
                                     )}

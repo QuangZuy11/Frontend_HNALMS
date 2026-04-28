@@ -17,12 +17,12 @@ interface Complaint {
   _id: string;
   content: string;
   category:
-    | 'Tiếng ồn'
-    | 'Vệ sinh'
-    | 'An ninh'
-    | 'Cơ sở vật chất'
-    | 'Thái độ phục vụ'
-    | 'Khác';
+  | 'Tiếng ồn'
+  | 'Vệ sinh'
+  | 'An ninh'
+  | 'Cơ sở vật chất'
+  | 'Thái độ phục vụ'
+  | 'Khác';
   priority: 'Low' | 'Medium' | 'High';
   status: 'Pending' | 'Processing' | 'Done' | 'Rejected';
   response?: string | null;
@@ -485,7 +485,7 @@ export default function ComplaintRequestList() {
               <th className="cell-tenant">Cư dân</th>
               <th className="cell-room">Phòng</th>
               <th className="cell-category">Loại</th>
-              <th className="cell-priority">Mức độ</th>
+              {/* <th className="cell-priority">Mức độ</th> */}
               <th className="cell-status">Trạng thái</th>
               <th className="cell-date">Ngày tạo</th>
               <th className="cell-actions">Thao tác</th>
@@ -501,12 +501,12 @@ export default function ComplaintRequestList() {
                     <span className="room-badge">{c.room?.name || c.room?.roomCode || '-'}</span>
                   </td>
                   <td className="cell-category">{c.category}</td>
-                  <td className="cell-priority">
+                  {/* <td className="cell-priority">
                     <span className={`priority-badge priority-${(c.priority || 'Low').toLowerCase()}`}>
                       {getPriorityIcon(c.priority || 'Low')}
                       {c.priority === 'High' ? 'Cao' : c.priority === 'Medium' ? 'Trung bình' : 'Thấp'}
                     </span>
-                  </td>
+                  </td> */}
                   <td className="cell-status">
                     <span className={`status-badge status-${c.status.toLowerCase()}`}>
                       {getStatusIcon(c.status)}
@@ -597,7 +597,7 @@ export default function ComplaintRequestList() {
                       <span className="rr-label">Loại</span>
                       <span className="rr-value">{selectedComplaint.category}</span>
                     </div>
-                    <div className="rr-row">
+                    {/* <div className="rr-row">
                       <span className="rr-label">Mức độ</span>
                       <span className="rr-value">
                         <span className={`priority-badge priority-${(selectedComplaint.priority || 'Low').toLowerCase()}`}>
@@ -605,7 +605,7 @@ export default function ComplaintRequestList() {
                           {selectedComplaint.priority === 'High' ? 'Cao' : selectedComplaint.priority === 'Medium' ? 'Trung bình' : 'Thấp'}
                         </span>
                       </span>
-                    </div>
+                    </div> */}
                     <div className="rr-row">
                       <span className="rr-label">Ngày tạo</span>
                       <span className="rr-value">{formatDate(selectedComplaint.createdDate)}</span>
