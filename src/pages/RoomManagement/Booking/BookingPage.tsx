@@ -282,29 +282,57 @@ export default function BookingPage() {
     }
   }, [minDuration]);
 
-  // ---------- Validation (đồng bộ với CreateContract) ----------
+  // ---------- Validation ----------
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
 
-    if (!fullName.trim() || fullName.trim().length < 2)
+    // Họ tên: ít nhất 2 ký tự, không chứa số hay ký tự đặc biệt
+    const nameTrimmed = fullName.trim();
+    if (!nameTrimmed || nameTrimmed.length < 2)
       newErrors.fullName = "Tên phải ít nhất 2 ký tự";
+    else if (/[0-9!@#$%^&*()_+=\[\]{};':"\\|,.<>\/?`~]/.test(nameTrimmed))
+      newErrors.fullName = "Họ tên không được chứa số hoặc ký tự đặc biệt";
 
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      newErrors.email = "Email không hợp lệ";
+    // Email: regex chặt — local@domain.ext (ext ≥ 2 ký tự, không có ký tự đặc biệt liên tiếp)
+    const emailTrimmed = email.trim();
+    const emailRegex = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+    if (!emailTrimmed)
+      newErrors.email = "Email là bắt buộc";
+    else if (!emailRegex.test(emailTrimmed))
+      newErrors.email = "Email không hợp lệ (VD: ten@gmail.com)";
+    else if (emailTrimmed.includes(".."))
+      newErrors.email = "Email không được có hai dấu chấm liên tiếp";
 
-    // SĐT: 10 chữ số, bắt đầu bằng 0
-    if (!phone.trim() || !/^0[0-9]{9}$/.test(phone.trim()))
-      newErrors.phone = "Số điện thoại phải gồm 10 chữ số, bắt đầu bằng 0";
+    // SĐT: 10 hoặc 11 chữ số, bắt đầu bằng 0
+    const phoneTrimmed = phone.trim();
+    if (!phoneTrimmed)
+      newErrors.phone = "Số điện thoại là bắt buộc";
+    else if (!/^0[0-9]{9,10}$/.test(phoneTrimmed))
+      newErrors.phone = "Số điện thoại phải gồm 10–11 chữ số, bắt đầu bằng 0";
 
-    // CCCD: 12 chữ số
-    if (!idCard.trim() || !/^[0-9]{12}$/.test(idCard.replace(/\s/g, "")))
+    // CCCD: đúng 12 chữ số
+    const cccdTrimmed = idCard.replace(/\s/g, "");
+    if (!cccdTrimmed)
+      newErrors.idCard = "Số CCCD là bắt buộc";
+    else if (!/^[0-9]{12}$/.test(cccdTrimmed))
       newErrors.idCard = "CCCD phải gồm đúng 12 chữ số";
 
-    if (!dob) newErrors.dob = "Ngày sinh là bắt buộc";
+    // Ngày sinh: bắt buộc + tuổi tối thiểu 16
+    if (!dob) {
+      newErrors.dob = "Ngày sinh là bắt buộc";
+    } else {
+      const dobDate = new Date(dob);
+      const minAge16 = new Date();
+      minAge16.setFullYear(minAge16.getFullYear() - 16);
+      if (dobDate > minAge16)
+        newErrors.dob = "Người đặt cọc phải đủ 16 tuổi trở lên";
+    }
 
+    // Địa chỉ: ít nhất 5 ký tự
     if (!address.trim() || address.trim().length < 5)
       newErrors.address = "Hộ khẩu thường trú quá ngắn (ít nhất 5 ký tự)";
 
+    // Ngày vào ở
     if (!startDate) {
       newErrors.startDate = "Vui lòng chọn ngày muốn vào ở";
     } else {
@@ -314,8 +342,6 @@ export default function BookingPage() {
       } else if (sd > maxDateLimit) {
         newErrors.startDate = "Không được chọn ngày vào ở quá 6 tháng";
       } else {
-        // Tính cutoff: nếu có hợp đồng inactive → cutoff = ngày 1 của (nextInactiveContractStart - 1 tháng)
-        // Ngược lại → cutoff = null
         const inactiveStart = room?.nextInactiveContractStart
           ? new Date(room.nextInactiveContractStart)
           : null;
@@ -328,44 +354,42 @@ export default function BookingPage() {
             })()
           : null;
 
-        // Nếu có cutoffDate và startDate > cutoffDate → báo lỗi
         if (cutoffDate && sd > cutoffDate) {
           newErrors.startDate =
             `Ngày vào ở phải ≤ ${cutoffDate.toLocaleDateString("vi-VN")} (tối thiểu 1 tháng trước kỳ thuê kế tiếp).`;
         } else {
-          // Rule chung: Các tháng SAU tháng của minStartDateStr chỉ được phép chọn ngày 1
           const minDateObj = new Date(minStartDateStr);
-          const baseMonth =
-            minDateObj.getFullYear() * 12 + minDateObj.getMonth();
+          const baseMonth = minDateObj.getFullYear() * 12 + minDateObj.getMonth();
           const sdMonth = sd.getFullYear() * 12 + sd.getMonth();
-
           if (sdMonth > baseMonth && sd.getDate() !== 1) {
-            newErrors.startDate =
-              "Từ các tháng tiếp theo chỉ được phép chọn ngày 1 đầu tháng";
+            newErrors.startDate = "Từ các tháng tiếp theo chỉ được phép chọn ngày 1 đầu tháng";
           }
         }
       }
     }
 
+    // Số tháng thuê
     const durVal = Number(duration);
     if (!duration || durVal < 1)
       newErrors.duration = "Số tháng thuê tối thiểu là 1";
     else if (!isSecondContract && durVal < 6)
       newErrors.duration = "Hợp đồng mới phải thuê tối thiểu 6 tháng";
 
-    // validate co-residents
+    // Người ở cùng
     const coErrors: { fullName?: string; cccd?: string }[] = coResidents.map(
       (cr, i) => {
         const e: { fullName?: string; cccd?: string } = {};
-        if (!cr.fullName.trim() || cr.fullName.trim().length < 2)
+        const crName = cr.fullName.trim();
+        if (!crName || crName.length < 2)
           e.fullName = "Tên phải ít nhất 2 ký tự";
-        if (!cr.cccd.trim() || !/^[0-9]{12}$/.test(cr.cccd.replace(/\s/g, "")))
+        else if (/[0-9!@#$%^&*()_+=\[\]{};':"\\|,.<>\/?`~]/.test(crName))
+          e.fullName = "Họ tên không được chứa số hoặc ký tự đặc biệt";
+        const crCccd = cr.cccd.replace(/\s/g, "");
+        if (!crCccd || !/^[0-9]{12}$/.test(crCccd))
           e.cccd = "CCCD phải đúng 12 chữ số";
-        else if (cr.cccd === idCard.trim())
+        else if (crCccd === cccdTrimmed)
           e.cccd = "CCCD người ở cùng không được trùng chủ hợp đồng";
-        else if (
-          coResidents.some((other, j) => j !== i && other.cccd === cr.cccd)
-        )
+        else if (coResidents.some((other, j) => j !== i && other.cccd.replace(/\s/g, "") === crCccd))
           e.cccd = "CCCD bị trùng với người ở cùng khác";
         return e;
       },
@@ -379,6 +403,74 @@ export default function BookingPage() {
       Object.keys(newErrors).filter((k) => k !== "coResidents").length === 0 &&
       !coErrors.some((e) => e.fullName || e.cccd)
     );
+  };
+
+  // ---------- Validate từng field khi blur ----------
+  const validateField = (field: keyof FormErrors) => {
+    setErrors((prev) => {
+      const next = { ...prev };
+      switch (field) {
+        case "fullName": {
+          const v = fullName.trim();
+          if (!v || v.length < 2) next.fullName = "Tên phải ít nhất 2 ký tự";
+          else if (/[0-9!@#$%^&*()_+=\[\]{};':"\\|,.<>\/?`~]/.test(v))
+            next.fullName = "Họ tên không được chứa số hoặc ký tự đặc biệt";
+          else delete next.fullName;
+          break;
+        }
+        case "email": {
+          const v = email.trim();
+          const re = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+          if (!v) next.email = "Email là bắt buộc";
+          else if (!re.test(v)) next.email = "Email không hợp lệ (VD: ten@gmail.com)";
+          else if (v.includes("..")) next.email = "Email không được có hai dấu chấm liên tiếp";
+          else delete next.email;
+          break;
+        }
+        case "phone": {
+          const v = phone.trim();
+          if (!v) next.phone = "Số điện thoại là bắt buộc";
+          else if (!/^0[0-9]{9,10}$/.test(v))
+            next.phone = "Số điện thoại phải gồm 10–11 chữ số, bắt đầu bằng 0";
+          else delete next.phone;
+          break;
+        }
+        case "idCard": {
+          const v = idCard.replace(/\s/g, "");
+          if (!v) next.idCard = "Số CCCD là bắt buộc";
+          else if (!/^[0-9]{12}$/.test(v)) next.idCard = "CCCD phải gồm đúng 12 chữ số";
+          else delete next.idCard;
+          break;
+        }
+        case "dob": {
+          if (!dob) {
+            next.dob = "Ngày sinh là bắt buộc";
+          } else {
+            const dobDate = new Date(dob);
+            const minAge = new Date();
+            minAge.setFullYear(minAge.getFullYear() - 16);
+            if (dobDate > minAge) next.dob = "Người đặt cọc phải đủ 16 tuổi trở lên";
+            else delete next.dob;
+          }
+          break;
+        }
+        case "address": {
+          if (!address.trim() || address.trim().length < 5)
+            next.address = "Hộ khẩu thường trú quá ngắn (ít nhất 5 ký tự)";
+          else delete next.address;
+          break;
+        }
+        case "duration": {
+          const durVal = Number(duration);
+          if (!duration || durVal < 1) next.duration = "Số tháng thuê tối thiểu là 1";
+          else if (!isSecondContract && durVal < 6)
+            next.duration = "Hợp đồng mới phải thuê tối thiểu 6 tháng";
+          else delete next.duration;
+          break;
+        }
+      }
+      return next;
+    });
   };
 
   // ---------- Submit ----------
@@ -627,7 +719,11 @@ export default function BookingPage() {
                         className={`bkp-input ${errors.fullName ? "error" : ""}`}
                         placeholder="Nguyễn Văn A"
                         value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
+                        onChange={(e) => {
+                          setFullName(e.target.value);
+                          if (errors.fullName) setErrors((prev) => ({ ...prev, fullName: undefined }));
+                        }}
+                        onBlur={() => validateField("fullName")}
                       />
                       {errors.fullName && (
                         <span className="bkp-error">{errors.fullName}</span>
@@ -649,18 +745,23 @@ export default function BookingPage() {
                           Email <span className="bkp-required">*</span>
                         </label>
                         <input
-                          type="email"
+                          type="text"
+                          inputMode="email"
+                          autoComplete="email"
                           className={`bkp-input ${errors.email || duplicateErrors.email ? "error" : ""}`}
-                          placeholder="email@example.com"
+                          placeholder="ten@gmail.com"
                           value={email}
                           onChange={(e) => {
-                            setEmail(e.target.value);
+                            // Loại bỏ khoảng trắng ngay khi nhập
+                            setEmail(e.target.value.replace(/\s/g, ""));
+                            if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
                             if (duplicateErrors.email)
                               setDuplicateErrors((prev) => ({
                                 ...prev,
                                 email: undefined,
                               }));
                           }}
+                          onBlur={() => validateField("email")}
                         />
                         {(errors.email || duplicateErrors.email) && (
                           <span className="bkp-error">
@@ -682,17 +783,35 @@ export default function BookingPage() {
                         </label>
                         <input
                           type="text"
+                          inputMode="numeric"
+                          autoComplete="tel"
+                          maxLength={11}
                           className={`bkp-input ${errors.phone || duplicateErrors.phone ? "error" : ""}`}
                           placeholder="0912345678"
                           value={phone}
                           onChange={(e) => {
-                            setPhone(e.target.value);
+                            const raw = e.target.value.replace(/\D/g, "");
+                            const val = raw.length > 11 ? raw.slice(0, 11) : raw;
+                            setPhone(val);
+                            // Validate ngay lập tức
+                            if (!val) {
+                              setErrors((prev) => ({ ...prev, phone: undefined }));
+                            } else if (raw.length > 11) {
+                              setErrors((prev) => ({ ...prev, phone: "SĐT không được vượt quá 11 chữ số" }));
+                            } else if (val.length < 10) {
+                              setErrors((prev) => ({ ...prev, phone: "Số điện thoại phải gồm 10–11 chữ số" }));
+                            } else if (!val.startsWith("0")) {
+                              setErrors((prev) => ({ ...prev, phone: "Số điện thoại phải bắt đầu bằng 0" }));
+                            } else {
+                              setErrors((prev) => ({ ...prev, phone: undefined }));
+                            }
                             if (duplicateErrors.phone)
                               setDuplicateErrors((prev) => ({
                                 ...prev,
                                 phone: undefined,
                               }));
                           }}
+                          onBlur={() => validateField("phone")}
                         />
                         {(errors.phone || duplicateErrors.phone) && (
                           <span className="bkp-error">
@@ -717,17 +836,32 @@ export default function BookingPage() {
                       </label>
                       <input
                         type="text"
+                        inputMode="numeric"
+                        maxLength={12}
                         className={`bkp-input ${errors.idCard || duplicateErrors.cccd ? "error" : ""}`}
                         placeholder="012345678901"
                         value={idCard}
                         onChange={(e) => {
-                          setIdCard(e.target.value);
+                          const raw = e.target.value.replace(/\D/g, "");
+                          const val = raw.length > 12 ? raw.slice(0, 12) : raw;
+                          setIdCard(val);
+                          // Validate ngay lập tức
+                          if (!val) {
+                            setErrors((prev) => ({ ...prev, idCard: undefined }));
+                          } else if (raw.length > 12) {
+                            setErrors((prev) => ({ ...prev, idCard: "CCCD không được vượt quá 12 chữ số" }));
+                          } else if (val.length < 12) {
+                            setErrors((prev) => ({ ...prev, idCard: "CCCD phải gồm đúng 12 chữ số" }));
+                          } else {
+                            setErrors((prev) => ({ ...prev, idCard: undefined }));
+                          }
                           if (duplicateErrors.cccd)
                             setDuplicateErrors((prev) => ({
                               ...prev,
                               cccd: undefined,
                             }));
                         }}
+                        onBlur={() => validateField("idCard")}
                       />
                       {(errors.idCard || duplicateErrors.cccd) && (
                         <span className="bkp-error">
@@ -762,6 +896,7 @@ export default function BookingPage() {
                             format="dd/MM/yyyy"
                             shouldDisableFutureDates
                             maxDate={new Date()}
+                            onClose={() => validateField("dob")}
                             slotProps={{
                               textField: {
                                 variant: "standard",
@@ -816,7 +951,11 @@ export default function BookingPage() {
                           className={`bkp-input ${errors.address ? "error" : ""}`}
                           placeholder="Địa chỉ..."
                           value={address}
-                          onChange={(e) => setAddress(e.target.value)}
+                          onChange={(e) => {
+                            setAddress(e.target.value);
+                            if (errors.address) setErrors((prev) => ({ ...prev, address: undefined }));
+                          }}
+                          onBlur={() => validateField("address")}
                         />
                         {errors.address && (
                           <span className="bkp-error">{errors.address}</span>
@@ -979,6 +1118,7 @@ export default function BookingPage() {
                             );
                             setDuration(v);
                           }}
+                          onBlur={() => validateField("duration")}
                         />
                         {minDuration > 1 && (
                           <span className="bkp-hint">

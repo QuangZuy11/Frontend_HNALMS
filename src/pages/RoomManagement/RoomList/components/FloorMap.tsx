@@ -52,7 +52,7 @@ const ROOM_TYPE_COLORS = [
   "#a78bfa", // Violet-400  (Loại 4)
   "#fbbf24", // Amber-400   (Loại 5)
   "#22d3ee", // Cyan-400    (Loại 6)
-  "#d597b7ff", // Pink-400    (Loại 7)
+  "#ec4899", // Pink-500    (Loại 7)
   "#a3e635", // Lime-400    (Loại 8)
 ];
 

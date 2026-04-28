@@ -53,13 +53,13 @@ interface RoomFiltersProps {
   onResetFilters: () => void;
 }
 
-// Helper to format price short (e.g. 5000000 -> 5tr)
+// Helper to format price: 2000→2k, 2900→2.9k, 2000000→2tr, 2500000→2.5tr
 const formatPriceShort = (price?: number) => {
   if (!price) return "";
   if (price >= 1000000) {
-    return `${(price / 1000000).toFixed(1).replace(/\.0$/, "")}tr`;
+    return `${parseFloat((price / 1000000).toFixed(1))}tr`;
   }
-  return `${(price / 1000).toFixed(0)}k`;
+  return `${parseFloat((price / 1000).toFixed(1))}k`;
 };
 
 // ... (Button, Card components unchanged) ...
