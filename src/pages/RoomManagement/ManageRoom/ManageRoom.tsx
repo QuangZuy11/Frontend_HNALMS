@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import axios from "axios";
 import { Building as BuildingIcon } from "lucide-react";
 
-import toastr from "toastr";
-import "toastr/build/toastr.min.css";
+import { useToast } from "../../../components/common/Toast";
 
 // Floor Maps
 import FloorMap from "../RoomList/components/FloorMap";
@@ -78,6 +77,7 @@ interface ManageRoomProps {
 }
 
 const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
+  const { showToast } = useToast();
   // --- States ---
   const [rooms, setRooms] = useState<Room[]>([]);
   const [floors, setFloors] = useState<Floor[]>([]);
@@ -185,19 +185,13 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       setExpandedFloors(floorsData.map((f: Floor) => f._id));
     } catch (error) {
       console.error("Lỗi tải dữ liệu:", error);
-      toastr.error("Không thể tải dữ liệu từ máy chủ.");
+      showToast("error", "Lỗi hệ thống", "Không thể tải dữ liệu từ máy chủ.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    toastr.options = {
-      closeButton: true,
-      progressBar: true,
-      positionClass: "toast-top-right",
-      timeOut: 3000,
-    };
     fetchData();
   }, []);
 
@@ -368,15 +362,15 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       document.body.appendChild(link);
       link.click();
       link.parentNode?.removeChild(link);
-      toastr.success("Tải file mẫu thành công!");
+      showToast("success", "Thành công", "Tải file mẫu thành công!");
     } catch (error) {
-      toastr.error("Lỗi tải file mẫu.");
+      showToast("error", "Lỗi", "Lỗi tải file mẫu.");
     }
   };
 
   const handleImportSubmit = async () => {
     if (!selectedFile) {
-      toastr.warning("Vui lòng chọn file Excel!");
+      showToast("warning", "Thông báo", "Vui lòng chọn file Excel!");
       return;
     }
 
@@ -388,7 +382,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       const res = await axios.post(`${API_BASE_URL}/excel/import`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      toastr.success(res.data.message || "Nhập file thành công!");
+      showToast("success", "Thành công", res.data.message || "Nhập file thành công!");
       setShowImportModal(false);
       setSelectedFile(null);
       fetchData();
@@ -398,13 +392,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
       const detailErrors = error.response?.data?.errors;
 
       if (detailErrors && detailErrors.length > 0) {
-        toastr.error(
-          `${msg}<br/>- ${detailErrors.join("<br/>- ")}`,
-          "Lỗi Import",
-          { timeOut: 10000, escapeHtml: false },
-        );
+        showToast("error", "Lỗi Import", `${msg}: ${detailErrors.join(", ")}`);
       } else {
-        toastr.error(msg);
+        showToast("error", "Lỗi", msg);
       }
     } finally {
       setLoading(false);
@@ -425,9 +415,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
 
   const handleOpenAdd = () => {
     if (floors.length === 0 || roomTypes.length === 0) {
-      toastr.warning(
-        "Vui lòng tạo Tầng và Loại phòng trước khi thêm phòng mới!",
-      );
+      showToast("warning", "Cảnh báo", "Vui lòng tạo Tầng và Loại phòng trước khi thêm phòng mới!");
       return;
     }
     setIsEditing(false);
@@ -606,9 +594,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const handleToggleActive = (room: Room) => {
     // Không cho vô hiệu hóa phòng đang thuê hoặc đang có cọc
     if (room.isActive && (room.status === "Occupied" || room.status === "Deposited")) {
-      toastr.warning(
-        `Phòng ${room.name} đang ${room.status === "Occupied" ? "có người thuê" : "có tiền cọc"}. Không thể vô hiệu hóa khi phòng đang thuê hoặc có cọc.`,
-      );
+      showToast("warning", "Hạn chế thao tác", `Phòng ${room.name} đang ${room.status === "Occupied" ? "có người thuê" : "có tiền cọc"}. Không thể vô hiệu hóa khi phòng đang thuê hoặc có cọc.`);
       return;
     }
 
@@ -640,20 +626,18 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         await axios.put(`${API_BASE_URL}/rooms/${room._id}`, {
           isActive: !room.isActive,
         });
-        toastr.success(`Đã ${actionText} phòng ${room.name} thành công!`);
+        showToast("success", "Thành công", `Đã ${actionText} phòng ${room.name} thành công!`);
         fetchData();
       } catch (error: any) {
-        toastr.error("Lỗi cập nhật trạng thái: " + error.message);
+        showToast("error", "Lỗi cập nhật", "Lỗi cập nhật trạng thái: " + error.message);
       }
     } else if (confirmModal.action === "DELETE") {
       try {
         await axios.delete(`${API_BASE_URL}/rooms/${room._id}`);
-        toastr.success("Xóa phòng thành công!");
+        showToast("success", "Thành công", "Xóa phòng thành công!");
         fetchData();
       } catch (e: any) {
-        toastr.error(
-          "Lỗi xóa phòng: " + (e.response?.data?.message || e.message),
-        );
+        showToast("error", "Lỗi xóa phòng", e.response?.data?.message || e.message);
       }
     }
 
@@ -671,17 +655,15 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     try {
       if (isEditing && currentRoom) {
         await axios.put(`${API_BASE_URL}/rooms/${currentRoom._id}`, formData);
-        toastr.success("Cập nhật thông tin phòng thành công!");
+        showToast("success", "Thành công", "Cập nhật thông tin phòng thành công!");
       } else {
         await axios.post(`${API_BASE_URL}/rooms`, formData);
-        toastr.success("Thêm phòng mới thành công!");
+        showToast("success", "Thành công", "Thêm phòng mới thành công!");
       }
       setShowModal(false);
       fetchData();
     } catch (error: any) {
-      toastr.error(
-        "Lỗi lưu dữ liệu: " + (error.response?.data?.message || error.message),
-      );
+      showToast("error", "Lỗi lưu dữ liệu", error.response?.data?.message || error.message);
     }
   };
 
@@ -1969,9 +1951,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                 setAllRoomContracts([]);
                 setRoomDeposits([]);
                 setActiveContractIdForLiquidation(null);
-                toastr.success(
-                  "Thanh lý hợp đồng thành công! Phòng đã được giải phóng.",
-                );
+                showToast("success", "Thành công", "Thanh lý hợp đồng thành công! Phòng đã được giải phóng.");
                 fetchData();
               }}
             />
