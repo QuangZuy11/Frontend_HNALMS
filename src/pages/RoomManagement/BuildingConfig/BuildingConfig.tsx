@@ -114,8 +114,9 @@ const BuildingConfig = () => {
 
       setFloors(floorsWithCount);
       setRoomTypes(typeRes.data.data || typeRes.data || []);
-    } catch (error) {
-      showToast('error', "Lỗi dữ liệu", "Không thể tải thông tin cấu hình tòa nhà.");
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.response?.data?.error?.message || "Không thể tải thông tin cấu hình tòa nhà.";
+      showToast('error', "Lỗi dữ liệu", msg);
     } finally {
       setLoading(false);
     }
@@ -159,8 +160,7 @@ const BuildingConfig = () => {
       setShowFloorModal(false);
       fetchData();
     } catch (error: any) {
-      const backendMsg = error.response?.data?.error?.message || error.response?.data?.message || null;
-      const msg = backendMsg || "Không thể lưu thông tin tầng.";
+      const msg = error.response?.data?.message || error.response?.data?.error?.message || "Không thể lưu thông tin tầng.";
       showToast('error', "Lỗi", msg);
     }
   };
@@ -209,16 +209,21 @@ const BuildingConfig = () => {
       });
 
       const url = editingType ? `${API_BASE_URL}/roomtypes/${editingType._id}` : `${API_BASE_URL}/roomtypes`;
-      const method = editingType ? "PUT" : "POST";
+      const method = editingType ? "put" : "post";
 
-      const res = await fetch(url, { method, body: formData });
-      if (!res.ok) throw new Error("Lỗi lưu loại phòng");
+      await axios({
+        method,
+        url,
+        data: formData,
+        headers: { "Content-Type": "multipart/form-data" }
+      });
 
       showToast('success', "Thành công", editingType ? "Đã cập nhật loại phòng." : "Đã thêm loại phòng mới.");
       setShowTypeModal(false);
       fetchData();
     } catch (err: any) {
-      showToast('error', "Lỗi hệ thống", err.message);
+      const msg = err.response?.data?.message || err.response?.data?.error?.message || err.message || "Lỗi lưu loại phòng";
+      showToast('error', "Lỗi hệ thống", msg);
     } finally {
       setLoading(false);
     }
@@ -239,7 +244,8 @@ const BuildingConfig = () => {
       fetchData();
       setShowDeleteModal(false);
     } catch (err: any) {
-      showToast('error', "Lỗi", err.response?.data?.message || "Lỗi khi xóa dữ liệu.");
+      const msg = err.response?.data?.message || err.response?.data?.error?.message || "Lỗi khi xóa dữ liệu.";
+      showToast('error', "Lỗi", msg);
     } finally {
       setLoading(false);
     }
