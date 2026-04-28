@@ -41,6 +41,7 @@ interface Complaint {
     email: string;
     phoneNumber?: string;
     fullname?: string | null;
+    fullName?: string | null;
   } | null;
   room?: {
     _id: string;
@@ -305,6 +306,8 @@ export default function ComplaintRequestList() {
     if (tenantSearch.trim()) {
       const search = normalize(tenantSearch.trim());
       result = result.filter((c) =>
+        normalize(c.tenantId?.fullName || '').includes(search) ||
+        normalize(c.tenantId?.fullname || '').includes(search) ||
         normalize(c.tenantId?.username || '').includes(search) ||
         normalize(c.tenantId?.email || '').includes(search)
       );
@@ -317,9 +320,9 @@ export default function ComplaintRequestList() {
       );
     }
     if (sortOption === 'name-asc') {
-      result.sort((a, b) => (a.tenantId?.fullname || '').localeCompare(b.tenantId?.fullname || ''));
+      result.sort((a, b) => (a.tenantId?.fullName || a.tenantId?.fullname || '').localeCompare(b.tenantId?.fullName || b.tenantId?.fullname || ''));
     } else if (sortOption === 'name-desc') {
-      result.sort((a, b) => (b.tenantId?.fullname || '').localeCompare(a.tenantId?.fullname || ''));
+      result.sort((a, b) => (b.tenantId?.fullName || b.tenantId?.fullname || '').localeCompare(a.tenantId?.fullName || a.tenantId?.fullname || ''));
     }
     return result;
   }, [complaints, statusFilter, categoryFilter, tenantSearch, roomSearch, sortOption]);
@@ -496,7 +499,7 @@ export default function ComplaintRequestList() {
               paginatedComplaints.map((c, index) => (
                 <tr key={c._id}>
                   <td className="cell-stt">{startIndex + index + 1}</td>
-                  <td className="cell-tenant">{c.tenantId?.fullname || c.tenantId?.username || '-'}</td>
+                  <td className="cell-tenant">{c.tenantId?.fullName || c.tenantId?.fullname || '-'}</td>
                   <td className="cell-room">
                     <span className="room-badge">{c.room?.name || c.room?.roomCode || '-'}</span>
                   </td>
@@ -568,11 +571,11 @@ export default function ComplaintRequestList() {
             {/* Profile strip */}
             <div className="rr-profile-strip">
               <div className="rr-avatar">
-                {(selectedComplaint.tenantId?.fullname || selectedComplaint.tenantId?.username || '?').charAt(0).toUpperCase()}
+                {(selectedComplaint.tenantId?.fullName || selectedComplaint.tenantId?.fullname || '?').charAt(0).toUpperCase()}
               </div>
               <div className="rr-profile-info">
                 <div className="rr-profile-name">
-                  {selectedComplaint.tenantId?.fullname || selectedComplaint.tenantId?.username || '-'}
+                  {selectedComplaint.tenantId?.fullName || selectedComplaint.tenantId?.fullname || '-'}
                 </div>
                 <div className="rr-profile-meta">
                   <span className="rr-meta-tag">{selectedComplaint.room?.name || selectedComplaint.room?.roomCode || '-'}</span>

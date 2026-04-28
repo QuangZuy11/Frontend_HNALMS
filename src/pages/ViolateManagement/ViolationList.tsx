@@ -80,11 +80,13 @@ export default function ViolationList() {
     title: string;
     totalAmount: string;
     dueDate: string;
+    images: string;
   }>({
     contractId: '',
     title: '',
     totalAmount: '',
     dueDate: '',
+    images: '',
   });
 
   // Modal states
@@ -182,6 +184,7 @@ export default function ViolationList() {
       title: '',
       totalAmount: '',
       dueDate: '',
+      images: '',
     });
   };
 
@@ -191,6 +194,7 @@ export default function ViolationList() {
       title: '',
       totalAmount: '',
       dueDate: '',
+      images: '',
     };
     let isValid = true;
 
@@ -217,6 +221,11 @@ export default function ViolationList() {
 
     if (!formData.dueDate) {
       errors.dueDate = 'Vui lòng chọn hạn thanh toán';
+      isValid = false;
+    }
+
+    if (uploadedImages.length === 0) {
+      errors.images = 'Vui lòng tải lên ít nhất một ảnh vi phạm';
       isValid = false;
     }
 
@@ -299,6 +308,8 @@ export default function ViolationList() {
       showToast('error', 'Lỗi', 'Không thể upload ảnh vi phạm.');
     } finally {
       setUploadingImages(false);
+      // Clear image error if any images were uploaded
+      setFormErrors(prev => ({ ...prev, images: '' }));
       e.target.value = '';
     }
   };
@@ -848,7 +859,9 @@ export default function ViolationList() {
           </div>
 
           <div className="ms-field">
-            <label className="ms-label">Ảnh vi phạm</label>
+            <label className="ms-label">
+              Ảnh vi phạm <span className="ms-label-required">*</span>
+            </label>
             <div className="ms-input-wrap">
               <input
                 type="file"
@@ -859,6 +872,9 @@ export default function ViolationList() {
                 disabled={uploadingImages}
               />
             </div>
+            {formErrors.images && (
+              <span className="vl-creation-error-text">{formErrors.images}</span>
+            )}
             {uploadingImages && (
               <span className="ms-helper-text">Đang upload ảnh...</span>
             )}
