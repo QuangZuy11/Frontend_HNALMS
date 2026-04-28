@@ -221,10 +221,12 @@
 }
 
 /* ==============================
-   AVAILABLE ROOMS: Unchanged, just ensure clickable
+   AVAILABLE ROOMS: Cyan gradient + clickable
    ============================== */
 .contract-floor-map .room-node.status-available {
   cursor: pointer;
+  background: linear-gradient(145deg, rgb(34, 211, 238) 0%, rgba(34, 211, 238, 0.867) 100%) !important;
+  color: #ffffff;
 }
 
 /* ==============================

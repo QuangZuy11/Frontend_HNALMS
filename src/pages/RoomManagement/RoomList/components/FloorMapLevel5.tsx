@@ -76,6 +76,17 @@ const extractTypeNumber = (typeName: string): number => {
   return match ? parseInt(match[1], 10) : 0;
 };
 
+// Darken a hex color by a given ratio (0–1)
+const darkenColor = (hex: string, amount = 0.18): string => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const dr = Math.max(0, Math.round(r * (1 - amount)));
+  const dg = Math.max(0, Math.round(g * (1 - amount)));
+  const db = Math.max(0, Math.round(b * (1 - amount)));
+  return `#${dr.toString(16).padStart(2, "0")}${dg.toString(16).padStart(2, "0")}${db.toString(16).padStart(2, "0")}`;
+};
+
 // Format room label: "Phòng 501" => "P.501"
 const formatRoomLabel = (name: string): string =>
   name.replace(/^Phòng\s*/i, "P.");
@@ -179,14 +190,14 @@ export default function FloorMapLevel5({
   };
 
   return (
-    <div className="floor-map-container level-5">
-      <div className="map-header">
-        <h3 className="map-title">SƠ ĐỒ {floorName || "TẦNG 5"}</h3>
+    <div className="lv5-container">
+      <div className="lv5-header">
+        <h3 className="lv5-title">SƠ ĐỒ {floorName || "TẦNG 5"}</h3>
 
-        <div className="map-legends-container">
+        <div className="lv5-legends-container">
           {/* Instruction Legend */}
           <div
-            className="map-legend status-legend"
+            className="lv5-legend"
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -194,7 +205,7 @@ export default function FloorMapLevel5({
               flexWrap: "wrap",
             }}
           >
-            <span style={{ fontSize: "0.8rem", color: "#374151" }}>
+            <span style={{ fontSize: "0.8rem", color: "#78350f" }}>
               {legendType === "deposit"
                 ? "Phòng sáng màu = chưa có cọc, click để tạo cọc mới."
                 : legendType === "guest"
@@ -206,7 +217,7 @@ export default function FloorMapLevel5({
             <span
               style={{
                 fontSize: "0.8rem",
-                color: "#374151",
+                color: "#78350f",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "0.35rem",
@@ -219,8 +230,8 @@ export default function FloorMapLevel5({
                   height: "16px",
                   borderRadius: "3px",
                   background:
-                    "repeating-linear-gradient(-50deg, #f8fafc, #f8fafc 4px, #e2e8f0 4px, #e2e8f0 8px)",
-                  border: "1px solid #d1d5db",
+                    "repeating-linear-gradient(-50deg, #fffbeb, #fffbeb 4px, #fef3c7 4px, #fef3c7 8px)",
+                  border: "1px solid #fcd34d",
                 }}
               />
               Đã thuê{legendType === "contract" && " → Click để xem HĐ"}
@@ -232,7 +243,7 @@ export default function FloorMapLevel5({
                 <span
                   style={{
                     fontSize: "0.8rem",
-                    color: "#374151",
+                    color: "#78350f",
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "0.35rem",
@@ -280,7 +291,7 @@ export default function FloorMapLevel5({
                 <span
                   style={{
                     fontSize: "0.8rem",
-                    color: "#374151",
+                    color: "#78350f",
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "0.35rem",
@@ -292,8 +303,8 @@ export default function FloorMapLevel5({
                       width: "16px",
                       height: "16px",
                       borderRadius: "3px",
-                      background: "#f1f5f9",
-                      border: "2px dotted #cbd5e1",
+                      background: "#fef9ec",
+                      border: "2px dotted #fcd34d",
                     }}
                   />
                   Vô hiệu hóa
@@ -304,11 +315,11 @@ export default function FloorMapLevel5({
 
           {/* Room Type Legend (Dynamic) */}
           {uniqueRoomTypes.length > 0 && (
-            <div className="map-legend type-legend">
+            <div className="lv5-legend">
               {uniqueRoomTypes.map((type) => (
-                <div key={type.id} className="legend-item">
+                <div key={type.id} className="lv5-legend-item">
                   <span
-                    className="legend-color"
+                    className="lv5-legend-color"
                     style={{
                       backgroundColor: getRoomTypeColor(type.id),
                       border: "none",
@@ -328,8 +339,8 @@ export default function FloorMapLevel5({
         </div>
       </div>
 
-      <div className="map-layout">
-        <div className="rooms-grid">
+      <div className="lv5-layout">
+        <div className="lv5-rooms-grid">
           {sortedRooms.length > 0 ? (
             sortedRooms.map((room, index) => {
               const isAvailable =
@@ -370,19 +381,19 @@ export default function FloorMapLevel5({
               const isRoomInactive = room.isActive === false;
 
               const statusClass = isRoomInactive
-                ? "status-inactive"
+                ? "lv5-inactive"
                 : showAsAvailable
-                  ? "status-available"
+                  ? "lv5-available"
                   : isDeposited
-                    ? "status-deposited"
-                    : "status-occupied";
+                    ? "lv5-deposited"
+                    : "lv5-occupied";
 
               // logic for inserting corridors
               return (
                 <React.Fragment key={room._id}>
                   {/* Render the room node */}
                   <div
-                    className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""} ${hasMultiOptions ? "has-multi-options" : ""}`}
+                    className={`lv5-room-node ${statusClass} ${isGhosted ? "lv5-ghosted" : ""} ${hasMultiOptions ? "lv5-has-multi-options" : ""}`}
                     onClick={
                       isRoomInactive
                         ? undefined
@@ -398,16 +409,16 @@ export default function FloorMapLevel5({
                       isRoomInactive
                         ? undefined
                         : {
-                            background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
+                            background: `linear-gradient(145deg, ${typeColor} 0%, ${darkenColor(typeColor)} 100%)`,
                           }
                     }
                   >
-                    <span className="room-node-name">
+                    <span className="lv5-room-name">
                       {formatRoomLabel(room.name)}
                     </span>
                     {/* Vô hiệu hóa badge */}
                     {isRoomInactive && (
-                      <span className="room-inactive-badge">Vô hiệu hóa</span>
+                      <span className="lv5-inactive-badge">Vô hiệu hóa</span>
                     )}
                     {hasMultiOptions &&
                       (room.futureContractStartDate ||
@@ -415,7 +426,7 @@ export default function FloorMapLevel5({
                       getComingSoonLabel(
                         room.futureContractStartDate || room.contractStartDate,
                       ) && (
-                        <span className="room-multi-options-date">
+                        <span className="lv5-multi-options-date">
                           {getComingSoonLabel(
                             room.futureContractStartDate ||
                               room.contractStartDate,
@@ -456,7 +467,7 @@ export default function FloorMapLevel5({
                         room.contractRenewalStatus === "declined") &&
                       !showDepositedBadge &&
                       getExpiryLabel(room.contractEndDate) && (
-                        <span className="room-expiry-label">
+                        <span className="lv5-expiry-label">
                           {getExpiryLabel(room.contractEndDate)}
                         </span>
                       )}
@@ -465,7 +476,7 @@ export default function FloorMapLevel5({
                       isDeposited &&
                       !showDepositedBadge &&
                       getExpiryLabel(room.contractEndDate) && (
-                        <span className="room-expiry-label">
+                        <span className="lv5-expiry-label">
                           {getExpiryLabel(room.contractEndDate)}
                         </span>
                       )}
@@ -473,7 +484,7 @@ export default function FloorMapLevel5({
                       room.contractRenewalStatus === "declined" &&
                       !hasFloatingDeposit &&
                       room.successorLeaseBooked && (
-                        <span className="room-guest-successor-booked">
+                        <span className="lv5-guest-successor-booked">
                           Đã có HĐ kế tiếp
                         </span>
                       )}
@@ -483,14 +494,14 @@ export default function FloorMapLevel5({
                       isDeposited &&
                       !showDepositedBadge &&
                       getExpiryLabel(room.contractEndDate) && (
-                        <span className="room-expiry-label">
+                        <span className="lv5-expiry-label">
                           {getExpiryLabel(room.contractEndDate)}
                         </span>
                       )}
                     {legendType === "contract" &&
                       room.contractRenewalStatus === "declined" &&
                       getExpiryLabel(room.contractEndDate) && (
-                        <span className="room-manager-declined-tag">
+                        <span className="lv5-manager-declined-tag">
                           Từ chối gia hạn
                         </span>
                       )}
@@ -502,7 +513,7 @@ export default function FloorMapLevel5({
                         room.contractEndDate,
                         showDateYear,
                       ) && (
-                        <span className="room-contract-dates">
+                        <span className="lv5-contract-dates">
                           {getContractDateLabel(
                             room.contractStartDate,
                             room.contractEndDate,
@@ -512,13 +523,13 @@ export default function FloorMapLevel5({
                       )}
                     {/* Deposited badge - always on top */}
                     {showDepositedBadge && (
-                      <span className="deposited-badge">!</span>
+                      <span className="lv5-deposited-badge">!</span>
                     )}
                   </div>
 
                   {/* Insert Corridor 1 after first row (index 7) */}
                   {index === 7 && (
-                    <div className="map-corridor">
+                    <div className="lv5-corridor">
                       <span>
                         ====================== HÀNH LANG ======================
                       </span>
@@ -527,7 +538,7 @@ export default function FloorMapLevel5({
 
                   {/* Insert Corridor 2 after third row (index 23 of total items) */}
                   {index === 23 && (
-                    <div className="map-corridor">
+                    <div className="lv5-corridor">
                       <span>
                         ====================== HÀNH LANG ======================
                       </span>
@@ -537,25 +548,14 @@ export default function FloorMapLevel5({
               );
             })
           ) : (
-            <div
-              className="map-empty-state"
-              style={{
-                gridColumn: "1 / -1",
-                height: "200px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#6b7280",
-                fontStyle: "italic",
-              }}
-            >
+            <div className="lv5-empty-state">
               Không tìm thấy phòng phù hợp
             </div>
           )}
         </div>
 
-        <div className="map-sidebar-area">
-          <div className="area-label">Sân Phơi</div>
+        <div className="lv5-sidebar">
+          <div>Sân Phơi</div>
         </div>
       </div>
     </div>
