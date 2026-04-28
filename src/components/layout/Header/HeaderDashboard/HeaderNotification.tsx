@@ -315,7 +315,7 @@ const HeaderNotification = ({ role }: HeaderNotificationProps) => {
 
             {/* ====== "Xem tất cả" Modal ====== */}
             {showAllModal && createPortal(
-                <div className="notif-modal-overlay" onClick={() => setShowAllModal(false)}>
+                <div className="notif-modal-overlay" style={{ zIndex: 1100 }} onClick={() => setShowAllModal(false)}>
                     <div className="notif-modal notif-modal-lg" onClick={e => e.stopPropagation()}>
                         <div className="notif-modal-header">
                             <h3>Tất cả thông báo</h3>
@@ -397,7 +397,7 @@ const HeaderNotification = ({ role }: HeaderNotificationProps) => {
                 <div className="notif-modal-overlay" style={{ zIndex: 1200 }} onClick={() => setDetailNotification(null)}>
                     <div className="notif-modal notif-modal-detail" onClick={e => e.stopPropagation()}>
                         <div className="notif-modal-header">
-                            <h3>Chi tiết thông báo</h3>
+                            <h3>Chi tiết thông báo </h3>
                             <button className="notif-modal-close" onClick={() => setDetailNotification(null)}>
                                 <X size={20} />
                             </button>
@@ -411,11 +411,12 @@ const HeaderNotification = ({ role }: HeaderNotificationProps) => {
                                 <div className="notif-detail-info">
                                     <div className="notif-detail-sender">
                                         <strong>Người gửi:</strong> {
-                                            detailNotification.type === 'system' 
-                                                ? 'Cư dân (Tenant)' 
+                                            detailNotification.sender_name
+                                            || (detailNotification.type === 'system'
+                                                ? 'Cư dân (Tenant)'
                                                 : detailNotification.type === 'staff'
-                                                ? 'Ban quản lý (Owner)'
-                                                : 'Quản lý (Manager)'
+                                                    ? 'Ban quản lý (Owner)'
+                                                    : 'Quản lý (Manager)')
                                         }
                                     </div>
                                     <div className="notif-detail-time-row">

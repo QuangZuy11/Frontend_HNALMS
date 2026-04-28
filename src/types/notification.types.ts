@@ -20,6 +20,7 @@ export interface Notification {
   // For Manager/Accountant view
   is_read?: boolean;
   read_at?: string | null;
+  sender_name?: string;
 }
 
 export interface NotificationPagination {
