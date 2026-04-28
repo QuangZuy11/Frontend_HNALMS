@@ -113,14 +113,68 @@ export default function CreateDeposit() {
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
-    if (!fullName.trim() || fullName.trim().length < 2)
+
+    // Họ tên
+    const nameTrimmed = fullName.trim();
+    if (!nameTrimmed || nameTrimmed.length < 2)
       newErrors.fullName = "Tên phải ít nhất 2 ký tự";
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      newErrors.email = "Email không hợp lệ";
-    if (!phone.trim() || !/^[0-9]{10,11}$/.test(phone))
-      newErrors.phone = "Số điện thoại phải có 10-11 chữ số";
+    else if (/[0-9!@#$%^&*()_+=\[\]{};':"\\|,.<>\/?`~]/.test(nameTrimmed))
+      newErrors.fullName = "Họ tên không được chứa số hoặc ký tự đặc biệt";
+
+    // Email
+    const emailTrimmed = email.trim();
+    const emailRegex = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+    if (!emailTrimmed)
+      newErrors.email = "Email là bắt buộc";
+    else if (!emailRegex.test(emailTrimmed))
+      newErrors.email = "Email không hợp lệ (VD: ten@gmail.com)";
+    else if (emailTrimmed.includes(".."))
+      newErrors.email = "Email không được có hai dấu chấm liên tiếp";
+
+    // SĐT: 10 hoặc 11 số, bắt đầu bằng 0
+    const phoneTrimmed = phone.trim();
+    if (!phoneTrimmed)
+      newErrors.phone = "Số điện thoại là bắt buộc";
+    else if (!/^0[0-9]{9,10}$/.test(phoneTrimmed))
+      newErrors.phone = "Số điện thoại phải gồm 10–11 chữ số, bắt đầu bằng 0";
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  // ---------- Validate từng field khi blur ----------
+  const validateField = (field: keyof FormErrors) => {
+    setErrors((prev) => {
+      const next = { ...prev };
+      switch (field) {
+        case "fullName": {
+          const v = fullName.trim();
+          if (!v || v.length < 2) next.fullName = "Tên phải ít nhất 2 ký tự";
+          else if (/[0-9!@#$%^&*()_+=\[\]{};':"\\|,.<>\/?`~]/.test(v))
+            next.fullName = "Họ tên không được chứa số hoặc ký tự đặc biệt";
+          else delete next.fullName;
+          break;
+        }
+        case "email": {
+          const v = email.trim();
+          const re = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+          if (!v) next.email = "Email là bắt buộc";
+          else if (!re.test(v)) next.email = "Email không hợp lệ (VD: ten@gmail.com)";
+          else if (v.includes("..")) next.email = "Email không được có hai dấu chấm liên tiếp";
+          else delete next.email;
+          break;
+        }
+        case "phone": {
+          const v = phone.trim();
+          if (!v) next.phone = "Số điện thoại là bắt buộc";
+          else if (!/^0[0-9]{9,10}$/.test(v))
+            next.phone = "Số điện thoại phải gồm 10–11 chữ số, bắt đầu bằng 0";
+          else delete next.phone;
+          break;
+        }
+      }
+      return next;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -246,7 +300,11 @@ export default function CreateDeposit() {
                         className={`form-input ${errors.fullName ? "error" : ""}`}
                         placeholder="Nguyễn Văn A"
                         value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
+                        onChange={(e) => {
+                          setFullName(e.target.value);
+                          if (errors.fullName) setErrors((prev) => ({ ...prev, fullName: undefined }));
+                        }}
+                        onBlur={() => validateField("fullName")}
                       />
                       {errors.fullName && (
                         <span className="form-error">{errors.fullName}</span>
@@ -256,11 +314,17 @@ export default function CreateDeposit() {
                     <div className="form-group">
                       <label className="form-label">Email *</label>
                       <input
-                        type="email"
+                        type="text"
+                        inputMode="email"
+                        autoComplete="email"
                         className={`form-input ${errors.email ? "error" : ""}`}
-                        placeholder="email@example.com"
+                        placeholder="ten@gmail.com"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => {
+                          setEmail(e.target.value.replace(/\s/g, ""));
+                          if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+                        }}
+                        onBlur={() => validateField("email")}
                       />
                       {errors.email && (
                         <span className="form-error">{errors.email}</span>
@@ -271,10 +335,29 @@ export default function CreateDeposit() {
                       <label className="form-label">Số Điện Thoại *</label>
                       <input
                         type="text"
+                        inputMode="numeric"
+                        autoComplete="tel"
+                        maxLength={11}
                         className={`form-input ${errors.phone ? "error" : ""}`}
                         placeholder="0912345678"
                         value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/\D/g, "");
+                          const val = raw.length > 11 ? raw.slice(0, 11) : raw;
+                          setPhone(val);
+                          if (!val) {
+                            setErrors((prev) => ({ ...prev, phone: undefined }));
+                          } else if (raw.length > 11) {
+                            setErrors((prev) => ({ ...prev, phone: "SĐT không được vượt quá 11 chữ số" }));
+                          } else if (val.length < 10) {
+                            setErrors((prev) => ({ ...prev, phone: "Số điện thoại phải gồm 10–11 chữ số" }));
+                          } else if (!val.startsWith("0")) {
+                            setErrors((prev) => ({ ...prev, phone: "Số điện thoại phải bắt đầu bằng 0" }));
+                          } else {
+                            setErrors((prev) => ({ ...prev, phone: undefined }));
+                          }
+                        }}
+                        onBlur={() => validateField("phone")}
                       />
                       {errors.phone && (
                         <span className="form-error">{errors.phone}</span>
