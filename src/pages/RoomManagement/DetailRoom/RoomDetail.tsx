@@ -542,7 +542,7 @@ export default function RoomDetail() {
 
                 <div className="benefits-list">
                   <p>✓ Giữ phòng trong 30 ngày</p>
-                  <p>✓ Hỗ trợ ký hợp đồng</p>
+                  <p>✓ Ký Hợp Đồng Online Không Cần Đến Trực Tiếp</p>
                   <p>✓ Nhân viên sẵn sàng tư vấn</p>
                   {room.isShortTermAvailable && room.futureContractStartDate && !room.hasFutureInactiveContract && (
                     <p style={{ color: "var(--warning)", fontWeight: "bold" }}>⚠ Chỉ thuê đến trước {new Date(room.futureContractStartDate).toLocaleDateString("vi-VN")}</p>
@@ -578,7 +578,7 @@ export default function RoomDetail() {
                       ? "Đã có HĐ kế tiếp"
                       : room.status === "Deposited"
                         ? "Phòng Đã Được Đặt Cọc"
-                        : "Phòng Đã Có Chủ"}
+                        : "Phòng Đã Có Người Thuê"}
                 </button>
 
               </div>

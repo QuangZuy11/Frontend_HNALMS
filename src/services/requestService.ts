@@ -147,6 +147,12 @@ export const transferRequestService = {
     return response.data;
   },
 
+  // [MANAGER] Lấy chỉ số điện nước gần nhất của phòng trong yêu cầu chuyển phòng
+  getLatestMeterReading: async (requestId: string) => {
+    const response = await api.get(`/requests/transfer/${requestId}/latest-meter`);
+    return response.data;
+  },
+
   // [MANAGER] Hoàn tất chuyển phòng (Bàn giao phòng)
   completeTransferRequest: async (
     requestId: string,

@@ -148,6 +148,11 @@ export default function TransferRequestsList() {
   const [waterIndex, setWaterIndex] = useState<string>('');
   const [managerInvoiceNotes, setManagerInvoiceNotes] = useState('');
   const [releaseInvoiceLoading, setReleaseInvoiceLoading] = useState(false);
+  const [latestMeterReading, setLatestMeterReading] = useState<{
+    electric: { newIndex: number; readingDate?: string } | null;
+    water: { newIndex: number; readingDate?: string } | null;
+  } | null>(null);
+  const [latestMeterLoading, setLatestMeterLoading] = useState(false);
 
   const tableRef = useRef<HTMLDivElement | null>(null);
 
@@ -275,12 +280,23 @@ export default function TransferRequestsList() {
   };
 
   // ─── Release Invoice ──────────────────────────────────────────────────────
-  const openReleaseInvoiceModal = (req: TransferRequest) => {
+  const openReleaseInvoiceModal = async (req: TransferRequest) => {
     setReleasingInvoiceRequest(req);
     setElectricIndex('');
     setWaterIndex('');
     setManagerInvoiceNotes('');
+    setLatestMeterReading(null);
     setShowReleaseInvoiceModal(true);
+    // Fetch chỉ số điện nước gần nhất
+    try {
+      setLatestMeterLoading(true);
+      const res = await transferRequestService.getLatestMeterReading(req._id);
+      if (res.success) setLatestMeterReading(res.data);
+    } catch {
+      // Không có dữ liệu → hiển thị "Chưa có"
+    } finally {
+      setLatestMeterLoading(false);
+    }
   };
 
   const handleReleaseInvoice = async () => {
@@ -895,6 +911,38 @@ export default function TransferRequestsList() {
               Chốt hóa đơn phòng <strong>{getRoomDisplay(releasingInvoiceRequest.currentRoomId)}</strong> đến ngày chuyển{' '}
               (<strong>{releasingInvoiceRequest.transferDate ? formatDate(releasingInvoiceRequest.transferDate) : '-'}</strong>).
             </p>
+
+            {/* Chỉ số điện nước gần nhất (chỉ đọc, để tham khảo) */}
+            <div className="trns-meter-ref-box">
+              <div className="trns-meter-ref-title">
+                📊 Chỉ số đồng hồ ghi nhận gần nhất
+              </div>
+              {latestMeterLoading ? (
+                <div className="trns-meter-ref-loading">Đang tải...</div>
+              ) : (
+                <div className="trns-meter-ref-row">
+                  <div className="trns-meter-ref-item">
+                    <span className="trns-meter-ref-icon">⚡</span>
+                    <span className="trns-meter-ref-label">Điện:</span>
+                    <span className="trns-meter-ref-value">
+                      {latestMeterReading?.electric != null
+                        ? `${latestMeterReading.electric.newIndex} kWh`
+                        : 'Chưa có bản ghi'}
+                    </span>
+                  </div>
+                  <div className="trns-meter-ref-item">
+                    <span className="trns-meter-ref-icon">💧</span>
+                    <span className="trns-meter-ref-label">Nước:</span>
+                    <span className="trns-meter-ref-value">
+                      {latestMeterReading?.water != null
+                        ? `${latestMeterReading.water.newIndex} m³`
+                        : 'Chưa có bản ghi'}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="trns-form-group">
               <label className="trns-form-label">Chỉ số điện cuối cùng (Phòng cũ)</label>
               <input

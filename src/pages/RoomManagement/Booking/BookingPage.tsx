@@ -748,12 +748,19 @@ export default function BookingPage() {
                         >
                           <DatePicker
                             value={dob ? new Date(dob) : null}
-                            onChange={(newValue) =>
-                              setDob(
-                                newValue ? toLocalDateString(newValue) : "",
-                              )
-                            }
+                            onChange={(newValue) => {
+                              if (newValue) {
+                                const today = new Date();
+                                today.setHours(23, 59, 59, 999);
+                                if (newValue <= today) {
+                                  setDob(toLocalDateString(newValue));
+                                }
+                              } else {
+                                setDob("");
+                              }
+                            }}
                             format="dd/MM/yyyy"
+                            shouldDisableFutureDates
                             maxDate={new Date()}
                             slotProps={{
                               textField: {
