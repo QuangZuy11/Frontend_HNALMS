@@ -221,11 +221,10 @@
 }
 
 /* ==============================
-   AVAILABLE ROOMS: Cyan gradient + clickable
+   AVAILABLE ROOMS: Clickable — màu theo loại phòng (inline style từ FloorMap)
    ============================== */
 .contract-floor-map .room-node.status-available {
   cursor: pointer;
-  background: linear-gradient(145deg, rgb(34, 211, 238) 0%, rgba(34, 211, 238, 0.867) 100%) !important;
   color: #ffffff;
 }
 
