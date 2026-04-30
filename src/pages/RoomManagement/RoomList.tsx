@@ -24,6 +24,7 @@ interface Room {
   contractEndDate?: string;
   contractStartDate?: string;
   hasFloatingDeposit?: boolean; // true if room has a deposit not yet linked to contract
+  activeContractId?: string;
   // mapped props
   title: string;
   floor: string;
@@ -187,6 +188,7 @@ export default function RoomList() {
               images: room.roomTypeId?.images || [],
               contractEndDate: room.contractEndDate || null,
               contractStartDate: room.contractStartDate || null,
+              activeContractId: room.activeContractId || null,
               hasFloatingDeposit: room.hasFloatingDeposit || false,
               successorLeaseBooked: !!room.successorLeaseBooked,
               isShortTermAvailable,
@@ -244,6 +246,8 @@ export default function RoomList() {
     });
   };
 
+
+
   // Auto-collapse sidebar when split-view (type detail) is active
   const sidebarCollapsed = showTypeDetail && !sidebarManualOpen;
 
@@ -252,21 +256,24 @@ export default function RoomList() {
       <div className="container">
         <div className="content-layout">
           {/* Toggle button visible when sidebar is collapsed */}
-          {sidebarCollapsed && (
-            <button
-              type="button"
-              className="filters-toggle-btn"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setSidebarManualOpen(true);
-              }}
-              title="Hiện bộ lọc"
-            >
-              <span className="toggle-icon">☰</span>
-              BỘ LỌC
-            </button>
-          )}
+          <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: '0.5rem', zIndex: 50 }}>
+            {sidebarCollapsed && (
+              <button
+                type="button"
+                className="filters-toggle-btn"
+                style={{ position: 'static' }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSidebarManualOpen(true);
+                }}
+                title="Hiện bộ lọc"
+              >
+                <span className="toggle-icon">☰</span>
+                BỘ LỌC
+              </button>
+            )}
+          </div>
 
           <aside
             className={`filters-sidebar ${sidebarCollapsed ? "collapsed" : ""}`}
@@ -366,6 +373,9 @@ export default function RoomList() {
                         legendType: "guest" as const,
                         showDateYear: filters.selectedRoomTypes.length === 0 || sidebarCollapsed,
                         sidebarType: layoutType === "type3" ? "drying" : "parking",
+                        multiSelectMode,
+                        selectedRoomIds: selectedRooms.map(r => r._id),
+                        onRoomToggle: handleRoomToggle
                       };
                       if (layoutType === "type2") {
                         return <FloorMapLevel2 {...props} />;
@@ -408,6 +418,8 @@ export default function RoomList() {
                 <p>Không tìm thấy phòng phù hợp</p>
               </div>
             )}
+
+
           </main>
         </div>
       </div>

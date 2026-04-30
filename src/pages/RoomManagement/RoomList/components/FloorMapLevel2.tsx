@@ -30,6 +30,9 @@ interface FloorMapLevel2Props {
   floorName?: string;
   onRoomSelect?: (room: Room, event?: React.MouseEvent) => void;
   legendType?: "default" | "deposit" | "guest" | "none" | "contract";
+  multiSelectMode?: boolean;
+  selectedRoomIds?: string[];
+  onRoomToggle?: (roomId: string) => void;
 }
 
 // Detailed Layout Configuration
@@ -141,6 +144,10 @@ export default function FloorMapLevel2({
   highlightedRooms?: Room[];
   compact?: boolean;
   onRoomSelect?: (room: Room, event?: React.MouseEvent) => void;
+  legendType?: "default" | "deposit" | "guest" | "none" | "contract";
+  multiSelectMode?: boolean;
+  selectedRoomIds?: string[];
+  onRoomToggle?: (roomId: string) => void;
 }) {
   const navigate = useNavigate();
 
@@ -180,12 +187,17 @@ export default function FloorMapLevel2({
     return `${(price / 1000).toFixed(0)}k`;
   };
 
-  const handleRoomClick = (roomId: string, event: React.MouseEvent) => {
+  const handleRoomClick = (room: Room, event: React.MouseEvent) => {
+    if (multiSelectMode) {
+      if ((room.status === "Occupied" || room.status === "Deposited") && room.activeContractId) {
+        if (onRoomToggle) onRoomToggle(room._id);
+      }
+      return;
+    }
     if (onRoomSelect) {
-      const room = rooms.find((r) => r._id === roomId);
-      if (room) onRoomSelect(room, event);
+      onRoomSelect(room, event);
     } else {
-      navigate(`/rooms/${roomId}`);
+      navigate(`/rooms/${room._id}`);
     }
   };
 
@@ -462,22 +474,27 @@ export default function FloorMapLevel2({
                                 ? "status-deposited"
                                 : "status-occupied";
 
+                          const isSelected = selectedRoomIds.includes(room._id);
+                          const isSelectable = multiSelectMode && (room.status === "Occupied" || room.status === "Deposited") && room.activeContractId;
+                          const opacity = multiSelectMode && !isSelectable ? 0.3 : 1;
+
                           return (
                             <div
                               key={room._id}
-                              className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""} ${hasMultiOptions ? "has-multi-options" : ""}`}
+                              className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""} ${hasMultiOptions ? "has-multi-options" : ""} ${isSelected ? "selected-ring" : ""}`}
                               onClick={
                                 isRoomInactive
                                   ? undefined
-                                  : (e) => handleRoomClick(room._id, e)
+                                  : (e) => handleRoomClick(room, e)
                               }
                               data-color={typeColor}
                               style={
                                 isRoomInactive
-                                  ? { flex: 1 }
+                                  ? { flex: 1, opacity }
                                   : {
                                       flex: 1,
                                       background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
+                                      opacity
                                     }
                               }
                               title={
@@ -486,6 +503,11 @@ export default function FloorMapLevel2({
                                   : room.name
                               }
                             >
+                              {isSelected && (
+                                <div style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, background: '#10b981', borderRadius: '50%', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </div>
+                              )}
                               <span
                                 className="room-node-name"
                                 style={{

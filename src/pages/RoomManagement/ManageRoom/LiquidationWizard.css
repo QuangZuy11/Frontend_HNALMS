@@ -10,15 +10,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000; /* Must be > 9999 to cover AppModal */
+  z-index: 10000;
+  /* Must be > 9999 to cover AppModal */
   backdrop-filter: blur(2px);
   animation: lqw-fade-in 0.15s ease;
   padding: 1rem;
 }
 
 @keyframes lqw-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* ── Modal box ── */
@@ -36,8 +42,15 @@
 }
 
 @keyframes lqw-slide-up {
-  from { transform: translateY(20px); opacity: 0; }
-  to   { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* ── Header ── */
@@ -69,6 +82,7 @@
   background: #eff6ff;
   color: #3b82f6;
 }
+
 .lqw-header-icon.violation {
   background: #fee2e2;
   color: #dc2626;
@@ -103,6 +117,7 @@
   color: #64748b;
   transition: all 0.2s;
 }
+
 .lqw-close-btn:hover {
   background: #eff6ff;
   border-color: #3b82f6;
@@ -119,10 +134,12 @@
   font-size: 0.7rem;
   font-weight: 600;
 }
+
 .lqw-type-badge.force {
   background: #dbeafe;
   color: #1d4ed8;
 }
+
 .lqw-type-badge.violation {
   background: #fee2e2;
   color: #dc2626;
@@ -176,9 +193,11 @@
   font-weight: 600;
   color: #94a3b8;
 }
+
 .lqw-step.active .lqw-step-label {
   color: #0f172a;
 }
+
 .lqw-step.done .lqw-step-label {
   color: #10b981;
 }
@@ -190,6 +209,7 @@
   margin: 0 0.25rem;
   transition: background 0.2s;
 }
+
 .lqw-step-connector.done {
   background: #10b981;
 }
@@ -391,6 +411,7 @@
 .lqw-meter-icon-elec {
   color: #f59e0b;
 }
+
 .lqw-meter-icon-water {
   color: #3b82f6;
 }
@@ -434,6 +455,7 @@
   -webkit-appearance: none;
   margin: 0;
 }
+
 .lqw-meter-input-row .lqw-input[type="number"] {
   -moz-appearance: textfield;
 }
@@ -535,6 +557,7 @@
 .lqw-financial-item-value.positive {
   color: #059669;
 }
+
 .lqw-financial-item-value.negative {
   color: #dc2626;
 }
@@ -607,6 +630,7 @@
   background: #fff;
   color: #475569;
 }
+
 .lqw-btn-secondary:hover:not(:disabled) {
   background: #f8fafc;
 }
@@ -616,6 +640,7 @@
   color: #fff;
   border-color: #3b82f6;
 }
+
 .lqw-btn-primary:hover:not(:disabled) {
   background: #2563eb;
 }
@@ -625,6 +650,7 @@
   color: #fff;
   border-color: #dc2626;
 }
+
 .lqw-btn-danger:hover:not(:disabled) {
   background: #b91c1c;
 }

@@ -42,6 +42,8 @@ import "./ManageRoom.css";
 import LiquidationWizard from "./LiquidationWizard";
 import { isContractStartedByLocalCalendar } from "../../../utils/contractDates";
 import { AppModal } from "../../../components/common/Modal";
+import BulkLiquidationModal from "../RoomList/components/BulkLiquidationModal";
+import * as XLSX from "xlsx";
 
 const API_BASE_URL = "http://localhost:9999/api";
 
@@ -138,6 +140,11 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   // Import Excel States
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Multi Select & Bulk Liquidation
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [selectedRooms, setSelectedRooms] = useState<Room[]>([]);
+  const [showBulkLiquidationModal, setShowBulkLiquidationModal] = useState(false);
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -399,6 +406,48 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRoomToggle = (roomId: string) => {
+    const room = rooms.find(r => r._id === roomId);
+    if (!room) return;
+    
+    setSelectedRooms(prev => {
+      const isSelected = prev.some(r => r._id === roomId);
+      if (isSelected) {
+        return prev.filter(r => r._id !== roomId);
+      } else {
+        return [...prev, room];
+      }
+    });
+  };
+
+  const handleExportExcel = () => {
+    if (selectedRooms.length === 0) return;
+
+    const data = selectedRooms.map((room, index) => {
+      let rType = getRoomTypeDetail(room.roomTypeId);
+      return {
+        "STT": index + 1,
+        "Tên Phòng": room.name,
+        "Tầng": getFloorName(room.floorId),
+        "Loại Phòng": rType?.typeName || "",
+        "Trạng Thái": room.status === "Occupied" ? "Đã thuê" : "Đã đặt cọc",
+        "Ghi Chú": "Dự kiến thanh lý bất khả kháng"
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Danh_Sach_Thanh_Ly");
+    
+    const wscols = [
+      { wch: 5 }, { wch: 15 }, { wch: 10 }, { wch: 20 }, 
+      { wch: 15 }, { wch: 30 }
+    ];
+    ws['!cols'] = wscols;
+
+    XLSX.writeFile(wb, `Danh_Sach_Phong_Thanh_Ly_${new Date().toISOString().slice(0,10)}.xlsx`);
   };
 
   const triggerFileInput = () => {
@@ -789,6 +838,31 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
         </div>
 
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          {canLiquidate && (
+            <button
+              onClick={() => {
+                setMultiSelectMode(!multiSelectMode);
+                if (multiSelectMode) {
+                  setSelectedRooms([]);
+                }
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "6px 12px",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                background: multiSelectMode ? "#e2e8f0" : "#10b981",
+                color: multiSelectMode ? "#1e293b" : "#fff",
+                fontWeight: "bold",
+              }}
+            >
+              <Zap size={16} /> {multiSelectMode ? "Hủy chọn hàng loạt" : "Thanh lý hàng loạt"}
+            </button>
+          )}
+
           {canModify && (
             <>
               <button
@@ -1030,6 +1104,9 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                         ? handleViewDetail(room as any)
                         : handleOpenEdit(room as any)
                     }
+                    multiSelectMode={multiSelectMode}
+                    selectedRoomIds={selectedRooms.map(r => r._id)}
+                    onRoomToggle={handleRoomToggle}
                   />
                 );
               }
@@ -1045,11 +1122,48 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                       ? handleViewDetail(room as any)
                       : handleOpenEdit(room as any)
                   }
+                  multiSelectMode={multiSelectMode}
+                  selectedRoomIds={selectedRooms.map(r => r._id)}
+                  onRoomToggle={handleRoomToggle}
                 />
               );
             })}
           </div>
         </div>
+      )}
+
+      {/* Floating Action Bar cho Thanh Lý Hàng Loạt */}
+      {multiSelectMode && (
+        <div className="bulk-action-bar" style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: 'white', padding: '16px 24px', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', zIndex: 1000, display: 'flex', alignItems: 'center', gap: '24px', border: '1px solid #e2e8f0' }}>
+          <div style={{ fontWeight: 600, color: '#1e293b' }}>
+            Đã chọn <span style={{ color: '#10b981', fontSize: '1.2em' }}>{selectedRooms.length}</span> phòng
+          </div>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button onClick={handleExportExcel} disabled={selectedRooms.length === 0} style={{ padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: selectedRooms.length ? 'pointer' : 'not-allowed', opacity: selectedRooms.length ? 1 : 0.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              Kết xuất Excel
+            </button>
+            <button onClick={() => setShowBulkLiquidationModal(true)} disabled={selectedRooms.length === 0} style={{ padding: '8px 16px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: selectedRooms.length ? 'pointer' : 'not-allowed', opacity: selectedRooms.length ? 1 : 0.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+              Thanh lý bất khả kháng
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Liquidation Modal */}
+      {showBulkLiquidationModal && (
+        <BulkLiquidationModal
+          open={showBulkLiquidationModal}
+          rooms={selectedRooms as any}
+          onClose={() => setShowBulkLiquidationModal(false)}
+          onSuccess={() => {
+            setShowBulkLiquidationModal(false);
+            setSelectedRooms([]);
+            setMultiSelectMode(false);
+            fetchData();
+          }}
+        />
       )}
 
       {/* Modal Xác Nhận Xóa/Kích hoạt */}

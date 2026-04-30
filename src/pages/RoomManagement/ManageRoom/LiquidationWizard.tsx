@@ -237,9 +237,8 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
         ).reduce((s: number, p: any) => s + p.unusedDays, 0);
         remainingRentLabel =
           remainRent > 0
-            ? `${totalUnused} ngày chưa dùng (từ ${
-                (preflightData.paidRentPeriods as any[]).length
-              } kỳ HĐ)`
+            ? `${totalUnused} ngày chưa dùng (từ ${(preflightData.paidRentPeriods as any[]).length
+            } kỳ HĐ)`
             : "0 ngày (không có kỳ đã thanh toán còn dư)";
       } else {
         if (preflightData?.rentPaidUntil) {
@@ -403,7 +402,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
     } catch (e: any) {
       setError(
         "Lỗi thanh lý: " +
-          (e.response?.data?.message || e.message || "Lỗi không xác định")
+        (e.response?.data?.message || e.message || "Lỗi không xác định")
       );
     } finally {
       setSubmitting(false);
@@ -412,9 +411,8 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
 
   const typeBadge = liquidationType ? (
     <span
-      className={`lqw-type-badge ${
-        liquidationType === "force_majeure" ? "force" : "violation"
-      }`}
+      className={`lqw-type-badge ${liquidationType === "force_majeure" ? "force" : "violation"
+        }`}
     >
       {liquidationType === "force_majeure" ? (
         <ShieldOff size={10} />
@@ -437,9 +435,8 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
         <div className="lqw-header">
           <div className="lqw-header-left">
             <div
-              className={`lqw-header-icon ${
-                liquidationType === "violation" ? "violation" : "force"
-              }`}
+              className={`lqw-header-icon ${liquidationType === "violation" ? "violation" : "force"
+                }`}
             >
               <Gavel size={18} />
             </div>
@@ -461,9 +458,8 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
         {step > 0 && (
           <div className="lqw-stepper">
             <div
-              className={`lqw-step ${
-                step >= 1 ? (step > 1 ? "done" : "active") : ""
-              }`}
+              className={`lqw-step ${step >= 1 ? (step > 1 ? "done" : "active") : ""
+                }`}
             >
               <div className="lqw-step-circle">
                 {step > 1 ? <CheckCircle size={14} /> : "1"}
@@ -498,11 +494,10 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
             </p>
             <div className="lqw-type-selector">
               <div
-                className={`lqw-type-card ${
-                  liquidationType === "force_majeure"
+                className={`lqw-type-card ${liquidationType === "force_majeure"
                     ? "selected-force"
                     : ""
-                }`}
+                  }`}
                 onClick={() => setLiquidationType("force_majeure")}
               >
                 <div className="lqw-type-card-icon">
@@ -519,9 +514,8 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
               </div>
 
               <div
-                className={`lqw-type-card ${
-                  liquidationType === "violation" ? "selected-violation" : ""
-                }`}
+                className={`lqw-type-card ${liquidationType === "violation" ? "selected-violation" : ""
+                  }`}
                 onClick={() => setLiquidationType("violation")}
               >
                 <div className="lqw-type-card-icon">
@@ -770,12 +764,12 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                               }
                             ) === "object"
                               ? parseFloat(
-                                  (
-                                    electricService.currentPrice as unknown as {
-                                      $numberDecimal: string;
-                                    }
-                                  ).$numberDecimal
-                                )
+                                (
+                                  electricService.currentPrice as unknown as {
+                                    $numberDecimal: string;
+                                  }
+                                ).$numberDecimal
+                              )
                               : Number(electricService.currentPrice)
                           )}`}
                       </div>
@@ -849,12 +843,12 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                               }
                             ) === "object"
                               ? parseFloat(
-                                  (
-                                    waterService.currentPrice as unknown as {
-                                      $numberDecimal: string;
-                                    }
-                                  ).$numberDecimal
-                                )
+                                (
+                                  waterService.currentPrice as unknown as {
+                                    $numberDecimal: string;
+                                  }
+                                ).$numberDecimal
+                              )
                               : Number(waterService.currentPrice)
                           )}`}
                       </div>
@@ -870,9 +864,8 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                   </div>
 
                   <div
-                    className={`lqw-financial-preview ${
-                      financial.type === "violation" ? "violation" : ""
-                    }`}
+                    className={`lqw-financial-preview ${financial.type === "violation" ? "violation" : ""
+                      }`}
                   >
                     <div className="lqw-financial-title">
                       {financial.type === "force_majeure" ? (
@@ -922,8 +915,8 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                             {(financial as any).isDepositRefunded
                               ? `+ 0 ₫ (Đã được hoàn)`
                               : `+ ${formatCurrency(
-                                  (financial as any).depositRefund
-                                )}`}
+                                (financial as any).depositRefund
+                              )}`}
                           </span>
                         </div>
                         <div
@@ -943,7 +936,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                           </span>
                           {preflightData?.paidRentPeriods &&
                             (preflightData.paidRentPeriods as any[]).length >
-                              0 && (
+                            0 && (
                               <div style={{ marginTop: "8px", width: "100%" }}>
                                 <div
                                   style={{
@@ -1079,8 +1072,8 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                                           >
                                             {p.refundAmount > 0
                                               ? `+ ${formatCurrency(
-                                                  p.refundAmount
-                                                )}`
+                                                p.refundAmount
+                                              )}`
                                               : "0 ₫"}
                                           </td>
                                         </tr>
@@ -1092,7 +1085,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                             )}
                           {preflightData?.paidRentPeriods &&
                             (preflightData.paidRentPeriods as any[]).length ===
-                              0 && (
+                            0 && (
                               <div
                                 style={{
                                   fontSize: "0.7rem",
@@ -1224,11 +1217,10 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                 <ChevronLeft size={14} /> Quay lại
               </button>
               <button
-                className={`lqw-btn ${
-                  liquidationType === "force_majeure"
+                className={`lqw-btn ${liquidationType === "force_majeure"
                     ? "lqw-btn-primary"
                     : "lqw-btn-danger"
-                }`}
+                  }`}
                 onClick={handleSubmit}
                 disabled={submitting}
               >

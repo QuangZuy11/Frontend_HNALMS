@@ -42,6 +42,9 @@ interface FloorMapProps {
   showDateYear?: boolean;
   /** 'parking' = Nhà Xe (Tầng 1), 'drying' = Sân Phơi (Tầng 5) */
   sidebarType?: "parking" | "drying";
+  multiSelectMode?: boolean;
+  selectedRoomIds?: string[];
+  onRoomToggle?: (roomId: string) => void;
 }
 
 // Vibrant mid-tone palette — Tailwind ~400–500, easy to distinguish
@@ -138,8 +141,11 @@ export default function FloorMap({
   compact = false,
   onRoomSelect,
   legendType = "default",
-  showDateYear = true,
+  showDateYear = false,
   sidebarType = "parking",
+  multiSelectMode = false,
+  selectedRoomIds = [],
+  onRoomToggle,
 }: FloorMapProps) {
   const navigate = useNavigate();
 
@@ -186,12 +192,17 @@ export default function FloorMap({
     });
   });
 
-  const handleRoomClick = (roomId: string, event: React.MouseEvent) => {
+  const handleRoomClick = (room: Room, event: React.MouseEvent) => {
+    if (multiSelectMode) {
+      if ((room.status === "Occupied" || room.status === "Deposited") && room.activeContractId) {
+        if (onRoomToggle) onRoomToggle(room._id);
+      }
+      return;
+    }
     if (onRoomSelect) {
-      const room = rooms.find((r) => r._id === roomId);
-      if (room) onRoomSelect(room, event);
+      onRoomSelect(room, event);
     } else {
-      navigate(`/rooms/${roomId}`);
+      navigate(`/rooms/${room._id}`);
     }
   };
 
@@ -356,8 +367,6 @@ export default function FloorMap({
               const isDeposited = room.status === "Deposited";
               const typeColor = getRoomTypeColor(room.roomTypeId?._id);
 
-              // For guest view: if room is Deposited but no floating deposit and
-              // has future contract >= 30 days, treat it as available for short-term
               const isShortTermAvailable = room.isShortTermAvailable || false;
               const hasFloatingDeposit = room.hasFloatingDeposit || false;
               const hasFutureContract = !!(
@@ -366,7 +375,6 @@ export default function FloorMap({
               const hasFutureInactiveContract =
                 room.hasFutureInactiveContract || false;
 
-              // Special case: room is Deposited AND has future contract
               const hasMultiOptions =
                 isDeposited && hasFutureContract && !hasFloatingDeposit;
 
@@ -375,15 +383,12 @@ export default function FloorMap({
                 !hasFloatingDeposit &&
                 (room.status === "Occupied" || room.status === "Deposited");
 
-              // Inactive contract (>30 days): treat as available, green label, no !
-              // Guest + declined: giữ dạng đang thuê (sọc), chỉ thêm nhãn "Có thể cọc"
               const showAsAvailable =
                 isAvailable ||
                 (isDeposited && isShortTermAvailable && !hasFutureContract) ||
                 hasFutureInactiveContract ||
                 (renewalDeclinedRebook && legendType !== "guest");
-              // Visual: show deposit badge if deposited + has floating deposit (NOT for inactive contracts)
-              // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit OR gap is already filled
+              
               const showDepositedBadge =
                 (isDeposited &&
                   !hasMultiOptions &&
@@ -391,10 +396,8 @@ export default function FloorMap({
                 (hasFutureInactiveContract && hasFloatingDeposit) ||
                 (hasFutureInactiveContract && room.successorLeaseBooked);
 
-              // Room bị Vô hiệu hóa (isActive === false)
               const isRoomInactive = room.isActive === false;
 
-              // Check if highlighted
               const isGhosted =
                 highlightedRooms &&
                 !highlightedRooms.some((r) => r._id === room._id);
@@ -407,16 +410,17 @@ export default function FloorMap({
                     ? "status-deposited"
                     : "status-occupied";
 
-              // logic for inserting corridors
+              const isSelected = selectedRoomIds.includes(room._id);
+              const isSelectable = multiSelectMode && (room.status === "Occupied" || room.status === "Deposited") && room.activeContractId;
+              const opacity = multiSelectMode && !isSelectable ? 0.3 : 1;
+
               return (
                 <React.Fragment key={room._id}>
-                  {/* Render the room node */}
                   <div
-                    className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""} ${hasMultiOptions ? "has-multi-options" : ""}`}
-                    onClick={isRoomInactive ? undefined : (e) => handleRoomClick(room._id, e)}
-                    title={isRoomInactive ? `${room.name} - VÔ HIỆU HÓA` : `${room.name} - ${room.roomTypeId?.typeName || room.roomTypeId?.name || ""}${hasFutureInactiveContract ? " (Có HĐ inactive, đặt cọc được)" : hasMultiOptions ? " (Có 2 lựa chọn)" : isShortTermAvailable && !hasFloatingDeposit ? " (Có thể thuê ngắn hạn)" : ""}`}
+                    className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""} ${hasMultiOptions ? "has-multi-options" : ""} ${isSelected ? "selected-ring" : ""}`}
+                    onClick={isRoomInactive ? undefined : (e) => handleRoomClick(room, e)}
                     data-color={typeColor}
-                    style={isRoomInactive ? undefined : {
+                    style={isRoomInactive ? { opacity } : {
                       background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
                     }}
                   >

@@ -117,4 +117,23 @@ export const liquidationService = {
     const response = await api.post<RestoreResponse>(`/liquidations/restore/${id}`);
     return response.data;
   },
+
+  /**
+   * Tạo yêu cầu thanh lý (hỗ trợ nhập chỉ số điện nước)
+   * POST /api/liquidations/create
+   */
+  create: async (payload: {
+    contractId: string;
+    liquidationType: LiquidationType;
+    liquidationDate: string;
+    note: string;
+    images?: string[];
+    electricServiceId: string;
+    waterServiceId: string;
+    electricNewIndex: number;
+    waterNewIndex: number;
+  }): Promise<any> => {
+    const response = await api.post("/liquidations/create", payload);
+    return response.data;
+  },
 };
