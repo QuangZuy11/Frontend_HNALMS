@@ -588,6 +588,7 @@
 .col-type     { min-width: 140px; }
 .col-date     { min-width: 120px; }
 .col-amount   { min-width: 150px; }
+.col-status   { min-width: 140px; }
 .col-actions  { width: 100px; text-align: center !important; }
 
 .clm-table tbody tr {
@@ -720,6 +721,41 @@
   background: #fef2f2;
   color: #dc2626;
   border: 1px solid #fecaca;
+}
+
+/* Status badges */
+.clm-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.clm-status-badge--pending {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.clm-status-badge--warning {
+  background: #fef2f2;
+  color: #ea580c;
+  border: 1px solid #fed7aa;
+}
+
+.clm-status-badge--info {
+  background: #f0fdfa;
+  color: #0d9488;
+  border: 1px solid #99f6e4;
+}
+
+.clm-status-badge--success {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
 }
 
 /* Action buttons */

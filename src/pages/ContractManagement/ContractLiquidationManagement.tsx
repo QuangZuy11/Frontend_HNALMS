@@ -88,6 +88,25 @@ const getSettlementLabel = (item: LiquidationItem): { label: string; amount: num
   }
 };
 
+const getStatusBadge = (status: string | undefined, type: LiquidationType, settlementAmount: number) => {
+  if (status === "pending_owner") {
+    return { label: "Chờ chủ tòa nhà duyệt", className: "clm-status-badge clm-status-badge--pending" };
+  }
+  if (status === "pending_accountant") {
+    return { label: "Chờ kế toán giải ngân", className: "clm-status-badge clm-status-badge--info" };
+  }
+  if (status === "completed") {
+    return { label: "Đã quyết toán", className: "clm-status-badge clm-status-badge--success" };
+  }
+
+  // Fallback if no status field from backend yet
+  if (type === "force_majeure" && settlementAmount > 0) {
+    return { label: "Chờ chủ tòa nhà duyệt", className: "clm-status-badge clm-status-badge--pending" };
+  }
+
+  return { label: "Đã quyết toán", className: "clm-status-badge clm-status-badge--success" };
+};
+
 // ─────────────────────────────────────────────
 // Confirm Modal
 // ─────────────────────────────────────────────
@@ -449,21 +468,23 @@ const DetailModal: React.FC<DetailModalProps> = ({
           <button className="clm-btn clm-btn--secondary" onClick={onClose}>
             Đóng
           </button>
-          <button
-            className="clm-btn clm-btn--restore"
-            onClick={() => onRestore(item._id)}
-            disabled={restoring}
-          >
-            {restoring ? (
-              <>
-                <Loader2Icon className="mui-icon mui-icon-spinner" /> Đang hoàn tác...
-              </>
-            ) : (
-              <>
-                <RotateCcwIcon className="mui-icon mui-icon-restore" /> Hoàn Tác Thanh Lý
-              </>
-            )}
-          </button>
+          {item.status !== "completed" && (
+            <button
+              className="clm-btn clm-btn--restore"
+              onClick={() => onRestore(item._id)}
+              disabled={restoring}
+            >
+              {restoring ? (
+                <>
+                  <Loader2Icon className="mui-icon mui-icon-spinner" /> Đang hoàn tác...
+                </>
+              ) : (
+                <>
+                  <RotateCcwIcon className="mui-icon mui-icon-restore" /> Hoàn Tác Thanh Lý
+                </>
+              )}
+            </button>
+          )}
         </div>
 
         {/* Lightbox Image Viewer */}
@@ -767,6 +788,7 @@ const ContractLiquidationManagement: React.FC = () => {
                     <th className="col-type">Loại</th>
                     <th className="col-date">Ngày Thanh Lý</th>
                     <th className="col-amount">Tổng Tất Toán</th>
+                    <th className="col-status">Trạng Thái</th>
                     <th className="col-actions">Thao Tác</th>
                   </tr>
                 </thead>
@@ -824,6 +846,16 @@ const ContractLiquidationManagement: React.FC = () => {
                             </span>
                             <span className="clm-amount-label">{settlement.label}</span>
                           </div>
+                        </td>
+                        <td className="col-status">
+                          {(() => {
+                            const badge = getStatusBadge(item.status, item.liquidationType, settlement.amount);
+                            return (
+                              <span className={badge.className}>
+                                {badge.label}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="col-actions">
                           <button

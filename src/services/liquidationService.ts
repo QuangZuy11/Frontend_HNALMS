@@ -49,6 +49,7 @@ export interface LiquidationItem {
   meterReadingIds: MeterReadingInfo[];
   createdAt: string;
   updatedAt: string;
+  status?: string;
 }
 
 export interface LiquidationListResponse {
