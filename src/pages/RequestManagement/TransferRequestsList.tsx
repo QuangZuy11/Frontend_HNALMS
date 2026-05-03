@@ -151,8 +151,10 @@ export default function TransferRequestsList() {
   const [latestMeterReading, setLatestMeterReading] = useState<{
     electric: { newIndex: number; readingDate?: string } | null;
     water: { newIndex: number; readingDate?: string } | null;
+    hasPeriodicInvoice?: boolean;
   } | null>(null);
   const [latestMeterLoading, setLatestMeterLoading] = useState(false);
+  const [hasPeriodicInvoice, setHasPeriodicInvoice] = useState(false);
 
   const tableRef = useRef<HTMLDivElement | null>(null);
 
@@ -196,9 +198,12 @@ export default function TransferRequestsList() {
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('vi-VN', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-    });
+    // Dùng UTC methods để tránh lệch ngày do timezone (VN UTC+7)
+    const d = new Date(dateStr);
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const year = d.getUTCFullYear();
+    return `${day}/${month}/${year}`;
   };
 
   const formatCurrency = (amount?: number) => {
@@ -286,12 +291,16 @@ export default function TransferRequestsList() {
     setWaterIndex('');
     setManagerInvoiceNotes('');
     setLatestMeterReading(null);
+    setHasPeriodicInvoice(false);
     setShowReleaseInvoiceModal(true);
-    // Fetch chỉ số điện nước gần nhất
+    // Fetch chỉ số điện nước gần nhất + kiểm tra hóa đơn định kỳ
     try {
       setLatestMeterLoading(true);
       const res = await transferRequestService.getLatestMeterReading(req._id);
-      if (res.success) setLatestMeterReading(res.data);
+      if (res.success) {
+        setLatestMeterReading(res.data);
+        setHasPeriodicInvoice(!!res.data?.hasPeriodicInvoice);
+      }
     } catch {
       // Không có dữ liệu → hiển thị "Chưa có"
     } finally {
@@ -913,16 +922,14 @@ export default function TransferRequestsList() {
             </p>
 
             {/* Chỉ số điện nước gần nhất (chỉ đọc, để tham khảo) */}
-            <div className="trns-meter-ref-box">
-              <div className="trns-meter-ref-title">
-                📊 Chỉ số đồng hồ ghi nhận gần nhất
-              </div>
-              {latestMeterLoading ? (
-                <div className="trns-meter-ref-loading">Đang tải...</div>
-              ) : (
+            {!latestMeterLoading && !hasPeriodicInvoice && (
+              <div className="trns-meter-ref-box">
+                <div className="trns-meter-ref-title">
+                  Chỉ số đồng hồ ghi nhận gần nhất
+                </div>
                 <div className="trns-meter-ref-row">
                   <div className="trns-meter-ref-item">
-                    <span className="trns-meter-ref-icon">⚡</span>
+                    <span className="trns-meter-ref-icon"></span>
                     <span className="trns-meter-ref-label">Điện:</span>
                     <span className="trns-meter-ref-value">
                       {latestMeterReading?.electric != null
@@ -931,7 +938,7 @@ export default function TransferRequestsList() {
                     </span>
                   </div>
                   <div className="trns-meter-ref-item">
-                    <span className="trns-meter-ref-icon">💧</span>
+                    <span className="trns-meter-ref-icon"></span>
                     <span className="trns-meter-ref-label">Nước:</span>
                     <span className="trns-meter-ref-value">
                       {latestMeterReading?.water != null
@@ -940,29 +947,55 @@ export default function TransferRequestsList() {
                     </span>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            <div className="trns-form-group">
-              <label className="trns-form-label">Chỉ số điện cuối cùng (Phòng cũ)</label>
-              <input
-                type="number"
-                className="trns-form-input"
-                placeholder="Để trống nếu dùng chỉ số gần nhất..."
-                value={electricIndex}
-                onChange={(e) => setElectricIndex(e.target.value)}
-              />
-            </div>
-            <div className="trns-form-group">
-              <label className="trns-form-label">Chỉ số nước cuối cùng (Phòng cũ)</label>
-              <input
-                type="number"
-                className="trns-form-input"
-                placeholder="Để trống nếu dùng chỉ số gần nhất..."
-                value={waterIndex}
-                onChange={(e) => setWaterIndex(e.target.value)}
-              />
-            </div>
+            {latestMeterLoading && (
+              <div className="trns-meter-ref-box">
+                <div className="trns-meter-ref-loading">Đang kiểm tra hóa đơn...</div>
+              </div>
+            )}
+
+            {/* Thông báo khi đã có hóa đơn định kỳ tháng này */}
+            {!latestMeterLoading && hasPeriodicInvoice && (
+              <div className="trns-info-box" style={{ borderColor: '#3b82f6', background: '#eff6ff' }}>
+                <p className="trns-info-box-title" style={{ color: '#1d4ed8' }}>
+                  Phòng này đã có hóa đơn định kỳ tháng hiện tại
+                </p>
+                <ul className="trns-info-box-list" style={{ color: '#1e40af' }}>
+                  <li>Hóa đơn điện, nước tháng này đã được phát hành trong kỳ định kỳ.</li>
+                  <li>Không cần nhập chỉ số điện nước cho hóa đơn chuyển phòng.</li>
+                  <li>Hệ thống sẽ dùng hóa đơn định kỳ hiện có thay thế.</li>
+                </ul>
+              </div>
+            )}
+
+            {/* Form nhập điện nước - chỉ hiện khi CHƯA có hóa đơn định kỳ */}
+            {!latestMeterLoading && !hasPeriodicInvoice && (
+              <>
+                <div className="trns-form-group">
+                  <label className="trns-form-label">Chỉ số điện cuối cùng (Phòng cũ)</label>
+                  <input
+                    type="number"
+                    className="trns-form-input"
+                    placeholder="Để trống nếu dùng chỉ số gần nhất..."
+                    value={electricIndex}
+                    onChange={(e) => setElectricIndex(e.target.value)}
+                  />
+                </div>
+                <div className="trns-form-group">
+                  <label className="trns-form-label">Chỉ số nước cuối cùng (Phòng cũ)</label>
+                  <input
+                    type="number"
+                    className="trns-form-input"
+                    placeholder="Để trống nếu dùng chỉ số gần nhất..."
+                    value={waterIndex}
+                    onChange={(e) => setWaterIndex(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
+
             <div className="trns-form-group">
               <label className="trns-form-label">Ghi chú hóa đơn</label>
               <textarea

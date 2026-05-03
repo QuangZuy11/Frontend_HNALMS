@@ -80,6 +80,13 @@ export const moveOutService = {
     return response.data;
   },
 
+  // [MANAGER] Lấy chỉ số điện nước gần nhất + kiểm tra HĐ định kỳ tháng hiện tại
+  // GET /api/move-outs/:moveOutRequestId/latest-meter
+  getLatestMeterReadingForMoveOut: async (requestId: string) => {
+    const response = await api.get(`/move-outs/${requestId}/latest-meter`);
+    return response.data;
+  },
+
   // [MANAGER] So sánh cọc vs hóa đơn cuối
   // GET /api/move-outs/:moveOutRequestId/deposit-vs-invoice
   getDepositVsInvoice: async (requestId: string) => {
