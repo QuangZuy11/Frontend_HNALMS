@@ -112,7 +112,7 @@ const extractTypeNumber = (typeName: string): number => {
 const formatRoomLabel = (name: string): string =>
   name.replace(/^Phòng\s*/i, "P.");
 
-// Format contract date label: DD/MM/YY–DD/MM/YY (single line with en-dash)
+// Format contract date label: DD/MM/YYYY–DD/MM/YYYY (single line with en-dash)
 const getContractDateLabel = (
   startDate?: string,
   endDate?: string,
@@ -127,8 +127,8 @@ const getContractDateLabel = (
   const endDd = endDt.getDate().toString().padStart(2, "0");
   const endMm = (endDt.getMonth() + 1).toString().padStart(2, "0");
 
-  const startYy = startDt.getFullYear().toString().slice(-2);
-  const endYy = endDt.getFullYear().toString().slice(-2);
+  const startYy = startDt.getFullYear().toString();
+  const endYy = endDt.getFullYear().toString();
 
   return `${startDd}/${startMm}/${startYy}\u2013${endDd}/${endMm}/${endYy}`;
 };
@@ -192,7 +192,10 @@ export default function FloorMapLevel2({
 
   const handleRoomClick = (room: Room, event: React.MouseEvent) => {
     if (multiSelectMode) {
-      if ((room.status === "Occupied" || room.status === "Deposited") && room.activeContractId) {
+      if (
+        (room.status === "Occupied" || room.status === "Deposited") &&
+        room.activeContractId
+      ) {
         if (onRoomToggle) onRoomToggle(room._id);
       }
       return;
@@ -478,8 +481,13 @@ export default function FloorMapLevel2({
                                 : "status-occupied";
 
                           const isSelected = selectedRoomIds.includes(room._id);
-                          const isSelectable = multiSelectMode && (room.status === "Occupied" || room.status === "Deposited") && room.activeContractId;
-                          const opacity = multiSelectMode && !isSelectable ? 0.3 : 1;
+                          const isSelectable =
+                            multiSelectMode &&
+                            (room.status === "Occupied" ||
+                              room.status === "Deposited") &&
+                            room.activeContractId;
+                          const opacity =
+                            multiSelectMode && !isSelectable ? 0.3 : 1;
 
                           return (
                             <div
@@ -497,7 +505,7 @@ export default function FloorMapLevel2({
                                   : {
                                       flex: 1,
                                       background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
-                                      opacity
+                                      opacity,
                                     }
                               }
                               title={
@@ -507,8 +515,34 @@ export default function FloorMapLevel2({
                               }
                             >
                               {isSelected && (
-                                <div style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, background: '#10b981', borderRadius: '50%', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    top: -6,
+                                    right: -6,
+                                    width: 20,
+                                    height: 20,
+                                    background: "#10b981",
+                                    borderRadius: "50%",
+                                    border: "2px solid white",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    zIndex: 10,
+                                  }}
+                                >
+                                  <svg
+                                    width="12"
+                                    height="12"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="white"
+                                    strokeWidth="3"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                  </svg>
                                 </div>
                               )}
                               <span

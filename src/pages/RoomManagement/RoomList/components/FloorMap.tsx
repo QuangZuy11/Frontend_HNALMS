@@ -98,7 +98,7 @@ const extractTypeNumber = (typeName: string): number => {
 const formatRoomLabel = (name: string): string =>
   name.replace(/^Phòng\s*/i, "P.");
 
-// Format contract date label: DD/MM/YY–DD/MM/YY (showYear=true) or DD/MM–DD/MM (showYear=false)
+// Format contract date label: DD/MM/YYYY–DD/MM/YYYY
 const getContractDateLabel = (
   startDate?: string,
   endDate?: string,
@@ -114,24 +114,10 @@ const getContractDateLabel = (
   const endDd = endDt.getDate().toString().padStart(2, "0");
   const endMm = (endDt.getMonth() + 1).toString().padStart(2, "0");
 
-  const startNoYear = `${startDd}/${startMm}`;
-  const endNoYear = `${endDd}/${endMm}`;
+  const startYy = startDt.getFullYear().toString();
+  const endYy = endDt.getFullYear().toString();
 
-  const startYy = startDt.getFullYear().toString().slice(-2);
-  const endYy = endDt.getFullYear().toString().slice(-2);
-
-  // Vì Tầng 1/5 đủ rộng, luôn hiển thị cả năm (kể cả khi trùng DD/MM)
-  if (startNoYear === endNoYear) {
-    return `${startNoYear}/${startYy}–${endNoYear}/${endYy}`;
-  }
-
-  // Nếu chữ đủ rộng (showYear = true)
-  if (showYear) {
-    return `${startNoYear}/${startYy}–${endNoYear}/${endYy}`;
-  }
-
-  // Mặc định: hiện DD/MM–DD/MM
-  return `${startNoYear}–${endNoYear}`;
+  return `${startDd}/${startMm}/${startYy}\u2013${endDd}/${endMm}/${endYy}`;
 };
 
 export default function FloorMap({
@@ -194,7 +180,10 @@ export default function FloorMap({
 
   const handleRoomClick = (room: Room, event: React.MouseEvent) => {
     if (multiSelectMode) {
-      if ((room.status === "Occupied" || room.status === "Deposited") && room.activeContractId) {
+      if (
+        (room.status === "Occupied" || room.status === "Deposited") &&
+        room.activeContractId
+      ) {
         if (onRoomToggle) onRoomToggle(room._id);
       }
       return;
@@ -321,8 +310,7 @@ export default function FloorMap({
                         width: "16px",
                         height: "16px",
                         borderRadius: "3px",
-                        background:
-                          "#f1f5f9",
+                        background: "#f1f5f9",
                         border: "2px dotted #cbd5e1",
                       }}
                     />
@@ -388,7 +376,7 @@ export default function FloorMap({
                 (isDeposited && isShortTermAvailable && !hasFutureContract) ||
                 hasFutureInactiveContract ||
                 (renewalDeclinedRebook && legendType !== "guest");
-              
+
               const showDepositedBadge =
                 (isDeposited &&
                   !hasMultiOptions &&
@@ -411,18 +399,29 @@ export default function FloorMap({
                     : "status-occupied";
 
               const isSelected = selectedRoomIds.includes(room._id);
-              const isSelectable = multiSelectMode && (room.status === "Occupied" || room.status === "Deposited") && room.activeContractId;
+              const isSelectable =
+                multiSelectMode &&
+                (room.status === "Occupied" || room.status === "Deposited") &&
+                room.activeContractId;
               const opacity = multiSelectMode && !isSelectable ? 0.3 : 1;
 
               return (
                 <React.Fragment key={room._id}>
                   <div
                     className={`room-node ${statusClass} ${isGhosted ? "ghosted" : ""} ${hasMultiOptions ? "has-multi-options" : ""} ${isSelected ? "selected-ring" : ""}`}
-                    onClick={isRoomInactive ? undefined : (e) => handleRoomClick(room, e)}
+                    onClick={
+                      isRoomInactive
+                        ? undefined
+                        : (e) => handleRoomClick(room, e)
+                    }
                     data-color={typeColor}
-                    style={isRoomInactive ? { opacity } : {
-                      background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
-                    }}
+                    style={
+                      isRoomInactive
+                        ? { opacity }
+                        : {
+                            background: `linear-gradient(145deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
+                          }
+                    }
                   >
                     <span className="room-node-name">
                       {formatRoomLabel(room.name)}
@@ -441,7 +440,7 @@ export default function FloorMap({
                         <span className="room-multi-options-date">
                           {getComingSoonLabel(
                             room.futureContractStartDate ||
-                            room.contractStartDate,
+                              room.contractStartDate,
                           )}
                         </span>
                       )}

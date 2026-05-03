@@ -91,7 +91,7 @@ const darkenColor = (hex: string, amount = 0.18): string => {
 const formatRoomLabel = (name: string): string =>
   name.replace(/^Phòng\s*/i, "P.");
 
-// Format contract date label: DD/MM/YY–DD/MM/YY (showYear=true) or DD/MM–DD/MM (showYear=false)
+// Format contract date label: DD/MM/YYYY–DD/MM/YYYY (single line with en-dash)
 const getContractDateLabel = (
   startDate?: string,
   endDate?: string,
@@ -107,24 +107,10 @@ const getContractDateLabel = (
   const endDd = endDt.getDate().toString().padStart(2, "0");
   const endMm = (endDt.getMonth() + 1).toString().padStart(2, "0");
 
-  const startNoYear = `${startDd}/${startMm}`;
-  const endNoYear = `${endDd}/${endMm}`;
+  const startYy = startDt.getFullYear().toString();
+  const endYy = endDt.getFullYear().toString();
 
-  const startYy = startDt.getFullYear().toString().slice(-2);
-  const endYy = endDt.getFullYear().toString().slice(-2);
-
-  // Vì Tầng 1/5 đủ rộng, luôn hiển thị cả năm (kể cả khi trùng DD/MM)
-  if (startNoYear === endNoYear) {
-    return `${startNoYear}/${startYy}–${endNoYear}/${endYy}`;
-  }
-
-  // Nếu chữ đủ rộng (showYear = true)
-  if (showYear) {
-    return `${startNoYear}/${startYy}–${endNoYear}/${endYy}`;
-  }
-
-  // Mặc định: hiện DD/MM–DD/MM
-  return `${startNoYear}–${endNoYear}`;
+  return `${startDd}/${startMm}/${startYy}\u2013${endDd}/${endMm}/${endYy}`;
 };
 
 export default function FloorMapLevel5({
@@ -548,9 +534,7 @@ export default function FloorMapLevel5({
               );
             })
           ) : (
-            <div className="lv5-empty-state">
-              Không tìm thấy phòng phù hợp
-            </div>
+            <div className="lv5-empty-state">Không tìm thấy phòng phù hợp</div>
           )}
         </div>
 

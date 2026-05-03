@@ -57,9 +57,21 @@ export default function RoomList() {
 
   const [defaultFloorId, setDefaultFloorId] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [floorsData, setFloorsData] = useState<{ _id: string; name: string; layoutType?: "type1" | "type2" | "type3" }[]>(
-    [],
-  );
+  const [floorsData, setFloorsData] = useState<
+    { _id: string; name: string; layoutType?: "type1" | "type2" | "type3" }[]
+  >([]);
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [selectedRooms, setSelectedRooms] = useState<Room[]>([]);
+
+  const handleRoomToggle = (room: Room) => {
+    setSelectedRooms((prev) => {
+      const exists = prev.find((r) => r._id === room._id);
+      if (exists) {
+        return prev.filter((r) => r._id !== room._id);
+      }
+      return [...prev, room];
+    });
+  };
 
   useEffect(() => {
     const initializeDefaultFilter = async () => {
@@ -93,23 +105,23 @@ export default function RoomList() {
   // Get floor label from floorsData instead of rooms (works even when no rooms match)
   const currentFloorLabel = showFloorMap
     ? (() => {
-      const selectedFloor = floorsData.find(
-        (f) => f._id === filters.selectedFloors[0],
-      );
-      if (selectedFloor) {
-        const name = selectedFloor.name;
-        // Check if name already starts with "Tầng"
-        if (name.toLowerCase().startsWith("tầng")) {
-          return name;
+        const selectedFloor = floorsData.find(
+          (f) => f._id === filters.selectedFloors[0],
+        );
+        if (selectedFloor) {
+          const name = selectedFloor.name;
+          // Check if name already starts with "Tầng"
+          if (name.toLowerCase().startsWith("tầng")) {
+            return name;
+          }
+          return `Tầng ${name}`;
         }
-        return `Tầng ${name}`;
-      }
-      // Fallback to room data if floorsData not available
-      const roomFloorLabel = rooms.find(
-        (r) => r.floorId?._id === filters.selectedFloors[0],
-      )?.floorLabel;
-      return roomFloorLabel || "";
-    })()
+        // Fallback to room data if floorsData not available
+        const roomFloorLabel = rooms.find(
+          (r) => r.floorId?._id === filters.selectedFloors[0],
+        )?.floorLabel;
+        return roomFloorLabel || "";
+      })()
     : "";
 
   useEffect(() => {
@@ -149,52 +161,60 @@ export default function RoomList() {
             priceNum = room.price;
           }
 
-            let isShortTermAvailable = false;
-            // Check if room is Deposited and has a future contract >= 30 days away
-            // AND does NOT have a floating deposit (pending contract signing)
-            // OR: room has a future inactive contract (>30 days) → available to book now
-            if (room.status === "Deposited" && room.contractStartDate && !room.hasFloatingDeposit) {
-               const daysUntil = Math.ceil((new Date(room.contractStartDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-               if (daysUntil >= 30) {
-                  isShortTermAvailable = true;
-               }
+          let isShortTermAvailable = false;
+          // Check if room is Deposited and has a future contract >= 30 days away
+          // AND does NOT have a floating deposit (pending contract signing)
+          // OR: room has a future inactive contract (>30 days) → available to book now
+          if (
+            room.status === "Deposited" &&
+            room.contractStartDate &&
+            !room.hasFloatingDeposit
+          ) {
+            const daysUntil = Math.ceil(
+              (new Date(room.contractStartDate).getTime() -
+                new Date().getTime()) /
+                (1000 * 60 * 60 * 24),
+            );
+            if (daysUntil >= 30) {
+              isShortTermAvailable = true;
             }
-            if (room.hasFutureInactiveContract && !room.hasFloatingDeposit) {
-               isShortTermAvailable = true;
-            }
+          }
+          if (room.hasFutureInactiveContract && !room.hasFloatingDeposit) {
+            isShortTermAvailable = true;
+          }
 
-            if (room.successorLeaseBooked) {
-              isShortTermAvailable = false;
-            }
+          if (room.successorLeaseBooked) {
+            isShortTermAvailable = false;
+          }
 
-            return {
-              ...room,
-              title: room.name,
-              floor: room.floorId?.name || "N/A",
-              floorLabel: (room.floorId?.name || "")
-                .toLowerCase()
-                .startsWith("tầng")
-                ? room.floorId?.name
-                : `Tầng ${room.floorId?.name || "N/A"}`,
-              price: priceNum,
-              priceLabel:
-                priceNum > 0
-                  ? `${(priceNum / 1000000).toFixed(1)}M`
-                  : "Chưa có giá",
-              area: room.roomTypeId?.area || 30,
-              capacity: room.roomTypeId?.personMax || 2,
-              description: room.description || room.roomTypeId?.description || "",
-              amenities: [],
-              images: room.roomTypeId?.images || [],
-              contractEndDate: room.contractEndDate || null,
-              contractStartDate: room.contractStartDate || null,
-              activeContractId: room.activeContractId || null,
-              hasFloatingDeposit: room.hasFloatingDeposit || false,
-              successorLeaseBooked: !!room.successorLeaseBooked,
-              isShortTermAvailable,
-              hasFutureInactiveContract: room.hasFutureInactiveContract || false,
-            };
-          });
+          return {
+            ...room,
+            title: room.name,
+            floor: room.floorId?.name || "N/A",
+            floorLabel: (room.floorId?.name || "")
+              .toLowerCase()
+              .startsWith("tầng")
+              ? room.floorId?.name
+              : `Tầng ${room.floorId?.name || "N/A"}`,
+            price: priceNum,
+            priceLabel:
+              priceNum > 0
+                ? `${(priceNum / 1000000).toFixed(1)}M`
+                : "Chưa có giá",
+            area: room.roomTypeId?.area || 30,
+            capacity: room.roomTypeId?.personMax || 2,
+            description: room.description || room.roomTypeId?.description || "",
+            amenities: [],
+            images: room.roomTypeId?.images || [],
+            contractEndDate: room.contractEndDate || null,
+            contractStartDate: room.contractStartDate || null,
+            activeContractId: room.activeContractId || null,
+            hasFloatingDeposit: room.hasFloatingDeposit || false,
+            successorLeaseBooked: !!room.successorLeaseBooked,
+            isShortTermAvailable,
+            hasFutureInactiveContract: room.hasFutureInactiveContract || false,
+          };
+        });
 
         let currentFloorRooms: Room[] = [];
         let displayRooms = transformedRooms;
@@ -246,8 +266,6 @@ export default function RoomList() {
     });
   };
 
-
-
   // Auto-collapse sidebar when split-view (type detail) is active
   const sidebarCollapsed = showTypeDetail && !sidebarManualOpen;
 
@@ -256,12 +274,20 @@ export default function RoomList() {
       <div className="container">
         <div className="content-layout">
           {/* Toggle button visible when sidebar is collapsed */}
-          <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: '0.5rem', zIndex: 50 }}>
+          <div
+            style={{
+              position: "absolute",
+              top: 145,
+              left: 0,
+              display: "flex",
+              zIndex: 50,
+            }}
+          >
             {sidebarCollapsed && (
               <button
                 type="button"
                 className="filters-toggle-btn"
-                style={{ position: 'static' }}
+                style={{ position: "static" }}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -345,8 +371,8 @@ export default function RoomList() {
               <>
                 {/* Case: Floor selected + Room Type selected + No rooms match -> Show "No rooms found" instead of empty map */}
                 {showFloorMap &&
-                  filters.selectedRoomTypes.length > 0 &&
-                  rooms.length === 0 ? (
+                filters.selectedRoomTypes.length > 0 &&
+                rooms.length === 0 ? (
                   <div className="empty-state">
                     <p>Không có phòng loại này tại {currentFloorLabel}</p>
                   </div>
@@ -365,17 +391,21 @@ export default function RoomList() {
                         (f) => f._id === filters.selectedFloors[0],
                       );
                       const layoutType = selectedFloor?.layoutType || "type1";
-                      const mapRooms = floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms;
+                      const mapRooms =
+                        floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms;
                       const props = {
                         rooms: mapRooms,
                         highlightedRooms: rooms,
                         floorName: currentFloorLabel || "Tầng",
                         legendType: "guest" as const,
-                        showDateYear: filters.selectedRoomTypes.length === 0 || sidebarCollapsed,
-                        sidebarType: layoutType === "type3" ? "drying" : "parking",
+                        showDateYear:
+                          filters.selectedRoomTypes.length === 0 ||
+                          sidebarCollapsed,
+                        sidebarType:
+                          layoutType === "type3" ? "drying" : "parking",
                         multiSelectMode,
-                        selectedRoomIds: selectedRooms.map(r => r._id),
-                        onRoomToggle: handleRoomToggle
+                        selectedRoomIds: selectedRooms.map((r) => r._id),
+                        onRoomToggle: handleRoomToggle,
                       };
                       if (layoutType === "type2") {
                         return <FloorMapLevel2 {...props} />;
@@ -390,13 +420,15 @@ export default function RoomList() {
                       (f) => f._id === filters.selectedFloors[0],
                     );
                     const layoutType = selectedFloor?.layoutType || "type1";
-                    const mapRooms = floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms;
+                    const mapRooms =
+                      floorLayoutRooms.length > 0 ? floorLayoutRooms : rooms;
                     const props = {
                       rooms: mapRooms,
                       highlightedRooms: rooms,
                       floorName: currentFloorLabel || "Tầng",
                       legendType: "guest" as const,
-                      sidebarType: layoutType === "type3" ? "drying" : "parking",
+                      sidebarType:
+                        layoutType === "type3" ? "drying" : "parking",
                     };
                     if (layoutType === "type2") {
                       return <FloorMapLevel2 {...props} />;
@@ -418,8 +450,6 @@ export default function RoomList() {
                 <p>Không tìm thấy phòng phù hợp</p>
               </div>
             )}
-
-
           </main>
         </div>
       </div>
