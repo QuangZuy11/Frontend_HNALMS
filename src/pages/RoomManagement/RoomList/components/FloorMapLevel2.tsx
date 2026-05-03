@@ -140,6 +140,9 @@ export default function FloorMapLevel2({
   compact = false,
   onRoomSelect,
   legendType = "default",
+  multiSelectMode = false,
+  selectedRoomIds = [],
+  onRoomToggle,
 }: FloorMapLevel2Props & {
   highlightedRooms?: Room[];
   compact?: boolean;
@@ -757,7 +760,7 @@ export default function FloorMapLevel2({
                       onClick={
                         isRoomInactive
                           ? undefined
-                          : (e) => handleRoomClick(room._id, e)
+                          : (e) => handleRoomClick(room, e)
                       }
                       data-color={typeColor}
                       style={
