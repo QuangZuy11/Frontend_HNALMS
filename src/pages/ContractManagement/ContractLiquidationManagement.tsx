@@ -280,7 +280,7 @@ const DetailModal: React.FC<DetailModalProps> = ({
                     <label>Khách thuê</label>
                     <span>
                       {typeof contractData?.tenantId === "object"
-                        ? (contractData.tenantId as any)?.username
+                        ? (contractData.tenantId as any)?.fullName || "—"
                         : "—"}
                     </span>
                   </div>
@@ -327,14 +327,16 @@ const DetailModal: React.FC<DetailModalProps> = ({
 
                   {/* Utility costs */}
                   {item.meterReadingIds?.map((mr, idx) => {
+                    const utilityName = mr.utilityId?.name || "";
                     const isElectric =
-                      mr.utilityId?.toLowerCase().includes("điện") ||
-                      mr.utilityId?.toLowerCase().includes("electric");
+                      utilityName.toLowerCase().includes("điện") ||
+                      utilityName.toLowerCase().includes("electric");
                     const isNegative = item.liquidationType === "force_majeure";
                     const usage = mr.usageAmount || 0;
                     const reading = item.invoiceId?.items?.find(
                       (it: any) =>
-                        it.itemName?.toLowerCase().includes(isElectric ? "điện" : "nước")
+                        (isElectric && (it.itemName?.toLowerCase().includes("điện") || it.itemName?.includes("Điện"))) ||
+                        (!isElectric && (it.itemName?.toLowerCase().includes("nước") || it.itemName?.includes("Nước")))
                     );
                     const amount = reading?.amount || 0;
 
@@ -413,9 +415,10 @@ const DetailModal: React.FC<DetailModalProps> = ({
                   </h3>
                   <div className="clm-meter-list">
                     {item.meterReadingIds.map((mr, idx) => {
+                      const utilityName = mr.utilityId?.name || "";
                       const isElectric =
-                        mr.utilityId?.toLowerCase().includes("điện") ||
-                        mr.utilityId?.toLowerCase().includes("electric");
+                        utilityName.toLowerCase().includes("điện") ||
+                        utilityName.toLowerCase().includes("electric");
                       return (
                         <div key={idx} className="clm-meter-item">
                           <div className="clm-meter-icon">
@@ -577,7 +580,7 @@ const ContractLiquidationManagement: React.FC = () => {
           ? (contractData.roomId as any)?.name?.toLowerCase() || ""
           : "";
         const tenantName = typeof contractData?.tenantId === "object"
-          ? (contractData.tenantId as any)?.username?.toLowerCase() || ""
+          ? ((contractData.tenantId as any)?.fullName || "")?.toLowerCase()
           : "";
         const contractCode = (contractData?.contractCode || "").toLowerCase();
         const note = (item.note || "").toLowerCase();
@@ -824,7 +827,7 @@ const ContractLiquidationManagement: React.FC = () => {
                               <UserIcon className="mui-icon mui-icon-user-row" />
                             </span>
                             {typeof contractData?.tenantId === "object"
-                              ? (contractData.tenantId as any)?.username
+                              ? (contractData.tenantId as any)?.fullName || "—"
                               : "—"}
                           </span>
                         </td>

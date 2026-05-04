@@ -5,6 +5,8 @@ import api from "./api";
 // ─────────────────────────────────────────────
 export type LiquidationType = "force_majeure" | "violation";
 
+export type LiquidationStatus = "pending_owner" | "pending_accountant" | "completed";
+
 export interface RoomInfo {
   _id: string;
   name: string;
@@ -13,6 +15,7 @@ export interface RoomInfo {
 export interface TenantInfo {
   _id: string;
   username: string;
+  fullName?: string;
   email?: string;
 }
 
@@ -27,7 +30,7 @@ export interface ContractInfo {
 
 export interface MeterReadingInfo {
   _id: string;
-  utilityId: string;
+  utilityId: { _id: string; name: string } | string;
   oldIndex: number;
   newIndex: number;
   usageAmount: number;
@@ -49,7 +52,10 @@ export interface LiquidationItem {
   meterReadingIds: MeterReadingInfo[];
   createdAt: string;
   updatedAt: string;
-  status?: string;
+  status: LiquidationStatus;
+  ownerApprovedAt?: string | null;
+  ownerApprovedBy?: string | null;
+  accountantPaidAt?: string | null;
 }
 
 export interface LiquidationListResponse {

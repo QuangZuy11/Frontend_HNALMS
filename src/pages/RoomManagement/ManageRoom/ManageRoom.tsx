@@ -411,7 +411,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
   const handleRoomToggle = (roomId: string) => {
     const room = rooms.find(r => r._id === roomId);
     if (!room) return;
-    
+
     setSelectedRooms(prev => {
       const isSelected = prev.some(r => r._id === roomId);
       if (isSelected) {
@@ -440,14 +440,14 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Danh_Sach_Thanh_Ly");
-    
+
     const wscols = [
-      { wch: 5 }, { wch: 15 }, { wch: 10 }, { wch: 20 }, 
+      { wch: 5 }, { wch: 15 }, { wch: 10 }, { wch: 20 },
       { wch: 15 }, { wch: 30 }
     ];
     ws['!cols'] = wscols;
 
-    XLSX.writeFile(wb, `Danh_Sach_Phong_Thanh_Ly_${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.writeFile(wb, `Danh_Sach_Phong_Thanh_Ly_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
   const triggerFileInput = () => {
@@ -1548,7 +1548,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                           {activeContracts.map((contract: any) => (
                             <option key={contract._id} value={contract._id}>
                               {contract.contractCode} -{" "}
-                              {contract.tenantId?.username || "---"} (
+                              {contract.tenantId?.fullName || contract.tenantId?.username || "---"} (
                               {formatDate(contract.startDate)} →{" "}
                               {formatDate(contract.endDate)})
                             </option>
@@ -1560,7 +1560,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                           {inactiveContracts.map((contract: any) => (
                             <option key={contract._id} value={contract._id}>
                               {contract.contractCode} -{" "}
-                              {contract.tenantId?.username || "---"} (
+                              {contract.tenantId?.fullName || contract.tenantId?.username || "---"} (
                               {formatDate(contract.startDate)} →{" "}
                               {formatDate(contract.endDate)})
                             </option>
@@ -1845,7 +1845,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                             Họ tên:
                           </label>
                           <span>
-                            {roomContract.tenantId?.username || "---"}
+                            {roomContract.tenantId?.fullName || roomContract.tenantId?.username || "---"}
                           </span>
                         </div>
                         <div className="rd-field">
@@ -2065,7 +2065,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                 setAllRoomContracts([]);
                 setRoomDeposits([]);
                 setActiveContractIdForLiquidation(null);
-                showToast("success", "Thành công", "Thanh lý hợp đồng thành công! Phòng đã được giải phóng.");
+                showToast("success", "Thành công", "Đã tạo yêu cầu thanh lý. Đang chờ chủ nhà duyệt.");
                 fetchData();
               }}
             />

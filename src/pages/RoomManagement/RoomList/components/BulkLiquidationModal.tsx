@@ -265,12 +265,12 @@ export default function BulkLiquidationModal({
     if (errors.length > 0) {
       setErrorLogs(errors);
       if (successCount > 0) {
-        showToast("warning", `Đã thanh lý thành công ${successCount}/${roomStates.length} phòng. Có ${errors.length} lỗi.`);
+        showToast("warning", `Đã tạo yêu cầu thanh lý cho ${successCount}/${roomStates.length} phòng. Có ${errors.length} lỗi.`);
       } else {
-        showToast("error", `Thanh lý thất bại cho tất cả các phòng.`);
+        showToast("error", `Tạo yêu cầu thanh lý thất bại cho tất cả các phòng.`);
       }
     } else {
-      showToast("success", `Đã thanh lý thành công ${successCount} phòng.`);
+      showToast("success", `Đã tạo yêu cầu thanh lý cho ${successCount} phòng. Đang chờ chủ nhà duyệt.`);
       onSuccess();
     }
   };
