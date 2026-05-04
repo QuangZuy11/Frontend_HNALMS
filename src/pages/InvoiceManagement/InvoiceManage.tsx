@@ -891,8 +891,8 @@ const InvoiceManager = () => {
             onChange={(e) => setFilterType(e.target.value)}
           >
             <option value="All">Tất cả loại HĐ</option>
-            <option value="Periodic">Định kỳ (Tháng)</option>
-            <option value="Incurred">Phát sinh (Sửa chữa)</option>
+            <option value="Periodic">Định kỳ </option>
+            <option value="Incurred">Phát sinh </option>
           </select>
         </div>
       </div>
@@ -1501,8 +1501,8 @@ const InvoiceManager = () => {
                     onChange={(e) => setExcelFilterType(e.target.value)}
                   >
                     <option value="All">Tất cả loại hóa đơn</option>
-                    <option value="Periodic">Định kỳ (Hàng tháng)</option>
-                    <option value="Incurred">Phát sinh (Sửa chữa)</option>
+                    <option value="Periodic">Định kỳ</option>
+                    <option value="Incurred">Phát sinh </option>
                   </select>
                 </div>
               </LocalizationProvider>

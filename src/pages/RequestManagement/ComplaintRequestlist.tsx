@@ -43,7 +43,7 @@ interface Complaint {
     fullname?: string | null;
     fullName?: string | null;
   } | null;
-  room?: {
+  roomId?: {
     _id: string;
     name: string;
     roomCode?: string;
@@ -315,8 +315,8 @@ export default function ComplaintRequestList() {
     if (roomSearch.trim()) {
       const search = normalize(roomSearch.trim());
       result = result.filter((c) =>
-        normalize(c.room?.name || '').includes(search) ||
-        normalize(c.room?.roomCode || '').includes(search)
+        normalize(c.roomId?.name || '').includes(search) ||
+        normalize(c.roomId?.roomCode || '').includes(search)
       );
     }
     if (sortOption === 'name-asc') {
@@ -345,6 +345,7 @@ export default function ComplaintRequestList() {
   const totalCount = complaints.length;
   const pendingCount = complaints.filter((c) => c.status === 'Pending').length;
   const doneCount = complaints.filter((c) => c.status === 'Done').length;
+  const rejectedCount = complaints.filter((c) => c.status === 'Rejected').length;
 
   return (
     <div className="repair-container">
@@ -397,6 +398,16 @@ export default function ComplaintRequestList() {
                   <span className="repair-stat-label">Đã xử lý</span>
                 </div>
               </div>
+              <div className="repair-stat-divider" />
+              <div className="repair-stat-item">
+                <div className="repair-stat-icon icon-danger">
+                  <XCircle size={16} strokeWidth={2} />
+                </div>
+                <div className="repair-stat-text">
+                  <span className="repair-stat-value">{rejectedCount}</span>
+                  <span className="repair-stat-label">Từ chối</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -436,7 +447,7 @@ export default function ComplaintRequestList() {
             >
               <option value="ALL">Tất cả trạng thái</option>
               <option value="Pending">Chờ xử lý</option>
-              <option value="Processing">Đang xử lý</option>
+              {/* <option value="Processing">Đang xử lý</option> */}
               <option value="Done">Đã xử lý</option>
               <option value="Rejected">Từ chối</option>
             </select>
@@ -501,7 +512,7 @@ export default function ComplaintRequestList() {
                   <td className="cell-stt">{startIndex + index + 1}</td>
                   <td className="cell-tenant">{c.tenantId?.fullName || c.tenantId?.fullname || '-'}</td>
                   <td className="cell-room">
-                    <span className="room-badge">{c.room?.name || c.room?.roomCode || '-'}</span>
+                    <span className="room-badge">{c.roomId?.name || c.roomId?.roomCode || '-'}</span>
                   </td>
                   <td className="cell-category">{c.category}</td>
                   {/* <td className="cell-priority">
@@ -578,7 +589,7 @@ export default function ComplaintRequestList() {
                   {selectedComplaint.tenantId?.fullName || selectedComplaint.tenantId?.fullname || '-'}
                 </div>
                 <div className="rr-profile-meta">
-                  <span className="rr-meta-tag">{selectedComplaint.room?.name || selectedComplaint.room?.roomCode || '-'}</span>
+                  <span className="rr-meta-tag">{selectedComplaint.roomId?.name || selectedComplaint.roomId?.roomCode || '-'}</span>
                   <span className={`rr-status-tag rr-status-${selectedComplaint.status.toLowerCase()}`}>
                     {getStatusIcon(selectedComplaint.status)}
                     {getComplaintStatusText(selectedComplaint.status)}

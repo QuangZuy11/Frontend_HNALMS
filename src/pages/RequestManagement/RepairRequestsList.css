@@ -169,6 +169,11 @@
   background: linear-gradient(135deg, #d1fae5 0%, #6ee7b7 100%);
 }
 
+.repair-stat-icon.icon-danger {
+  color: #dc2626;
+  background: linear-gradient(135deg, #fee2e2 0%, #fca5a5 100%);
+}
+
 @media (max-width: 640px) {
   .repair-stats-summary {
     width: 100%;
