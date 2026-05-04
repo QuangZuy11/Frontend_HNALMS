@@ -844,7 +844,7 @@ export default function MoveOutRequestsList() {
                   <div className="mout-settlement-row"><span>Tiền cọc:</span><span>{formatMoney(normalizedReleaseSettlement.depositAmount)}</span></div>
                 )}
                 {normalizedReleaseSettlement.invoiceAmount !== undefined && (
-                  <div className="mout-settlement-row"><span>Hóa đơn cuối (tenant trả):</span><span>{formatMoney(normalizedReleaseSettlement.invoiceAmount)}</span></div>
+                  <div className="mout-settlement-row"><span>Hóa đơn cuối (Người thuê trả):</span><span>{formatMoney(normalizedReleaseSettlement.invoiceAmount)}</span></div>
                 )}
                 {normalizedReleaseSettlement.remainingToPay !== undefined && (
                   <div className="mout-settlement-row">

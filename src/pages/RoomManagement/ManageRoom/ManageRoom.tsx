@@ -1407,7 +1407,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
             <AppModal
               open={showDetailModal && Boolean(viewingRoom)}
               onClose={() => setShowDetailModal(false)}
-              title={`Chi tiết Phòng: ${viewingRoom.name}`}
+              title={`Chi tiết ${viewingRoom.name}`}
               icon={<Eye size={18} />}
               color="blue"
               size="xl"
