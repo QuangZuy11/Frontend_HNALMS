@@ -414,7 +414,7 @@ const EditContract = () => {
                 fontFamily: serifFont,
               }}
             >
-              CHỈNH SỬA HỢP ĐỒNG THUÊ NHÀ
+              CHỈNH SỬA HỢP ĐỒNG THUÊ CĂN HỘ KHÉP KÍN
             </Typography>
             <Typography
               variant="body1"

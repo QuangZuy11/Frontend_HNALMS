@@ -591,18 +591,18 @@ const SendContractToGuest = () => {
     const uInfo = selectedDeposit.userInfoId; // populated object từ backend
     const isPopulatedUserInfo = uInfo && typeof uInfo === "object" && uInfo._id;
 
-    const resolveName    = isPopulatedUserInfo ? (uInfo.fullname || "") : (selectedDeposit.name || "");
-    const resolvePhone   = isPopulatedUserInfo ? (uInfo.phone   || "") : (selectedDeposit.phone || "");
-    const resolveEmail   = isPopulatedUserInfo ? (uInfo.email   || "") : (selectedDeposit.email || "");
-    const resolveCCCD    = isPopulatedUserInfo ? (uInfo.cccd    || "") : (selectedDeposit.idCard || "");
-    const resolveDob     = isPopulatedUserInfo ? (uInfo.dob     || null) : (selectedDeposit.dob || null);
+    const resolveName = isPopulatedUserInfo ? (uInfo.fullname || "") : (selectedDeposit.name || "");
+    const resolvePhone = isPopulatedUserInfo ? (uInfo.phone || "") : (selectedDeposit.phone || "");
+    const resolveEmail = isPopulatedUserInfo ? (uInfo.email || "") : (selectedDeposit.email || "");
+    const resolveCCCD = isPopulatedUserInfo ? (uInfo.cccd || "") : (selectedDeposit.idCard || "");
+    const resolveDob = isPopulatedUserInfo ? (uInfo.dob || null) : (selectedDeposit.dob || null);
     const resolveAddress = isPopulatedUserInfo ? (uInfo.address || "") : (selectedDeposit.address || "");
 
     setValue("tenantInfo.fullName", resolveName);
-    setValue("tenantInfo.phone",    resolvePhone);
-    setValue("tenantInfo.email",    resolveEmail);
-    if (resolveCCCD)    setValue("tenantInfo.cccd",    resolveCCCD);
-    if (resolveDob)     setValue("tenantInfo.dob",     formatDate(new Date(resolveDob), "yyyy-MM-dd"));
+    setValue("tenantInfo.phone", resolvePhone);
+    setValue("tenantInfo.email", resolveEmail);
+    if (resolveCCCD) setValue("tenantInfo.cccd", resolveCCCD);
+    if (resolveDob) setValue("tenantInfo.dob", formatDate(new Date(resolveDob), "yyyy-MM-dd"));
     if (resolveAddress) setValue("tenantInfo.address", resolveAddress);
 
     if (selectedDeposit.startDate) {
@@ -1154,7 +1154,7 @@ const SendContractToGuest = () => {
                         textTransform: "uppercase",
                       }}
                     >
-                      HỢP ĐỒNG THUÊ NHÀ
+                      HỢP ĐỒNG THUÊ CĂN HỘ KHÉP KÍN
                     </Typography>
                     <Typography
                       variant="body1"
@@ -1750,7 +1750,7 @@ const SendContractToGuest = () => {
                         <>
                           {/* Agreement */}
                           <Typography paragraph>
-                            Hai bên cùng thỏa thuận ký kết hợp đồng thuê nhà với
+                            Hai bên cùng thỏa thuận ký kết hợp đồng thuê căn hộ khép kín với
                             các điều khoản sau:
                           </Typography>
 

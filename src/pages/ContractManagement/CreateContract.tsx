@@ -276,12 +276,12 @@ function DepositModal({
               <Typography sx={{ fontFamily: serifFont }}>
                 {deposit.createdAt
                   ? new Date(deposit.createdAt).toLocaleDateString("vi-VN", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
                   : "—"}
               </Typography>
             </Box>
@@ -978,7 +978,7 @@ const CreateContract = () => {
       console.error("OCR Error:", err);
       toastr.error(
         "Lỗi khi kết nối tới FPT.AI: " +
-          (err.response?.data?.errorMessage || err.message),
+        (err.response?.data?.errorMessage || err.message),
       );
     } finally {
       setOcrLoading(false);
@@ -1189,7 +1189,7 @@ const CreateContract = () => {
                       textTransform: "uppercase",
                     }}
                   >
-                    HỢP ĐỒNG THUÊ NHÀ
+                    HỢP ĐỒNG THUÊ CĂN HỘ KHÉP KÍN
                   </Typography>
                   <Typography
                     variant="body1"
@@ -1655,8 +1655,8 @@ const CreateContract = () => {
                                       } catch (err: any) {
                                         toastr.error(
                                           "Lỗi khi kết nối tới FPT.AI: " +
-                                            (err.response?.data?.errorMessage ||
-                                              err.message),
+                                          (err.response?.data?.errorMessage ||
+                                            err.message),
                                         );
                                       }
                                       // Reset file input
@@ -1759,17 +1759,17 @@ const CreateContract = () => {
                       </Button>
                       {coResidentFields.length + 1 >=
                         (selectedRoom?.roomTypeId?.personMax || 1) && (
-                        <Typography
-                          sx={{
-                            fontStyle: "italic",
-                            fontFamily: '"Times New Roman", serif',
-                            fontSize: "0.9rem",
-                            color: "#999",
-                          }}
-                        >
-                          (Đã đạt giới hạn số người cho loại phòng này)
-                        </Typography>
-                      )}
+                          <Typography
+                            sx={{
+                              fontStyle: "italic",
+                              fontFamily: '"Times New Roman", serif',
+                              fontSize: "0.9rem",
+                              color: "#999",
+                            }}
+                          >
+                            (Đã đạt giới hạn số người cho loại phòng này)
+                          </Typography>
+                        )}
                     </Box>
                   </Box>
 
@@ -1800,7 +1800,7 @@ const CreateContract = () => {
                       <>
                         {/* Agreement */}
                         <Typography paragraph>
-                          Hai bên cùng thỏa thuận ký kết hợp đồng thuê nhà với
+                          Hai bên cùng thỏa thuận ký kết hợp đồng thuê căn hộ khép kín với
                           các điều khoản sau:
                         </Typography>
 
@@ -2126,7 +2126,7 @@ const CreateContract = () => {
 
                                     const isFutureMonth =
                                       date.getFullYear() >
-                                        refDate.getFullYear() ||
+                                      refDate.getFullYear() ||
                                       (date.getFullYear() ===
                                         refDate.getFullYear() &&
                                         date.getMonth() > refDate.getMonth());
@@ -2244,8 +2244,8 @@ const CreateContract = () => {
                                 {new Date(
                                   String(
                                     selectedRoom?.activeContractEndDate ??
-                                      selectedRoom?.contractEndDate ??
-                                      "",
+                                    selectedRoom?.contractEndDate ??
+                                    "",
                                   ),
                                 ).toLocaleDateString("vi-VN")}
                               </strong>
@@ -2352,8 +2352,8 @@ const CreateContract = () => {
                             InputProps={{ readOnly: true }}
                             value={Number(
                               selectedRoom?.roomTypeId?.currentPrice ||
-                                selectedRoom?.price ||
-                                0,
+                              selectedRoom?.price ||
+                              0,
                             ).toLocaleString()}
                           />
                           VNĐ/tháng. (Giá này cố định theo loại phòng).
@@ -2386,8 +2386,8 @@ const CreateContract = () => {
                                   InputProps={{ readOnly: true }}
                                   value={Number(
                                     selectedRoom?.roomTypeId?.currentPrice ||
-                                      selectedRoom?.price ||
-                                      0,
+                                    selectedRoom?.price ||
+                                    0,
                                   ).toLocaleString()}
                                 />
                                 VNĐ (Tương đương 01 tháng tiền phòng).
@@ -2615,7 +2615,7 @@ const CreateContract = () => {
                             .filter(
                               (s) =>
                                 getServiceCategory(s.name) ===
-                                  "fixed_monthly" &&
+                                "fixed_monthly" &&
                                 !isServiceExcludedForRoom(s.name),
                             )
                             .sort(

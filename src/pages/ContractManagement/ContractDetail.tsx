@@ -438,7 +438,7 @@ const ContractDetail = () => {
               fontFamily: serifFont,
             }}
           >
-            HỢP ĐỒNG THUÊ NHÀ
+            HỢP ĐỒNG THUÊ CĂN HỘ KHÉP KÍN
           </Typography>
           <Typography
             variant="body1"
@@ -651,7 +651,7 @@ const ContractDetail = () => {
 
           {/* Agreement */}
           <Typography paragraph sx={{ fontFamily: serifFont }}>
-            Hai bên cùng thỏa thuận ký kết hợp đồng thuê nhà với các điều khoản
+            Hai bên cùng thỏa thuận ký kết hợp đồng thuê căn hộ khép kín với các điều khoản
             sau:
           </Typography>
 
