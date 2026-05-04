@@ -159,6 +159,16 @@
   background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
 }
 
+.repair-stat-icon.icon-info {
+  color: #0284c7;
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+}
+
+.repair-stat-icon.icon-success {
+  color: #059669;
+  background: linear-gradient(135deg, #d1fae5 0%, #6ee7b7 100%);
+}
+
 @media (max-width: 640px) {
   .repair-stats-summary {
     width: 100%;

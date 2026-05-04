@@ -816,7 +816,7 @@ const InvoiceManager = () => {
               <div className="invoice-title-text">
                 <h2>Tổng hợp Hóa đơn Thu chi</h2>
                 <p className="invoice-subtitle">
-                  Quản lý toàn bộ Hóa đơn Định kỳ hàng tháng & Hóa đơn Phát sinh (Sửa chữa, đền bù...).
+                  Quản lý toàn bộ Hóa đơn Định kỳ hàng tháng & Hóa đơn Phát sinh.
                 </p>
               </div>
             </div>
@@ -1179,20 +1179,20 @@ const InvoiceManager = () => {
 
             {selectedInvoice.type === 'Incurred' &&
               selectedInvoice.incurredCategoryLabel === 'Sửa chữa' && (
-              <div style={{ marginTop: '8px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', background: '#f8fafc' }}>
-                <div className="rd-section-title" style={{ marginTop: 0, paddingBottom: '12px', marginBottom: '12px' }}>
-                  <Wrench size={16} />
-                  <span>Danh mục sửa chữa</span>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '8px', fontSize: '14px' }}>
-                  <span style={{ color: '#64748b' }}>Thiết bị lỗi:</span>
-                  <span style={{ fontWeight: 600, color: '#1e293b' }}>{selectedInvoice.deviceName || "Không xác định"}</span>
+                <div style={{ marginTop: '8px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', background: '#f8fafc' }}>
+                  <div className="rd-section-title" style={{ marginTop: 0, paddingBottom: '12px', marginBottom: '12px' }}>
+                    <Wrench size={16} />
+                    <span>Danh mục sửa chữa</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '8px', fontSize: '14px' }}>
+                    <span style={{ color: '#64748b' }}>Thiết bị lỗi:</span>
+                    <span style={{ fontWeight: 600, color: '#1e293b' }}>{selectedInvoice.deviceName || "Không xác định"}</span>
 
-                  <span style={{ color: '#64748b' }}>Mô tả từ khách:</span>
-                  <span style={{ color: '#334155', fontStyle: 'italic' }}>"{selectedInvoice.repairDescription || "Không có mô tả"}"</span>
+                    <span style={{ color: '#64748b' }}>Mô tả từ khách:</span>
+                    <span style={{ color: '#334155', fontStyle: 'italic' }}>"{selectedInvoice.repairDescription || "Không có mô tả"}"</span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             <div style={{ marginTop: '12px', background: '#f1f5f9', padding: '16px 20px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '16px', fontWeight: 600, color: '#0f172a' }}>TỔNG CẦN THU:</span>

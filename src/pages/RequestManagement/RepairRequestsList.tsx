@@ -12,6 +12,8 @@ import {
   Search,
   Image as ImageIcon,
   Check,
+  RefreshCw,
+  Receipt,
 } from 'lucide-react';
 import { AppModal } from '../../components/common/Modal';
 import { Pagination } from '../../components/common/Pagination';
@@ -477,6 +479,9 @@ export default function RepairRequestsList() {
   // Stats
   const totalCount = requests.length;
   const pendingCount = requests.filter((r) => r.status === 'Pending').length;
+  const processingCount = requests.filter((r) => r.status === 'Processing').length;
+  const doneCount = requests.filter((r) => r.status === 'Done').length;
+  const unpaidCount = requests.filter((r) => r.status === 'Unpaid').length;
   const paidCount = requests.filter((r) => r.status === 'Paid').length;
 
   const filteredRequests = useMemo(() => {
@@ -547,6 +552,36 @@ export default function RepairRequestsList() {
                 <div className="repair-stat-text">
                   <span className="repair-stat-value">{pendingCount}</span>
                   <span className="repair-stat-label">Chờ xử lý</span>
+                </div>
+              </div>
+              <div className="repair-stat-divider" />
+              <div className="repair-stat-item">
+                <div className="repair-stat-icon icon-info">
+                  <RefreshCw size={16} strokeWidth={2} />
+                </div>
+                <div className="repair-stat-text">
+                  <span className="repair-stat-value">{processingCount}</span>
+                  <span className="repair-stat-label">Đang xử lý</span>
+                </div>
+              </div>
+              <div className="repair-stat-divider" />
+              <div className="repair-stat-item">
+                <div className="repair-stat-icon icon-success">
+                  <CheckCircle2 size={16} strokeWidth={2} />
+                </div>
+                <div className="repair-stat-text">
+                  <span className="repair-stat-value">{doneCount}</span>
+                  <span className="repair-stat-label">Đã xử lý</span>
+                </div>
+              </div>
+              <div className="repair-stat-divider" />
+              <div className="repair-stat-item">
+                <div className="repair-stat-icon icon-warning">
+                  <Receipt size={16} strokeWidth={2} />
+                </div>
+                <div className="repair-stat-text">
+                  <span className="repair-stat-value">{unpaidCount}</span>
+                  <span className="repair-stat-label">Chờ thanh toán</span>
                 </div>
               </div>
               <div className="repair-stat-divider" />
@@ -826,6 +861,7 @@ export default function RepairRequestsList() {
                 </div>
 
                 {/* Status update controls */}
+                {selectedRequest.status !== 'Paid' && (
                 <div className="rr-section">
                   <div className="rr-section-title">
                     <Clock size={15} />
@@ -858,6 +894,7 @@ export default function RepairRequestsList() {
                     )}
                   </div>
                 </div>
+                )}
               </div>
             </div>
           </div>
