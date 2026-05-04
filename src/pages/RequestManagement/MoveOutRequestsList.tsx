@@ -161,6 +161,7 @@ export default function MoveOutRequestsList() {
   const [oldWaterIndex, setOldWaterIndex] = useState<{ oldIndex: number; newIndex: number } | null>(null);
   const [oldIndexLoading, setOldIndexLoading] = useState(false);
   const [oldIndexError, setOldIndexError] = useState('');
+  const [hasPeriodicInvoice, setHasPeriodicInvoice] = useState(false);
   const [releaseLoading, setReleaseLoading] = useState(false);
   const [releaseError, setReleaseError] = useState('');
   const [releaseSettlement, setReleaseSettlement] = useState<ReleaseSettlement | null>(null);
@@ -304,36 +305,22 @@ export default function MoveOutRequestsList() {
     setOldIndexError('');
     setReleaseError('');
     setReleaseSettlement(null);
+    setHasPeriodicInvoice(false);
     setShowReleaseModal(true);
 
-    const roomId = getRoomId(req);
-    if (!roomId) { setOldIndexError('Không xác định được phòng để tải chỉ số cũ.'); return; }
-
+    // Gọi endpoint mới: lấy chỉ số gần nhất + kiểm tra hóa đơn định kỳ tháng hiện tại
     try {
       setOldIndexLoading(true);
-      const servicesRes = await moveOutService.getUtilityServices();
-      const serviceList = Array.isArray(servicesRes?.data) ? servicesRes.data : [];
-
-      const electricService = serviceList.find((s: { _id?: string; name?: string; serviceName?: string }) =>
-        ['điện', 'dien'].includes((s.name || s.serviceName || '').trim().toLowerCase())
-      );
-      const waterService = serviceList.find((s: { _id?: string; name?: string; serviceName?: string }) =>
-        ['nước', 'nuoc'].includes((s.name || s.serviceName || '').trim().toLowerCase())
-      );
-
-      const [electricReadingRes, waterReadingRes] = await Promise.all([
-        electricService?._id ? moveOutService.getLatestMeterReading(roomId, electricService._id).catch(() => null) : Promise.resolve(null),
-        waterService?._id ? moveOutService.getLatestMeterReading(roomId, waterService._id).catch(() => null) : Promise.resolve(null),
-      ]);
-
-      const electricReading = electricReadingRes?.data;
-      const waterReading = waterReadingRes?.data;
-
-      if (electricReading && typeof electricReading.oldIndex === 'number' && typeof electricReading.newIndex === 'number') {
-        setOldElectricIndex({ oldIndex: electricReading.oldIndex, newIndex: electricReading.newIndex });
-      }
-      if (waterReading && typeof waterReading.oldIndex === 'number' && typeof waterReading.newIndex === 'number') {
-        setOldWaterIndex({ oldIndex: waterReading.oldIndex, newIndex: waterReading.newIndex });
+      const res = await moveOutService.getLatestMeterReadingForMoveOut(req._id);
+      if (res.success && res.data) {
+        const data = res.data;
+        setHasPeriodicInvoice(!!data.hasPeriodicInvoice);
+        if (data.electric?.newIndex !== undefined) {
+          setOldElectricIndex({ oldIndex: 0, newIndex: data.electric.newIndex });
+        }
+        if (data.water?.newIndex !== undefined) {
+          setOldWaterIndex({ oldIndex: 0, newIndex: data.water.newIndex });
+        }
       }
     } catch {
       setOldIndexError('Không tải được chỉ số điện nước cũ.');
@@ -814,15 +801,39 @@ export default function MoveOutRequestsList() {
               <div className="mout-info-row"><span className="mout-info-label">Cư dân</span><span className="mout-info-value">{getTenantFullName(releasingRequest)}</span></div>
               <div className="mout-info-row"><span className="mout-info-label">Phòng</span><span className="mout-info-value">{getRoomNumber(releasingRequest)}</span></div>
               <div className="mout-info-row"><span className="mout-info-label">Ngày trả phòng</span><span className="mout-info-value">{formatDate(releasingRequest.expectedMoveOutDate)}</span></div>
-              <div className="mout-info-row">
-                <span className="mout-info-label">Chỉ số điện cũ</span>
-                <span className="mout-info-value">{oldIndexLoading ? 'Đang tải...' : oldElectricIndex ? `${oldElectricIndex.newIndex}` : '-'}</span>
-              </div>
-              <div className="mout-info-row">
-                <span className="mout-info-label">Chỉ số nước cũ</span>
-                <span className="mout-info-value">{oldIndexLoading ? 'Đang tải...' : oldWaterIndex ? `${oldWaterIndex.newIndex}` : '-'}</span>
-              </div>
+              {!hasPeriodicInvoice && (
+                <>
+                  <div className="mout-info-row">
+                    <span className="mout-info-label">Chỉ số điện cũ</span>
+                    <span className="mout-info-value">{oldIndexLoading ? 'Đang tải...' : oldElectricIndex ? `${oldElectricIndex.newIndex}` : '-'}</span>
+                  </div>
+                  <div className="mout-info-row">
+                    <span className="mout-info-label">Chỉ số nước cũ</span>
+                    <span className="mout-info-value">{oldIndexLoading ? 'Đang tải...' : oldWaterIndex ? `${oldWaterIndex.newIndex}` : '-'}</span>
+                  </div>
+                </>
+              )}
             </div>
+
+            {oldIndexLoading && (
+              <div className="mout-info-box" style={{ background: '#f0f9ff', borderColor: '#bae6fd' }}>
+                <p style={{ margin: 0, color: '#0369a1', fontSize: '13px' }}>Đang kiểm tra hóa đơn tháng hiện tại...</p>
+              </div>
+            )}
+
+            {/* Thông báo khi đã có hóa đơn định kỳ tháng này */}
+            {!oldIndexLoading && hasPeriodicInvoice && (
+              <div className="mout-info-box" style={{ background: '#eff6ff', borderColor: '#3b82f6' }}>
+                <p className="mout-info-box-title" style={{ color: '#1d4ed8' }}>
+                  Phòng này đã có hóa đơn định kỳ tháng hiện tại
+                </p>
+                <ul style={{ margin: '6px 0 0', paddingLeft: '18px', color: '#1e40af', fontSize: '13px' }}>
+                  <li>Hóa đơn điện, nước tháng này đã được phát hành trong kỳ định kỳ.</li>
+                  <li>Không cần nhập chỉ số điện nước cho hóa đơn trả phòng.</li>
+                  <li>Hệ thống sẽ dùng hóa đơn định kỳ hiện có thay thế.</li>
+                </ul>
+              </div>
+            )}
 
             {oldIndexError && <div className="mout-error-banner">{oldIndexError}</div>}
 
@@ -846,28 +857,33 @@ export default function MoveOutRequestsList() {
               </div>
             )}
 
-            <div className="mout-form-group">
-              <label className="mout-form-label">Chỉ số điện chốt (tùy chọn)</label>
-              <input
-                type="number"
-                className="mout-form-input"
-                value={electricIndex}
-                onChange={(e) => setElectricIndex(e.target.value)}
-                placeholder="VD: 1450"
-                min="0"
-              />
-            </div>
-            <div className="mout-form-group">
-              <label className="mout-form-label">Chỉ số nước chốt (tùy chọn)</label>
-              <input
-                type="number"
-                className="mout-form-input"
-                value={waterIndex}
-                onChange={(e) => setWaterIndex(e.target.value)}
-                placeholder="VD: 320"
-                min="0"
-              />
-            </div>
+            {/* Form nhập điện nước - chỉ hiện khi CHƯA có hóa đơn định kỳ */}
+            {!oldIndexLoading && !hasPeriodicInvoice && (
+              <>
+                <div className="mout-form-group">
+                  <label className="mout-form-label">Chỉ số điện chốt (tùy chọn)</label>
+                  <input
+                    type="number"
+                    className="mout-form-input"
+                    value={electricIndex}
+                    onChange={(e) => setElectricIndex(e.target.value)}
+                    placeholder="VD: 1450"
+                    min="0"
+                  />
+                </div>
+                <div className="mout-form-group">
+                  <label className="mout-form-label">Chỉ số nước chốt (tùy chọn)</label>
+                  <input
+                    type="number"
+                    className="mout-form-input"
+                    value={waterIndex}
+                    onChange={(e) => setWaterIndex(e.target.value)}
+                    placeholder="VD: 320"
+                    min="0"
+                  />
+                </div>
+              </>
+            )}
             {releaseError && <div className="mout-error-banner">{releaseError}</div>}
           </div>
         )}
