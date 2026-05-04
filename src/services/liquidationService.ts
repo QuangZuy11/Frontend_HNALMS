@@ -15,6 +15,7 @@ export interface RoomInfo {
 export interface TenantInfo {
   _id: string;
   username: string;
+  fullName?: string;
   email?: string;
 }
 
@@ -29,7 +30,7 @@ export interface ContractInfo {
 
 export interface MeterReadingInfo {
   _id: string;
-  utilityId: string;
+  utilityId: { _id: string; name: string } | string;
   oldIndex: number;
   newIndex: number;
   usageAmount: number;
