@@ -2065,7 +2065,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                 setAllRoomContracts([]);
                 setRoomDeposits([]);
                 setActiveContractIdForLiquidation(null);
-                showToast("success", "Thành công", "Thanh lý hợp đồng thành công! Phòng đã được giải phóng.");
+                showToast("success", "Thành công", "Đã tạo yêu cầu thanh lý. Đang chờ chủ nhà duyệt.");
                 fetchData();
               }}
             />
