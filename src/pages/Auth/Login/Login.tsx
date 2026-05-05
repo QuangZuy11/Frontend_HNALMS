@@ -4,6 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { authService } from "../../../services/authService";
 import { useAuth } from "../../../context/AuthContext";
 import logoImage from "../../../assets/images/z7463676981543_494642986e53789b49de728b4f4a3a1e.jpg";
+import bg1 from "../../../assets/images/Overview.jpg";
+import bg2 from "../../../assets/images/NhaXe.jpg";
+import bg3 from "../../../assets/images/Gate2.jpg";
+import bg4 from "../../../assets/images/Tang5.png";
 import "./login.css";
 
 type View = "login" | "forgot-password";
@@ -290,28 +294,23 @@ export default function LoginPage() {
   };
 
   return (
-    <main
-      className="min-h-screen flex"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: "100vw",
-        height: "100vh",
-      }}
-    >
-      <div
-        className="w-full flex flex-col justify-center items-center px-6 py-12 bg-background"
-        style={{
-          height: "100vh",
-          width: "100%",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
+    <main className="login-main-container">
+      <div className="login-slideshow-pane hidden lg:flex">
+        <div className="login-slideshow">
+          <div className="slide" style={{ backgroundImage: `url(${bg1})` }}></div>
+          <div className="slide" style={{ backgroundImage: `url(${bg2})` }}></div>
+          <div className="slide" style={{ backgroundImage: `url(${bg3})` }}></div>
+          <div className="slide" style={{ backgroundImage: `url(${bg4})` }}></div>
+        </div>
+        <div className="login-slideshow-overlay">
+          <div className="hero-content">
+            <h2>Hoàng Nam Apartment</h2>
+            <p>Hệ thống quản lý căn hộ dịch vụ cao cấp và tiện lợi.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="login-form-pane">
         <div className="login-form-container">
           <div className="login-logo-wrapper">
             <img
