@@ -1619,7 +1619,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                       <span>{renderStatus(viewingRoom)}</span>
                     </div>
 
-                    <div className="rd-field">
+                    {/* <div className="rd-field">
                       <label>Kích hoạt:</label>
                       <span
                         style={{
@@ -1631,7 +1631,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                           ? "Đang hoạt động"
                           : "Vô hiệu hóa"}
                       </span>
-                    </div>
+                    </div> */}
                     <div className="rd-field">
                       <label>Thuộc Tầng:</label>
                       <span>{getFloorName(viewingRoom.floorId)}</span>
@@ -1931,12 +1931,11 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                               <span className="rd-service-tag-name">
                                 {svc.name}
                               </span>
-                              <span className="rd-service-tag-price">
-                                {svc.currentPrice
-                                  ? formatCurrency(svc.currentPrice)
-                                  : ""}
-                                {svc.quantity > 1 ? ` ×${svc.quantity}` : ""}
-                              </span>
+                              {svc.quantity > 1 && (
+                                <span className="rd-service-tag-price">
+                                  ×{svc.quantity}
+                                </span>
+                              )}
                             </div>
                           ))}
                         </div>
