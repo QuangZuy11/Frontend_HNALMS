@@ -155,6 +155,8 @@ export default function TransferRequestsList() {
   } | null>(null);
   const [latestMeterLoading, setLatestMeterLoading] = useState(false);
   const [hasPeriodicInvoice, setHasPeriodicInvoice] = useState(false);
+  const [resetElectric, setResetElectric] = useState(false);
+  const [resetWater, setResetWater] = useState(false);
 
   const tableRef = useRef<HTMLDivElement | null>(null);
 
@@ -292,6 +294,8 @@ export default function TransferRequestsList() {
     setManagerInvoiceNotes('');
     setLatestMeterReading(null);
     setHasPeriodicInvoice(false);
+    setResetElectric(false);
+    setResetWater(false);
     setShowReleaseInvoiceModal(true);
     // Fetch chỉ số điện nước gần nhất + kiểm tra hóa đơn định kỳ
     try {
@@ -310,12 +314,64 @@ export default function TransferRequestsList() {
 
   const handleReleaseInvoice = async () => {
     if (!releasingInvoiceRequest) return;
+    
+    if (!hasPeriodicInvoice) {
+      if (electricIndex === '') {
+        showToast('error', 'Lỗi', 'Vui lòng nhập chỉ số điện cuối cùng');
+        return;
+      }
+      if (waterIndex === '') {
+        showToast('error', 'Lỗi', 'Vui lòng nhập chỉ số nước cuối cùng');
+        return;
+      }
+    }
+
+    let elIdx: number | undefined;
+    if (electricIndex !== '') {
+      elIdx = Number(electricIndex);
+      if (isNaN(elIdx) || elIdx < 0) {
+        showToast('error', 'Lỗi', 'Chỉ số điện phải là số không âm');
+        return;
+      }
+      if (elIdx > 99999) {
+        showToast('error', 'Lỗi', 'Chỉ số điện không được vượt quá 99999');
+        return;
+      }
+      const oldE = latestMeterReading?.electric?.newIndex ?? 0;
+      if (oldE === 99999 && resetElectric) {
+         // Có thể bắt đầu lại từ 0
+      } else if (elIdx < oldE) {
+         showToast('error', 'Lỗi', `Chỉ số điện mới (${elIdx}) không được nhỏ hơn chỉ số cũ (${oldE})`);
+         return;
+      }
+    }
+
+    let waIdx: number | undefined;
+    if (waterIndex !== '') {
+      waIdx = Number(waterIndex);
+      if (isNaN(waIdx) || waIdx < 0) {
+        showToast('error', 'Lỗi', 'Chỉ số nước phải là số không âm');
+        return;
+      }
+      if (waIdx > 99999) {
+        showToast('error', 'Lỗi', 'Chỉ số nước không được vượt quá 99999');
+        return;
+      }
+      const oldW = latestMeterReading?.water?.newIndex ?? 0;
+      if (oldW === 99999 && resetWater) {
+         // Có thể bắt đầu lại từ 0
+      } else if (waIdx < oldW) {
+         showToast('error', 'Lỗi', `Chỉ số nước mới (${waIdx}) không được nhỏ hơn chỉ số cũ (${oldW})`);
+         return;
+      }
+    }
+
     try {
       setReleaseInvoiceLoading(true);
       await transferRequestService.releaseTransferInvoice(releasingInvoiceRequest._id, {
         managerInvoiceNotes,
-        electricIndex: electricIndex ? Number(electricIndex) : undefined,
-        waterIndex: waterIndex ? Number(waterIndex) : undefined,
+        electricIndex: elIdx,
+        waterIndex: waIdx,
       });
       setShowReleaseInvoiceModal(false);
       setReleasingInvoiceRequest(null);
@@ -974,23 +1030,53 @@ export default function TransferRequestsList() {
             {!latestMeterLoading && !hasPeriodicInvoice && (
               <>
                 <div className="trns-form-group">
-                  <label className="trns-form-label">Chỉ số điện cuối cùng (Phòng cũ)</label>
+                  <label className="trns-form-label">
+                    Chỉ số điện cuối cùng (Phòng cũ) <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  {latestMeterReading?.electric?.newIndex === 99999 && (
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+                      <input 
+                        type="checkbox" 
+                        id="resetElectricTransfer" 
+                        checked={resetElectric} 
+                        onChange={(e) => setResetElectric(e.target.checked)} 
+                      />
+                      <label htmlFor="resetElectricTransfer" style={{ marginLeft: '8px', fontSize: '13px', cursor: 'pointer' }}>Reset đồng hồ điện (từ 0)</label>
+                    </div>
+                  )}
                   <input
                     type="number"
                     className="trns-form-input"
-                    placeholder="Để trống nếu dùng chỉ số gần nhất..."
+                    placeholder="Nhập chỉ số..."
                     value={electricIndex}
                     onChange={(e) => setElectricIndex(e.target.value)}
+                    min="0"
+                    max="99999"
                   />
                 </div>
                 <div className="trns-form-group">
-                  <label className="trns-form-label">Chỉ số nước cuối cùng (Phòng cũ)</label>
+                  <label className="trns-form-label">
+                    Chỉ số nước cuối cùng (Phòng cũ) <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  {latestMeterReading?.water?.newIndex === 99999 && (
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+                      <input 
+                        type="checkbox" 
+                        id="resetWaterTransfer" 
+                        checked={resetWater} 
+                        onChange={(e) => setResetWater(e.target.checked)} 
+                      />
+                      <label htmlFor="resetWaterTransfer" style={{ marginLeft: '8px', fontSize: '13px', cursor: 'pointer' }}>Reset đồng hồ nước (từ 0)</label>
+                    </div>
+                  )}
                   <input
                     type="number"
                     className="trns-form-input"
-                    placeholder="Để trống nếu dùng chỉ số gần nhất..."
+                    placeholder="Nhập chỉ số..."
                     value={waterIndex}
                     onChange={(e) => setWaterIndex(e.target.value)}
+                    min="0"
+                    max="99999"
                   />
                 </div>
               </>

@@ -165,6 +165,8 @@ export default function MoveOutRequestsList() {
   const [releaseLoading, setReleaseLoading] = useState(false);
   const [releaseError, setReleaseError] = useState('');
   const [releaseSettlement, setReleaseSettlement] = useState<ReleaseSettlement | null>(null);
+  const [resetElectric, setResetElectric] = useState(false);
+  const [resetWater, setResetWater] = useState(false);
 
   // ── Complete modal ────────────────────────────────────────────────────
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -306,6 +308,8 @@ export default function MoveOutRequestsList() {
     setReleaseError('');
     setReleaseSettlement(null);
     setHasPeriodicInvoice(false);
+    setResetElectric(false);
+    setResetWater(false);
     setShowReleaseModal(true);
 
     // Gọi endpoint mới: lấy chỉ số gần nhất + kiểm tra hóa đơn định kỳ tháng hiện tại
@@ -332,14 +336,44 @@ export default function MoveOutRequestsList() {
   const handleRelease = async () => {
     if (!releasingRequest) return;
     const payload: { electricIndex?: number; waterIndex?: number } = {};
+
+    if (!hasPeriodicInvoice) {
+      if (electricIndex === '') {
+        setReleaseError('Vui lòng nhập chỉ số điện chốt');
+        return;
+      }
+      if (waterIndex === '') {
+        setReleaseError('Vui lòng nhập chỉ số nước chốt');
+        return;
+      }
+    }
+
     if (electricIndex !== '') {
       const ei = Number(electricIndex);
       if (isNaN(ei) || ei < 0) { setReleaseError('Chỉ số điện phải là số không âm'); return; }
+      if (ei > 99999) { setReleaseError('Chỉ số điện không được vượt quá 99999'); return; }
+      
+      const oldE = oldElectricIndex?.newIndex ?? 0;
+      if (oldE === 99999 && resetElectric) {
+        // Có thể bắt đầu lại từ 0
+      } else if (ei < oldE) {
+        setReleaseError(`Chỉ số điện mới (${ei}) không được nhỏ hơn chỉ số cũ (${oldE})`);
+        return;
+      }
       payload.electricIndex = ei;
     }
     if (waterIndex !== '') {
       const wi = Number(waterIndex);
       if (isNaN(wi) || wi < 0) { setReleaseError('Chỉ số nước phải là số không âm'); return; }
+      if (wi > 99999) { setReleaseError('Chỉ số nước không được vượt quá 99999'); return; }
+      
+      const oldW = oldWaterIndex?.newIndex ?? 0;
+      if (oldW === 99999 && resetWater) {
+        // Có thể bắt đầu lại từ 0
+      } else if (wi < oldW) {
+        setReleaseError(`Chỉ số nước mới (${wi}) không được nhỏ hơn chỉ số cũ (${oldW})`);
+        return;
+      }
       payload.waterIndex = wi;
     }
     try {
@@ -861,7 +895,20 @@ export default function MoveOutRequestsList() {
             {!oldIndexLoading && !hasPeriodicInvoice && (
               <>
                 <div className="mout-form-group">
-                  <label className="mout-form-label">Chỉ số điện chốt (tùy chọn)</label>
+                  <label className="mout-form-label">
+                    Chỉ số điện chốt <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  {oldElectricIndex?.newIndex === 99999 && (
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+                      <input 
+                        type="checkbox" 
+                        id="resetElectric" 
+                        checked={resetElectric} 
+                        onChange={(e) => setResetElectric(e.target.checked)} 
+                      />
+                      <label htmlFor="resetElectric" style={{ marginLeft: '8px', fontSize: '13px', cursor: 'pointer' }}>Reset đồng hồ điện (từ 0)</label>
+                    </div>
+                  )}
                   <input
                     type="number"
                     className="mout-form-input"
@@ -869,10 +916,24 @@ export default function MoveOutRequestsList() {
                     onChange={(e) => setElectricIndex(e.target.value)}
                     placeholder="VD: 1450"
                     min="0"
+                    max="99999"
                   />
                 </div>
                 <div className="mout-form-group">
-                  <label className="mout-form-label">Chỉ số nước chốt (tùy chọn)</label>
+                  <label className="mout-form-label">
+                    Chỉ số nước chốt <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  {oldWaterIndex?.newIndex === 99999 && (
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+                      <input 
+                        type="checkbox" 
+                        id="resetWater" 
+                        checked={resetWater} 
+                        onChange={(e) => setResetWater(e.target.checked)} 
+                      />
+                      <label htmlFor="resetWater" style={{ marginLeft: '8px', fontSize: '13px', cursor: 'pointer' }}>Reset đồng hồ nước (từ 0)</label>
+                    </div>
+                  )}
                   <input
                     type="number"
                     className="mout-form-input"
@@ -880,6 +941,7 @@ export default function MoveOutRequestsList() {
                     onChange={(e) => setWaterIndex(e.target.value)}
                     placeholder="VD: 320"
                     min="0"
+                    max="99999"
                   />
                 </div>
               </>

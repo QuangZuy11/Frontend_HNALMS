@@ -837,7 +837,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
           </button>
         </div>
 
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        {/* <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           {canLiquidate && (
             <button
               onClick={() => {
@@ -887,7 +887,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
               </button>
             </>
           )}
-        </div>
+        </div> */}
       </div>
 
       {viewMode === "list" ? (
