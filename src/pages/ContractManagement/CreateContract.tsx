@@ -729,9 +729,10 @@ const CreateContract = () => {
         newPrepay = Math.min(1, dur);
       }
     } else {
-      // Normal contract: ensure min 2, max = duration
-      if (current < 2 || current > dur) {
-        newPrepay = Math.min(Math.max(2, current), dur);
+      // Normal contract: min = Math.min(2, dur) để tránh kẹt khi dur=1
+      const minPrepay = Math.min(2, dur);
+      if (current < minPrepay || current > dur) {
+        newPrepay = Math.min(Math.max(minPrepay, current), dur);
       }
     }
 
@@ -739,6 +740,7 @@ const CreateContract = () => {
       setValue("prepayMonths", newPrepay, { shouldValidate: true });
     }
   }, [isSecondContract, watch("duration"), setValue, getValues]);
+
 
   // Xóa lỗi trùng dữ liệu khi user thay đổi trường CCCD/Phone/Email
   useEffect(() => {
@@ -1059,15 +1061,36 @@ const CreateContract = () => {
       let rentPaidUntil = null;
       if (data.prepayMonths) {
         const start = new Date(data.startDate);
+        const duration = Number(data.duration);
         const monthsToAdd =
           data.prepayMonths === "all"
-            ? Number(data.duration)
+            ? duration
             : Number(data.prepayMonths);
-        rentPaidUntil = new Date(
-          start.getFullYear(),
-          start.getMonth() + 1 + monthsToAdd,
-          0,
-        ).toISOString();
+
+        // Quy tắc: startDate mùng 1 → prepaid từ tháng đó; mùng 2+ → từ tháng tiếp theo
+        const isStartFirstDay = start.getDate() === 1;
+        const prepaidStartMonth = isStartFirstDay
+          ? start.getMonth()       // tháng của startDate
+          : start.getMonth() + 1;  // tháng tiếp theo
+
+        // Tính endDate của hợp đồng
+        const endDate = new Date(start.getFullYear(), start.getMonth() + duration, 0);
+
+        // Trường hợp đặc biệt:
+        //   - Hợp đồng 1 tháng + startDate không phải mùng 1 → rentPaidUntil = endDate
+        //   - prepayMonths đủ duration (trả hết) → luôn dùng endDate
+        const isSingleMonthNonFirst = duration === 1 && !isStartFirstDay;
+        const isFullPayment = monthsToAdd >= duration;
+
+        if (isSingleMonthNonFirst || isFullPayment) {
+          rentPaidUntil = endDate.toISOString();
+        } else {
+          rentPaidUntil = new Date(
+            start.getFullYear(),
+            prepaidStartMonth + monthsToAdd,
+            0,
+          ).toISOString();
+        }
       }
 
       const isOnlineBooking = selectedDeposit && selectedDeposit.isBookingRequest;
@@ -2287,7 +2310,7 @@ const CreateContract = () => {
                                 fontSize: "1rem",
                                 padding: "0 0 2px 0",
                               },
-                              min: isSecondContract ? 1 : 2,
+                              min: isSecondContract ? 1 : Math.min(2, Number(watch("duration")) || 12),
                               max: Number(watch("duration")) || 12,
                             }}
                             {...register("prepayMonths", {
@@ -2296,10 +2319,9 @@ const CreateContract = () => {
                               validate: (value) => {
                                 const val = Number(value);
                                 const dur = Number(watch("duration")) || 12;
-                                if (!isSecondContract && val < 2)
-                                  return "Phải trả trước tối thiểu 2 tháng";
-                                if (isSecondContract && val < 1)
-                                  return "Phải trả trước tối thiểu 1 tháng";
+                                const minPrepay = isSecondContract ? 1 : Math.min(2, dur);
+                                if (val < minPrepay)
+                                  return `Phải trả trước tối thiểu ${minPrepay} tháng`;
                                 if (val > dur)
                                   return `Không được vượt quá thời hạn thuê (${dur} tháng)`;
                                 return true;
@@ -2320,9 +2342,9 @@ const CreateContract = () => {
                               mt: 0.5,
                             }}
                           >
-                            *Lưu ý: Thời hạn tính tiền phòng đã trả sẽ bắt đầu
-                            từ ngày đầu tiên của tháng tiếp theo (nếu tạo hợp
-                            đồng vào ngày lẻ trong tháng).
+                            *Lưu ý: Nếu ngày bắt đầu là mùng 1, tiền trả trước
+                            tính từ tháng đó. Nếu ngày bắt đầu là mùng 2 trở đi,
+                            tiền trả trước tính từ tháng tiếp theo.
                           </Typography>
                           <br />
                           - Giá thuê phòng là:
