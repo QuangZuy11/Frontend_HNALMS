@@ -495,8 +495,8 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
             <div className="lqw-type-selector">
               <div
                 className={`lqw-type-card ${liquidationType === "force_majeure"
-                    ? "selected-force"
-                    : ""
+                  ? "selected-force"
+                  : ""
                   }`}
                 onClick={() => setLiquidationType("force_majeure")}
               >
@@ -1137,7 +1137,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                       <>
                         <div className="lqw-financial-item">
                           <span className="lqw-financial-item-label">
-                            💰 Tiền thuê còn nợ (
+                            Tiền phòng đã sử dụng (
                             {(financial as any).daysUsed} ngày)
                           </span>
                           <span className="lqw-financial-item-value negative">
@@ -1146,7 +1146,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                         </div>
                         <div className="lqw-financial-item">
                           <span className="lqw-financial-item-label">
-                            ⚡ Tiền {electricService?.name || "điện"} (
+                            Tiền {electricService?.name || "điện"} (
                             {electricOverride
                               ? Math.max(0, (99999 - electricOldIndex) + Number(electricNewIndex))
                               : Math.max(0, Number(electricNewIndex) - electricOldIndex)}{" "}
@@ -1162,7 +1162,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                         </div>
                         <div className="lqw-financial-item">
                           <span className="lqw-financial-item-label">
-                            💧 Tiền {waterService?.name || "nước"} (
+                            Tiền {waterService?.name || "nước"} (
                             {waterOverride
                               ? Math.max(0, (99999 - waterOldIndex) + Number(waterNewIndex))
                               : Math.max(0, Number(waterNewIndex) - waterOldIndex)}{" "}
@@ -1178,7 +1178,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                         </div>
                         <div className="lqw-financial-item">
                           <span className="lqw-financial-item-label">
-                            🔒 Tiền cọc bị tịch thu (giữ lại)
+                            Tiền cọc bị tịch thu (giữ lại)
                           </span>
                           <span
                             className="lqw-financial-item-value"
@@ -1193,7 +1193,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                     <div className="lqw-financial-total">
                       <span className="lqw-financial-total-label">
                         {financial.type === "force_majeure"
-                          ? "Tổng hoàn lại cho người thuê:"
+                          ? (financial.total >= 0 ? "Tổng hoàn lại cho người thuê:" : "Tổng người thuê cần nộp thêm:")
                           : "Tổng người thuê cần nộp thêm:"}
                       </span>
                       <span className="lqw-financial-total-value">
@@ -1218,8 +1218,8 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
               </button>
               <button
                 className={`lqw-btn ${liquidationType === "force_majeure"
-                    ? "lqw-btn-primary"
-                    : "lqw-btn-danger"
+                  ? "lqw-btn-primary"
+                  : "lqw-btn-danger"
                   }`}
                 onClick={handleSubmit}
                 disabled={submitting}
