@@ -72,12 +72,11 @@ const getTypeColor = (type: LiquidationType): string => {
 };
 
 const getSettlementLabel = (item: LiquidationItem): { label: string; amount: number; color: string } => {
-  if (item.liquidationType === "force_majeure") {
-    const amount = item.totalSettlement;
+  if (item.settlementType === "refund" || (item.liquidationType === "force_majeure" && item.totalSettlement >= 0)) {
     return {
-      label: amount >= 0 ? "Hoàn tiền" : "Cần thu thêm",
-      amount,
-      color: amount >= 0 ? "#16a34a" : "#dc2626",
+      label: "Hoàn tiền",
+      amount: item.totalSettlement,
+      color: "#16a34a",
     };
   } else {
     return {
@@ -88,19 +87,23 @@ const getSettlementLabel = (item: LiquidationItem): { label: string; amount: num
   }
 };
 
-const getStatusBadge = (status: string | undefined, type: LiquidationType, settlementAmount: number) => {
+const getStatusBadge = (status: string | undefined, type: LiquidationType, settlementAmount: number, settlementType?: string) => {
   if (status === "pending_owner") {
     return { label: "Chờ chủ tòa nhà duyệt", className: "clm-status-badge clm-status-badge--pending" };
   }
   if (status === "pending_accountant") {
-    return { label: "Chờ kế toán giải ngân", className: "clm-status-badge clm-status-badge--info" };
+    const isRefund = settlementType === "refund" || (type === "force_majeure" && settlementAmount >= 0);
+    return {
+      label: isRefund ? "Chờ kế toán giải ngân" : "Chờ kế toán thu tiền",
+      className: "clm-status-badge clm-status-badge--info"
+    };
   }
   if (status === "completed") {
     return { label: "Đã quyết toán", className: "clm-status-badge clm-status-badge--success" };
   }
 
   // Fallback if no status field from backend yet
-  if (type === "force_majeure" && settlementAmount > 0) {
+  if (type === "force_majeure" && settlementAmount >= 0) {
     return { label: "Chờ chủ tòa nhà duyệt", className: "clm-status-badge clm-status-badge--pending" };
   }
 
@@ -243,9 +246,9 @@ const DetailModal: React.FC<DetailModalProps> = ({
             <div className="clm-detail-col">
               {/* Contract Info */}
               <div className="clm-detail-section">
-              <h3 className="clm-section-title">
-                <FileTextIcon className="mui-icon mui-icon-file-text" /> Thông Tin Hợp Đồng
-              </h3>
+                <h3 className="clm-section-title">
+                  <FileTextIcon className="mui-icon mui-icon-file-text" /> Thông Tin Hợp Đồng
+                </h3>
                 <div className="clm-info-grid">
                   <div className="clm-info-item">
                     <label>Mã HĐ</label>
@@ -264,9 +267,9 @@ const DetailModal: React.FC<DetailModalProps> = ({
 
               {/* Room & Tenant */}
               <div className="clm-detail-section">
-              <h3 className="clm-section-title">
-                <HomeIcon className="mui-icon mui-icon-home" /> Phòng & Khách Thuê
-              </h3>
+                <h3 className="clm-section-title">
+                  <HomeIcon className="mui-icon mui-icon-home" /> Phòng & Khách Thuê
+                </h3>
                 <div className="clm-info-grid">
                   <div className="clm-info-item">
                     <label>Phòng</label>
@@ -297,9 +300,9 @@ const DetailModal: React.FC<DetailModalProps> = ({
 
               {/* Financial breakdown */}
               <div className="clm-detail-section">
-              <h3 className="clm-section-title">
-                <ReceiptIcon className="mui-icon mui-icon-receipt" /> Chi Tiết Tài Chính
-              </h3>
+                <h3 className="clm-section-title">
+                  <ReceiptIcon className="mui-icon mui-icon-receipt" /> Chi Tiết Tài Chính
+                </h3>
                 <div className="clm-financial-list">
                   {item.liquidationType === "force_majeure" ? (
                     <>
@@ -373,9 +376,9 @@ const DetailModal: React.FC<DetailModalProps> = ({
             <div className="clm-detail-col">
               {/* Note */}
               <div className="clm-detail-section">
-                  <h3 className="clm-section-title">
-                    <AlertTriangleIcon className="mui-icon mui-icon-alert" /> Lý Do / Ghi Chú
-                  </h3>
+                <h3 className="clm-section-title">
+                  <AlertTriangleIcon className="mui-icon mui-icon-alert" /> Lý Do / Ghi Chú
+                </h3>
                 <p className="clm-note-text">{item.note || "Không có ghi chú."}</p>
               </div>
 
@@ -444,9 +447,9 @@ const DetailModal: React.FC<DetailModalProps> = ({
 
               {/* Metadata */}
               <div className="clm-detail-section">
-                  <h3 className="clm-section-title">
-                    <CalendarIcon className="mui-icon mui-icon-calendar" /> Thông Tin Hệ Thống
-                  </h3>
+                <h3 className="clm-section-title">
+                  <CalendarIcon className="mui-icon mui-icon-calendar" /> Thông Tin Hệ Thống
+                </h3>
                 <div className="clm-info-grid">
                   <div className="clm-info-item">
                     <label>Tạo lúc</label>
@@ -852,7 +855,7 @@ const ContractLiquidationManagement: React.FC = () => {
                         </td>
                         <td className="col-status">
                           {(() => {
-                            const badge = getStatusBadge(item.status, item.liquidationType, settlement.amount);
+                            const badge = getStatusBadge(item.status, item.liquidationType, settlement.amount, item.settlementType);
                             return (
                               <span className={badge.className}>
                                 {badge.label}

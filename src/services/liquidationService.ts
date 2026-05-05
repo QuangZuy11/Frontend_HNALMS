@@ -48,7 +48,9 @@ export interface LiquidationItem {
   remainingRentAmount: number | null;
   rentDebtAmount: number | null;
   totalSettlement: number;
+  settlementType?: "refund" | "collect";
   invoiceId?: any;
+  financialTicketId?: any;
   meterReadingIds: MeterReadingInfo[];
   createdAt: string;
   updatedAt: string;
