@@ -250,11 +250,11 @@ const InvoiceManager = () => {
       const eUsage = isElecReset ? (100000 - dualReadingForm.elecOld + dualReadingForm.elecNew) : (dualReadingForm.elecNew - dualReadingForm.elecOld);
       const wUsage = isWaterReset ? (100000 - dualReadingForm.waterOld + dualReadingForm.waterNew) : (dualReadingForm.waterNew - dualReadingForm.waterOld);
 
-      if (elecService && eUsage >= 0 && dualReadingForm.elecOld !== dualReadingForm.elecNew) {
+      if (elecService && eUsage >= 0) {
         apiCalls.push({ roomId: rId, utilityId: elecService._id, oldIndex: dualReadingForm.elecOld, newIndex: dualReadingForm.elecNew, isReset: isElecReset, maxIndex: 100000 });
       }
 
-      if (waterService && wUsage >= 0 && dualReadingForm.waterOld !== dualReadingForm.waterNew) {
+      if (waterService && wUsage >= 0) {
         apiCalls.push({ roomId: rId, utilityId: waterService._id, oldIndex: dualReadingForm.waterOld, newIndex: dualReadingForm.waterNew, isReset: isWaterReset, maxIndex: 100000 });
       }
 
@@ -395,12 +395,12 @@ const InvoiceManager = () => {
       const data = bulkData[roomId];
 
       const eUsage = data.eReset ? (100000 - data.eOld + data.eNew) : (data.eNew - data.eOld);
-      if (elecService && eUsage > 0) {
+      if (elecService && eUsage >= 0) {
         apiCalls.push({ roomId, utilityId: elecService._id, oldIndex: data.eOld, newIndex: data.eNew, isReset: data.eReset, maxIndex: 100000 });
       }
 
       const wUsage = data.wReset ? (100000 - data.wOld + data.wNew) : (data.wNew - data.wOld);
-      if (waterService && wUsage > 0) {
+      if (waterService && wUsage >= 0) {
         apiCalls.push({ roomId, utilityId: waterService._id, oldIndex: data.wOld, newIndex: data.wNew, isReset: data.wReset, maxIndex: 100000 });
       }
     });
