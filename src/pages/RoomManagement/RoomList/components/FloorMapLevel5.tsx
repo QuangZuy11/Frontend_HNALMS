@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { useNavigate } from "react-router-dom";
 import "./FloorMapLevel5.css";
 
@@ -349,7 +349,7 @@ export default function FloorMapLevel5({
                 isAvailable ||
                 (isDeposited && isShortTermAvailable && !hasFutureContract) ||
                 hasFutureInactiveContract ||
-                (renewalDeclinedRebook && legendType !== "guest");
+                renewalDeclinedRebook;
               // Show ! badge if: deposited (no multi-options) OR inactive contract + has new floating deposit
               const showDepositedBadge =
                 (isDeposited &&

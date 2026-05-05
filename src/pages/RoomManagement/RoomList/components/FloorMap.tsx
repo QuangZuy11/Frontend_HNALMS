@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { useNavigate } from "react-router-dom";
 import "./FloorMap.css";
 
@@ -375,7 +375,7 @@ export default function FloorMap({
                 isAvailable ||
                 (isDeposited && isShortTermAvailable && !hasFutureContract) ||
                 hasFutureInactiveContract ||
-                (renewalDeclinedRebook && legendType !== "guest");
+                renewalDeclinedRebook;
 
               const showDepositedBadge =
                 (isDeposited &&
