@@ -303,22 +303,31 @@ const ContractDetail = () => {
     if (!contract.startDate || !contract.rentPaidUntil) return 0;
     const start = new Date(contract.startDate);
     const paidUntil = new Date(contract.rentPaidUntil);
-    let months = (paidUntil.getFullYear() - start.getFullYear()) * 12;
-    months -= start.getMonth();
-    months += paidUntil.getMonth();
-    // The rentPaidUntil logic goes to end of month. If rentPaidUntil is end of Jan, and start is mid Dec,
-    // differences in month is 1. If start is Dec 1 and paidUntil is Jan 31, diff is 1.
-    // The formulation used in Creation is exactly: start.getMonth() + 1 + prepayMonths
-    // So prepayMonths = paidUntil.getMonth() - start.getMonth() - 1 + (years * 12)
-    // Wait, let's reverse exactly: 
-    // paidUntil = new Date(start.getFullYear(), start.getMonth() + 1 + prepayMonths, 0)
-    // paidUntil.getMonth() = (start.getMonth() + 1 + prepayMonths - 1) % 12
-    // It's simpler to just do: (paidUntil.getFullYear() - start.getFullYear()) * 12 + paidUntil.getMonth() - start.getMonth()
-    let prepay = (paidUntil.getFullYear() - start.getFullYear()) * 12 + paidUntil.getMonth() - start.getMonth();
-    return prepay;
+
+    // Xác định actualPrepaidFrom dựa theo quy tắc:
+    //   - startDate mùng 1 → prepaid từ tháng đó
+    //   - startDate mùng 2+ → prepaid từ tháng tiếp theo
+    const isStartFirstDay = start.getDate() === 1;
+    const actualPrepaidFrom = isStartFirstDay
+      ? new Date(start.getFullYear(), start.getMonth(), 1)
+      : new Date(start.getFullYear(), start.getMonth() + 1, 1);
+
+    // Đếm số tháng từ actualPrepaidFrom đến paidUntil
+    // paidUntil là ngày cuối tháng (hoặc endDate hợp đồng với 1-month/full-payment)
+    // → lấy năm/tháng của ngày tiếp theo sau paidUntil để tính đúng
+    const dayAfterPaid = new Date(paidUntil);
+    dayAfterPaid.setDate(dayAfterPaid.getDate() + 1);
+
+    const prepay =
+      (dayAfterPaid.getFullYear() - actualPrepaidFrom.getFullYear()) * 12 +
+      (dayAfterPaid.getMonth() - actualPrepaidFrom.getMonth());
+
+    return Math.max(prepay, 0);
   };
 
   const prepayMonths = calculatePrepayMonths();
+  // Hiển thị trả trước nếu có rentPaidUntil (kể cả khi đã trả hết toàn bộ hợp đồng)
+  const hasPrepay = !!contract.rentPaidUntil;
 
   const serifFont = '"Times New Roman", Times, serif';
 
@@ -672,7 +681,7 @@ const ContractDetail = () => {
             <br />- Thời hạn thuê: <strong>{contract.duration}</strong> tháng,
             bắt đầu từ ngày <strong>{formatDateVN(contract.startDate)}</strong>{" "}
             đến ngày <strong>{formatDateVN(contract.endDate)}</strong>.
-            {prepayMonths > 0 && (
+            {hasPrepay && (
               <>
                 <br />- Trả trước tiền phòng: <strong>{prepayMonths}</strong> tháng
                 (Đến hết ngày <strong>{formatDateVN(contract.rentPaidUntil)}</strong>).
