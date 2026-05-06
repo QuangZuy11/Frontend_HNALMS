@@ -888,7 +888,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                           style={{ flexDirection: "column", alignItems: "flex-start" }}
                         >
                           <span className="lqw-financial-item-label">
-                            ✅ Hoàn tiền cọc (100%)
+                             Hoàn tiền cọc (100%)
                           </span>
                           {(financial as any).isDepositRefunded &&
                             preflightData?.deposit && (
@@ -900,7 +900,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                                   fontWeight: "normal",
                                 }}
                               >
-                                💡 Tiền cọc{" "}
+                                 Tiền cọc{" "}
                                 <strong>
                                   {formatCurrency(preflightData.deposit.amount)}
                                 </strong>{" "}
@@ -927,7 +927,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                           }}
                         >
                           <span className="lqw-financial-item-label">
-                            ✅ Hoàn tiền thuê còn dư (
+                            Hoàn tiền thuê còn dư (
                             {(financial as any).remainingRentLabel})
                           </span>
                           <span className="lqw-financial-item-value positive">
@@ -945,7 +945,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                                     marginBottom: "4px",
                                   }}
                                 >
-                                  💡 Chi tiết từng kỳ hoà đơn đã thanh toán:
+                                  Chi tiết từng kỳ hoà đơn đã thanh toán:
                                 </div>
                                 <table
                                   style={{
@@ -1055,11 +1055,11 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                                           >
                                             {p.unusedDays > 0 ? (
                                               <span style={{ color: "#10b981" }}>
-                                                ✅ {p.unusedDays} ngày
+                                                 {p.unusedDays} ngày
                                               </span>
                                             ) : (
                                               <span style={{ color: "#ef4444" }}>
-                                                ❌ 0 ngày
+                                                 0 ngày
                                               </span>
                                             )}
                                           </td>
@@ -1100,7 +1100,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                         </div>
                         <div className="lqw-financial-item">
                           <span className="lqw-financial-item-label">
-                            ❌ Trừ tiền {electricService?.name || "điện"} (
+                            Trừ tiền {electricService?.name || "điện"} (
                             {electricOverride
                               ? Math.max(0, (99999 - electricOldIndex) + Number(electricNewIndex))
                               : Math.max(0, Number(electricNewIndex) - electricOldIndex)}{" "}
@@ -1116,7 +1116,7 @@ const LiquidationWizard: React.FC<LiquidationWizardProps> = ({
                         </div>
                         <div className="lqw-financial-item">
                           <span className="lqw-financial-item-label">
-                            ❌ Trừ tiền {waterService?.name || "nước"} (
+                            Trừ tiền {waterService?.name || "nước"} (
                             {waterOverride
                               ? Math.max(0, (99999 - waterOldIndex) + Number(waterNewIndex))
                               : Math.max(0, Number(waterNewIndex) - waterOldIndex)}{" "}
