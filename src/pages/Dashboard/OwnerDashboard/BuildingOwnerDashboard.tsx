@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import api from "../../../services/api";
+import { cashflowReportService } from "../../../services/cashflowReportService";
 import "./BuildingOwnerDashboard.css";
 import {
   DoorOpen,
@@ -12,10 +13,6 @@ import {
   Building2,
   CheckCircle2,
   Percent,
-  Settings,
-  Wrench,
-  Clock,
-  MessageSquare,
 } from "lucide-react";
 
 interface DashboardStats {
@@ -31,6 +28,7 @@ interface DashboardStats {
   uncollectedRevenue: number;
   depositsWithoutContract: number;
   occupancyRate: number;
+  totalDebt: number;
 }
 
 export default function BuildingOwnerDashboard() {
@@ -45,23 +43,36 @@ export default function BuildingOwnerDashboard() {
     try {
       setLoading(true);
 
-      // Fetch rooms, contracts, deposits and requests in parallel
+      // Calculate date range for current month
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      const formatDate = (d: Date) => d.toISOString().split("T")[0];
+
+      // Fetch all data in parallel
       const [
         roomsRes,
         contractsRes,
         depositsRes,
-        invoicesRes,
+        cashflowRes,
       ] = await Promise.all([
         api.get("/rooms"),
         api.get("/contracts"),
         api.get("/deposits"),
-        api.get("/invoices/periodic").catch(() => ({ data: { data: [] } })),
+        cashflowReportService.getCashflowReport({
+          startDate: formatDate(startOfMonth),
+          endDate: formatDate(endOfMonth),
+        }).catch(() => ({ summary: { actualCollected: 0, totalDebt: 0 } })),
       ]);
 
       const rooms = roomsRes.data.data || [];
       const contracts = contractsRes.data.data || [];
       const deposits = depositsRes.data.data || [];
-      const invoices = invoicesRes.data.data || [];
+      const cashflow = cashflowRes.summary || { actualCollected: 0, totalDebt: 0 };
+
+      // Revenue from cashflow report
+      const collectedRevenue = cashflow.actualCollected;
+      const uncollectedRevenue = cashflow.totalDebt;
 
       // Room stats based on status field
       const totalRooms = rooms.length;
@@ -79,7 +90,6 @@ export default function BuildingOwnerDashboard() {
       const activeContracts = contracts.filter((c: any) => c.status === "active");
 
       // Expiring contracts: active contracts with endDate within next 30 days
-      const now = new Date();
       const thirtyDaysLater = new Date();
       thirtyDaysLater.setDate(now.getDate() + 30);
 
@@ -99,37 +109,6 @@ export default function BuildingOwnerDashboard() {
         const rentAmount = c.roomPrice || (c.room && c.room.price) || 0;
         return sum + rentAmount;
       }, 0);
-
-      // Thu tiền phòng dự kiến/tháng is monthlyRevenue.
-      // We need to calculate how much of the EXPECTED rent has been collected vs uncollected.
-      // If invoices are available, we sum paid invoices for 'collected' and unpaid for 'uncollected'.
-      // Otherwise, we default to 0.
-      let collectedRevenue = 0;
-      let uncollectedRevenue = 0;
-
-      // Lấy hóa đơn của tháng hiện tại
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
-
-      const currentMonthInvoices = invoices.filter((inv: any) => {
-        if (!inv.createdAt && !inv.issueDate) return false;
-        const date = new Date(inv.createdAt || inv.issueDate);
-        return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
-      });
-
-      if (currentMonthInvoices.length > 0) {
-        collectedRevenue = currentMonthInvoices
-          .filter((inv: any) => inv.status === "Paid" || inv.status === "Đã thanh toán" || inv.status === "Paid")
-          .reduce((sum: number, inv: any) => sum + (inv.totalAmount || inv.amount || 0), 0);
-
-        uncollectedRevenue = currentMonthInvoices
-          .filter((inv: any) => inv.status === "Draft" || inv.status === "Unpaid" || inv.status === "Chưa thanh toán" || inv.status === "Pending")
-          .reduce((sum: number, inv: any) => sum + (inv.totalAmount || inv.amount || 0), 0);
-      } else {
-        // Fallback: Nếu đầu tháng chưa sinh hóa đơn nào cho tháng này
-        // thì toàn bộ tiền phòng dự kiến tháng sẽ coi là "chưa thu".
-        uncollectedRevenue = monthlyRevenue;
-      }
 
       // Deposits without contract
       const contractDepositIds = new Set(
@@ -155,6 +134,7 @@ export default function BuildingOwnerDashboard() {
         monthlyRevenue,
         collectedRevenue,
         uncollectedRevenue,
+        totalDebt: cashflow.totalDebt,
         occupancyRate: totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0,
       });
     } catch (error) {
@@ -171,6 +151,7 @@ export default function BuildingOwnerDashboard() {
         monthlyRevenue: 0,
         collectedRevenue: 0,
         uncollectedRevenue: 0,
+        totalDebt: 0,
         occupancyRate: 0,
       });
     } finally {
@@ -207,31 +188,6 @@ export default function BuildingOwnerDashboard() {
   ];
 
   const totalForChart = roomStatusData.reduce((sum, i) => sum + i.value, 0);
-
-  // Alerts
-  const alerts = [
-    {
-      show: (stats?.vacantRooms || 0) > 0,
-      icon: DoorOpen,
-      title: "Phòng Trống",
-      message: `${stats?.vacantRooms || 0} phòng đang trống chờ khách thuê`,
-      type: "warning",
-    },
-    {
-      show: (stats?.expiringContracts || 0) > 0,
-      icon: Clock,
-      title: "Hợp Đồng Sắp Hết Hạn",
-      message: `${stats?.expiringContracts || 0} hợp đồng sẽ hết hạn trong 30 ngày`,
-      type: "warning",
-    },
-    {
-      show: (stats?.maintenanceRooms || 0) > 0,
-      icon: Wrench,
-      title: "Phòng Bảo Trì",
-      message: `${stats?.maintenanceRooms || 0} phòng đang được sửa chữa`,
-      type: "info",
-    },
-  ].filter((a) => a.show);
 
   if (loading) {
     return (
@@ -349,13 +305,13 @@ export default function BuildingOwnerDashboard() {
             <h3>Tổng Quan Tài Chính</h3>
           </div>
           <div className="finance-content">
-            <div className="revenue-block">
+            {/* <div className="revenue-block">
               <Wallet className="revenue-icon" />
               <div className="revenue-info">
                 <span className="revenue-value">{formatCurrency(stats?.monthlyRevenue || 0)}</span>
                 <span className="revenue-label">Thu tiền phòng dự kiến/tháng</span>
               </div>
-            </div>
+            </div> */}
 
             <div className="finance-stats">
               <div className="finance-stat">

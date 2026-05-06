@@ -183,7 +183,7 @@ export default function ManagerDashboard() {
       icon: Percent,
     },
     {
-      title: "Tổng Cọc",
+      title: "Đang Cọc",
       value: stats?.depositsWithoutContract || 0,
       icon: Wallet,
     },
@@ -244,7 +244,7 @@ export default function ManagerDashboard() {
     <div className="manager-dashboard">
       {/* Header */}
       <header className="dashboard-header">
-        <h1>Manager Dashboard</h1>
+        <h1>Tổng quan </h1>
         <p>Tổng quan quản lý tòa nhà Hoàng Nam</p>
       </header>
 
@@ -369,7 +369,7 @@ export default function ManagerDashboard() {
                   {requestCounts.repairPending}
                 </span>
               </Link>
-              <Link
+              {/* <Link
                 to="/manager/requests/maintenance"
                 className="request-link-item"
               >
@@ -378,7 +378,7 @@ export default function ManagerDashboard() {
                 <span className="request-badge">
                   {requestCounts.maintenancePending}
                 </span>
-              </Link>
+              </Link> */}
               <Link
                 to="/manager/requests/complaints"
                 className="request-link-item"
