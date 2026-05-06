@@ -87,6 +87,74 @@ const getSettlementLabel = (item: LiquidationItem): { label: string; amount: num
   }
 };
 
+const getInvoiceItems = (item: LiquidationItem): any[] => {
+  const invoiceItems = (item.invoiceId as any)?.items;
+  if (Array.isArray(invoiceItems) && invoiceItems.length > 0) return invoiceItems;
+
+  const ticketItems = (item.financialTicketId as any)?.items;
+  if (Array.isArray(ticketItems)) return ticketItems;
+
+  return [];
+};
+
+const normalizeUtilityText = (value: unknown): string => {
+  if (!value) return "";
+  if (typeof value === "string") return value.toLowerCase();
+  if (typeof value === "object") {
+    const name = (value as any).name || (value as any).serviceName;
+    if (name) return String(name).toLowerCase();
+  }
+  return "";
+};
+
+const getUtilityType = (
+  mr: any,
+  index: number,
+  total: number,
+  items?: any[]
+): "electric" | "water" => {
+  const text = normalizeUtilityText(mr?.utilityId);
+  if (text.includes("điện") || text.includes("dien") || text.includes("electric")) return "electric";
+  if (text.includes("nước") || text.includes("nuoc") || text.includes("water")) return "water";
+
+  const safeItems = Array.isArray(items) ? items : [];
+  const matchedItem = safeItems.find(
+    (it) =>
+      it?.isIndex &&
+      (it.oldIndex === mr?.oldIndex && it.newIndex === mr?.newIndex)
+  );
+  if (matchedItem?.itemName) {
+    const name = String(matchedItem.itemName).toLowerCase();
+    if (name.includes("điện") || name.includes("electric")) return "electric";
+    if (name.includes("nước") || name.includes("water")) return "water";
+  }
+
+  if (total === 2) return index === 0 ? "electric" : "water";
+  return "water";
+};
+
+const findUtilityItem = (
+  mr: any,
+  items: any[],
+  utilityType: "electric" | "water"
+) => {
+  const keywords = utilityType === "electric"
+    ? ["điện", "dien", "electric"]
+    : ["nước", "nuoc", "water"];
+
+  const byName = items.find((it) => {
+    const name = String(it?.itemName || "").toLowerCase();
+    return keywords.some((key) => name.includes(key));
+  });
+  if (byName) return byName;
+
+  return items.find(
+    (it) =>
+      it?.isIndex &&
+      (it.oldIndex === mr?.oldIndex && it.newIndex === mr?.newIndex)
+  );
+};
+
 const getStatusBadge = (status: string | undefined, type: LiquidationType, settlementAmount: number, settlementType?: string) => {
   if (status === "pending_owner") {
     return { label: "Chờ chủ tòa nhà duyệt", className: "clm-status-badge clm-status-badge--pending" };
@@ -283,7 +351,7 @@ const DetailModal: React.FC<DetailModalProps> = ({
                     <label>Khách thuê</label>
                     <span>
                       {typeof contractData?.tenantId === "object"
-                        ? (contractData.tenantId as any)?.fullName || "—"
+                        ? (contractData.tenantId as any)?.username
                         : "—"}
                     </span>
                   </div>
@@ -330,29 +398,34 @@ const DetailModal: React.FC<DetailModalProps> = ({
 
                   {/* Utility costs */}
                   {item.meterReadingIds?.map((mr, idx) => {
-                    const utilityName = mr.utilityId?.name || "";
-                    const isElectric =
-                      utilityName.toLowerCase().includes("điện") ||
-                      utilityName.toLowerCase().includes("electric");
-                    const isNegative = item.liquidationType === "force_majeure";
-                    const usage = mr.usageAmount || 0;
-                    const reading = item.invoiceId?.items?.find(
-                      (it: any) =>
-                        (isElectric && (it.itemName?.toLowerCase().includes("điện") || it.itemName?.includes("Điện"))) ||
-                        (!isElectric && (it.itemName?.toLowerCase().includes("nước") || it.itemName?.includes("Nước")))
+                    const invoiceItems = getInvoiceItems(item);
+                    const utilityType = getUtilityType(
+                      mr,
+                      idx,
+                      item.meterReadingIds?.length || 0,
+                      invoiceItems
                     );
-                    const amount = reading?.amount || 0;
+                    const isElectric = utilityType === "electric";
+                    const isUtilityDeduct =
+                      item.liquidationType === "force_majeure" &&
+                      (item.settlementType === "refund" || item.totalSettlement >= 0);
+                    const usage = mr.usageAmount || 0;
+                    const reading = findUtilityItem(mr, invoiceItems, utilityType);
+                    const amount = reading?.amount ?? 0;
+                    const label = isUtilityDeduct
+                      ? (isElectric ? "Trừ tiền điện cuối kỳ" : "Trừ tiền nước cuối kỳ")
+                      : (isElectric ? "Tiền điện cuối kỳ" : "Tiền nước cuối kỳ");
 
                     return (
                       <div className="clm-financial-item" key={idx}>
                         <span className="clm-fi-label">
-                          {isElectric ? "Tiền điện cuối kỳ" : "Tiền nước cuối kỳ"}
+                          {label}
                           <span className="clm-fi-usage">
                             ({mr.oldIndex} → {mr.newIndex}, {usage} {isElectric ? "kWh" : "m³"})
                           </span>
                         </span>
-                        <span className={`clm-fi-value ${isNegative ? "negative" : "positive"}`}>
-                          {isNegative ? "-" : ""} {formatCurrency(Math.abs(amount))}
+                        <span className={`clm-fi-value ${isUtilityDeduct ? "negative" : "positive"}`}>
+                          {isUtilityDeduct ? "-" : ""} {formatCurrency(Math.abs(amount))}
                         </span>
                       </div>
                     );
@@ -418,10 +491,14 @@ const DetailModal: React.FC<DetailModalProps> = ({
                   </h3>
                   <div className="clm-meter-list">
                     {item.meterReadingIds.map((mr, idx) => {
-                      const utilityName = mr.utilityId?.name || "";
-                      const isElectric =
-                        utilityName.toLowerCase().includes("điện") ||
-                        utilityName.toLowerCase().includes("electric");
+                      const invoiceItems = getInvoiceItems(item);
+                      const utilityType = getUtilityType(
+                        mr,
+                        idx,
+                        item.meterReadingIds?.length || 0,
+                        invoiceItems
+                      );
+                      const isElectric = utilityType === "electric";
                       return (
                         <div key={idx} className="clm-meter-item">
                           <div className="clm-meter-icon">
@@ -583,7 +660,7 @@ const ContractLiquidationManagement: React.FC = () => {
           ? (contractData.roomId as any)?.name?.toLowerCase() || ""
           : "";
         const tenantName = typeof contractData?.tenantId === "object"
-          ? ((contractData.tenantId as any)?.fullName || "")?.toLowerCase()
+          ? (contractData.tenantId as any)?.username?.toLowerCase() || ""
           : "";
         const contractCode = (contractData?.contractCode || "").toLowerCase();
         const note = (item.note || "").toLowerCase();
@@ -662,8 +739,7 @@ const ContractLiquidationManagement: React.FC = () => {
     const total = liquidations.length;
     const forceMajeure = liquidations.filter((l) => l.liquidationType === "force_majeure").length;
     const violation = liquidations.filter((l) => l.liquidationType === "violation").length;
-    const totalAmount = liquidations.reduce((sum, l) => sum + (l.totalSettlement || 0), 0);
-    return { total, forceMajeure, violation, totalAmount };
+    return { total, forceMajeure, violation };
   }, [liquidations]);
 
   return (
@@ -703,15 +779,6 @@ const ContractLiquidationManagement: React.FC = () => {
           <div className="card-info">
             <span className="card-value">{stats.violation}</span>
             <span className="card-label">Vi phạm</span>
-          </div>
-        </div>
-        <div className="summary-card">
-          <div className="card-icon" style={{ background: '#dcfce7', color: '#22c55e' }}>
-            <ReceiptIcon className="mui-icon mui-icon-receipt-large" />
-          </div>
-          <div className="card-info">
-            <span className="card-value">{formatCurrency(stats.totalAmount)}</span>
-            <span className="card-label">Tổng tất toán</span>
           </div>
         </div>
       </section>
@@ -830,7 +897,7 @@ const ContractLiquidationManagement: React.FC = () => {
                               <UserIcon className="mui-icon mui-icon-user-row" />
                             </span>
                             {typeof contractData?.tenantId === "object"
-                              ? (contractData.tenantId as any)?.fullName || "—"
+                              ? (contractData.tenantId as any)?.username
                               : "—"}
                           </span>
                         </td>
