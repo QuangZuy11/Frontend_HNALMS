@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { format } from "date-fns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -8,7 +8,7 @@ import { vi } from "date-fns/locale/vi";
 import * as XLSX from "xlsx-js-style";
 import {
   Plus, Search, Droplet, Send, FileText, X, Edit3, Wrench,
-  ChevronLeft, ChevronRight, Filter, AlertCircle, ArrowUpDown, ChevronUp, ChevronDown, FileSpreadsheet
+  AlertCircle, ArrowUpDown, ChevronUp, ChevronDown, FileSpreadsheet
 } from 'lucide-react';
 
 import './InvoiceManage.css';
@@ -245,7 +245,7 @@ const InvoiceManager = () => {
       const elecService = services.find(s => ['điện', 'dien'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
       const waterService = services.find(s => ['nước', 'nuoc'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
 
-      const apiCalls = [];
+      const apiCalls: { roomId: string; utilityId: string; oldIndex: number; newIndex: number; isReset: boolean; maxIndex: number }[] = [];
 
       const eUsage = isElecReset ? (100000 - dualReadingForm.elecOld + dualReadingForm.elecNew) : (dualReadingForm.elecNew - dualReadingForm.elecOld);
       const wUsage = isWaterReset ? (100000 - dualReadingForm.waterOld + dualReadingForm.waterNew) : (dualReadingForm.waterNew - dualReadingForm.waterOld);
@@ -387,7 +387,7 @@ const InvoiceManager = () => {
     const elecService = services.find(s => ['điện', 'dien'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
     const waterService = services.find(s => ['nước', 'nuoc'].includes((s.name || s.serviceName || '').trim().toLowerCase()));
 
-    const apiCalls = [];
+    const apiCalls: { roomId: string; utilityId: string; oldIndex: number; newIndex: number; isReset: boolean; maxIndex: number }[] = [];
 
     Object.keys(bulkData).forEach(roomId => {
       if (completedRooms[roomId]) return;

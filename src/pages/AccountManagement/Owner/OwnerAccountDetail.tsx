@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { accountService } from '../../../services/accountService';
-import { STATUS_LABELS, formatAccountDate, type AccountDetail } from '../constants';
+import { formatAccountDate, type AccountDetail } from '../constants';
 import {
   Person as PersonIcon,
   VpnKey as VpnKeyIcon,

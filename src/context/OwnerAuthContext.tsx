@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, PropsWithChildren } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
+import type { PropsWithChildren } from 'react'
 
 interface OwnerAuthContextType {
   ownerName: string | null

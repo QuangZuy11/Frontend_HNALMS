@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard,
     Users,
-    Settings,
     ChevronDown,
     ChevronRight,
 } from 'lucide-react';
@@ -12,7 +11,7 @@ import '../OwnerSidebar/OwnerSidebar.css';
 import logo from '../../../../assets/images/Logo.png';
 
 // Định nghĩa cấu trúc menu cho Admin
-const MENU_ITEMS = [
+const MENU_ITEMS: { title: string; icon: React.ReactNode; path: string; subItems: { title: string; path: string }[] }[] = [
     {
         title: "Tổng quan",
         icon: <LayoutDashboard size={20} />,

@@ -358,7 +358,7 @@ const CreateContract = () => {
     }
   })();
 
-  const [rooms, setRooms] = useState([]);
+  const [rooms, setRooms] = useState<any[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [roomDevices, setRoomDevices] = useState<any[]>([]);
   const [availableServices, setAvailableServices] = useState<ServiceItem[]>([]);
@@ -719,8 +719,8 @@ const CreateContract = () => {
 
   // Auto-adjust prepayMonths when duration or contract type changes
   useEffect(() => {
-    const dur = getValues("duration");
-    const current = getValues("prepayMonths");
+    const dur = Number(getValues("duration"));
+    const current = Number(getValues("prepayMonths"));
     let newPrepay = current;
 
     if (isSecondContract) {
@@ -1348,7 +1348,7 @@ const CreateContract = () => {
                                   }
                                 }}
                                 format="dd/MM/yyyy"
-                                shouldDisableFutureDates
+                                disableFuture
                                 maxDate={new Date()}
                                 slotProps={{
                                   textField: {

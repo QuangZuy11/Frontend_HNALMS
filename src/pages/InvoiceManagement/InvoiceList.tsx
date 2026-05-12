@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import {
   FileSpreadsheet, Search, Filter, LayoutGrid, ArrowUpDown,
@@ -476,7 +476,6 @@ const InvoiceList = () => {
           totalPages={totalPages}
           onPageChange={setCurrentPage}
           totalItems={sortedAndFilteredInvoices.length}
-          itemsPerPage={ITEMS_PER_PAGE}
         />
       </div>
 

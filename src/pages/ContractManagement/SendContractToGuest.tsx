@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Box,
   Button,
@@ -32,7 +32,7 @@ import { useToast } from "../../components/common/Toast";
 import "../RequestManagement/BookingRequestList.css";
 
 // Mock API URL - Replace with actual
-const API_URL = "http://localhost:9999/api";
+
 
 /** Ngày bắt đầu HĐ mới tối thiểu khi từ chối gia hạn: ngày liền sau endDate của HĐ đang hiệu lực. */
 function getMinStartDateAfterDeclinedRenewal(room: {
@@ -359,7 +359,7 @@ const SendContractToGuest = () => {
     }
   })();
 
-  const [rooms, setRooms] = useState([]);
+  const [rooms, setRooms] = useState<any[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [roomDevices, setRoomDevices] = useState<any[]>([]);
   const [availableServices, setAvailableServices] = useState<ServiceItem[]>([]);
@@ -502,7 +502,7 @@ const SendContractToGuest = () => {
           if (preFilledDepositId) {
             const depositIdStr = typeof preFilledDepositId === "string"
               ? preFilledDepositId
-              : preFilledDepositId._id;
+              : (preFilledDepositId as any)._id;
             const deposit = allDeposits.find((d: any) => d._id === depositIdStr);
             if (deposit) {
               setSelectedDeposit(deposit);
@@ -761,16 +761,16 @@ const SendContractToGuest = () => {
 
   // Auto-adjust prepayMonths default when contract type changes (normal vs gap-fill)
   useEffect(() => {
-    const current = getValues("prepayMonths");
+    const current = Number(getValues("prepayMonths"));
     if (isSecondContract) {
       // Gap-fill contract: default to 1, adjust if current value is invalid
-      const dur = getValues("duration");
+      const dur = Number(getValues("duration"));
       if (current < 1) setValue("prepayMonths", 1, { shouldValidate: true });
       if (current > dur)
         setValue("prepayMonths", Math.min(1, dur), { shouldValidate: true });
     } else {
       // Normal contract: min = Math.min(2, dur) để tránh kẹt khi dur=1
-      const dur = getValues("duration");
+      const dur = Number(getValues("duration"));
       const minPrepay = Math.min(2, dur);
       if (current < minPrepay || current > dur) setValue("prepayMonths", Math.min(Math.max(minPrepay, current), dur), { shouldValidate: true });
     }

@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import "./FloorMap.css";
 
@@ -117,14 +117,15 @@ const getContractDateLabel = (
   const startYy = startDt.getFullYear().toString();
   const endYy = endDt.getFullYear().toString();
 
-  return `${startDd}/${startMm}/${startYy}\u2013${endDd}/${endMm}/${endYy}`;
+  return showYear
+    ? `${startDd}/${startMm}/${startYy}\u2013${endDd}/${endMm}/${endYy}`
+    : `${startDd}/${startMm}\u2013${endDd}/${endMm}`;
 };
 
 export default function FloorMap({
   rooms,
   highlightedRooms,
   floorName,
-  compact = false,
   onRoomSelect,
   legendType = "default",
   showDateYear = false,

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Eye, Check, X, ArrowLeftRight,
   Clock, CheckCircle2, XCircle,
@@ -9,7 +8,7 @@ import { AppModal } from '../../components/common/Modal';
 import { Pagination } from '../../components/common/Pagination';
 import { useToast } from '../../components/common/Toast';
 import { transferRequestService } from '../../services/requestService';
-import api from '../../services/api';
+
 import './TransferRequestsList.css';
 
 interface RoomType {
@@ -44,7 +43,7 @@ interface TransferRequest {
   targetRoomId?: Room | null;
   reason?: string;
   note?: string;
-  status: 'Pending' | 'Approved' | 'Rejected' | 'Completed' | 'Cancelled';
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Completed' | 'Cancelled' | 'Paid';
   managerNote?: string;
   rejectReason?: string;
   completedAt?: string;
@@ -52,33 +51,7 @@ interface TransferRequest {
   transferDate?: string | null;
 }
 
-interface Contract {
-  _id?: string;
-  status?: string;
-  tenantId?: { _id?: string; phoneNumber?: string; email?: string } | string;
-  roomId?: { _id?: string } | string;
-  depositId?: { _id?: string } | string;
-  duration?: number;
-  tenantInfo?: Record<string, unknown>;
-  coResidents?: unknown[];
-  bookServices?: Array<{
-    serviceId?: { _id?: string; name?: string; currentPrice?: number; type?: string } | string;
-    name?: string;
-    currentPrice?: number;
-    type?: string;
-    category?: string;
-    quantity?: number;
-  }>;
-}
 
-interface BookService {
-  serviceId?: { _id?: string; name?: string; currentPrice?: number; type?: string } | string;
-  name?: string;
-  currentPrice?: number;
-  type?: string;
-  category?: string;
-  quantity?: number;
-}
 
 type StatusFilter = 'ALL' | 'Pending' | 'Approved' | 'Rejected' | 'Completed' | 'Cancelled';
 
@@ -103,7 +76,6 @@ const STATUS_BADGE_CLASS: Record<string, string> = {
 };
 
 export default function TransferRequestsList() {
-  const navigate = useNavigate();
   const { showToast } = useToast();
   const [requests, setRequests] = useState<TransferRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -397,22 +369,6 @@ export default function TransferRequestsList() {
     try {
       setCompleteLoading(true);
 
-      let oldDepositId: string | undefined;
-      let oldContract: Contract | undefined;
-      try {
-        const contractsRes = await api.get('/contracts');
-        if (contractsRes.data.success && Array.isArray(contractsRes.data.data)) {
-          const tenantId = completingRequest.tenantId?._id;
-          const currentRoomId = completingRequest.currentRoomId?._id;
-          oldContract = (contractsRes.data.data as Contract[]).find((c: Contract) => {
-            const cTenantId = typeof c.tenantId === 'object' ? c.tenantId?._id : c.tenantId;
-            const cRoomId = typeof c.roomId === 'object' ? c.roomId?._id : c.roomId;
-            return c.status === 'active' && cTenantId === tenantId && cRoomId === currentRoomId;
-          });
-        }
-      } catch (fetchErr) {
-        console.error('Không thể lấy dữ liệu hợp đồng cũ:', fetchErr);
-      }
 
       await transferRequestService.completeTransferRequest(completingRequest._id, {
         transferDate: completingRequest.transferDate ?? undefined,

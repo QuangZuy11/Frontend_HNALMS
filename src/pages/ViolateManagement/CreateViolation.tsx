@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Autocomplete, TextField } from '@mui/material';
-import violateService, { CreateViolationPayload } from '../../services/violateService';
+import violateService from '../../services/violateService';
+import type { CreateViolationPayload } from '../../services/violateService';
 import api from '../../services/api';
 import './CreateViolation.css';
 

@@ -12,14 +12,12 @@ import {
   Trash2,
   Save,
   X,
-  CheckCircle,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import {
   getActiveBuildingRules,
   createBuildingRules,
   updateBuildingRules,
-  deleteBuildingRules,
 } from "../../services/buildingService";
 import "./BuildingRulesPublic.css";
 import { useToast } from "../../components/common/Toast";
@@ -52,17 +50,17 @@ const BuildingRulesPublic = () => {
   const isAdminOrManager = user && user.role === "owner";
 
   // State quản lý dữ liệu nội quy
-  const [rulesData, setRulesData] = useState(null);
+  const [rulesData, setRulesData] = useState<any>(null);
   // State quản lý trạng thái loading
   const [loading, setLoading] = useState(true);
   // State quản lý lỗi
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   // State quản lý chế độ chỉnh sửa
   const [isEditing, setIsEditing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState(""); // 'category', 'guideline'
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [editingGuideline, setEditingGuideline] = useState(null);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [editingGuideline, setEditingGuideline] = useState<any>(null);
 
   // State popup xác nhận xóa
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -117,13 +115,13 @@ const BuildingRulesPublic = () => {
     setShowModal(true);
   };
 
-  const handleEditCategory = (index) => {
+  const handleEditCategory = (index: number) => {
     setEditingCategory({ ...rulesData.categories[index], index });
     setModalType("category");
     setShowModal(true);
   };
 
-  const handleDeleteCategory = async (index) => {
+  const handleDeleteCategory = async (index: number) => {
     const categoryName = rulesData.categories[index]?.title || "danh mục này";
     setDeleteConfirm({
       isOpen: true,
@@ -133,7 +131,7 @@ const BuildingRulesPublic = () => {
     });
   };
 
-  const handleDeleteGuideline = async (index) => {
+  const handleDeleteGuideline = async (index: number) => {
     const guidelineTitle = rulesData.guidelines[index]?.title || "hướng dẫn này";
     setDeleteConfirm({
       isOpen: true,
@@ -149,7 +147,7 @@ const BuildingRulesPublic = () => {
 
     try {
       if (type === "category") {
-        const newCategories = rulesData.categories.filter((_, i) => i !== index);
+        const newCategories = rulesData.categories.filter((_: any, i: number) => i !== index);
         const updatedData = { ...rulesData, categories: newCategories };
         if (rulesData._id) {
           await updateBuildingRules(rulesData._id, updatedData);
@@ -158,7 +156,7 @@ const BuildingRulesPublic = () => {
         await fetchRules();
         showToast("success", "Xóa danh mục thành công!");
       } else if (type === "guideline") {
-        const newGuidelines = rulesData.guidelines.filter((_, i) => i !== index);
+        const newGuidelines = rulesData.guidelines.filter((_: any, i: number) => i !== index);
         const updatedData = { ...rulesData, guidelines: newGuidelines };
         if (rulesData._id) {
           await updateBuildingRules(rulesData._id, updatedData);
@@ -182,13 +180,13 @@ const BuildingRulesPublic = () => {
         newCategories[editingCategory.index] = {
           title: editingCategory.title,
           icon: editingCategory.icon,
-          rules: editingCategory.rules.filter((r) => r.trim() !== ""),
+          rules: editingCategory.rules.filter((r: any) => typeof r === "string" && r.trim() !== ""),
         };
       } else {
         newCategories.push({
           title: editingCategory.title,
           icon: editingCategory.icon,
-          rules: editingCategory.rules.filter((r) => r.trim() !== ""),
+          rules: editingCategory.rules.filter((r: any) => typeof r === "string" && r.trim() !== ""),
         });
       }
       const updatedData = { ...rulesData, categories: newCategories };
@@ -221,7 +219,7 @@ const BuildingRulesPublic = () => {
     setShowModal(true);
   };
 
-  const handleEditGuideline = (index) => {
+  const handleEditGuideline = (index: number) => {
     setEditingGuideline({ ...rulesData.guidelines[index], index });
     setModalType("guideline");
     setShowModal(true);
@@ -271,14 +269,14 @@ const BuildingRulesPublic = () => {
     });
   };
 
-  const updateCategoryRule = (index, value) => {
+  const updateCategoryRule = (index: number, value: string) => {
     const newRules = [...editingCategory.rules];
     newRules[index] = value;
     setEditingCategory({ ...editingCategory, rules: newRules });
   };
 
-  const removeCategoryRule = (index) => {
-    const newRules = editingCategory.rules.filter((_, i) => i !== index);
+  const removeCategoryRule = (index: number) => {
+    const newRules = editingCategory.rules.filter((_: any, i: number) => i !== index);
     setEditingCategory({ ...editingCategory, rules: newRules });
   };
 
@@ -466,8 +464,8 @@ const BuildingRulesPublic = () => {
               )}
             </div>
             <div className="rules-grid">
-              {rulesData.categories.map((category, index) => {
-                const IconComponent = iconMap[category.icon] || AlertCircle;
+              {rulesData.categories.map((category: any, index: number) => {
+                const IconComponent = iconMap[category.icon as keyof typeof iconMap] || AlertCircle;
                 return (
                   <div key={index} className="rule-card">
                     <div className="rule-card-content">
@@ -515,7 +513,7 @@ const BuildingRulesPublic = () => {
                         )}
                       </div>
                       <ul className="rule-list">
-                        {category.rules.map((rule, ruleIndex) => (
+                        {category.rules.map((rule: any, ruleIndex: number) => (
                           <li key={ruleIndex} className="rule-item">
                             <span className="rule-checkmark">✓</span>
                             <span className="rule-text">{rule}</span>
@@ -557,7 +555,7 @@ const BuildingRulesPublic = () => {
               )}
             </div>
             <div className="guidelines-list">
-              {rulesData.guidelines.map((guideline, index) => (
+              {rulesData.guidelines.map((guideline: any, index: number) => (
                 <div key={index} className="guideline-item">
                   <div
                     style={{
@@ -722,7 +720,7 @@ const BuildingRulesPublic = () => {
                 {/* Grid chọn icon */}
                 <div className="hnalms-icon-grid">
                   {iconOptions.map((iconName) => {
-                    const IconComponent = iconMap[iconName];
+                    const IconComponent = iconMap[iconName as keyof typeof iconMap];
                     const isSelected = editingCategory.icon === iconName;
                     return (
                       <button
@@ -747,7 +745,7 @@ const BuildingRulesPublic = () => {
 
               <div className="modal-field">
                 <label className="modal-label">Quy định</label>
-                {editingCategory.rules.map((rule, index) => (
+                {editingCategory.rules.map((rule: any, index: number) => (
                   <div key={index} className="rule-input-group">
                     <input
                       type="text"

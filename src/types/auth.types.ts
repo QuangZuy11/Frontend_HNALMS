@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'Admin' | 'manager' | 'Manager' | 'owner' | 'Owner' | 'tenant' | 'Tenant' | 'accountant' | 'Accountant';
+export type UserRole = 'admin' | 'manager' | 'owner' | 'tenant' | 'accountant';
 
 export interface User {
   _id?: string; // Primary ID from MongoDB
@@ -17,7 +17,7 @@ export interface User {
   cccd?: string | null;
   address?: string | null;
   dob?: string | null;
-  gender?: string | null; // Can be "Male", "Female", "Other" or "male", "female", "other"
+  gender?: 'male' | 'female' | 'other' | null;
   phoneNumber?: string | null;
   phone?: string | null;
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Plus, Edit, Trash2, Cpu, PackageSearch,
-  Search, ArrowUpDown, AlertTriangle, X,
+  Search, ArrowUpDown, AlertTriangle,
   CheckCircle, FileText, LayoutGrid,
 } from "lucide-react";
 import { AppModal } from "../../components/common/Modal";
@@ -179,6 +179,7 @@ const RoomDeviceManagement: React.FC = () => {
         roomTypeId: selectedRoomTypeId,
         deviceId: addForm.deviceId,
         quantity: addForm.quantity,
+        condition: "Tốt",
       });
       showToast("success", "Thành công", "Thêm thiết bị vào loại phòng thành công!");
       setShowAddModal(false);
@@ -404,7 +405,7 @@ const RoomDeviceManagement: React.FC = () => {
                     <td className="rdm-td-name">
                       <div className="rdm-main-text">{rd.deviceId?.name}</div>
                       <div className="rdm-desc-text">
-                        {rd.deviceId?.description || rd.deviceId?.unit || "Chưa có mô tả"}
+                        {(rd.deviceId as any)?.description || rd.deviceId?.unit || "Chưa có mô tả"}
                       </div>
                     </td>
                     <td className="rdm-td-info">

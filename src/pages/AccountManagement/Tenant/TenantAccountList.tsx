@@ -64,8 +64,7 @@ export default function TenantAccountList() {
   // Excel export modal
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
   const [excelFloor, setExcelFloor] = useState<string>("all");
-  const [coResidentsMap, setCoResidentsMap] = useState<Record<string, any[]>>({});
-  const [loadingCoResidents, setLoadingCoResidents] = useState(false);
+
 
   const fetchAccounts = useCallback(async () => {
     try {
@@ -245,11 +244,9 @@ export default function TenantAccountList() {
   // Lấy danh sách phòng để map roomId -> coResidents
   const fetchCoResidentsForExport = async (rows: AccountItem[]) => {
     const map: Record<string, any[]> = {};
-    const roomIds = [...new Set(rows.map((acc) => acc.roomName).filter(Boolean))];
+    const roomIds = [...new Set(rows.map((acc) => acc.roomName).filter((name): name is string => Boolean(name)))];
 
     if (roomIds.length === 0) return map;
-
-    setLoadingCoResidents(true);
     try {
       const roomResponses = await Promise.all(
         roomIds.map((roomName) => {
@@ -268,8 +265,6 @@ export default function TenantAccountList() {
       });
     } catch {
       // fallback: map rỗng
-    } finally {
-      setLoadingCoResidents(false);
     }
     return map;
   };

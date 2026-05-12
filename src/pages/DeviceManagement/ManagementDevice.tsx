@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, Download,
   AlertTriangle, Cpu,
   Filter, ArrowUpDown,
-  LayoutGrid, FileText, Sparkles, X, Upload, CheckCircle
+  LayoutGrid, FileText, Sparkles, Upload, CheckCircle
 } from 'lucide-react';
 import { saveAs } from 'file-saver';
 import './ManagementDevice.css';

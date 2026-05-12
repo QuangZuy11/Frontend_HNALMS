@@ -13,7 +13,6 @@ import {
   Percent,
   MapPin,
   Wrench,
-  Clock,
   MessageSquare,
   Wallet,
 } from "lucide-react";
@@ -205,30 +204,7 @@ export default function ManagerDashboard() {
 
   const totalForChart = roomStatusData.reduce((sum, i) => sum + i.value, 0);
 
-  // Alerts
-  const alerts = [
-    {
-      show: (stats?.vacantRooms || 0) > 0,
-      icon: DoorOpen,
-      title: "Phòng Trống",
-      message: `${stats?.vacantRooms || 0} phòng đang trống chờ khách thuê`,
-      type: "warning",
-    },
-    {
-      show: (stats?.expiringContracts || 0) > 0,
-      icon: Clock,
-      title: "Hợp Đồng Sắp Hết Hạn",
-      message: `${stats?.expiringContracts || 0} hợp đồng sẽ hết hạn trong 30 ngày`,
-      type: "warning",
-    },
-    {
-      show: (stats?.maintenanceRooms || 0) > 0,
-      icon: Wrench,
-      title: "Phòng Bảo Trì",
-      message: `${stats?.maintenanceRooms || 0} phòng đang được sửa chữa`,
-      type: "info",
-    },
-  ].filter((a) => a.show);
+
 
   if (loading) {
     return (

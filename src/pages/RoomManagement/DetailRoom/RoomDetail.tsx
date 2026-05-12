@@ -25,7 +25,7 @@ export default function RoomDetail() {
   const navigate = useNavigate();
   const [room, setRoom] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [services, setServices] = useState<any[]>([]);
 
@@ -50,6 +50,7 @@ export default function RoomDetail() {
 
   const fetchRoomDetail = async () => {
     try {
+      if (!id) return;
       setLoading(true);
       const response = await roomService.getRoomById(id);
 
@@ -317,7 +318,7 @@ export default function RoomDetail() {
               {/* Thumbnails */}
               {room.images.length > 1 && (
                 <div className="thumbnails-container">
-                  {room.images.map((image, index) => (
+                  {room.images.map((image: string, index: number) => (
                     <div
                       key={index}
                       className={`thumbnail-wrapper ${index === currentImageIndex ? "active" : ""

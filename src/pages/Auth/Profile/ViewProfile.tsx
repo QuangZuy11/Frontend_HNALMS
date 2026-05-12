@@ -231,7 +231,7 @@ export default function ViewProfile() {
         cccd: formData.cccd.trim() || null,
         address: formData.address.trim() || null,
         dob: formData.dob || null,
-        gender: formData.gender || null,
+        gender: (formData.gender || null) as 'male' | 'female' | 'other' | null,
       });
       updateUser({ fullname: formData.fullname.trim() || undefined });
       await fetchProfile();

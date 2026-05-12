@@ -4,7 +4,6 @@ import api from "../../../services/api";
 import {
   FileText,
   Filter,
-  Plus,
   Search,
   Wallet,
   DollarSign,

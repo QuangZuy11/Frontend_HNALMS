@@ -2,21 +2,14 @@ import { Link } from "react-router-dom";
 import { Users, Maximize, MapPin, ListChecks } from "lucide-react";
 import "./Room-card.css";
 
-export default function RoomCard({ room }) {
-  const statusColors = {
+export default function RoomCard({ room }: { room: any }) {
+  const statusColors: Record<string, string> = {
     Available: "available",
     Occupied: "occupied",
     Maintenance: "maintenance",
     Trống: "available",
     "Đã thuê": "occupied",
     "Bảo trì": "maintenance",
-  };
-
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(price);
   };
 
   // Get the first image from room images array
@@ -85,7 +78,7 @@ export default function RoomCard({ room }) {
         {/* Amenities Tags */}
         {room.amenities && room.amenities.length > 0 && (
           <div className="amenities-tags">
-            {room.amenities.slice(0, 3).map((amenity, index) => (
+            {room.amenities.slice(0, 3).map((amenity: any, index: number) => (
               <span key={index} className="amenity-tag">
                 {amenity}
               </span>

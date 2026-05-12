@@ -1,28 +1,6 @@
 import { Phone, Mail, MapPin, Clock } from "lucide-react";
-import { Slot } from "@radix-ui/react-slot";
 import "./Contact.css";
 
-// Button Component
-function Button({
-  className = "",
-  variant = "default",
-  size = "default",
-  asChild = false,
-  ...props
-}) {
-  const Comp = asChild ? Slot : "button";
-
-  const classes = [
-    "contact-btn",
-    `contact-btn-${variant}`,
-    `contact-btn-${size}`,
-    className,
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  return <Comp data-slot="button" className={classes} {...props} />;
-}
 
 // Card Components
 function Card({ className = "", ...props }) {
@@ -137,7 +115,7 @@ export default function Contact() {
             width="100%"
             height="450"
             style={{ border: 0, borderRadius: "0.5rem" }}
-            allowFullScreen=""
+            allowFullScreen
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
             title="Vị trí Hoàng Nam Apartment"

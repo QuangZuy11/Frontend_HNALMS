@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   TrendingUp, TrendingDown, DollarSign, AlertCircle, 
@@ -114,7 +114,7 @@ const AccountantDashboard = () => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(val) => `${val / 1000000}M`} />
-                <Tooltip formatter={(val: number) => formatCurrency(val)} cursor={{fill: '#f1f5f9'}} />
+                <Tooltip formatter={(val) => typeof val === 'number' ? formatCurrency(val) : String(val)} cursor={{fill: '#f1f5f9'}} />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                 <Bar dataKey="revenue" name="Thực Thu" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={40} />
                 <Bar dataKey="expense" name="Thực Chi" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={40} />
@@ -140,11 +140,11 @@ const AccountantDashboard = () => {
                     innerRadius={60} outerRadius={90}
                     paddingAngle={5} dataKey="value"
                   >
-                    {data.revenueBreakdown.map((entry: any, index: number) => (
+                    {data.revenueBreakdown.map((_entry: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(val: number) => formatCurrency(val)} />
+                  <Tooltip formatter={(val) => typeof val === 'number' ? formatCurrency(val) : String(val)} />
                 </PieChart>
               </ResponsiveContainer>
             </div>

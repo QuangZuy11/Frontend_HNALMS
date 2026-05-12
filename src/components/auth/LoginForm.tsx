@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { authService } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 import type { LoginResponse } from "../../types/auth.types";
@@ -13,7 +12,6 @@ export function LoginForm({ onForgotPassword }: LoginFormProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,8 +35,10 @@ export function LoginForm({ onForgotPassword }: LoginFormProps) {
           role: response.user.role,
         };
 
-        // Đăng nhập + lưu vào context + localStorage
-        login(response.token, baseUser);
+        login(response.token, {
+          ...baseUser,
+          role: (baseUser.role as string).toLowerCase() as typeof baseUser.role,
+        });
 
         // Sau khi đăng nhập, gọi lại /auth/me để luôn lấy thông tin profile mới nhất
         try {
@@ -51,7 +51,10 @@ export function LoginForm({ onForgotPassword }: LoginFormProps) {
             name: profile.username ?? baseUser.name,
             role: profile.role,
           };
-          login(response.token, freshUser);
+          login(response.token, {
+            ...freshUser,
+            role: (freshUser.role as string).toLowerCase() as typeof freshUser.role,
+          });
 
           // Redirect dựa vào role
           if (freshUser.role === "manager") {

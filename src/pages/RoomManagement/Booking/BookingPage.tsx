@@ -12,7 +12,6 @@ import {
   User,
   CreditCard,
   Building,
-  Shield,
   Mail,
   Phone,
   Calendar,
@@ -20,7 +19,7 @@ import {
   Users,
   Plus,
   Trash2,
-  AlertCircle,
+
 } from "lucide-react";
 import { roomService } from "../../../services/roomService";
 import { bookingRequestService } from "../../../services/bookingRequestService";
@@ -196,7 +195,7 @@ export default function BookingPage() {
     today.getMonth() + 6,
     today.getDate(),
   );
-  const maxStartDateStr = toLocalDateString(maxDateLimit);
+
 
   /** Tính ngày tối thiểu được chọn vào ở */
   function getMinStartDate(r: any): Date {
@@ -601,9 +600,7 @@ export default function BookingPage() {
     }
   };
 
-  const handleCancelDeposit = () => {
-    setBookingStep("form");
-  };
+
 
   // ---------- Co-resident helpers ----------
   const addCoResident = () => {
@@ -654,7 +651,7 @@ export default function BookingPage() {
     );
   }
 
-  const depositAmount = room.price;
+
   const depositAllowed =
     !room.successorLeaseBooked &&
     (room.status === "Available" ||
@@ -894,7 +891,7 @@ export default function BookingPage() {
                               }
                             }}
                             format="dd/MM/yyyy"
-                            shouldDisableFutureDates
+                            disableFuture
                             maxDate={new Date()}
                             onClose={() => validateField("dob")}
                             slotProps={{

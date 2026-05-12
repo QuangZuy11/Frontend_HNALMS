@@ -20,7 +20,6 @@ import {
   Activity,
   SwatchBook,
   Building2,
-  ChartBarStacked,
   RefreshCcwDot,
   Settings
 } from 'lucide-react';
