@@ -22,7 +22,6 @@ import {
 import {
   Wrench,
   HardHat,
-  AlertTriangle,
   TrendingUp,
   Activity,
 } from "lucide-react";
@@ -136,10 +135,7 @@ export default function ReportRepairMaintenance() {
     return total > 0 ? Math.round((value / total) * 100) : 0;
   };
 
-  // Tính % cho biểu đồ tròn (dựa trên total)
-  const peakPct = snapshot && snapshot.total > 0
-    ? Math.round((peakMonth?.total ?? 0) / snapshot.total * 100)
-    : 0;
+  // peakPct computed but not used in display
 
   return (
     <div className="rrm-container">
@@ -385,7 +381,6 @@ export default function ReportRepairMaintenance() {
                   </thead>
                   <tbody>
                     {[...monthlyData].reverse().map((row) => {
-                      const isPeak = peakMonth && row.month === peakMonth.month;
                       return (
                         <tr key={row.month}>
                           <td>

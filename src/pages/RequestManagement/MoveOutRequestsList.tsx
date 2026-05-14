@@ -233,13 +233,6 @@ export default function MoveOutRequestsList() {
     return '-';
   };
 
-  const getRoomId = (req: MoveOutRequestItem): string | null => {
-    if (!req.contractId || typeof req.contractId !== 'object') return null;
-    const roomRef = req.contractId.roomId;
-    if (!roomRef) return null;
-    if (typeof roomRef === 'string') return roomRef;
-    return roomRef._id ?? null;
-  };
 
   const getContractCode = (req: MoveOutRequestItem) => {
     if (req.contractId && typeof req.contractId === 'object') {

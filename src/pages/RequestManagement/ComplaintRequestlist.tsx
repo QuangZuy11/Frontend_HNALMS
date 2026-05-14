@@ -289,11 +289,6 @@ export default function ComplaintRequestList() {
     return <CheckCircle2 size={14} />;
   };
 
-  const getPriorityIcon = (priority: string) => {
-    if (priority === 'High') return <AlertCircle size={14} />;
-    if (priority === 'Medium') return <Clock size={14} />;
-    return <CheckCircle2 size={14} />;
-  };
 
   const normalize = (value: string) =>
     value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();

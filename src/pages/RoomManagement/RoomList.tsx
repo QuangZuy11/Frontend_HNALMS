@@ -60,16 +60,17 @@ export default function RoomList() {
   const [floorsData, setFloorsData] = useState<
     { _id: string; name: string; layoutType?: "type1" | "type2" | "type3" }[]
   >([]);
-  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [multiSelectMode] = useState(false);
   const [selectedRooms, setSelectedRooms] = useState<Room[]>([]);
 
-  const handleRoomToggle = (room: Room) => {
+  const handleRoomToggle = (roomId: string) => {
     setSelectedRooms((prev) => {
-      const exists = prev.find((r) => r._id === room._id);
+      const exists = prev.find((r) => r._id === roomId);
       if (exists) {
-        return prev.filter((r) => r._id !== room._id);
+        return prev.filter((r) => r._id !== roomId);
       }
-      return [...prev, room];
+      const roomToAdd = rooms.find((r) => r._id === roomId);
+      return roomToAdd ? [...prev, roomToAdd] : prev;
     });
   };
 
@@ -402,7 +403,7 @@ export default function RoomList() {
                           filters.selectedRoomTypes.length === 0 ||
                           sidebarCollapsed,
                         sidebarType:
-                          layoutType === "type3" ? "drying" : "parking",
+                          (layoutType === "type3" ? "drying" : "parking") as "drying" | "parking",
                         multiSelectMode,
                         selectedRoomIds: selectedRooms.map((r) => r._id),
                         onRoomToggle: handleRoomToggle,
@@ -428,7 +429,7 @@ export default function RoomList() {
                       floorName: currentFloorLabel || "Tầng",
                       legendType: "guest" as const,
                       sidebarType:
-                        layoutType === "type3" ? "drying" : "parking",
+                        (layoutType === "type3" ? "drying" : "parking") as "drying" | "parking",
                     };
                     if (layoutType === "type2") {
                       return <FloorMapLevel2 {...props} />;

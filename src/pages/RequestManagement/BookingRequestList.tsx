@@ -60,6 +60,7 @@ interface BookingRequest {
   prepayMonths: number | "all";
   coResidents: { name: string; phone: string }[];
   createdAt: string;
+  contractId?: string;
 }
 
 // Helper: lấy tên hiển thị từ booking request (có thể có userInfoId hoặc name trực tiếp)

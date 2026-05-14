@@ -23,7 +23,7 @@ import {
   Home,
   Tag,
   Power,
-  Download,
+
   FileSpreadsheet,
   List as ListIcon,
   Map as MapIcon,
@@ -128,7 +128,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     useState<string | null>(null);
 
   // State cho dropdown chọn hiển thị (hợp đồng/cọc)
-  const [displayMode, setDisplayMode] = useState<
+  const [, setDisplayMode] = useState<
     "active" | "inactive" | "deposit"
   >("active");
   const [allRoomContracts, setAllRoomContracts] = useState<any[]>([]);
@@ -357,23 +357,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     }
   };
 
-  const handleDownloadTemplate = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/excel/template`, {
-        responseType: "blob",
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", "Mau_Nhap_Phong.xlsx");
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode?.removeChild(link);
-      showToast("success", "Thành công", "Tải file mẫu thành công!");
-    } catch (error) {
-      showToast("error", "Lỗi", "Lỗi tải file mẫu.");
-    }
-  };
+
 
   const handleImportSubmit = async () => {
     if (!selectedFile) {
@@ -450,9 +434,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     XLSX.writeFile(wb, `Danh_Sach_Phong_Thanh_Ly_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
+
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -462,24 +444,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     e.target.value = "";
   };
 
-  const handleOpenAdd = () => {
-    if (floors.length === 0 || roomTypes.length === 0) {
-      showToast("warning", "Cảnh báo", "Vui lòng tạo Tầng và Loại phòng trước khi thêm phòng mới!");
-      return;
-    }
-    setIsEditing(false);
-    setCurrentRoom(null);
-    setFormData({
-      roomCode: "",
-      name: "",
-      floorId: floors[0]?._id || "",
-      roomTypeId: roomTypes[0]?._id || "",
-      status: "Available",
-      description: "",
-      isActive: true,
-    });
-    setShowModal(true);
-  };
+
 
   const handleOpenEdit = (room: Room) => {
     setIsEditing(true);
@@ -530,13 +495,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
     }
   };
 
-  const handleContractChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const contractId = e.target.value;
-    setSelectedContractId(contractId);
-    if (contractId) {
-      fetchContractDetails(contractId);
-    }
-  };
+
 
   // Xử lý thay đổi dropdown chọn hợp đồng/cọc
   const handleContractSelectChange = (
@@ -1479,7 +1438,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                 const inactiveContracts = allRoomContracts.filter(
                   (c) => c.status !== "active",
                 );
-                const depositCount = roomDeposits.length;
+
                 const totalContracts =
                   activeContracts.length + inactiveContracts.length;
                 const hasAnyContract = totalContracts > 0;
@@ -1570,7 +1529,7 @@ const ManageRoom: React.FC<ManageRoomProps> = ({ readOnly = false }) => {
                       {/* Hiện cọc lẻ (chưa gắn hợp đồng) */}
                       {depositLeList.length > 0 && (
                         <optgroup label="Cọc lẻ chưa có hợp đồng">
-                          {depositLeList.map((deposit: any, idx: number) => {
+                          {depositLeList.map((deposit: any) => {
                             const depositIdx = roomDeposits.findIndex(
                               (d: any) => d._id === deposit._id,
                             );

@@ -73,7 +73,7 @@ export default function UpdateProfile() {
                 cccd: formData.cccd.trim() || null,
                 address: formData.address.trim() || null,
                 dob: formData.dob || null,
-                gender: formData.gender || null
+                gender: (formData.gender || null) as 'male' | 'female' | 'other' | null
             });
 
             // Redirect to profile page after successful update

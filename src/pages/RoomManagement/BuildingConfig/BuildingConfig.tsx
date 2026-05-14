@@ -826,7 +826,7 @@ const BuildingConfig = () => {
       {isLightboxOpen && (
         <div className="lightbox-overlay" onClick={() => setIsLightboxOpen(false)}>
           <div className="lightbox-content" onClick={e => e.stopPropagation()}>
-            <button className="lightbox-close" onClick={() => setIsLightboxOpen(false)}><X size={32} /></button>
+            <button className="lightbox-close" onClick={() => setIsLightboxOpen(false)}><LucideX size={32} /></button>
             <img src={images[photoIndex]} className="lightbox-image" alt="Zoom" />
             <button className="lightbox-nav-btn prev" onClick={prevImage}><ChevronLeft size={32} /></button>
             <button className="lightbox-nav-btn next" onClick={nextImage}><ChevronRight size={32} /></button>

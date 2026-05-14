@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Settings, LogOut, User } from 'lucide-react';
+import { ChevronDown, LogOut, User } from 'lucide-react';
 import { useAuth } from '../../../../context/AuthContext';
 import HeaderNotification from './HeaderNotification';
 import './HeaderDashboard.css';

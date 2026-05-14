@@ -7,7 +7,6 @@ import {
   Loader,
   User,
   Building,
-  Shield,
 } from "lucide-react";
 import { roomService } from "../../services/roomService";
 import toastr from "toastr";

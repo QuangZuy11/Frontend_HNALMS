@@ -108,28 +108,6 @@ function CardContent({ className = "", ...props }) {
   return <div className={`rf-card-content ${className}`} {...props} />;
 }
 
-// Checkbox Component
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function Checkbox({
-  id,
-  checked,
-  onCheckedChange,
-  className = "",
-  ...props
-}: any) {
-  return (
-    <input
-      type="checkbox"
-      id={id}
-      checked={checked}
-      onChange={(e) => onCheckedChange?.(e.target.checked)}
-      // Changed "checkbox" to "rf-checkbox"
-      className={`rf-checkbox ${className}`}
-      {...props}
-    />
-  );
-}
-
 // Radio Component
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function Radio({

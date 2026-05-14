@@ -3,9 +3,8 @@ import {
   useContext,
   useEffect,
   useState,
-  PropsWithChildren,
 } from "react";
-import { authService } from "../services/authService";
+import type { PropsWithChildren } from "react";
 
 /* ===================== TYPES ===================== */
 

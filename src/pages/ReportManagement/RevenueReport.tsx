@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Download, Filter, TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-react';
 import * as XLSX from 'xlsx-js-style';

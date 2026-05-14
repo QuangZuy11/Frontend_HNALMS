@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import { MapPin, Home, Users, DoorOpen } from "lucide-react";
 import { Slot } from "@radix-ui/react-slot";
 import "./RoomCard.css";
@@ -46,7 +46,7 @@ function Badge({ className = "", variant = "default", ...props }) {
 }
 
 // RoomCard Component
-export default function RoomCard({ room }) {
+export default function RoomCard({ room }: { room: any }) {
   let statusLabel = room.status === "available" ? "Trống" : "Đã Thuê";
   if (room.isShortTermAvailable) {
     statusLabel = "Trống ngắn hạn";
@@ -116,7 +116,7 @@ export default function RoomCard({ room }) {
 
         {/* Amenities */}
         <div className="room-card-amenities">
-          {room.amenities.slice(0, 3).map((amenity, index) => (
+          {room.amenities.slice(0, 3).map((amenity: any, index: number) => (
             <Badge
               key={index}
               variant="secondary"
@@ -132,7 +132,7 @@ export default function RoomCard({ room }) {
           )}
         </div>
 
-        <Link href={`/rooms/${room._id}`} className="room-card-link">
+        <Link to={`/rooms/${room._id}`} className="room-card-link">
           <Button
             variant="default"
             size="sm"
